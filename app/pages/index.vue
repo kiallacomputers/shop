@@ -8,7 +8,7 @@
     <section class="flex-1">
       <div class="w-full flex justify-center overflow-hidden">
         <div
-          class="relative w-[400px] md:w-[800px] h-[150px] md:h-[300px] overflow-hidden"
+          class="relative w-[500px] md:w-[800px] h-[188px] md:h-[300px] overflow-hidden"
         >
           <Transition name="slide">
             <NuxtLink
