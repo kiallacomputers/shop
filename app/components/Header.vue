@@ -6,7 +6,7 @@
         <img src="/kc_logo.png" alt="Logo" class="w-20" />
       </NuxtLink>
 
-      <!-- Menu Right -->
+      <!-- Menu Right. -->
       <div class="flex items-center gap-8">
         <nav class="md:flex items-center gap-8">
           <!-- <NuxtLink to="/" class="text-slate-700 hover:text-blue-600">
