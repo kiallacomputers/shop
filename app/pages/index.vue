@@ -66,6 +66,10 @@ onMounted(() => {
   }, 10000);
 });
 
+const images = import.meta.glob("~/assets/images/products/*", {
+  eager: true,
+  import: "default",
+});
 const products = [
   {
     id: 1,
@@ -74,7 +78,7 @@ const products = [
     category: "Processors",
     description:
       "20-core desktop processor delivering exceptional gaming and multitasking performance.",
-    image: "/products/intel-i7-14700k.png",
+    image: images["/assets/images/products/intel-i7-14700k.png"],
     price: 699.0,
     oldPrice: 749.0,
     reviews: 126,
@@ -88,7 +92,7 @@ const products = [
     category: "Networking",
     description:
       "High-speed dual-band WiFi 6 router with advanced security and gaming features.",
-    image: "/products/asus-rt-ax88u-pro.png",
+    image: images["/assets/images/products/asus-rt-ax88u-pro.png"],
     price: 499.0,
     oldPrice: 549.0,
     reviews: 87,
@@ -102,7 +106,7 @@ const products = [
     category: "Storage",
     description:
       "Ultra-fast PCIe 4.0 NVMe SSD designed for gaming, content creation, and demanding workloads.",
-    image: "/products/samsung-990-pro-2tb.png",
+    image: images["/assets/images/products/samsung-990-pro-2tb.png"],
     price: 279.0,
     oldPrice: 319.0,
     reviews: 214,

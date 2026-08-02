@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <!-- Logo Left -->
       <NuxtLink to="/" class="flex items-center">
-        <img src="/kc_logo.png" alt="Logo" class="w-20" />
+        <img src="~/assets/images/logos/kc_logo.png" alt="Logo" class="w-20" />
       </NuxtLink>
 
       <!-- Menu Right. -->
