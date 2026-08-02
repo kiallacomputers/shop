@@ -3,7 +3,7 @@
     <!-- Mobile Category Button -->
     <button
       @click="mobileOpen = !mobileOpen"
-      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 mb-4 text-slate-800 font-semibold"
+      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow md:shadow-none px-4 py-3 mb-4 text-slate-800 font-semibold"
     >
       <span>Categories</span>
 
@@ -25,12 +25,8 @@
 
     <!-- Desktop + Mobile Menu -->
     <aside
-      class="w-full md:w-64 bg-white rounded-lg p-5 shadow"
-      :class="{
-        block: mobileOpen,
-        hidden: !mobileOpen,
-      }"
-      md:block
+      class="w-full md:w-64 bg-white rounded-lg p-5 shadow md:shadow-none"
+      :class="[mobileOpen ? 'block' : 'hidden', 'md:block']"
     >
       <h2 class="hidden md:block text-xl font-bold mb-4 text-slate-800">
         Categories
