@@ -15,13 +15,13 @@
 
     <!-- Product Details -->
     <div class="p-5">
-      <p class="text-sm text-sky-600 font-medium">
+      <p class="text-xs text-sky-600 font-medium">
         {{ product.category }}
       </p>
 
       <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
         <h3
-          class="text-lg font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
+          class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
         >
           {{ product.name }}
         </h3>
