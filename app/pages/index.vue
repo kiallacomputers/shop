@@ -1,8 +1,6 @@
 <template>
   <!-- Main Area -->
   <div class="max-w-7xl mx-auto px-4 py-6 md:flex gap-6">
-    <!-- insert side menu -->
-    <Sidemenu />
 
     <!-- Ad Content -->
     <section class="flex-1">
@@ -26,13 +24,18 @@
         </div>
       </div>
     </section>
-  </div>
+
+    
+    <!-- insert side menu -->
+    <Sidemenu />
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <ProductCard
       v-for="product in products"
       :key="product.id"
       :product="product"
     />
+  </div>
+
   </div>
 </template>
 
