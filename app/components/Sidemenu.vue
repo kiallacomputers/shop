@@ -12,7 +12,7 @@
         :class="{ 'rotate-180': mobileOpen }"
         fill="none"
         stroke="currentColor"
-        viewBox="0 0 24 24"
+        viewBox="0 0 20 20"
       >
         <path
           stroke-linecap="round"
