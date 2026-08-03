@@ -75,7 +75,7 @@ const images = import.meta.glob("~/assets/images/products/*", {
 const ads = [
   {
     title: "Computer Builds",
-    image: loadads["/assets/images/ads/computer.png"],
+    image: loadads["/assets/images/ads/computers.png"],
     link: "#",
   },
   {
