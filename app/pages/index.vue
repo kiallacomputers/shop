@@ -52,19 +52,6 @@ const { isLoggedIn } = defineProps({
 
 const currentAd = ref(0);
 
-const ads = [
-  {
-    title: "Computer Builds",
-    image: loadads["/assets/images/ads/computer.png"],
-    link: "#",
-  },
-  {
-    title: "Avast Antivirus",
-    image: loadads["/assets/images/ads/avast.png"],
-    link: "#",
-  },
-];
-
 onMounted(() => {
   setInterval(() => {
     currentAd.value++;
@@ -85,6 +72,18 @@ const images = import.meta.glob("~/assets/images/products/*", {
   import: "default",
 });
 
+const ads = [
+  {
+    title: "Computer Builds",
+    image: loadads["/assets/images/ads/computer.png"],
+    link: "#",
+  },
+  {
+    title: "Avast Antivirus",
+    image: loadads["/assets/images/ads/avast.png"],
+    link: "#",
+  },
+];
   
 const products = [
   {
