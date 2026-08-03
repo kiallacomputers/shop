@@ -55,12 +55,12 @@ const currentAd = ref(0);
 const ads = [
   {
     title: "Computer Builds",
-    image: "/ads/kc_ad2.png",
+    image: ads["/assets/images/ads/computer.png",
     link: "#",
   },
   {
     title: "Avast Antivirus",
-    image: "/ads/kc_ad.png",
+    image: ads["/assets/images/ads/avast.png"],
     link: "#",
   },
 ];
@@ -79,6 +79,13 @@ const images = import.meta.glob("~/assets/images/products/*", {
   eager: true,
   import: "default",
 });
+
+  const ads = import.meta.glob("~/assets/images/ads/*", {
+  eager: true,
+  import: "default",
+});
+
+  
 const products = [
   {
     id: 1,
