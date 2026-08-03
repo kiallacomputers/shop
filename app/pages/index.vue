@@ -1,38 +1,47 @@
 <template>
-  <!-- Main Area -->
-  <div class="max-w-7xl mx-auto px-4 py-6 md:flex gap-6">
-    <!-- insert side menu -->
-    <Sidemenu />
+  <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- Ad Content -->
-    <section class="flex-1">
-      <div class="w-full flex justify-center overflow-hidden">
-        <div
-          class="relative w-[310px] md:w-[800px] h-[116px] md:h-[300px] overflow-hidden"
-        >
-          <Transition name="slide">
-            <NuxtLink
-              :to="ads[currentAd].link"
-              :key="currentAd"
-              class="absolute inset-0"
-            >
-              <img
-                :src="ads[currentAd].image"
-                :alt="ads[currentAd].title"
-                class="w-full h-full object-cover"
-              />
-            </NuxtLink>
-          </Transition>
-        </div>
+    <!-- Advertisement -->
+    <section class="w-full flex justify-center overflow-hidden">
+      <div
+        class="relative w-[310px] md:w-full md:max-w-[1000px] h-[116px] md:h-[300px] overflow-hidden rounded-lg"
+      >
+        <Transition name="slide">
+          <NuxtLink
+            :to="ads[currentAd].link"
+            :key="currentAd"
+            class="absolute inset-0"
+          >
+            <img
+              :src="ads[currentAd].image"
+              :alt="ads[currentAd].title"
+              class="w-full h-full object-cover"
+            />
+          </NuxtLink>
+        </Transition>
       </div>
     </section>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <ProductCard
-      v-for="product in products"
-      :key="product.id"
-      :product="product"
-    />
+
+    <!-- Sidebar + Products -->
+    <div class="flex flex-col md:flex-row gap-6">
+
+      <!-- Sidebar -->
+      <aside class="w-full md:w-64 shrink-0">
+        <Sidemenu />
+      </aside>
+
+      <!-- Products -->
+      <main class="flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <ProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+          />
+        </div>
+      </main>
+
+    </div>
   </div>
 </template>
 
