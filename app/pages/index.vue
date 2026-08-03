@@ -55,7 +55,7 @@ const currentAd = ref(0);
 const ads = [
   {
     title: "Computer Builds",
-    image: ads["/assets/images/ads/computer.png",
+    image: ads["/assets/images/ads/computer.png"],
     link: "#",
   },
   {
