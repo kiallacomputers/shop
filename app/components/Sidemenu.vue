@@ -32,7 +32,7 @@
         Categories
       </h2>
 
-      <ul class="space-y-2">
+      <ul class="space-y-1">
         <li v-for="category in categories" :key="category.name">
           <!-- Category -->
           <button
