@@ -56,7 +56,7 @@
               v-if="openMenu === category.name"
               class="ml-8 mt-2 space-y-2 border-l pl-3"
             >
-              <li v-for="item in category.items" :key="item.name">
+              <li v-for="item in parents" :key="item.name">
                 <NuxtLink
                   :to="item.link"
                   class="block text-sm text-slate-600 hover:text-blue-600"
@@ -73,39 +73,39 @@
 </template>
 
 <script setup>
-const mobileOpen = ref(false);
+const supabase = useSupabaseClient();
 
+const mobileOpen = ref(false);
 const openMenu = ref(null);
 
 const toggle = (name) => {
   openMenu.value = openMenu.value === name ? null : name;
 };
 
-const categories = [
-  {
-    name: "Computers",
-    items: [
-      { name: "Gaming PCs", link: "#" },
-      { name: "Business PCs", link: "#" },
-      { name: "Mini PCs", link: "#" },
-    ],
-  },
-  {
-    name: "Laptops",
-    items: [
-      { name: "Gaming Laptops", link: "#" },
-      { name: "Business Laptops", link: "#" },
-    ],
-  },
-  {
-    name: "Accessories",
-    items: [
-      { name: "Keyboards", link: "#" },
-      { name: "Mice", link: "#" },
-      { name: "Monitors", link: "#" },
-    ],
-  },
-];
+const { data } = await useAsyncData("categories", async () => {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order");
+
+  if (error) throw error;
+
+  return data;
+});
+
+const categories = computed(() => {
+  if (!data.value) return [];
+
+  const parents = data.value
+    .filter((c) => c.parent_id === null)
+    .map((parent) => ({
+      ...parent,
+      items: data.value.filter((child) => child.parent_id === parent.id),
+    }));
+
+  return parents;
+});
 </script>
 
 <style scoped>
