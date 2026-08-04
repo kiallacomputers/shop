@@ -106,21 +106,35 @@ const toggle = (id) => {
 };
 
 // Fetch categories
-const { data, error } = await useAsyncData("categories", async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("active", true)
-    .order("sort_order", { ascending: true });
+// const { data, error } = await useAsyncData("categories", async () => {
+//   const { data, error } = await supabase
+//     .from("categories")
+//     .select("*")
+//     .eq("active", true)
+//     .order("sort_order", { ascending: true });
 
-  if (error) {
-    console.error("Supabase Error:", error);
-    throw error;
+//   if (error) {
+//     console.error("Supabase Error:", error);
+//     throw error;
+//   }
+
+//   console.log("Supabase returned:", data);
+
+//   return data;
+// });
+
+  const { data, error } = await useAsyncData("categories", async () => {
+  const result = await supabase
+    .from("categories")
+    .select("*");
+
+  console.log("Result:", result);
+
+  if (result.error) {
+    console.error(result.error);
   }
 
-  console.log("Supabase returned:", data);
-
-  return data;
+  return result.data;
 });
 
 // Build parent/child structure
