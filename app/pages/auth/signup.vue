@@ -55,5 +55,8 @@ const signUp = async () => {
     </button>
 
     <p class="text-red-500 mt-4">{{ error }}</p>
+    <p>
+      Already have an account ? <NuxtLink to="/auth/signin">Sign In</NuxtLink>
+    </p>
   </div>
 </template>

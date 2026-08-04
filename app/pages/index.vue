@@ -43,9 +43,9 @@
 </template>
 
 <script setup>
-const { isLoggedIn } = defineProps({
-  isLoggedIn: Boolean,
-});
+// const { isLoggedIn } = defineProps({
+//   isLoggedIn: Boolean,
+// });
 
 const currentAd = ref(0);
 

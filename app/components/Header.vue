@@ -18,19 +18,27 @@
           </NuxtLink> -->
 
           <NuxtLink
-            v-if="!props.isLoggedIn"
-            to="#"
+            v-if="!user"
+            to="/auth/signup"
             class="text-slate-700 hover:text-blue-600"
           >
             Signup/Login
           </NuxtLink>
 
           <NuxtLink
-            v-if="props.isLoggedIn"
-            to="#"
+            v-if="user"
+            to="/admin/dashboard"
             class="text-slate-700 hover:text-blue-600"
           >
             My Account
+          </NuxtLink>
+
+          <NuxtLink
+            v-if="user"
+            to="#"
+            class="text-slate-700 hover:text-blue-600"
+          >
+            Sign Out
           </NuxtLink>
         </nav>
 
@@ -66,4 +74,6 @@
 const user = useSupabaseUser();
 
 const isLoggedIn = computed(() => !!user.value);
+
+console.log("Logged in:", isLoggedIn.value);
 </script>
