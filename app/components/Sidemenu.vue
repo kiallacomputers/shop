@@ -74,7 +74,7 @@
           <Transition name="submenu">
             <ul
               v-if="openMenu === category.id"
-              class="ml-8 mt-2 space-y-2 border-l pl-4"
+              class="ml-8 mt-2 space-y-2 pl-4"
             >
               <li
                 v-for="item in category.items"
