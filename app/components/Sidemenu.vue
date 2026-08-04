@@ -51,7 +51,7 @@
           <!-- Parent -->
           <button
             @click="category.items.length ? toggle(category.id) : null"
-            class="flex items-center gap-1 text-[#404E71] w-full text-left py-1 hover:text-blue-600"
+            class="flex items-center gap-1 text-[#404E71] w-full text-left py-1 hover:text-[#2CB6D5]"
           >
             <span
               v-if="category.items.length"
