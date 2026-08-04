@@ -93,6 +93,6 @@ console.log("Logged in:", isLoggedIn.value);
 
 const logout = async () => {
   await supabase.auth.signOut();
-  navigateTo("/signin");
+  navigateTo("/");
 };
 </script>
