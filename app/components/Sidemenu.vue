@@ -65,7 +65,7 @@
               class="w-5"
             ></span>
 
-            <span class="font-medium text-[#404E71]">
+            <span class="font-medium">
               {{ category.name }}
             </span>
           </button>
