@@ -36,16 +36,19 @@
         <li v-for="category in categories" :key="category.name">
           <!-- Category -->
           <button
-            @click="toggle(category.name)"
+            @click="catergory.items.length && toggle(category.name)"
             class="flex items-center gap-1 w-full py-1 text-left text-slate-700 hover:text-blue-600"
           >
             <span
+              v-if="catergory.items.length"
               class="w-5 h-5 flex items-center justify-center border rounded text-sm"
             >
               {{ openMenu === category.name ? "−" : "+" }}
             </span>
 
-            <span class="font-medium">
+            <NuxtLink 
+              :to="/catergory/${catergory.slug"
+              class="font-medium hover:text-blue-600">
               {{ category.name }}
             </span>
           </button>
@@ -58,7 +61,7 @@
             >
               <li v-for="item in category.items" :key="item.name">
                 <NuxtLink
-                  :to="item.link"
+                  :to="/catergory/${item.slug}"
                   class="block text-sm text-slate-600 hover:text-blue-600"
                 >
                   {{ item.name }}
@@ -97,12 +100,16 @@ const { data } = await useAsyncData("categories", async () => {
 const categories = computed(() => {
   if (!data.value) return [];
 
-  const parents = data.value
-    .filter((c) => c.parent_id === null)
-    .map((parent) => ({
+  return data.value
+    .filter(c => c.parent_id === null)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(parent => ({
       ...parent,
-      items: data.value.filter((child) => child.parent_id === parent.id),
+      items: data.value
+        .filter(c => c.parent_id === parent.id)
+        .sort((a, b) => a.sort_order - b.sort_order)
     }));
+});
 
   console.log("Parent Categories:", parents);
 
