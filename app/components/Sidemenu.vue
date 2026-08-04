@@ -25,7 +25,7 @@
 
     <!-- Sidebar -->
     <aside
-      class="w-full md:w-64 bg-white rounded-lg p-5 shadow"
+      class="w-full md:w-64 bg-white rounded-lg p-5"
       :class="[mobileOpen ? 'block' : 'hidden', 'md:block']"
     >
       <h2 class="hidden md:block text-xl font-bold mb-4 text-slate-800">
@@ -51,7 +51,7 @@
           <!-- Parent -->
           <button
             @click="category.items.length ? toggle(category.id) : null"
-            class="flex items-center gap-2 w-full text-left py-2 hover:text-blue-600"
+            class="flex items-center gap-1 w-full text-left py-1 hover:text-blue-600"
           >
             <span
               v-if="category.items.length"
