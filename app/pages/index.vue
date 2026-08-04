@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
     <!-- Advertisement -->
     <section class="w-full flex justify-center overflow-hidden">
       <div
@@ -24,7 +23,6 @@
 
     <!-- Sidebar + Products -->
     <div class="flex flex-col md:flex-row gap-6">
-
       <!-- Sidebar -->
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
@@ -40,7 +38,6 @@
           />
         </div>
       </main>
-
     </div>
   </div>
 </template>
@@ -67,7 +64,7 @@ const images = import.meta.glob("~/assets/images/products/*", {
   import: "default",
 });
 
-  const loadads = import.meta.glob("~/assets/images/ads/*", {
+const loadads = import.meta.glob("~/assets/images/ads/*", {
   eager: true,
   import: "default",
 });
@@ -84,7 +81,7 @@ const ads = [
     link: "#",
   },
 ];
-  
+
 const products = [
   {
     id: 1,

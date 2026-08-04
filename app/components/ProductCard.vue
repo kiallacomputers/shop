@@ -3,7 +3,8 @@
     class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
   >
     <!-- Product Image -->
-    <NuxtLink :to="`/product/${product.slug}`">
+    <!-- :to="`/product/${product.slug}`" -->
+    <NuxtLink to="#">
       <div class="overflow-hidden bg-gray-100">
         <img
           :src="product.image"
@@ -18,8 +19,8 @@
       <p class="text-xs text-sky-600 font-medium">
         {{ product.category }}
       </p>
-
-      <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
+      <!-- :to="`/product/${product.slug}`" -->
+      <NuxtLink to="#" class="block mt-1">
         <h3
           class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
         >
@@ -66,4 +67,6 @@ defineProps({
     required: true,
   },
 });
+
+const isLoggedIn = ref(false);
 </script>
