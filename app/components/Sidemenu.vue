@@ -123,19 +123,19 @@ const toggle = (id) => {
 //   return data;
 // });
 
-  const { data, error } = await useAsyncData("categories", async () => {
-  const result = await supabase
-    .from("categories")
-    .select("*");
+//   const { data, error } = await useAsyncData("categories", async () => {
+//   const result = await supabase
+//     .from("categories")
+//     .select("*");
 
-  console.log("Result:", result);
+//   console.log("Result:", result);
 
-  if (result.error) {
-    console.error(result.error);
-  }
+//   if (result.error) {
+//     console.error(result.error);
+//   }
 
-  return result.data;
-});
+//   return result.data;
+// });
 
 // Build parent/child structure
 const categories = computed(() => {
