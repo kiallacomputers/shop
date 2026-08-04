@@ -28,14 +28,14 @@
       class="w-full md:w-64 bg-white rounded-lg p-5"
       :class="[mobileOpen ? 'block' : 'hidden', 'md:block']"
     >
-      <h2 class="hidden md:block text-xl font-bold mb-4 text-slate-800">
+      <h2 class="hidden md:block text-xl font-bold mb-4 text-[#404E71]">
         Categories
       </h2>
 
       <!-- If no categories -->
       <div
         v-if="categories.length === 0"
-        class="text-sm text-gray-500"
+        class="text-sm text-[#404E71]"
       >
         No categories found.
       </div>
@@ -51,7 +51,7 @@
           <!-- Parent -->
           <button
             @click="category.items.length ? toggle(category.id) : null"
-            class="flex items-center gap-1 w-full text-left py-1 hover:text-blue-600"
+            class="flex items-center gap-1 text-[#404E71] w-full text-left py-1 hover:text-blue-600"
           >
             <span
               v-if="category.items.length"
@@ -65,7 +65,7 @@
               class="w-5"
             ></span>
 
-            <span class="font-medium">
+            <span class="font-medium text-[#404E71]">
               {{ category.name }}
             </span>
           </button>
