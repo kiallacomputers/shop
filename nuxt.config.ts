@@ -4,8 +4,8 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@nuxtjs/supabase"],
   supabase: {
-    redirect: false,
-    url: process.env.SUPBASE_URL,
+    url: process.env.SUPABASE_URL,
     key: process.env.SUPABASE_KEY,
+    redirect: false,
   },
 });
