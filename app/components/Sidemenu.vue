@@ -3,7 +3,7 @@
     <!-- Mobile Category Button -->
     <button
       @click="mobileOpen = !mobileOpen"
-      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow md:shadow-none px-4 py-3 mb-4 text-slate-800 font-semibold"
+      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 mb-4 text-slate-800 font-semibold"
     >
       <span>Categories</span>
 
@@ -23,48 +23,65 @@
       </svg>
     </button>
 
-    <!-- Desktop + Mobile Menu -->
+    <!-- Sidebar -->
     <aside
-      class="w-full md:w-64 bg-white rounded-lg p-5 shadow md:shadow-none"
+      class="w-full md:w-64 bg-white rounded-lg p-5 shadow"
       :class="[mobileOpen ? 'block' : 'hidden', 'md:block']"
     >
       <h2 class="hidden md:block text-xl font-bold mb-4 text-slate-800">
         Categories
       </h2>
 
-      <ul class="space-y-1">
-        <li v-for="category in categories" :key="category.name">
-          <!-- Category -->
+      <!-- If no categories -->
+      <div
+        v-if="categories.length === 0"
+        class="text-sm text-gray-500"
+      >
+        No categories found.
+      </div>
+
+      <ul
+        v-else
+        class="space-y-2"
+      >
+        <li
+          v-for="category in categories"
+          :key="category.id"
+        >
+          <!-- Parent -->
           <button
-  @click="category.items.length && toggle(category.name)"
-  class="flex items-center gap-2 w-full py-1 text-left"
->
-  <span
-    v-if="category.items.length"
-    class="w-5 h-5 flex items-center justify-center border rounded text-sm"
-  >
-    {{ openMenu === category.name ? "−" : "+" }}
-  </span>
+            @click="category.items.length ? toggle(category.id) : null"
+            class="flex items-center gap-2 w-full text-left py-2 hover:text-blue-600"
+          >
+            <span
+              v-if="category.items.length"
+              class="w-5 h-5 flex items-center justify-center border rounded text-sm"
+            >
+              {{ openMenu === category.id ? "−" : "+" }}
+            </span>
 
-  <span v-else class="w-5"></span>
+            <span
+              v-else
+              class="w-5"
+            ></span>
 
-  <NuxtLink
-    :to="`/category/${category.slug}`"
-    class="font-medium hover:text-blue-600"
-  >
-    {{ category.name }}
-  </NuxtLink>
-</button>
+            <span class="font-medium">
+              {{ category.name }}
+            </span>
+          </button>
 
-          <!-- Sub Categories -->
+          <!-- Children -->
           <Transition name="submenu">
             <ul
-              v-if="openMenu === category.name"
-              class="ml-8 mt-2 space-y-2 border-l pl-3"
+              v-if="openMenu === category.id"
+              class="ml-8 mt-2 space-y-2 border-l pl-4"
             >
-              <li v-for="item in category.items" :key="item.name">
+              <li
+                v-for="item in category.items"
+                :key="item.id"
+              >
                 <NuxtLink
-                  :to="/catergory/${item.slug}"
+                  :to="`/category/${item.slug}`"
                   class="block text-sm text-slate-600 hover:text-blue-600"
                 >
                   {{ item.name }}
@@ -88,35 +105,44 @@ const toggle = (id) => {
   openMenu.value = openMenu.value === id ? null : id;
 };
 
-const { data } = await useAsyncData("categories", async () => {
+// Fetch categories
+const { data, error } = await useAsyncData("categories", async () => {
   const { data, error } = await supabase
     .from("categories")
     .select("*")
     .eq("active", true)
-    .order("sort_order");
+    .order("sort_order", { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Supabase Error:", error);
+    throw error;
+  }
+
+  console.log("Supabase returned:", data);
 
   return data;
 });
 
+// Build parent/child structure
 const categories = computed(() => {
   if (!data.value) return [];
 
-  return data.value
-    .filter(c => c.parent_id === null)
+  const parents = data.value
+    .filter((c) => c.parent_id === null)
     .sort((a, b) => a.sort_order - b.sort_order)
-    .map(parent => ({
+    .map((parent) => ({
       ...parent,
       items: data.value
-        .filter(c => c.parent_id === parent.id)
-        .sort((a, b) => a.sort_order - b.sort_order)
+        .filter((child) => child.parent_id === parent.id)
+        .sort((a, b) => a.sort_order - b.sort_order),
     }));
-});
-
-  console.log("Parent Categories:", parents);
 
   return parents;
+});
+
+// Debug output
+watchEffect(() => {
+  console.log("Computed categories:", categories.value);
 });
 </script>
 
