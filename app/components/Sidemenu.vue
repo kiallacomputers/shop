@@ -50,7 +50,7 @@
               :to="/catergory/${catergory.slug"
               class="font-medium hover:text-blue-600">
               {{ category.name }}
-            </span>
+            </NuxtLink>
           </button>
 
           <!-- Sub Categories -->
