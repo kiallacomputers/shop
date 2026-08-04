@@ -84,8 +84,8 @@ const supabase = useSupabaseClient();
 const mobileOpen = ref(false);
 const openMenu = ref(null);
 
-const toggle = (name) => {
-  openMenu.value = openMenu.value === name ? null : name;
+const toggle = (id) => {
+  openMenu.value = openMenu.value === id ? null : id;
 };
 
 const { data } = await useAsyncData("categories", async () => {
