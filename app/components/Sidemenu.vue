@@ -110,7 +110,6 @@ const { data, error } = await useAsyncData("categories", async () => {
   const { data, error } = await supabase
     .from("categories")
     .select("*")
-    .eq("active", true)
     .order("sort_order", { ascending: true });
 
   if (error) {
