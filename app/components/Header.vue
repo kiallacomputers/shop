@@ -85,6 +85,7 @@
 
 <script setup>
 const user = useSupabaseUser();
+const supabase = useSupabaseClient();
 
 const isLoggedIn = computed(() => !!user.value);
 
