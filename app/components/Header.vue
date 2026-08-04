@@ -63,10 +63,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
-  isLoggedIn: {
-    type: Boolean,
-    default: true,
-  },
-});
+const user = useSupabaseUser();
+
+const isLoggedIn = computed(() => !!user.value);
 </script>
