@@ -3,7 +3,7 @@
     <!-- Mobile Category Button -->
     <button
       @click="mobileOpen = !mobileOpen"
-      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 mb-4 text-slate-800 font-semibold"
+      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 mb-4 text-[#404E71] font-semibold"
     >
       <span>Categories</span>
 
