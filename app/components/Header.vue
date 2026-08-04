@@ -19,7 +19,7 @@
 
           <NuxtLink
             v-if="!user"
-            to="/auth/signup"
+            to="/auth/signin"
             class="text-slate-700 hover:text-blue-600"
           >
             Signup/Login

@@ -34,6 +34,10 @@
         <p v-if="errorMessage" class="text-red-600 text-sm">
           {{ errorMessage }}
         </p>
+        <p>
+          Do not have an account ?
+          <NuxtLink to="/auth/signup">Sign Up</NuxtLink>
+        </p>
       </form>
     </div>
   </div>

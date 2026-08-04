@@ -23,6 +23,6 @@ const supabase = useSupabaseClient();
 
 const logout = async () => {
   await supabase.auth.signOut();
-  navigateTo("/login");
+  navigateTo("/signin");
 };
 </script>
