@@ -36,22 +36,25 @@
         <li v-for="category in categories" :key="category.name">
           <!-- Category -->
           <button
-            @click="catergory.items.length && toggle(category.name)"
-            class="flex items-center gap-1 w-full py-1 text-left text-slate-700 hover:text-blue-600"
-          >
-            <span
-              v-if="catergory.items.length"
-              class="w-5 h-5 flex items-center justify-center border rounded text-sm"
-            >
-              {{ openMenu === category.name ? "−" : "+" }}
-            </span>
+  @click="category.items.length && toggle(category.name)"
+  class="flex items-center gap-2 w-full py-1 text-left"
+>
+  <span
+    v-if="category.items.length"
+    class="w-5 h-5 flex items-center justify-center border rounded text-sm"
+  >
+    {{ openMenu === category.name ? "−" : "+" }}
+  </span>
 
-            <NuxtLink 
-              :to="/catergory/${catergory.slug"
-              class="font-medium hover:text-blue-600">
-              {{ category.name }}
-            </NuxtLink>
-          </button>
+  <span v-else class="w-5"></span>
+
+  <NuxtLink
+    :to="`/category/${category.slug}`"
+    class="font-medium hover:text-blue-600"
+  >
+    {{ category.name }}
+  </NuxtLink>
+</button>
 
           <!-- Sub Categories -->
           <Transition name="submenu">
