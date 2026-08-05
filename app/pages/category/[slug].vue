@@ -9,7 +9,7 @@ const { data: category } = await useAsyncData(`category-${slug}`, async () => {
   const { data, error } = await supabase
     .from("categories")
     .select("*")
-    .eq("id", slug)
+    .eq("slug", slug)
     .single();
 
   if (error) throw error;
@@ -24,7 +24,7 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   const { data, error } = await supabase
     .from("products")
     .select("*")
-    .eq("category_id", slug)
+    .eq("category_id", category.value.id)
     .order("sort_order");
 
   if (error) throw error;
