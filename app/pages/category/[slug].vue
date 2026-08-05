@@ -30,8 +30,11 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
 
   if (error) throw error;
 
-  // console.log("Data Products :", data);
-  return data;
+  // Replace the category ID with the category name
+  return data.map(product => ({
+    ...product,
+    category: category.value.name,
+  }));
 });
 </script>
 
