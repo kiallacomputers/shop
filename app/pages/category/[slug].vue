@@ -30,7 +30,7 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
 
   if (error) throw error;
 
-  console.log("Data Products :>", products);
+  console.log("Data Products :", data);
   return data;
 });
 </script>
