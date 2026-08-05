@@ -66,7 +66,7 @@
             >
               <li v-for="item in category.items" :key="item.id">
                 <NuxtLink
-                  :to="`/category/${item.id}`"
+                  :to="`/category/${item.slug}`"
                   class="block text-sm text-slate-600 hover:text-blue-600"
                 >
                   {{ item.name }}
