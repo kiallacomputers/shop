@@ -27,7 +27,7 @@ const signUp = async () => {
     password: form.password,
     options: {
       data: {
-        "Full Name": `${form.firstName} ${form.lastName}`,
+        "Display name": `${form.firstName} ${form.lastName}`,
       }
     }
   })
