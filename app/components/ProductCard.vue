@@ -5,7 +5,7 @@
     <!-- Product Image -->
     <!-- :to="`/product/${product.slug}`" -->
     <NuxtLink to="#">
-      <div class="overflow-hidden bg-gray-100">
+      <div class="relative overflow-hidden bg-gray-100">
          <!-- Featured Badge -->
          <span
             v-if="product.featured"
