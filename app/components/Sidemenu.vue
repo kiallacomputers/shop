@@ -95,7 +95,7 @@ const { data, error } = await useAsyncData("categories", async () => {
   const { data, error } = await supabase
     .from("categories")
     .select("*")
-    .order("sort_order", { ascending: true });
+    .order("name", { ascending: true });
 
   if (error) {
     console.error("Supabase Error:", error);
@@ -115,7 +115,9 @@ const categories = computed(() => {
     .filter((c) => c.parent_id === null)
     .map((parent) => ({
       ...parent,
-      items: data.value.filter((child) => child.parent_id === parent.id),
+      items: data.value
+        .filter((child) => child.parent_id === parent.id),
+        .sort((a, b) => a.name.localeCompare(b.name))
     }));
 
   return parents;
