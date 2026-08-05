@@ -24,7 +24,7 @@
     <!-- Product Details -->
     <div class="p-5">
       <p class="text-xs text-sky-600 font-medium">
-        {{ product.category }}
+        {{ category.name }}
       </p>
       <!-- :to="`/product/${product.slug}`" -->
       <NuxtLink to="#" class="block mt-1">
@@ -77,4 +77,18 @@ defineProps({
 
 const user = useSupabaseUser();
 const supabase = useSupabaseClient();
+
+  // Get the category
+const { data: category } = await useAsyncData(`category-${slug}`, async () => {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (error) throw error;
+
+  // console.log("Data Category :>", category);
+  return data;
+});
 </script>
