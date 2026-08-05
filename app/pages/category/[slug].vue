@@ -33,7 +33,7 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   // Replace the category ID with the category name
   return data.map(product => ({
     ...product,
-    category: category.value.name,
+    categoryName: category.value.name,
   }));
 });
 </script>
