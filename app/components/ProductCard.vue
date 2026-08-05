@@ -78,17 +78,17 @@ defineProps({
 const user = useSupabaseUser();
 const supabase = useSupabaseClient();
 
-  // Get the category
-const { data: category } = await useAsyncData(`category-${product.category}`, async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("id", product.category)
-    .single();
+//   // Get the category
+// const { data: category } = await useAsyncData(`category-${product.category}`, async () => {
+//   const { data, error } = await supabase
+//     .from("categories")
+//     .select("*")
+//     .eq("id", product.category)
+//     .single();
 
-  if (error) throw error;
+//   if (error) throw error;
 
-  // console.log("Data Category :>", category);
-  return data;
-});
+//   // console.log("Data Category :>", category);
+//   return data;
+// });
 </script>
