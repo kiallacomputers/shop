@@ -75,5 +75,6 @@ defineProps({
   },
 });
 
-const isLoggedIn = ref(false);
+const user = useSupabaseUser();
+const supabase = useSupabaseClient();
 </script>
