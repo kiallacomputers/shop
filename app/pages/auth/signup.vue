@@ -49,7 +49,7 @@ const signUp = async () => {
 </script>
 
 <template>
-  <div class="max-w-md mx-auto bg-white rounded-lg shadow p-6">
+  <div class="max-w-md mx-auto bg-white rounded-lg p-6">
     <h1 class="text-2xl font-bold mb-6">
       Create Account
     </h1>
