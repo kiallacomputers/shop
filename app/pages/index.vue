@@ -51,20 +51,27 @@ const supabase = useSupabaseClient();
 const { data: featuredProducts, error } = await useAsyncData(
   "featured-products",
   async () => {
-    const { data, error } = await supabase
+    console.log("Fetching featured products...");
+
+    const result = await supabase
       .from("products")
       .select("*")
-      .eq("featured", true)
-      // .eq("active", true)
-      .order("sort_order", { ascending: true });
+      .eq("featured", true);
 
-    if (error) throw error;
+    console.log("Result:", result);
 
-    console.log(featuredProducts.value);
+    if (result.error) {
+      console.error("Supabase Error:", result.error);
+      throw result.error;
+    }
 
-    return data;
+    return result.data;
   }
 );
+
+watchEffect(() => {
+  console.log("featuredProducts:", featuredProducts.value);
+});
   
 const currentAd = ref(0);
 
