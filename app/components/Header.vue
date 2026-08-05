@@ -90,7 +90,7 @@ const supabase = useSupabaseClient();
 
 const isLoggedIn = computed(() => !!user.value);
 
-console.log("Logged in:", isLoggedIn.value);
+console.log("Logged in:", isLoggedIn);
 
 const logout = async () => {
   await supabase.auth.signOut();
