@@ -33,21 +33,12 @@
       </h2>
 
       <!-- If no categories -->
-      <div
-        v-if="categories.length === 0"
-        class="text-sm text-[#404E71]"
-      >
+      <div v-if="categories.length === 0" class="text-sm text-[#404E71]">
         No categories found.
       </div>
 
-      <ul
-        v-else
-        class="space-y-2"
-      >
-        <li
-          v-for="category in categories"
-          :key="category.id"
-        >
+      <ul v-else class="space-y-2">
+        <li v-for="category in categories" :key="category.id">
           <!-- Parent -->
           <button
             @click="category.items.length ? toggle(category.id) : null"
@@ -60,10 +51,7 @@
               {{ openMenu === category.id ? "−" : "+" }}
             </span>
 
-            <span
-              v-else
-              class="w-5"
-            ></span>
+            <span v-else class="w-5"></span>
 
             <span class="font-medium">
               {{ category.name }}
@@ -76,10 +64,7 @@
               v-if="openMenu === category.id"
               class="ml-8 mt-2 space-y-2 pl-4"
             >
-              <li
-                v-for="item in category.items"
-                :key="item.id"
-              >
+              <li v-for="item in category.items" :key="item.id">
                 <NuxtLink
                   :to="`/category/${item.id}`"
                   class="block text-sm text-slate-600 hover:text-blue-600"
@@ -121,20 +106,6 @@ const { data, error } = await useAsyncData("categories", async () => {
 
   return data;
 });
-
-//   const { data, error } = await useAsyncData("categories", async () => {
-//   const result = await supabase
-//     .from("categories")
-//     .select("*");
-
-//   console.log("Result:", result);
-
-//   if (result.error) {
-//     console.error(result.error);
-//   }
-
-//   return result.data;
-// });
 
 // Build parent/child structure
 const categories = computed(() => {
