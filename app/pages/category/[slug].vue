@@ -14,6 +14,7 @@ const { data: category } = await useAsyncData(`category-${slug}`, async () => {
 
   if (error) throw error;
 
+  console.log("Data Category :>", category);
   return data;
 });
 
@@ -25,11 +26,11 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
     .from("products")
     .select("*")
     .eq("category", category.value.id)
-    .order("name");
+    .order("price");
 
   if (error) throw error;
 
-  console.log("Data :", data);
+  console.log("Data Products :>", products);
   return data;
 });
 </script>
