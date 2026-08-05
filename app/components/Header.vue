@@ -94,8 +94,6 @@ const firstName = computed(() => {
     .split(/\s+/)[0] ?? ''
 });
 
-console.log("Logged in:", isLoggedIn);
-
 const logout = async () => {
   await supabase.auth.signOut();
   navigateTo("/");
