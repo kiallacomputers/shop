@@ -29,6 +29,7 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
 
   if (error) throw error;
 
+  console.log("Data :", data);
   return data;
 });
 </script>
