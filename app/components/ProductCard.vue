@@ -9,7 +9,7 @@
          <!-- Featured Badge -->
          <span
             v-if="product.featured"
-            class="absolute top-3 left-3 z-10 bg-yellow-600 text-black text-xs font-bold uppercase px-3 py-1 rounded-full shadow"
+            class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
           >
           Featured
           </span>
