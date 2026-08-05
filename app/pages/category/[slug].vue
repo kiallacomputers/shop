@@ -24,8 +24,8 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   const { data, error } = await supabase
     .from("products")
     .select("*")
-    .eq("category_id", category.value.id)
-    .order("sort_order");
+    .eq("category", category.value.id)
+    .order("name");
 
   if (error) throw error;
 
