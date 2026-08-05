@@ -113,12 +113,9 @@ const categories = computed(() => {
 
   const parents = data.value
     .filter((c) => c.parent_id === null)
-    .sort((a, b) => a.sort_order - b.sort_order)
     .map((parent) => ({
       ...parent,
-      items: data.value
-        .filter((child) => child.parent_id === parent.id)
-        .sort((a, b) => a.sort_order - b.sort_order),
+      items: data.value.filter((child) => child.parent_id === parent.id),
     }));
 
   return parents;
