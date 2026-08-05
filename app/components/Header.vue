@@ -20,7 +20,7 @@
           <NuxtLink
             v-if="!user"
             to="/auth/signin"
-            class="text-slate-700 hover:text-blue-600"
+            class="text-[#404E71] hover:text-blue-600"
           >
             Signup/Login
           </NuxtLink>
@@ -28,7 +28,7 @@
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
-            class="text-slate-700 hover:text-blue-600"
+            class="text-[#404E71] hover:text-blue-600"
           >
             My Account
           </NuxtLink>
