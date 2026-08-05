@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group"
+    class="bg-white rounded-xl  transition-all duration-300 overflow-hidden group"
   >
     <!-- Product Image -->
     <!-- :to="`/product/${product.slug}`" -->
