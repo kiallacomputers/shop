@@ -116,8 +116,8 @@ const categories = computed(() => {
     .map((parent) => ({
       ...parent,
       items: data.value
-        .filter((child) => child.parent_id === parent.id),
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter((child) => child.parent_id === parent.id)
+        .sort((a, b) => a.name.localeCompare(b.name)),
     }));
 
   return parents;
