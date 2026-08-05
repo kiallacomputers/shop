@@ -1,8 +1,4 @@
 <script setup>
-definePageMeta({
-  middleware: "default",
-});
-
 const supabase = useSupabaseClient();
 const route = useRoute();
 
