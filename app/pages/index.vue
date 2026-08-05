@@ -30,7 +30,7 @@
 
       <!-- Products -->
       <main class="flex-1">
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
           <ProductCard
             v-for="product in featuredProducts"
             :key="product.id"
