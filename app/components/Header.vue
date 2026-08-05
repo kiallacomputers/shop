@@ -24,7 +24,7 @@
           >
             Signup/Login
           </NuxtLink>
-          <p v-if="user" class="mr-5">Welcome {{ user?.user_metadata?.display_name }}</p>
+          <p v-if="user" class="mr-5">Welcome {{ firstName }}</p>
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
@@ -88,7 +88,11 @@
 const user = useSupabaseUser();
 const supabase = useSupabaseClient();
 
-const isLoggedIn = computed(() => !!user.value);
+const firstName = computed(() => {
+  return user.value?.user_metadata?.display_name
+    ?.trim()
+    .split(/\s+/)[0] ?? ''
+});
 
 console.log("Logged in:", isLoggedIn);
 
