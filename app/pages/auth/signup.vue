@@ -3,7 +3,9 @@ definePageMeta({
   layout: "auth",
 });
 
-  const supabase = useSupabaseClient()
+const router = useRouter()
+
+const supabase = useSupabaseClient()
 
 const loading = ref(false)
 
