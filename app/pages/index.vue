@@ -69,6 +69,19 @@ const { data: featuredProducts, error } = await useAsyncData(
   }
 );
 
+  const { data: categories } = await supabase
+  .from("categories")
+  .select("id, name");
+
+const categoryMap = Object.fromEntries(
+  categories.map(c => [c.id, c.name])
+);
+
+return data.map(product => ({
+  ...product,
+  categoryName: categoryMap[product.category] || "",
+}));
+  
 watchEffect(() => {
   console.log("featuredProducts:", featuredProducts.value);
 });
@@ -108,50 +121,6 @@ const ads = [
   },
 ];
 
-// const products = [
-//   {
-//     id: 1,
-//     slug: "intel-core-i7-14700k",
-//     name: "Intel Core i7-14700K Desktop Processor",
-//     category: "Processors",
-//     description:
-//       "20-core desktop processor delivering exceptional gaming and multitasking performance.",
-//     image: images["/assets/images/products/intel-i7-14700k.png"],
-//     price: 699.0,
-//     oldPrice: 749.0,
-//     reviews: 126,
-//     stock: 18,
-//     featured: true,
-//   },
-//   {
-//     id: 2,
-//     slug: "asus-rt-ax88u-pro",
-//     name: "ASUS RT-AX88U Pro WiFi 6 Router",
-//     category: "Networking",
-//     description:
-//       "High-speed dual-band WiFi 6 router with advanced security and gaming features.",
-//     image: images["/assets/images/products/asus-rt-ax88u-pro.png"],
-//     price: 499.0,
-//     oldPrice: 549.0,
-//     reviews: 87,
-//     stock: 9,
-//     featured: false,
-//   },
-//   {
-//     id: 3,
-//     slug: "samsung-990-pro-2tb",
-//     name: "Samsung 990 PRO 2TB NVMe SSD",
-//     category: "Storage",
-//     description:
-//       "Ultra-fast PCIe 4.0 NVMe SSD designed for gaming, content creation, and demanding workloads.",
-//     image: images["/assets/images/products/samsung-990-pro-2tb.png"],
-//     price: 279.0,
-//     oldPrice: 319.0,
-//     reviews: 214,
-//     stock: 32,
-//     featured: true,
-//   },
-// ];
 </script>
 
 <style scoped>
