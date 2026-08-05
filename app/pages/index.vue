@@ -55,7 +55,12 @@ const { data: featuredProducts, error } = await useAsyncData(
 
     const result = await supabase
       .from("products")
-      .select("*")
+      .select(`
+      *,
+      categories (
+      name
+      )
+      `)
       .eq("featured", true);
 
     console.log("Result:", result);
@@ -68,19 +73,6 @@ const { data: featuredProducts, error } = await useAsyncData(
     return result.data;
   }
 );
-
-  const { data: categories } = await supabase
-  .from("categories")
-  .select("id, name");
-
-const categoryMap = Object.fromEntries(
-  categories.map(c => [c.id, c.name])
-);
-
-return data.map(product => ({
-  ...product,
-  categoryName: categoryMap[product.category] || "",
-}));
   
 watchEffect(() => {
   console.log("featuredProducts:", featuredProducts.value);
