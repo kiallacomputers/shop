@@ -41,7 +41,7 @@
       </div>
 
       <!-- Price -->
-      <div v-if="isLoggedIn" class="flex items-center justify-between mt-5">
+      <div v-if="user" class="flex items-center justify-between mt-5">
         <div>
           <p class="text-2xl font-bold text-sky-600">${{ product.price }}</p>
 
