@@ -70,10 +70,7 @@ const { data: featuredProducts, error } = await useAsyncData(
       throw result.error;
     }
 
-    return data.map(product => ({
-      ...product,
-      categoryName: product.categories?.name,
-    }));
+    return result.data;
   }
 );
   
