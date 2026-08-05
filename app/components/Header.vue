@@ -24,7 +24,7 @@
           >
             Signup/Login
           </NuxtLink>
-          <p v-if="user" class="mr-5">Welcome {{ user.display_name }}</p>
+          <p v-if="user" class="mr-5">Welcome {{ user?.user_metadata?.display_name }}</p>
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
