@@ -60,7 +60,7 @@ const { data: featuredProducts, error } = await useAsyncData(
 
     if (error) throw error;
 
-    console.log("Products:", data);
+    console.log(featuredProducts.value);
 
     return data;
   }
