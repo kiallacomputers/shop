@@ -81,7 +81,7 @@
                 :key="item.id"
               >
                 <NuxtLink
-                  :to="`/category/${item.category}`"
+                  :to="`/category/${item.id}`"
                   class="block text-sm text-slate-600 hover:text-blue-600"
                 >
                   {{ item.name }}
