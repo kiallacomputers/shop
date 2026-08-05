@@ -51,7 +51,7 @@ const supabase = useSupabaseClient();
 const { data: featuredProducts, error } = await useAsyncData(
   "featured-products",
   async () => {
-    const { products, error } = await supabase
+    const { data, error } = await supabase
       .from("products")
       .select("*")
       .eq("featured", true)
@@ -59,8 +59,10 @@ const { data: featuredProducts, error } = await useAsyncData(
       .order("sort_order", { ascending: true });
 
     if (error) throw error;
-    console.log("Products :", products)
-    return products;
+
+    console.log("Products:", data);
+
+    return data;
   }
 );
   
