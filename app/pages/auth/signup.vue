@@ -41,6 +41,10 @@ const signUp = async () => {
 
   successMessage.value =
     'Your account has been created. Please check your email to verify your account.'
+// Redirect after 5 seconds
+  setTimeout(() => {
+    router.push("/")
+  }, 5000)
 }
 </script>
 
