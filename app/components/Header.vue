@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white" :isLoggedIn="isLoggedIn">
+  <header class="bg-white">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <!-- Logo Left -->
       <NuxtLink to="/" class="flex items-center">
