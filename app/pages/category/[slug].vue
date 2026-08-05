@@ -1,42 +1,36 @@
 <script setup>
-const supabase = useSupabaseClient()
-const route = useRoute()
+const supabase = useSupabaseClient();
+const route = useRoute();
 
-const slug = route.params.slug
+const slug = route.params.slug;
 
 // Get the category
-const { data: category } = await useAsyncData(
-  `category-${slug}`,
-  async () => {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("slug", slug)
-      .single()
+const { data: category } = await useAsyncData(`category-${slug}`, async () => {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("id", slug)
+    .single();
 
-    if (error) throw error
+  if (error) throw error;
 
-    return data
-  }
-)
+  return data;
+});
 
 // Get the products
-const { data: products } = await useAsyncData(
-  `products-${slug}`,
-  async () => {
-    if (!category.value) return []
+const { data: products } = await useAsyncData(`products-${slug}`, async () => {
+  if (!category.value) return [];
 
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("category_id", category.value.id)
-      .order("sort_order")
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("category_id", category.value.id)
+    .order("sort_order");
 
-    if (error) throw error
+  if (error) throw error;
 
-    return data
-  }
-)
+  return data;
+});
 </script>
 
 <template>
@@ -56,10 +50,7 @@ const { data: products } = await useAsyncData(
       />
     </div>
 
-    <div
-      v-else
-      class="text-center py-16 text-gray-500"
-    >
+    <div v-else class="text-center py-16 text-gray-500">
       No products found in this category.
     </div>
   </div>
