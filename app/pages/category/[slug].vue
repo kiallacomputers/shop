@@ -14,7 +14,7 @@ const { data: category } = await useAsyncData(`category-${slug}`, async () => {
 
   if (error) throw error;
 
-  console.log("Data Category :>", category);
+  // console.log("Data Category :>", category);
   return data;
 });
 
