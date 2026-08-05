@@ -9,7 +9,7 @@
         <img
           :src="product.images"
           :alt="product.name"
-          class="w-full h-56 object-contain p-6 group-hover:scale-110 transition-transform duration-300"
+          class="w-full h-56 object-contain p-6 group-hover:scale-130 transition-transform duration-300"
         />
       </div>
     </NuxtLink>
