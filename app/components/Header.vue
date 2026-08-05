@@ -20,11 +20,11 @@
           <NuxtLink
             v-if="!user"
             to="/auth/signin"
-            class="text-[#404E71] hover:text-[#2CB6D5] font-bold"
+            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold"
           >
             Signup/Login
           </NuxtLink>
-          <p v-if="user" class="mr-5 text-[#404E71] font-bold">Welcome {{ firstName }}</p>
+          <p v-if="user" class="mr-5 text-[#566C9D] font-bold">Welcome {{ firstName }}</p>
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
