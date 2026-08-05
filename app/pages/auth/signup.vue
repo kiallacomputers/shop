@@ -27,7 +27,7 @@ const signUp = async () => {
     password: form.password,
     options: {
       data: {
-        "Display name": `${form.firstName} ${form.lastName}`,
+        display_name: form.FullName,
       }
     }
   })
@@ -53,19 +53,9 @@ const signUp = async () => {
     <form @submit.prevent="signUp" class="space-y-4">
 
       <div>
-        <label class="block mb-1">First Name</label>
+        <label class="block mb-1">Full Name</label>
         <input
-          v-model="form.firstName"
-          type="text"
-          required
-          class="w-full border rounded-lg px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label class="block mb-1">Last Name</label>
-        <input
-          v-model="form.lastName"
+          v-model="form.FullName"
           type="text"
           required
           class="w-full border rounded-lg px-3 py-2"
