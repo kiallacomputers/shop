@@ -7,7 +7,7 @@
     <NuxtLink to="#">
       <div class="overflow-hidden bg-gray-100">
         <img
-          :src="product.image"
+          :src="product.images"
           :alt="product.name"
           class="w-full h-56 object-contain p-6 group-hover:scale-105 transition-transform duration-300"
         />
