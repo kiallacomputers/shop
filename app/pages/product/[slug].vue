@@ -61,7 +61,7 @@ const { data: product } = await useAsyncData(
           <!-- Product Details -->
           <div class="p-5">
             <NuxtLink
-              :to="/category/${product.categories.slug}"
+              :to="`/category/${product.categories.slug}`"
               class="text-xs text-sky-600 font-medium"
             >
               {{ product.categories.name }}
