@@ -4,27 +4,18 @@ const route = useRoute();
 
 const slug = route.params.slug;
 
-// Get the category
-const { data: category } = await useAsyncData(`category-${slug}`, async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (error) throw error;
-
-  // console.log("Data Category :>", category);
-  return data;
-});
-
 // Get the products
 const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   if (!category.value) return [];
 
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+          .select(`
+      *,
+      categories (
+        name
+      )
+      `)
     .eq("category", category.value.id)
     .order("price");
 
