@@ -29,7 +29,7 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
         name
       )
       `)
-    .eq("category", category.value.id)
+    .eq("category_id", category.value.id)
     .order("price");
 
   if (error) throw error;
