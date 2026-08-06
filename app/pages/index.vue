@@ -51,26 +51,22 @@ const supabase = useSupabaseClient();
 const { data: featuredProducts, error } = await useAsyncData(
   "featured-products",
   async () => {
-    console.log("Fetching featured products...");
-
-    const result = await supabase
+    const { data, error } = await supabase
       .from("products")
       .select(`
-      *,
-      categories (
-      name
-      )
+        *,
+        categories (
+          name
+        )
       `)
       .eq("featured", true);
 
-    console.log("Result:", result);
+    if (error) throw error;
 
-    if (result.error) {
-      console.error("Supabase Error:", result.error);
-      throw result.error;
-    }
-
-    return result.data;
+    return data.map(product => ({
+      ...product,
+      categoryName: product.categories?.name ?? "",
+    }));
   }
 );
   
