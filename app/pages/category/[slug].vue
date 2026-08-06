@@ -44,23 +44,35 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
 
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">
-      {{ category?.name }}
-    </h1>
+    <div class="flex flex-col md:flex-row gap-6">
+      <!-- Sidebar -->
+      <aside class="w-full md:w-64 shrink-0">
+        <Sidemenu />
+      </aside>
 
-    <div
-      v-if="products?.length"
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
-      <ProductCard
-        v-for="product in products"
-        :key="product.id"
-        :product="product"
-      />
-    </div>
-
-    <div v-else class="text-center py-16 text-gray-500">
-      No products found in this category.
+      <!-- Product -->
+      <main class="flex-1">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+          <h1 class="text-3xl font-bold mb-8">
+            {{ category?.name }}
+          </h1>
+      
+          <div
+            v-if="products?.length"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            <ProductCard
+              v-for="product in products"
+              :key="product.id"
+              :product="product"
+            />
+          </div>
+      
+          <div v-else class="text-center py-16 text-gray-500">
+            No products found in this category.
+          </div>
+        </div>
+      </main>
     </div>
   </div>
 </template>
