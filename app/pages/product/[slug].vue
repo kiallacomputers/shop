@@ -60,17 +60,17 @@ const { data: product } = await useAsyncData(
 
           <!-- Product Details -->
           <div class="p-5">
-            <p class="text-xs text-sky-600 font-medium">
+            <NuxtLink
+              :to="/category/${product.categories.slug}"
+              class="text-xs text-sky-600 font-medium"
+            >
               {{ product.categories.name }}
-            </p>
-            <!-- :to="`/product/${product.slug}`" -->
-            <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
-              <h3
-                class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
-              >
-                {{ product.name }}
-              </h3>
             </NuxtLink>
+            <h3
+              class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
+            >
+              {{ product.name }}
+            </h3>
 
             <div
               class="text-gray-500 text-sm mt-2"
