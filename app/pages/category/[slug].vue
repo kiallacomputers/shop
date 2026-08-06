@@ -59,10 +59,9 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
       
           <div
             v-if="products?.length"
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr"
+            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
           >
             <ProductCard 
-              class="h-full max-h-[500px]"
               v-for="product in products"
               :key="product.id"
               :product="product"
