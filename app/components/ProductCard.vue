@@ -24,7 +24,7 @@
     <!-- Product Details -->
     <div class="p-5">
       <p class="text-xs text-sky-600 font-medium">
-        {{ product.categoryName }}
+        {{ product.categories.name }}
       </p>
       <!-- :to="`/product/${product.slug}`" -->
       <NuxtLink to="#" class="block mt-1">
