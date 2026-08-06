@@ -72,10 +72,10 @@ const { data: product } = await useAsyncData(
               </h3>
             </NuxtLink>
 
-            <p
+            <div
               class="text-gray-500 text-sm mt-2"
               v-html="product.description"
-            />
+            ></div>
 
             <!-- Rating -->
             <div class="flex items-center mt-3">
