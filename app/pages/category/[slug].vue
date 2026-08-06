@@ -52,13 +52,11 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
       v-if="products?.length"
       class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
     >
-      <NuxtLink
+      <ProductCard
         v-for="product in products"
         :key="product.id"
-        :to="`/product/${product.slug}`"
-      >
-        <ProductCard :product="product" />
-      </NuxtLink>
+        :product="product"
+      />
     </div>
 
     <div v-else class="text-center py-16 text-gray-500">
