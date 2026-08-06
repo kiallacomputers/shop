@@ -124,10 +124,10 @@ const categories = computed(() => {
 });
 
 // Debug output
-watchEffect(() => {
-  // console.log("Computed categories:", categories.value);
-  console.log("Data:", data.value);
-});
+// watchEffect(() => {
+//   console.log("Computed categories:", categories.value);
+//   console.log("Data:", data.value);
+// });
 </script>
 
 <style scoped>
