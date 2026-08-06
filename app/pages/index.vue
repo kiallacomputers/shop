@@ -53,7 +53,12 @@ const { data: featuredProducts, error } = await useAsyncData(
   async () => {
     const { data, error } = await supabase
       .from("products")
-      .select("*")
+      .select(`
+      *,
+      categories (
+        name
+      )
+      `)
       .eq("featured", true);
 
     if (error) throw error;
