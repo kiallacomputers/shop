@@ -25,7 +25,30 @@ const { data: product } = await useAsyncData(
 </script>
 
 <template>
-<div class="p-5">
+  <div
+    class="bg-white rounded-xl  transition-all duration-300 overflow-hidden group"
+  >
+    <!-- Product Image -->
+    <!-- :to="`/product/${product.slug}`" -->
+    <NuxtLink :to="`/product/${product.slug}`">
+      <div class="relative overflow-hidden bg-gray-100">
+         <!-- Featured Badge -->
+         <span
+            v-if="product.featured"
+            class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
+          >
+          Featured
+          </span>
+        <img
+          :src="product.images"
+          :alt="product.name"
+          class="w-full h-56 object-contain p-6 group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+    </NuxtLink>
+
+    <!-- Product Details -->
+    <div class="p-5">
       <p class="text-xs text-sky-600 font-medium">
         {{ product.categories.name }}
       </p>
@@ -67,4 +90,5 @@ const { data: product } = await useAsyncData(
         </button>
       </div>
     </div>
+  </div>
 </template>
