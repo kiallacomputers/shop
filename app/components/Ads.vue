@@ -22,6 +22,40 @@
 </template>
 
 <script setup>
+const currentAd = ref(0);
+
+onMounted(() => {
+  setInterval(() => {
+    currentAd.value++;
+
+    if (currentAd.value >= ads.length) {
+      currentAd.value = 0;
+    }
+  }, 10000);
+});
+
+const images = import.meta.glob("~/assets/images/products/*", {
+  eager: true,
+  import: "default",
+});
+
+const loadads = import.meta.glob("~/assets/images/ads/*", {
+  eager: true,
+  import: "default",
+});
+
+const ads = [
+  {
+    title: "Computer Builds",
+    image: loadads["/assets/images/ads/computers.png"],
+    link: "#",
+  },
+  {
+    title: "Avast Antivirus",
+    image: loadads["/assets/images/ads/avast.png"],
+    link: "#",
+  },
+];
 
 </script>
 
