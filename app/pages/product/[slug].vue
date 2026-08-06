@@ -25,7 +25,6 @@ const { data: product } = await useAsyncData(
 </script>
 
 <template>
-  <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row gap-6">
       <!-- Sidebar -->
@@ -34,6 +33,7 @@ const { data: product } = await useAsyncData(
       </aside>
 
       <!-- Product -->
+      <main class="flex-1">
   <div
     class="bg-white rounded-xl  transition-all duration-300 overflow-hidden group"
   >
@@ -100,6 +100,8 @@ const { data: product } = await useAsyncData(
       </div>
     </div>
   </div>
-</div>
+      </main>
     </div>
-    </template>
+  </div>
+</template>
+
