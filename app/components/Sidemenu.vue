@@ -125,7 +125,7 @@ const categories = computed(() => {
 
 // Debug output
 watchEffect(() => {
-  console.log("Computed categories:", categories.value);
+  // console.log("Computed categories:", categories.value);
   console.log("Data:", data.value);
 });
 </script>
