@@ -53,7 +53,7 @@ const { data: product } = await useAsyncData(
               <img
                 :src="product.images"
                 :alt="product.name"
-                class="w-full h-[50%] object-contain p-6 group-hover:scale-105 transition-transform duration-300"
+                class="w-full h-[30%] object-contain p-6 group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           </NuxtLink>
