@@ -1,3 +1,40 @@
+<template>
+	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+		<!-- Advertisement -->
+		<Ads />
+
+		<!-- Sidebar -->
+		<div class="flex flex-col md:flex-row gap-6">
+			<!-- Sidebar -->
+			<aside class="w-full md:w-64 shrink-0">
+				<Sidemenu />
+			</aside>
+
+			<!-- Products -->
+			<main class="flex-1">
+				<div class="max-w-7xl mx-auto px-4 py-8">
+					<h1 class="text-3xl font-bold mb-8">
+						{{ category?.name }}
+					</h1>
+					<div
+						v-if="products?.length"
+						class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
+					>
+						<ProductCard 
+							v-for="product in products"
+							:key="product.id"
+							:product="product"
+						/>
+					</div>
+					<div v-else class="text-center py-16 text-gray-500">
+						No products found in this category.
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+</template>
+
 <script setup>
 const supabase = useSupabaseClient();
 const route = useRoute();
@@ -41,38 +78,3 @@ const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   }));
 });
 </script>
-
-<template>
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-col md:flex-row gap-6">
-      <!-- Sidebar -->
-      <aside class="w-full md:w-64 shrink-0">
-        <Sidemenu />
-      </aside>
-
-      <!-- Product -->
-      <main class="flex-1">
-        <div class="max-w-7xl mx-auto px-4 py-8">
-          <h1 class="text-3xl font-bold mb-8">
-            {{ category?.name }}
-          </h1>
-      
-          <div
-            v-if="products?.length"
-            class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
-          >
-            <ProductCard 
-              v-for="product in products"
-              :key="product.id"
-              :product="product"
-            />
-          </div>
-      
-          <div v-else class="text-center py-16 text-gray-500">
-            No products found in this category.
-          </div>
-        </div>
-      </main>
-    </div>
-  </div>
-</template>
