@@ -4,7 +4,7 @@
   >
     <!-- Product Image -->
     <!-- :to="`/product/${product.slug}`" -->
-    <NuxtLink to="/product/${product.slug}">
+    <NuxtLink :to="`/product/${product.slug}`">
       <div class="relative overflow-hidden bg-gray-100">
          <!-- Featured Badge -->
          <span
@@ -27,7 +27,7 @@
         {{ product.categories.name }}
       </p>
       <!-- :to="`/product/${product.slug}`" -->
-      <NuxtLink to="/product/${product.slug}" class="block mt-1">
+      <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
         <h3
           class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
         >
