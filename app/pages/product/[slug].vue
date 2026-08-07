@@ -26,6 +26,13 @@
               >
                 Featured
               </span>
+              <!-- Refurbished Badge -->
+              <span
+                v-if="product.refurbished"
+                class="absolute top-4 -right-8 rotate-45deg bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
+              >
+                Featured
+              </span>
               <img
                 :src="product.images"
                 :alt="product.name"
