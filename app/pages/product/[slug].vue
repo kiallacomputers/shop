@@ -61,7 +61,7 @@
             <!-- Rating -->
             <div class="flex items-center mt-3">
               <span class="text-yellow-500">★★★★★</span>
-              <span class="ml-2 text-sm text-gray-500">
+              <span class="ml-2 text-sm text-[#566C9D]">
                 ({{ product.reviews }})
               </span>
             </div>
@@ -69,13 +69,13 @@
             <!-- Price -->
             <div class="flex items-center justify-between mt-5">
               <div>
-                <p class="text-2xl font-bold text-sky-600">
+                <p class="text-2xl font-bold text-[#2CB6D5]">
                   ${{ product.price }}
                 </p>
 
                 <p
                   v-if="product.oldPrice"
-                  class="text-gray-400 line-through text-sm"
+                  class="text-[#566C9D] line-through text-sm"
                 >
                   ${{ product.oldPrice }}
                 </p>
