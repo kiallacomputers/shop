@@ -37,6 +37,14 @@
         {{ product.description }}
       </p>
 
+      <!-- Quautity -->
+      <div class="flex items-center mt-3">
+        <span class="text-gray-500">Qty on Hand : </span>
+        <span class="ml-2 text-sm text-gray-500">
+          ({{ product.stock }})
+        </span>
+      </div>
+
       <!-- Rating -->
       <div class="flex items-center mt-3">
         <span class="text-yellow-500">★★★★★</span>
