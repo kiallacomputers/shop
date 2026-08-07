@@ -41,7 +41,9 @@ export const useCartStore = defineStore("cart", {
     increase(id: number) {
       const item = this.items.find((item) => item.id === id);
 
-      if (item) item.quantity++;
+      if (item) {
+        item.quantity++;
+      }
     },
 
     decrease(id: number) {
@@ -59,5 +61,10 @@ export const useCartStore = defineStore("cart", {
     clearCart() {
       this.items = [];
     },
+  },
+
+  // ⭐ Saves cart to browser storage
+  persist: {
+    key: "shopping-cart",
   },
 });

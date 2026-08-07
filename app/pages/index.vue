@@ -53,24 +53,26 @@ const { data: featuredProducts, error } = await useAsyncData(
   async () => {
     const { data, error } = await supabase
       .from("products")
-      .select(`
+      .select(
+        `
       *,
       categories (
         name
       )
-      `)
+      `,
+      )
       .eq("featured", true);
 
     if (error) throw error;
 
     return data;
-  }
+  },
 );
-  
-watchEffect(() => {
-  console.log("featuredProducts:", featuredProducts.value);
-});
-  
+
+// watchEffect(() => {
+//   console.log("featuredProducts:", featuredProducts.value);
+// });
+
 const currentAd = ref(0);
 
 onMounted(() => {
@@ -105,7 +107,6 @@ const ads = [
     link: "#",
   },
 ];
-
 </script>
 
 <style scoped>

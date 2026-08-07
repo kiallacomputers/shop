@@ -59,7 +59,7 @@
         </nav>
 
         <!-- Shopping Cart -->
-        <NuxtLink to="#" class="relative">
+        <NuxtLink to="/shoppingcart" class="relative">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-7 h-7 text-slate-700"
