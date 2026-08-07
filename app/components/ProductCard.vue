@@ -47,7 +47,7 @@
       <!-- Quautity -->
       <div class="flex items-center mt-3">
         <span class="text-[#566C9D]">Qty on Hand : </span>
-        <span class="ml-2 text-sm text-gray-500">
+        <span class="ml-2 text-sm text-[#566C9D]">
           {{ product.stock }}
         </span>
       </div>
@@ -71,7 +71,7 @@
         </div>
 
         <button
-          class="bg-[#2CB6D5] hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
+          class="bg-[#2CB6D5] hover:bg-[#30A0D3] text-white px-5 py-2 rounded-lg transition"
         >
           Add to Cart
         </button>
