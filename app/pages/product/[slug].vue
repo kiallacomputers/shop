@@ -45,7 +45,7 @@
           <div class="p-5">
             <NuxtLink
               :to="`/category/${product.categories.slug}`"
-              class="text-xs text-[#2CB6D5] font-medium hover:text-[#566C9D]"
+              class="text-lg text-[#2CB6D5] font-medium hover:text-[#566C9D]"
             >
               {{ product.categories.name }}
             </NuxtLink>
@@ -53,6 +53,27 @@
               {{ product.name }}
             </h3>
 
+            <!-- Price -->
+            <div class="flex items-center justify-between mt-5">
+              <div>
+                <p class="text-2xl font-bold text-[#2CB6D5]">
+                  ${{ product.price }}
+                </p>
+
+                <p
+                  v-if="product.oldPrice"
+                  class="text-[#566C9D] line-through text-sm"
+                >
+                  ${{ product.oldPrice }}
+                </p>
+              </div>
+
+              <button
+                class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
+              >
+                Add to Cart
+              </button>
+            </div>
             <div class="text-[#566C9D] text-sm mt-2">
               <div
                 v-for="(section, index) in product.description"
@@ -125,28 +146,6 @@
               <span class="ml-2 text-sm text-[#566C9D]">
                 ({{ product.reviews }})
               </span>
-            </div>
-
-            <!-- Price -->
-            <div class="flex items-center justify-between mt-5">
-              <div>
-                <p class="text-2xl font-bold text-[#2CB6D5]">
-                  ${{ product.price }}
-                </p>
-
-                <p
-                  v-if="product.oldPrice"
-                  class="text-[#566C9D] line-through text-sm"
-                >
-                  ${{ product.oldPrice }}
-                </p>
-              </div>
-
-              <button
-                class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
-              >
-                Add to Cart
-              </button>
             </div>
           </div>
         </div>
