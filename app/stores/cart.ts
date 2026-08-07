@@ -18,20 +18,33 @@ export const useCartStore = defineStore("cart", {
 
   actions: {
     addToCart(product: any) {
-      const existing = this.items.find((item) => item.id === product.id);
+      // testing script
 
-      if (existing) {
-        existing.quantity++;
-      } else {
-        this.items.push({
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          price: product.price,
-          image: product.images,
-          quantity: 1,
-        });
-      }
+      console.log("Adding:", product);
+
+      this.items.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+      });
+
+      // proper script
+      // console.log("Cart:", this.items);
+      //     const existing = this.items.find((item) => item.id === product.id);
+
+      //     if (existing) {
+      //       existing.quantity++;
+      //     } else {
+      //       this.items.push({
+      //         id: product.id,
+      //         name: product.name,
+      //         slug: product.slug,
+      //         price: product.price,
+      //         image: product.images,
+      //         quantity: 1,
+      //       });
+      //     }
     },
 
     removeFromCart(id: number) {
