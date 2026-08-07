@@ -29,24 +29,24 @@
 
     <!-- Product Details -->
     <div class="p-5">
-      <p class="text-xs text-sky-600 font-medium">
+      <p class="text-xs text-[#2CB6D5] font-medium">
         {{ product.categories.name }}
       </p>
       <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
         <h3
-          class="text-base font-semibold text-gray-900 line-clamp-2 hover:text-sky-600"
+          class="text-base font-semibold text-[#566C9D] line-clamp-2 hover:text-[#2CB6D5]"
         >
           {{ product.name }}
         </h3>
       </NuxtLink>
 
-      <p class="text-gray-500 text-sm mt-2 line-clamp-3">
+      <p class="text-[#566C9D] text-sm mt-2 line-clamp-3">
         {{ product.description }}
       </p>
 
       <!-- Quautity -->
       <div class="flex items-center mt-3">
-        <span class="text-gray-500">Qty on Hand : </span>
+        <span class="text-[#566C9D]">Qty on Hand : </span>
         <span class="ml-2 text-sm text-gray-500">
           {{ product.stock }}
         </span>
@@ -55,7 +55,7 @@
       <!-- Rating --><!--
       <div class="flex items-center mt-3">
         <span class="text-yellow-500">★★★★★</span>
-        <span class="ml-2 text-sm text-gray-500">
+        <span class="ml-2 text-sm text-[#566C9D]">
           ({{ product.reviews }})
         </span>
       </div>-->
@@ -63,9 +63,9 @@
       <!-- Price -->
       <div class="flex items-center justify-between mt-5">
         <div>
-          <p class="text-2xl font-bold text-sky-600">${{ product.price }}</p>
+          <p class="text-2xl font-bold text-[#2CB6D5]">${{ product.price }}</p>
 
-          <p v-if="product.oldPrice" class="text-gray-400 line-through text-sm">
+          <p v-if="product.oldPrice" class="text-[#566C9D] line-through text-sm">
             ${{ product.oldPrice }}
           </p>
         </div>
