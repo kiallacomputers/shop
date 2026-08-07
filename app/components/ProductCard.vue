@@ -1,24 +1,24 @@
 <template>
   <div
-    class="bg-white rounded-xl  transition-all duration-300 overflow-hidden group"
+    class="bg-white rounded-xl transition-all duration-300 overflow-hidden group"
   >
     <!-- Product Image -->
     <NuxtLink :to="`/product/${product.slug}`">
       <div class="relative overflow-hidden bg-gray-100">
-         <!-- Featured Badge -->
-         <span
-            v-if="product.featured"
-            class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
-          >
+        <!-- Featured Badge -->
+        <span
+          v-if="product.featured"
+          class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
+        >
           Featured
-          </span>
-         <!-- Refurbished Badge -->
-          <span
-            v-if="product.refurbished"
-            class="absolute top-4 -right-8 rotate-45 bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
-          >
-            Refurbished
-          </span>
+        </span>
+        <!-- Refurbished Badge -->
+        <span
+          v-if="product.refurbished"
+          class="absolute top-4 -right-8 rotate-45 bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
+        >
+          Refurbished
+        </span>
         <img
           :src="product.images"
           :alt="product.name"
@@ -41,7 +41,7 @@
       </NuxtLink>
 
       <p class="text-[#566C9D] text-sm mt-2 line-clamp-3">
-        {{ product.description }}
+        {{ product.blurb }}
       </p>
 
       <!-- Quautity -->
@@ -65,7 +65,10 @@
         <div>
           <p class="text-2xl font-bold text-[#2CB6D5]">${{ product.price }}</p>
 
-          <p v-if="product.oldPrice" class="text-[#566C9D] line-through text-sm">
+          <p
+            v-if="product.oldPrice"
+            class="text-[#566C9D] line-through text-sm"
+          >
             ${{ product.oldPrice }}
           </p>
         </div>
