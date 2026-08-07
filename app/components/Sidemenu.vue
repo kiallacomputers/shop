@@ -102,7 +102,7 @@ const { data, error } = await useAsyncData("categories", async () => {
     throw error;
   }
 
-  console.log("Supabase returned:", data);
+  // console.log("Supabase returned:", data);
 
   return data;
 });
