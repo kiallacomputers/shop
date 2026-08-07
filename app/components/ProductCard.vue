@@ -48,7 +48,7 @@
       <div class="flex items-center mt-3">
         <span class="text-gray-500">Qty on Hand : </span>
         <span class="ml-2 text-sm text-gray-500">
-          ({{ product.stock }})
+          {{ product.stock }}
         </span>
       </div>
 
