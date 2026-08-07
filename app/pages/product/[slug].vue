@@ -140,13 +140,13 @@
               </div>
             </div>
 
-            <!-- Rating -->
+            <!-- Rating --><!--
             <div class="flex items-center mt-3">
               <span class="text-yellow-500">★★★★★</span>
               <span class="ml-2 text-sm text-[#566C9D]">
                 ({{ product.reviews }})
               </span>
-            </div>
+            </div>-->
           </div>
         </div>
       </main>
