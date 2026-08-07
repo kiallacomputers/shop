@@ -5,10 +5,10 @@
 
     <!-- Sidebar -->
     <div class="flex flex-col md:flex-row gap-6">
-      <!-- Sidebar -->
+      <!-- Sidebar --><!--
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
-      </aside>
+      </aside>-->
 
       <!-- Products -->
       <main class="flex-1">
@@ -69,6 +69,7 @@
               </div>
 
               <button
+                @click="addToCart"
                 class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
               >
                 Add to Cart
@@ -180,4 +181,10 @@ const { data: product } = await useAsyncData(
     return data;
   },
 );
+
+const cart = useCartStore();
+
+function addToCart() {
+  cart.addToCart(product);
+}
 </script>

@@ -24,7 +24,9 @@
           >
             Signup/Login
           </NuxtLink>
-          <p v-if="user" class="mr-5 text-[#566C9D] font-bold">Welcome {{ firstName }}</p>
+          <p v-if="user" class="mr-5 text-[#566C9D] font-bold">
+            Welcome {{ firstName }}
+          </p>
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
@@ -76,7 +78,7 @@
           <span
             class="absolute -top-2 -right-2 bg-red-800 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
           >
-            0
+            {{ cart.count }}
           </span>
         </NuxtLink>
       </div>
@@ -89,13 +91,13 @@ const user = useSupabaseUser();
 const supabase = useSupabaseClient();
 
 const firstName = computed(() => {
-  return user.value?.user_metadata?.display_name
-    ?.trim()
-    .split(/\s+/)[0] ?? ''
+  return user.value?.user_metadata?.display_name?.trim().split(/\s+/)[0] ?? "";
 });
 
 const logout = async () => {
   await supabase.auth.signOut();
   navigateTo("/");
 };
+
+const cart = useCartStore();
 </script>
