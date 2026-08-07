@@ -5,10 +5,10 @@
 
     <!-- Sidebar -->
     <div class="flex flex-col md:flex-row gap-6">
-      <!-- Sidebar --><!--
+      <!-- Sidebar -->
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
-      </aside>-->
+      </aside>
 
       <!-- Products -->
       <main class="flex-1">
