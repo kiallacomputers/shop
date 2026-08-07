@@ -53,10 +53,71 @@
               {{ product.name }}
             </h3>
 
-            <div
-              class="text-[#566C9D] text-sm mt-2"
-              v-html="product.description"
-            ></div>
+            <div class="text-[#566C9D] text-sm mt-2">
+              <div
+                v-for="(section, index) in product.description"
+                :key="index"
+                class="mb-6"
+              >
+                <!-- Heading -->
+                <h2
+                  v-if="section.type === 'heading'"
+                  class="text-2xl font-semibold border-b border-gray-200 pb-2 mb-4"
+                >
+                  {{ section.text }}
+                </h2>
+
+                <!-- Paragraph -->
+                <p
+                  v-else-if="section.type === 'paragraph'"
+                  class="text-gray-700 leading-7 mb-4"
+                >
+                  {{ section.text }}
+                </p>
+
+                <!-- Dot Points -->
+                <ul
+                  v-else-if="section.type === 'list'"
+                  class="list-disc pl-6 space-y-2 text-gray-700"
+                >
+                  <li v-for="(item, i) in section.items" :key="i">
+                    {{ item }}
+                  </li>
+                </ul>
+
+                <!-- Table -->
+                <div
+                  v-else-if="section.type === 'table'"
+                  class="overflow-hidden rounded-lg border border-gray-200"
+                >
+                  <table class="w-full">
+                    <thead class="bg-gray-100">
+                      <tr>
+                        <th
+                          v-for="header in section.headers"
+                          :key="header"
+                          class="p-3 text-left font-semibold"
+                        >
+                          {{ header }}
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr
+                        v-for="(row, r) in section.rows"
+                        :key="r"
+                        class="border-t"
+                      >
+                        <td v-for="(cell, c) in row" :key="c" class="p-3">
+                          {{ cell }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
 
             <!-- Rating -->
             <div class="flex items-center mt-3">
