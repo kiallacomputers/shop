@@ -15,7 +15,7 @@
          <!-- Refurbished Badge -->
           <span
             v-if="product.refurbished"
-            class="absolute top-3 right-[-35px] rotate-45 bg-red-600 text-white text-xs font-bold w-32 text-center py-1 shadow-lg z-10"
+            class="absolute top-4 right-[-35px] rotate-45 bg-red-600 text-white text-xs font-bold w-32 text-center py-1 shadow-lg z-10"
           >
             Refurbished
           </span>
