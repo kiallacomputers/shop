@@ -45,13 +45,13 @@
         </span>
       </div>
 
-      <!-- Rating -->
+      <!-- Rating --><!--
       <div class="flex items-center mt-3">
         <span class="text-yellow-500">★★★★★</span>
         <span class="ml-2 text-sm text-gray-500">
           ({{ product.reviews }})
         </span>
-      </div>
+      </div>-->
 
       <!-- Price -->
       <div class="flex items-center justify-between mt-5">
