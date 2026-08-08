@@ -45,6 +45,8 @@ const cart = useCartStore();
 
 const loading = ref(false);
 
+console.log("cart :", cart.items);
+
 async function checkout() {
   if (!cart.items.length) {
     return;
