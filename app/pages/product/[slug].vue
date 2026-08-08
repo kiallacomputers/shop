@@ -69,7 +69,7 @@
               </div>
 
               <button
-                @click="addToCart"
+                @click="cart.addToCart(product)"
                 class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
               >
                 Add to Cart

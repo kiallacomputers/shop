@@ -13,4 +13,10 @@ export default defineNuxtConfig({
     key: process.env.SUPABASE_KEY,
     redirect: false,
   },
+  pinia: {
+    storesDirs: ["./stores/**"],
+  },
+  runtimeConfig: {
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  },
 });

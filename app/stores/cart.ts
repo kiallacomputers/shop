@@ -1,83 +1,84 @@
 import { defineStore } from "pinia";
 
-export const useCartStore = defineStore("cart", {
-  state: () => ({
-    items: [] as any[],
-  }),
+export const useCartStore = defineStore(
+  "cart",
+  () => {
+    const items = ref<any[]>([]);
 
-  getters: {
-    count: (state) =>
-      state.items.reduce((total, item) => total + item.quantity, 0),
+    const count = computed(() => {
+      return items.value.reduce((total, item) => total + item.quantity, 0);
+    });
 
-    total: (state) =>
-      state.items.reduce(
-        (total, item) => total + item.price * item.quantity,
+    const total = computed(() => {
+      return items.value.reduce(
+        (total, item) => total + Number(item.price) * item.quantity,
         0,
-      ),
-  },
+      );
+    });
 
-  actions: {
-    addToCart(product: any) {
-      // testing script
+    function addToCart(product: any) {
+      console.log("ADD TO CART:", product);
 
-      console.log("Adding:", product);
+      const existing = items.value.find((item) => item.id === product.id);
 
-      this.items.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: 1,
-      });
+      if (existing) {
+        existing.quantity++;
+      } else {
+        items.value.push({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: Number(product.price),
+          image: product.images,
+          quantity: 1,
+        });
+      }
 
-      // proper script
-      // console.log("Cart:", this.items);
-      //     const existing = this.items.find((item) => item.id === product.id);
+      console.log("CART ITEMS:", items.value);
+    }
 
-      //     if (existing) {
-      //       existing.quantity++;
-      //     } else {
-      //       this.items.push({
-      //         id: product.id,
-      //         name: product.name,
-      //         slug: product.slug,
-      //         price: product.price,
-      //         image: product.images,
-      //         quantity: 1,
-      //       });
-      //     }
-    },
+    function removeFromCart(id: number) {
+      items.value = items.value.filter((item) => item.id !== id);
+    }
 
-    removeFromCart(id: number) {
-      this.items = this.items.filter((item) => item.id !== id);
-    },
-
-    increase(id: number) {
-      const item = this.items.find((item) => item.id === id);
+    function increase(id: number) {
+      const item = items.value.find((item) => item.id === id);
 
       if (item) {
         item.quantity++;
       }
-    },
+    }
 
-    decrease(id: number) {
-      const item = this.items.find((item) => item.id === id);
+    function decrease(id: number) {
+      const item = items.value.find((item) => item.id === id);
 
       if (!item) return;
 
       item.quantity--;
 
       if (item.quantity <= 0) {
-        this.removeFromCart(id);
+        removeFromCart(id);
       }
-    },
+    }
 
-    clearCart() {
-      this.items = [];
+    function clearCart() {
+      items.value = [];
+    }
+
+    return {
+      items,
+      count,
+      total,
+      addToCart,
+      removeFromCart,
+      increase,
+      decrease,
+      clearCart,
+    };
+  },
+  {
+    persist: {
+      key: "shopping-cart",
     },
   },
-
-  // ⭐ Saves cart to browser storage
-  persist: {
-    key: "shopping-cart",
-  },
-});
+);
