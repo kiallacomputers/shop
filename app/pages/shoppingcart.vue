@@ -49,18 +49,23 @@ console.log("cart :", cart.items);
 
 async function checkout() {
   if (!cart.items.length) {
+    console.log("cart is empty");
     return;
   }
 
   loading.value = true;
 
   try {
+    console.log("Sending cart to stripe : ", cart.items);
+
     const response = await $fetch("/api/stripe/create-checkout", {
       method: "POST",
       body: {
         items: cart.items,
       },
     });
+
+    console.log("Stripe Response : ", response);
 
     if (response.url) {
       window.location.href = response.url;
