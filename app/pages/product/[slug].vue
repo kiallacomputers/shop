@@ -75,6 +75,15 @@
                 Add to Cart
               </button>
             </div>
+
+            <!-- Quautity -->
+            <div class="flex items-center mt-3">
+              <span class="text-[#566C9D]">Qty on Hand : </span>
+              <span class="ml-2 text-sm text-[#566C9D]">
+                {{ product.stock }}
+              </span>
+            </div>
+
             <div class="text-[#566C9D] text-sm mt-2">
               <div
                 v-for="(section, index) in product.description"
