@@ -19,7 +19,6 @@ export default defineEventHandler(async (event) => {
       currency: "aud",
       product_data: {
         name: item.name,
-        images: item.image ? [item.image] : [],
       },
       unit_amount: Math.round(Number(item.price) * 100),
     },
