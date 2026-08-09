@@ -46,7 +46,7 @@
 
       <!-- Quautity -->
       <div class="flex items-center mt-3">
-        <span class="text-[#566C9D]">Qty on Hand : </span>
+        <span class="text-[#566C9D]">Qty Available : </span>
         <span class="ml-2 text-sm text-[#566C9D]">
           {{ product.stock }}
         </span>
