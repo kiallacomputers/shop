@@ -6,7 +6,7 @@
       <SideMenu />
     </aside>
 
-    <!-- Cart -->
+    <!-- Cart items -->
     <main class="flex-1 min-w-0">
 
       <div
