@@ -108,4 +108,11 @@ const supabase = useSupabaseClient();
 //   // console.log("Data Category :>", category);
 //   return data;
 // });
+
+  
+const cart = useCartStore();
+
+function addToCart() {
+  cart.addToCart(product);
+}
 </script>
