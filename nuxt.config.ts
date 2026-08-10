@@ -11,6 +11,9 @@ export default defineNuxtConfig({
   supabase: {
     url: process.env.SUPABASE_URL,
     key: process.env.SUPABASE_KEY,
+    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
+    supabaseUrl: process.env.SUPABASE_URL,
+
     redirect: false,
   },
   pinia: {
