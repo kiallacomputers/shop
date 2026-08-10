@@ -79,7 +79,7 @@
 
             <!-- Quautity -->
             <div class="flex items-center mt-3">
-              <span class="text-[#566C9D]">Product Availablity : </span>
+              <span class="font-semibold text-[#566C9D]">Availablity : </span>
               <span v-if="product.stock > 0" class="ml-2 text-sm font-semibold text-[#00C409]">
                 In Stock
               </span>
