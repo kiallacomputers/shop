@@ -56,7 +56,7 @@
             <!-- Price -->
             <div class="flex items-center justify-between mt-5">
               <div>
-                <p class="text-2xl font-bold text-[#2CB6D5]">
+                <p class="text-3xl font-bold text-[#2CB6D5]">
                   ${{ product.price }}
                 </p>
 
