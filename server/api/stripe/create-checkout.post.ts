@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event);
 
-  if (!body.items || !Array.isArray(body.items)) {
+  if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
     throw createError({
       statusCode: 400,
       statusMessage: "Cart is empty",
@@ -17,12 +17,19 @@ export default defineEventHandler(async (event) => {
   const lineItems = body.items.map((item: any) => ({
     price_data: {
       currency: "aud",
+
       product_data: {
         name: item.name,
+
+        metadata: {
+          product_id: String(item.id),
+        },
       },
+
       unit_amount: Math.round(Number(item.price) * 100),
     },
-    quantity: item.quantity,
+
+    quantity: Number(item.quantity),
   }));
 
   const session = await stripe.checkout.sessions.create({
