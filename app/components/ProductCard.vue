@@ -47,8 +47,18 @@
       <!-- Quautity -->
       <div class="flex items-center mt-3">
         <span class="text-[#566C9D]">Qty Available : </span>
-        <span class="ml-2 text-sm text-[#566C9D]">
+        <span
+          v-if="product.stock > 0"
+          class="ml-2 text-sm text-[#566C9D]"
+        >
           {{ product.stock }}
+        </span>
+
+        <span
+          v-else
+          class="ml-2 text-sm text-red-600"
+        >
+          Out of Stock
         </span>
       </div>
 
