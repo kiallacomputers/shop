@@ -69,6 +69,7 @@
               </div>
 
               <button
+                v-if="product.stock > 0"
                 @click="cart.addToCart(product)"
                 class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
               >
@@ -78,9 +79,12 @@
 
             <!-- Quautity -->
             <div class="flex items-center mt-3">
-              <span class="text-[#566C9D]">Qty Available : </span>
-              <span class="ml-2 text-sm text-[#566C9D]">
-                {{ product.stock }}
+              <span class="text-[#566C9D]">product Availablity : </span>
+              <span v-if="product.stock > 0" class="ml-2 text-sm text-green-800">
+                In Stock
+              </span>
+              <span v-else class="ml-2 text-sm text-red-800">
+                Out of Stock
               </span>
             </div>
 
