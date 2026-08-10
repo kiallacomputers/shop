@@ -32,6 +32,8 @@ export default defineEventHandler(async (event) => {
     quantity: Number(item.quantity),
   }));
 
+  console.log("STRIPE LINE ITEMS:", JSON.stringify(lineItems, null, 2));
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
 
@@ -47,6 +49,8 @@ export default defineEventHandler(async (event) => {
       allowed_countries: ["AU"],
     },
   });
+
+  console.log("STRIPE SESSION:", session.id);
 
   return {
     url: session.url,
