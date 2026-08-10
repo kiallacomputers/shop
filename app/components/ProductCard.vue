@@ -74,6 +74,7 @@
         </div>
 
         <button
+          v-if="product.stock > 0"
           @click="cart.addToCart(product)"
           class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
         >
