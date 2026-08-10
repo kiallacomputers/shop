@@ -1,138 +1,84 @@
 import { defineStore } from "pinia";
 
-interface CartItem {
-  id: number | string;
-  name: string;
-  price: number;
-  image?: string;
-  quantity: number;
-  [key: string]: any;
-}
+export const useCartStore = defineStore(
+  "cart",
+  () => {
+    const items = ref<any[]>([]);
 
-export const useCartStore = defineStore("cart", {
-  state: () => ({
-    items: [] as CartItem[],
-    notification: "" as string,
-  }),
+    const count = computed(() => {
+      return items.value.reduce((total, item) => total + item.quantity, 0);
+    });
 
-  getters: {
-    // Number of different products in the cart
-    cartCount: (state) => state.items.length,
-
-    // Total number of items including quantities
-    totalItems: (state) =>
-      state.items.reduce((total, item) => total + Number(item.quantity), 0),
-    // Cart total
-    cartTotal: (state) =>
-      state.items.reduce(
-        (total, item) => total + Number(item.price) * Number(item.quantity),
+    const total = computed(() => {
+      return items.value.reduce(
+        (total, item) => total + Number(item.price) * item.quantity,
         0,
-      ),
+      );
+    });
 
-    // Check whether a product is already in the cart
-    hasItem: (state) => {
-      return (id: number | string) =>
-        state.items.some((item) => item.id === id);
-    },
-  },
-  actions: {
-    // ----------------------------------------
-    //
-    // ADD TO CART
-    //
-    // ----------------------------------------
-    addToCart(product: CartItem) {
-      const existingItem = this.items.find((item) => item.id === product.id);
+    function addToCart(product: any) {
+      console.log("ADD TO CART:", product);
 
-      if (existingItem) {
-        existingItem.quantity += 1;
+      const existing = items.value.find((item) => item.id === product.id);
+
+      if (existing) {
+        existing.quantity++;
       } else {
-        this.items.push({ ...product, quantity: 1 });
+        items.value.push({
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: Number(product.price),
+          image: product.images,
+          quantity: 1,
+        });
       }
 
-      // Show notification
-      this.notification = `${product.name} has been added to your cart.`;
+      console.log("CART ITEMS:", items.value);
+    }
 
-      // Remove notification after 3 seconds
-      setTimeout(() => {
-        this.notification = "";
-      }, 3000);
-    },
+    function removeFromCart(id: number) {
+      items.value = items.value.filter((item) => item.id !== id);
+    }
 
-    // ----------------------------------------
-    //
-    // REMOVE FROM CART
-    //
-    // ----------------------------------------
-    removeFromCart(id: number | string) {
-      this.items = this.items.filter((item) => item.id !== id);
-    },
+    function increase(id: number) {
+      const item = items.value.find((item) => item.id === id);
 
-    // ----------------------------------------
-    //
-    // UPDATE QUANTITY
-    //
-    // ----------------------------------------
-    updateQuantity(id: number | string, quantity: number) {
-      const item = this.items.find((item) => item.id === id);
-      if (!item) {
-        return;
-      }
-      if (quantity <= 0) {
-        this.removeFromCart(id);
-        return;
-      }
-      item.quantity = quantity;
-    },
-
-    // ----------------------------------------
-    //
-    //    INCREASE QUANTITY
-    //
-    // ----------------------------------------
-    increaseQuantity(id: number | string) {
-      const item = this.items.find((item) => item.id === id);
       if (item) {
         item.quantity++;
       }
-    },
+    }
 
-    // ----------------------------------------
-    //
-    // DECREASE QUANTITY
-    //
-    // ----------------------------------------
-    decreaseQuantity(id: number | string) {
-      const item = this.items.find((item) => item.id === id);
-      if (!item) {
-        return;
+    function decrease(id: number) {
+      const item = items.value.find((item) => item.id === id);
+
+      if (!item) return;
+
+      item.quantity--;
+
+      if (item.quantity <= 0) {
+        removeFromCart(id);
       }
-      if (item.quantity <= 1) {
-        this.removeFromCart(id);
-      } else {
-        item.quantity--;
-      }
-    },
+    }
 
-    // ----------------------------------------
-    //
-    // CLEAR CART
-    //
-    // ----------------------------------------
-    clearCart() {
-      this.items = [];
-    },
+    function clearCart() {
+      items.value = [];
+    }
 
-    // ----------------------------------------
-    //
-    // CLEAR NOTIFICATION
-    //
-    // ----------------------------------------
-    clearNotification() {
-      this.notification = "";
+    return {
+      items,
+      count,
+      total,
+      addToCart,
+      removeFromCart,
+      increase,
+      decrease,
+      clearCart,
+    };
+  },
+  {
+    persist: {
+      key: "shopping-cart",
     },
   },
-
-  // Persist cart in localStorage
-  persist: true,
-});
+);
