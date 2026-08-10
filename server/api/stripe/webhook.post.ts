@@ -6,14 +6,26 @@ export default defineEventHandler(async (event) => {
 
   const stripe = new Stripe(config.stripeSecretKey);
 
-  // IMPORTANT: read the raw Stripe request
   const body = await readRawBody(event);
   const signature = getHeader(event, "stripe-signature");
 
-  if (!body || !signature) {
+  console.log("=================================");
+  console.log("STRIPE WEBHOOK RECEIVED");
+  console.log("=================================");
+
+  if (!body) {
+    console.log("NO BODY");
     throw createError({
       statusCode: 400,
-      statusMessage: "Missing Stripe webhook signature",
+      statusMessage: "No body",
+    });
+  }
+
+  if (!signature) {
+    console.log("NO STRIPE SIGNATURE");
+    throw createError({
+      statusCode: 400,
+      statusMessage: "No signature",
     });
   }
 
@@ -26,94 +38,133 @@ export default defineEventHandler(async (event) => {
       config.stripeWebhookSecret,
     );
   } catch (error: any) {
-    console.error("Stripe webhook signature error:", error.message);
+    console.log("WEBHOOK SIGNATURE ERROR:", error.message);
 
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid Stripe webhook signature",
+      statusMessage: error.message,
     });
   }
 
-  console.log("Stripe event:", stripeEvent.type);
+  console.log("EVENT TYPE:", stripeEvent.type);
 
-  // Only process successful checkout
-  if (stripeEvent.type === "checkout.session.completed") {
-    const session = stripeEvent.data.object as Stripe.Checkout.Session;
+  if (stripeEvent.type !== "checkout.session.completed") {
+    console.log("Ignoring event:", stripeEvent.type);
 
-    console.log("Payment successful:", session.id);
+    return {
+      received: true,
+    };
+  }
 
-    if (session.payment_status !== "paid") {
-      console.log("Payment was not paid");
+  const session = stripeEvent.data.object as Stripe.Checkout.Session;
 
-      return {
-        received: true,
-      };
+  console.log("SESSION ID:", session.id);
+  console.log("PAYMENT STATUS:", session.payment_status);
+
+  if (session.payment_status !== "paid") {
+    console.log("PAYMENT NOT PAID");
+
+    return {
+      received: true,
+    };
+  }
+
+  console.log("PAYMENT IS PAID");
+
+  // ----------------------------------------
+  // GET STRIPE LINE ITEMS
+  // ----------------------------------------
+
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+    expand: ["data.price.product"],
+  });
+
+  console.log("LINE ITEMS:", JSON.stringify(lineItems.data, null, 2));
+
+  // ----------------------------------------
+  // SUPABASE
+  // ----------------------------------------
+
+  const supabase = createClient(
+    config.public.supabaseUrl,
+    config.supabaseServiceKey,
+  );
+
+  for (const lineItem of lineItems.data) {
+    console.log("---------------------------------");
+    console.log("PROCESSING ITEM");
+
+    const product = lineItem.price?.product;
+
+    console.log("STRIPE PRODUCT:", product);
+
+    if (!product || typeof product === "string") {
+      console.log("PRODUCT NOT FOUND");
+      continue;
     }
 
-    // Get the products purchased
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-      expand: ["data.price.product"],
-    });
+    const productId = product.metadata?.product_id;
 
-    const supabase = createClient(
-      config.public.supabaseUrl,
-      config.supabaseServiceKey,
-    );
+    console.log("DATABASE PRODUCT ID:", productId);
 
-    for (const lineItem of lineItems.data) {
-      const product = lineItem.price?.product;
+    if (!productId) {
+      console.log("NO PRODUCT ID IN METADATA");
+      continue;
+    }
 
-      if (!product || typeof product === "string") {
-        console.log("No Stripe product found");
-        continue;
-      }
+    const quantity = Number(lineItem.quantity) || 1;
 
-      const productId = product.metadata?.product_id;
+    console.log("QUANTITY SOLD:", quantity);
 
-      if (!productId) {
-        console.log("No database product ID found");
-        continue;
-      }
+    // ----------------------------------------
+    // GET PRODUCT FROM SUPABASE
+    // ----------------------------------------
 
-      const quantity = lineItem.quantity || 1;
+    const { data: productData, error: productError } = await supabase
+      .from("products")
+      .select("id, stock")
+      .eq("id", productId)
+      .single();
 
-      console.log(`Reducing stock: product ${productId}, quantity ${quantity}`);
+    console.log("SUPABASE PRODUCT:", productData);
+    console.log("SUPABASE ERROR:", productError);
 
-      // Get current stock
-      const { data: productData, error: productError } = await supabase
-        .from("products")
-        .select("id, stock")
-        .eq("id", productId)
-        .single();
+    if (productError || !productData) {
+      console.log("COULD NOT FIND SUPABASE PRODUCT");
+      continue;
+    }
 
-      if (productError) {
-        console.error("Product lookup error:", productError);
-        continue;
-      }
+    const currentStock = Number(productData.stock);
 
-      if (!productData) {
-        console.error("Product not found:", productId);
-        continue;
-      }
+    const newStock = Math.max(0, currentStock - quantity);
 
-      const currentStock = Number(productData.stock);
+    console.log(`STOCK: ${currentStock} -> ${newStock}`);
 
-      const newStock = Math.max(0, currentStock - quantity);
+    // ----------------------------------------
+    // UPDATE STOCK
+    // ----------------------------------------
 
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({
-          stock: newStock,
-        })
-        .eq("id", productId);
+    const { data: updateData, error: updateError } = await supabase
+      .from("products")
+      .update({
+        stock: newStock,
+      })
+      .eq("id", productId)
+      .select();
 
-      if (updateError) {
-        console.error("Stock update failed:", updateError);
-      } else {
-        console.log(`Stock updated: ${currentStock} -> ${newStock}`);
-      }
+    console.log("UPDATE RESULT:", updateData);
+    console.log("UPDATE ERROR:", updateError);
+
+    if (updateError) {
+      console.error("STOCK UPDATE FAILED:", updateError);
+    } else {
+      console.log(`SUCCESS: Product ${productId} stock is now ${newStock}`);
     }
   }
+
+  console.log("=================================");
+  console.log("WEBHOOK COMPLETE");
+  console.log("=================================");
 
   return {
     received: true,
