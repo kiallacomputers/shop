@@ -80,7 +80,7 @@
             <!-- Quautity -->
             <div class="flex items-center mt-3">
               <span class="text-[#566C9D]">product Availablity : </span>
-              <span v-if="product.stock > 0" class="ml-2 text-sm text-teal-800">
+              <span v-if="product.stock > 0" class="ml-2 text-sm text-[#00C409]">
                 In Stock
               </span>
               <span v-else class="ml-2 text-sm text-red-800">
