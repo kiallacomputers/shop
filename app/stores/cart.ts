@@ -33,6 +33,11 @@ export const useCartStore = defineStore(
           quantity: 1,
         });
       }
+      this.notification = `${product.name} has been added to your cart.`;
+
+      setTimeout(() => {
+        this.notification = "";
+      }, 3000);
 
       console.log("CART ITEMS:", items.value);
     }
