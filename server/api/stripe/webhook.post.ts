@@ -2,8 +2,8 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
-    console.log("🔥 STRIPE WEBHOOK HIT");
-  
+  console.log("🔥 STRIPE WEBHOOK HIT");
+
   const config = useRuntimeConfig();
 
   const stripe = new Stripe(config.stripeSecretKey);
@@ -15,19 +15,11 @@ export default defineEventHandler(async (event) => {
   console.log("STRIPE WEBHOOK RECEIVED");
   console.log("=================================");
 
-  if (!body) {
+  if (!body || !signature) {
     console.log("NO BODY");
     throw createError({
       statusCode: 400,
-      statusMessage: "No body",
-    });
-  }
-
-  if (!signature) {
-    console.log("NO STRIPE SIGNATURE");
-    throw createError({
-      statusCode: 400,
-      statusMessage: "No signature",
+      statusMessage: "Missing Stripe webhook data",
     });
   }
 
