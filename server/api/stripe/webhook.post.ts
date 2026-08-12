@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   console.log("🔥 STRIPE WEBHOOK HIT");
 
   const config = useRuntimeConfig();
-  const supabaseKey = "sb_publishable_pLRAptwDfESFnWFKCFM2eQ_UNpltmqX";
+  const supabaseServiceKey = "sb_publishable_pLRAptwDfESFnWFKCFM2eQ_UNpltmqX";
 
   const stripe = new Stripe(config.stripeSecretKey);
 
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
 
   const supabase = createClient(
     config.public.supabaseUrl,
-    // config.supabaseServiceKey,
+    config.supabaseServiceKey,
   );
 
   for (const lineItem of lineItems.data) {
