@@ -2,6 +2,8 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
+    console.log("🔥 STRIPE WEBHOOK HIT");
+  
   const config = useRuntimeConfig();
 
   const stripe = new Stripe(config.stripeSecretKey);
