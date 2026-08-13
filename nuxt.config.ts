@@ -10,10 +10,7 @@ export default defineNuxtConfig({
   ],
   supabase: {
     url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_KEY,
-    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
-    supabaseUrl: process.env.SUPABASE_URL,
-
+    key: process.env.SUPABASE_SECRET_KEY,
     redirect: false,
   },
   pinia: {
@@ -23,6 +20,7 @@ export default defineNuxtConfig({
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
     },
