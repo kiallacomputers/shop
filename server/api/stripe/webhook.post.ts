@@ -121,7 +121,7 @@ export default defineEventHandler(async (event) => {
       .eq("id", productId)
       .single();
 
-    if (productErro) {
+    if (productError) {
       console.error("Supabase stock update error:", updateError);
     }
 
