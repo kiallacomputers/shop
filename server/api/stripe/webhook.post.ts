@@ -121,10 +121,6 @@ export default defineEventHandler(async (event) => {
       .eq("id", productId)
       .single();
 
-    if (productError) {
-      console.error("Supabase stock update error:", updateError);
-    }
-
     console.log("SUPABASE PRODUCT:", productData);
     console.log("SUPABASE ERROR:", productError);
 
@@ -143,23 +139,45 @@ export default defineEventHandler(async (event) => {
     // UPDATE STOCK
     // ----------------------------------------
 
-    const { data: updateData, error: updateError } = await supabase
-      .from("products")
-      .update({
-        stock: newStock,
-      })
-      .eq("id", productId)
-      .select();
+console.log("UPDATING STOCK");
+console.log("Product ID:", productId);
+console.log("Old Stock:", product.stock);
+console.log("New Stock:", newStock);
 
-    console.log("UPDATE RESULT:", updateData);
-    console.log("UPDATE ERROR:", updateError);
+const { data: updateData, error: updateError } = await supabase
+  .from("products")
+  .update({
+    stock: newStock,
+  })
+  .eq("id", productId)
+  .select("id, name, stock");
 
-    if (updateError) {
-      console.error("STOCK UPDATE FAILED:", updateError);
-    } else {
-      console.log(`SUCCESS: Product ${productId} stock is now ${newStock}`);
-    }
-  }
+console.log("UPDATE RESULT:", updateData);
+console.log("UPDATE ERROR:", updateError);
+
+if (updateError) {
+  console.error("STOCK UPDATE FAILED:", updateError);
+
+  throw createError({
+    statusCode: 500,
+    statusMessage: updateError.message,
+  });
+}
+
+// Check whether Supabase actually returned an updated row
+if (!updateData || updateData.length === 0) {
+  console.error("STOCK UPDATE DID NOT MATCH ANY PRODUCT");
+  console.error("Product ID searched for:", productId);
+
+  throw createError({
+    statusCode: 500,
+    statusMessage: "Product stock update matched no rows",
+  });
+}
+
+console.log(
+  `DATABASE UPDATED: ${updateData[0].name} stock is now ${updateData[0].stock}`
+);
 
   console.log("=================================");
   console.log("WEBHOOK COMPLETE");
