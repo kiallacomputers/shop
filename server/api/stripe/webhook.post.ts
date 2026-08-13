@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
 
   const supabase = createClient(
     config.public.supabaseUrl,
-    config.supabaseSecretKey,
+    config.supabaseServiceKey,
     {
       auth: {
         autoRefreshToken: false,
