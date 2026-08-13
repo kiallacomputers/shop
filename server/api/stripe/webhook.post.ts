@@ -12,12 +12,7 @@ export default defineEventHandler(async (event) => {
   const body = await readRawBody(event);
   const signature = getHeader(event, "stripe-signature");
 
-  console.log("=================================");
-  console.log("STRIPE WEBHOOK RECEIVED");
-  console.log("=================================");
-
   if (!body || !signature) {
-    console.log("NO BODY");
     throw createError({
       statusCode: 400,
       statusMessage: "Missing Stripe webhook data",
@@ -33,7 +28,7 @@ export default defineEventHandler(async (event) => {
       config.stripeWebhookSecret,
     );
   } catch (error: any) {
-    console.log("WEBHOOK SIGNATURE ERROR:", error.message);
+    console.error("WEBHOOK SIGNATURE ERROR:", error.message);
 
     throw createError({
       statusCode: 400,
@@ -44,8 +39,6 @@ export default defineEventHandler(async (event) => {
   console.log("EVENT TYPE:", stripeEvent.type);
 
   if (stripeEvent.type !== "checkout.session.completed") {
-    console.log("Ignoring event:", stripeEvent.type);
-
     return {
       received: true,
     };
@@ -67,6 +60,21 @@ export default defineEventHandler(async (event) => {
   console.log("PAYMENT IS PAID");
 
   // ----------------------------------------
+  // SUPABASE
+  // ----------------------------------------
+
+  const supabase = createClient(
+    config.public.supabaseUrl,
+    config.supabaseSecretKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  );
+
+  // ----------------------------------------
   // GET STRIPE LINE ITEMS
   // ----------------------------------------
 
@@ -77,33 +85,32 @@ export default defineEventHandler(async (event) => {
   console.log("LINE ITEMS:", JSON.stringify(lineItems.data, null, 2));
 
   // ----------------------------------------
-  // SUPABASE
+  // PROCESS EACH PRODUCT
   // ----------------------------------------
-
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.supabaseServiceKey,
-  );
 
   for (const lineItem of lineItems.data) {
     console.log("---------------------------------");
     console.log("PROCESSING ITEM");
 
-    const product = lineItem.price?.product;
+    const stripeProduct = lineItem.price?.product;
 
-    console.log("STRIPE PRODUCT:", product);
+    console.log("STRIPE PRODUCT:", stripeProduct);
 
-    if (!product || typeof product === "string") {
+    if (!stripeProduct || typeof stripeProduct === "string") {
       console.log("PRODUCT NOT FOUND");
       continue;
     }
 
-    const productId = product.metadata?.product_id;
+    // ----------------------------------------
+    // GET DATABASE PRODUCT ID
+    // ----------------------------------------
+
+    const productId = stripeProduct.metadata?.product_id;
 
     console.log("DATABASE PRODUCT ID:", productId);
 
     if (!productId) {
-      console.log("NO PRODUCT ID IN METADATA");
+      console.log("NO PRODUCT ID IN STRIPE METADATA");
       continue;
     }
 
@@ -117,19 +124,25 @@ export default defineEventHandler(async (event) => {
 
     const { data: productData, error: productError } = await supabase
       .from("products")
-      .select("id, stock")
+      .select("id, name, stock")
       .eq("id", productId)
       .single();
 
     console.log("SUPABASE PRODUCT:", productData);
+
     console.log("SUPABASE ERROR:", productError);
 
     if (productError || !productData) {
-      console.log("COULD NOT FIND SUPABASE PRODUCT");
+      console.error("COULD NOT FIND SUPABASE PRODUCT", productId);
+
       continue;
     }
 
-    const currentStock = Number(productData.stock);
+    // ----------------------------------------
+    // CALCULATE STOCK
+    // ----------------------------------------
+
+    const currentStock = Number(productData.stock) || 0;
 
     const newStock = Math.max(0, currentStock - quantity);
 
@@ -139,45 +152,58 @@ export default defineEventHandler(async (event) => {
     // UPDATE STOCK
     // ----------------------------------------
 
-console.log("UPDATING STOCK");
-console.log("Product ID:", productId);
-console.log("Old Stock:", product.stock);
-console.log("New Stock:", newStock);
+    console.log("UPDATING STOCK");
 
-const { data: updateData, error: updateError } = await supabase
-  .from("products")
-  .update({
-    stock: newStock,
-  })
-  .eq("id", productId)
-  .select("id, name, stock");
+    console.log("Product ID:", productId);
 
-console.log("UPDATE RESULT:", updateData);
-console.log("UPDATE ERROR:", updateError);
+    console.log("Old Stock:", productData.stock);
 
-if (updateError) {
-  console.error("STOCK UPDATE FAILED:", updateError);
+    console.log("New Stock:", newStock);
 
-  throw createError({
-    statusCode: 500,
-    statusMessage: updateError.message,
-  });
-}
+    const { data: updateData, error: updateError } = await supabase
+      .from("products")
+      .update({
+        stock: newStock,
+      })
+      .eq("id", productId)
+      .select("id, name, stock");
 
-// Check whether Supabase actually returned an updated row
-if (!updateData || updateData.length === 0) {
-  console.error("STOCK UPDATE DID NOT MATCH ANY PRODUCT");
-  console.error("Product ID searched for:", productId);
+    console.log("UPDATE RESULT:", updateData);
 
-  throw createError({
-    statusCode: 500,
-    statusMessage: "Product stock update matched no rows",
-  });
-}
+    console.log("UPDATE ERROR:", updateError);
 
-console.log(
-  `DATABASE UPDATED: ${updateData[0].name} stock is now ${updateData[0].stock}`
-);
+    if (updateError) {
+      console.error("STOCK UPDATE FAILED:", updateError);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: updateError.message,
+      });
+    }
+
+    // ----------------------------------------
+    // VERIFY UPDATE
+    // ----------------------------------------
+
+    if (!updateData || updateData.length === 0) {
+      console.error("STOCK UPDATE DID NOT MATCH ANY PRODUCT");
+
+      console.error("Product ID:", productId);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Product stock update matched no rows",
+      });
+    }
+
+    console.log(
+      `DATABASE UPDATED: ${updateData[0].name} stock is now ${updateData[0].stock}`,
+    );
+  }
+
+  // ----------------------------------------
+  // WEBHOOK COMPLETE
+  // ----------------------------------------
 
   console.log("=================================");
   console.log("WEBHOOK COMPLETE");
