@@ -2,21 +2,31 @@ import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
+  console.log("🔥 ADMIN PRODUCT UPDATE");
+
+  // Check admin
   await requireAdmin(event);
 
-  const productId = Number(getRouterParam(event, "id"));
+  const productId = getRouterParam(event, "id");
+
+  console.log("🔥 UPDATING PRODUCT:", productId);
 
   if (!productId) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid product ID",
+      statusMessage: "Product ID is required",
     });
   }
 
   const body = await readBody(event);
 
+  console.log("🔥 UPDATE BODY:", body);
+
   const config = useRuntimeConfig();
 
+  /*
+   * Server-side Supabase client
+   */
   const supabase = createClient(
     config.public.supabaseUrl,
     config.supabaseSecretKey,
@@ -29,11 +39,8 @@ export default defineEventHandler(async (event) => {
   );
 
   /*
-   * ----------------------------------------
-   * VALIDATE DATA
-   * ----------------------------------------
+   * Validate name
    */
-
   if (!body.name) {
     throw createError({
       statusCode: 400,
@@ -43,21 +50,26 @@ export default defineEventHandler(async (event) => {
 
   /*
    * ----------------------------------------
-   * PREPARE IMAGES
+   * IMAGES
    * ----------------------------------------
+   *
+   * images MUST be an array.
    */
 
   let images: string[] = [];
 
   if (Array.isArray(body.images)) {
     images = body.images.filter(
-      (image: any) => typeof image === "string" && image.trim() !== "",
+      (image: unknown): image is string =>
+        typeof image === "string" && image.trim().length > 0,
     );
   }
 
+  console.log("🔥 IMAGES BEING SAVED:", images);
+
   /*
    * ----------------------------------------
-   * PREPARE DESCRIPTION
+   * DESCRIPTION
    * ----------------------------------------
    */
 
@@ -67,20 +79,46 @@ export default defineEventHandler(async (event) => {
     description = body.description;
   }
 
+  console.log("🔥 DESCRIPTION BEING SAVED:", description);
+
   /*
    * ----------------------------------------
-   * UPDATE PRODUCT
+   * CATEGORY
+   * ----------------------------------------
+   */
+
+  let categoryId = null;
+
+  if (
+    body.category_id !== null &&
+    body.category_id !== undefined &&
+    body.category_id !== ""
+  ) {
+    categoryId = Number(body.category_id);
+  }
+
+  /*
+   * ----------------------------------------
+   * UPDATE
    * ----------------------------------------
    */
 
   const { data, error } = await supabase
     .from("products")
     .update({
-      name: body.name.trim(),
+      name: String(body.name).trim(),
 
-      slug: body.slug ? body.slug.trim() : null,
+      slug:
+        body.slug !== null && body.slug !== undefined
+          ? String(body.slug).trim()
+          : null,
 
-      blurb: body.blurb ? body.blurb.trim() : null,
+      blurb:
+        body.blurb !== null && body.blurb !== undefined
+          ? String(body.blurb).trim()
+          : null,
+
+      category_id: categoryId,
 
       price:
         body.price !== null && body.price !== undefined
@@ -96,15 +134,8 @@ export default defineEventHandler(async (event) => {
 
       stock:
         body.stock !== null && body.stock !== undefined
-          ? Number(body.stock)
+          ? Math.max(0, Number(body.stock))
           : 0,
-
-      category_id:
-        body.category_id !== null &&
-        body.category_id !== undefined &&
-        body.category_id !== ""
-          ? Number(body.category_id)
-          : null,
 
       featured: Boolean(body.featured),
 
@@ -116,24 +147,23 @@ export default defineEventHandler(async (event) => {
       active: body.active === undefined ? true : Boolean(body.active),
 
       /*
-       * IMPORTANT
-       *
-       * Database column is "images"
+       * IMPORTANT:
+       * JSON ARRAY
        */
       images,
 
       /*
-       * Database column is "description"
-       * and contains a JSON array.
+       * IMPORTANT:
+       * JSON ARRAY
        */
       description,
     })
-    .eq("id", productId)
+    .eq("id", Number(productId))
     .select("*")
     .single();
 
   if (error) {
-    console.error("ADMIN PRODUCT UPDATE ERROR:", error);
+    console.error("🔥 PRODUCT UPDATE ERROR:", error);
 
     throw createError({
       statusCode: 500,
@@ -142,6 +172,8 @@ export default defineEventHandler(async (event) => {
   }
 
   console.log("🔥 PRODUCT UPDATED:", data);
+
+  console.log("🔥 UPDATED IMAGES:", data?.images);
 
   return data;
 });
