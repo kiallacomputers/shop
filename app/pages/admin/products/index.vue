@@ -301,21 +301,27 @@ const getFirstImage = (images: any) => {
 // ----------------------------------------
 
 const getCategoryName = (categoryId: any) => {
-  console.log("🔎 LOOKING FOR CATEGORY:", categoryId);
-
-  console.log("🔎 AVAILABLE CATEGORIES:", categories.value);
+  if (categoryId === null || categoryId === undefined || categoryId === "") {
+    return "";
+  }
 
   const category = categories.value.find(
     (item) => String(item.id) === String(categoryId),
   );
 
-  console.log("🔎 MATCH:", category);
-
   if (!category) {
     return "";
   }
 
-  return category.name ?? category.category_name ?? category.title ?? "";
+  console.log("✅ CATEGORY FOUND:", JSON.parse(JSON.stringify(category)));
+
+  return (
+    category.name ??
+    category.category_name ??
+    category.title ??
+    category.category ??
+    ""
+  );
 };
 // ----------------------------------------
 // LOAD PRODUCTS
