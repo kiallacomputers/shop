@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAdminFetch } from "~/composables/useAdminFetch";
 definePageMeta({
   middleware: "admin",
 });
