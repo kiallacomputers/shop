@@ -37,7 +37,7 @@ await loadAdmin();
 
     <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <NuxtLink
-        to="/admin/#"
+        to="/admin/products/"
         class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
       >
         <h2 class="text-xl font-semibold">Products</h2>
