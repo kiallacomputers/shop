@@ -75,8 +75,8 @@
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
                   <img
-                    v-if="getFirstImage(product.image)"
-                    :src="getFirstImage(product.image)"
+                    v-if="getFirstImage(product.images)"
+                    :src="getFirstImage(product.images)"
                     :alt="product.name"
                     class="w-14 h-14 object-contain rounded border bg-white"
                   />
@@ -187,8 +187,8 @@
         <div v-for="product in products" :key="product.id" class="p-5">
           <div class="flex gap-4">
             <img
-              v-if="getFirstImage(product.image)"
-              :src="getFirstImage(product.image)"
+              v-if="getFirstImage(product.images)"
+              :src="getFirstImage(product.images)"
               :alt="product.name"
               class="w-14 h-14 object-contain rounded border bg-white"
             />
@@ -293,12 +293,10 @@ const getFirstImage = (images: any) => {
     return "";
   }
 
-  // Already an array
   if (Array.isArray(images)) {
     return images[0] || "";
   }
 
-  // JSON string containing an array
   if (typeof images === "string") {
     try {
       const parsed = JSON.parse(images);
@@ -307,7 +305,7 @@ const getFirstImage = (images: any) => {
         return parsed[0] || "";
       }
 
-      return images;
+      return parsed;
     } catch {
       return images;
     }
@@ -363,8 +361,8 @@ const loadProducts = async () => {
       products.value.map((product) => ({
         id: product.id,
         name: product.name,
-        image: product.image,
-        firstImage: getFirstImage(product.image),
+        image: product.images,
+        firstImage: getFirstImage(product.images),
       })),
     );
 
@@ -422,7 +420,7 @@ const updateStock = async (product: any) => {
 
         category: product.category_id,
 
-        image: Array.isArray(product.image) ? product.image : [],
+        image: Array.isArray(product.images) ? product.images : [],
 
         description: Array.isArray(product.description)
           ? product.description

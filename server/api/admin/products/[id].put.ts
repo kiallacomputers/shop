@@ -118,7 +118,7 @@ export default defineEventHandler(async (event) => {
 
       category: body.category_id ? Number(body.category_id) : null,
 
-      image: body.image,
+      images: Array.isArray(body.images) ? body.images : [],
 
       description: body.description,
     })
