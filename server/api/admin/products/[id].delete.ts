@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { requireAdmin } from "~~/server/utils/adminAuth";
+import { requireAdmin } from "../../../utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   // ----------------------------------------
