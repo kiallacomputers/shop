@@ -301,13 +301,21 @@ const getFirstImage = (images: any) => {
 // ----------------------------------------
 
 const getCategoryName = (categoryId: any) => {
+  console.log("=================================");
+  console.log("PRODUCT CATEGORY VALUE:", categoryId);
+  console.log("PRODUCT CATEGORY TYPE:", typeof categoryId);
+  console.log("ALL CATEGORIES:", categories.value);
+
   if (categoryId === null || categoryId === undefined || categoryId === "") {
+    console.log("NO CATEGORY VALUE");
     return "";
   }
 
   const category = categories.value.find(
-    (item) => Number(item.id) === Number(categoryId),
+    (item) => String(item.id) === String(categoryId),
   );
+
+  console.log("MATCHED CATEGORY:", category);
 
   return category?.name || "";
 };
