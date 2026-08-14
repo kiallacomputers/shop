@@ -190,7 +190,7 @@
               v-if="getFirstImage(product.image)"
               :src="getFirstImage(product.image)"
               :alt="product.name"
-              class="w-20 h-20 object-contain rounded border"
+              class="w-14 h-14 object-contain rounded border bg-white"
             />
 
             <div
@@ -289,11 +289,31 @@ const errorMessage = ref("");
 // ----------------------------------------
 
 const getFirstImage = (images: any) => {
-  if (!Array.isArray(images)) {
+  if (!images) {
     return "";
   }
 
-  return images[0] || "";
+  // Already an array
+  if (Array.isArray(images)) {
+    return images[0] || "";
+  }
+
+  // JSON string containing an array
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+
+      if (Array.isArray(parsed)) {
+        return parsed[0] || "";
+      }
+
+      return images;
+    } catch {
+      return images;
+    }
+  }
+
+  return "";
 };
 
 // ----------------------------------------
@@ -337,6 +357,16 @@ const loadProducts = async () => {
     console.log(data);
 
     products.value = data || [];
+
+    console.log(
+      "🔥 PRODUCT IMAGES:",
+      products.value.map((product) => ({
+        id: product.id,
+        name: product.name,
+        image: product.image,
+        firstImage: getFirstImage(product.image),
+      })),
+    );
 
     console.log("🔥 PRODUCTS STORED:", products.value);
   } catch (error: any) {
