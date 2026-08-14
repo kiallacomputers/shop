@@ -136,17 +136,26 @@
         </select>
       </div>
 
-      <!-- Description -->
+      <!-- Description JSON -->
       <div>
-        <label class="block font-semibold text-gray-700 mb-2">
-          Description
-        </label>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block font-semibold text-gray-700">
+            Product Description
+          </label>
+
+          <span class="text-xs text-gray-500"> JSON format </span>
+        </div>
 
         <textarea
-          v-model="product.description"
-          rows="8"
-          class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          v-model="descriptionJson"
+          rows="20"
+          spellcheck="false"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         ></textarea>
+
+        <p v-if="descriptionError" class="text-red-600 text-sm mt-2">
+          {{ descriptionError }}
+        </p>
       </div>
 
       <!-- Buttons -->
