@@ -17,11 +17,15 @@ export default defineNuxtConfig({
     storesDirs: ["./stores/**"],
   },
   runtimeConfig: {
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
+
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
+      supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
     },
   },
 });
