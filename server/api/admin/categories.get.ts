@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await supabase
     .from("categories")
     .select("*")
-    .order("sort_order", {
+    .order("name", {
       ascending: true,
     });
 
