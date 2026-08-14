@@ -3,31 +3,23 @@ import { createClient } from "@supabase/supabase-js";
 export async function requireAdmin(event: any) {
   const config = useRuntimeConfig();
 
-  // ----------------------------------------
-  // GET AUTHORIZATION HEADER
-  // ----------------------------------------
+  const authHeader = getHeader(event, "authorization");
 
-  const authorization = getHeader(event, "authorization");
-
-  if (!authorization) {
+  if (!authHeader) {
     throw createError({
       statusCode: 401,
       statusMessage: "Authentication required",
     });
   }
 
-  const token = authorization.replace("Bearer ", "");
+  const token = authHeader.replace("Bearer ", "");
 
   if (!token) {
     throw createError({
       statusCode: 401,
-      statusMessage: "Invalid authentication token",
+      statusMessage: "Authentication required",
     });
   }
-
-  // ----------------------------------------
-  // VERIFY USER
-  // ----------------------------------------
 
   const supabase = createClient(
     config.public.supabaseUrl,
@@ -40,51 +32,39 @@ export async function requireAdmin(event: any) {
   } = await supabase.auth.getUser(token);
 
   if (userError || !user) {
-    console.error("AUTH ERROR:", userError);
+    console.error("ADMIN AUTH ERROR:", userError);
 
     throw createError({
       statusCode: 401,
-      statusMessage: "Invalid authentication",
+      statusMessage: "Authentication required",
     });
   }
 
-  console.log("AUTHENTICATED USER:", user.id, user.email);
+  console.log("Authenticated user:", user.email);
 
-  // ----------------------------------------
-  // SERVER-ONLY ADMIN CLIENT
-  // ----------------------------------------
-
-  const admin = createClient(
+  // Use the server secret key here.
+  const adminSupabase = createClient(
     config.public.supabaseUrl,
     config.supabaseSecretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
   );
 
-  // ----------------------------------------
-  // CHECK ADMIN USERS
-  // ----------------------------------------
-
-  const { data: adminUser, error: adminError } = await admin
+  const { data: adminUser, error: adminError } = await adminSupabase
     .from("admin_users")
     .select("id, email")
-    .eq("id", user.id)
+    .eq("email", user.email)
     .maybeSingle();
 
-  console.log("ADMIN USER:", adminUser);
+  if (adminError) {
+    console.error("ADMIN DATABASE ERROR:", adminError);
 
-  console.log("ADMIN ERROR:", adminError);
+    throw createError({
+      statusCode: 500,
+      statusMessage: adminError.message,
+    });
+  }
 
-  // ----------------------------------------
-  // DENY ACCESS
-  // ----------------------------------------
-
-  if (adminError || !adminUser) {
-    console.error("ADMIN ACCESS DENIED");
+  if (!adminUser) {
+    console.log("NOT AN ADMIN:", user.email);
 
     throw createError({
       statusCode: 403,
@@ -92,14 +72,11 @@ export async function requireAdmin(event: any) {
     });
   }
 
-  // ----------------------------------------
-  // ADMIN ACCESS GRANTED
-  // ----------------------------------------
-
-  console.log("✅ ADMIN ACCESS GRANTED:", user.email);
+  console.log("ADMIN USER:", user.email);
 
   return {
     user,
     adminUser,
+    supabase: adminSupabase,
   };
 }
