@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
 
       stock: Math.floor(stock),
 
-      category: body.category ? Number(body.category) : null,
+      category: body.category_id ? Number(body.category_id) : null,
 
       image: body.image,
 

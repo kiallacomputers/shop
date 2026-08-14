@@ -420,8 +420,8 @@ const updateProduct = async () => {
 
         stock: Number(product.value.stock),
 
-        category: product.value.category
-          ? Number(product.value.category)
+        category: product.value.category_id
+          ? Number(product.value.category_id)
           : null,
 
         image: images,
