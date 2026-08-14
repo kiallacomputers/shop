@@ -6,17 +6,10 @@
         <img src="~/assets/images/logos/kc_logo.png" alt="Logo" class="w-20" />
       </NuxtLink>
 
-      <!-- Menu Right. -->
+      <!-- Menu Right -->
       <div class="flex items-center gap-8">
         <nav class="md:flex items-center gap-8">
-          <!-- <NuxtLink to="/" class="text-slate-700 hover:text-blue-600">
-            Home
-          </NuxtLink>
-
-          <NuxtLink to="/shop" class="text-slate-700 hover:text-blue-600">
-            Shop
-          </NuxtLink> -->
-
+          <!-- Signup / Login -->
           <NuxtLink
             v-if="!user"
             to="/auth/signin"
@@ -24,9 +17,13 @@
           >
             Signup/Login
           </NuxtLink>
+
+          <!-- Welcome -->
           <p v-if="user" class="mr-5 text-[#566C9D] font-bold">
             Welcome {{ firstName }}
           </p>
+
+          <!-- My Account -->
           <NuxtLink
             v-if="user"
             to="/admin/dashboard"
@@ -35,10 +32,21 @@
             My Account
           </NuxtLink>
 
+          <!-- ADMIN -->
+          <NuxtLink
+            v-if="user && isAdmin"
+            to="/admin"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold"
+          >
+            Admin
+          </NuxtLink>
+
+          <!-- Logout -->
           <button
             v-if="user"
             @click="logout"
             class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
+            title="Sign Out"
           >
             <!-- Sign out icon -->
             <svg
@@ -84,6 +92,8 @@
       </div>
     </div>
   </header>
+
+  <!-- Cart Notification -->
   <Transition name="toast">
     <div
       v-if="cart.notification"
@@ -98,16 +108,87 @@
 
 <script setup>
 const user = useSupabaseUser();
+
 const supabase = useSupabaseClient();
+
+const cart = useCartStore();
+
+// ----------------------------------------
+// FIRST NAME
+// ----------------------------------------
 
 const firstName = computed(() => {
   return user.value?.user_metadata?.display_name?.trim().split(/\s+/)[0] ?? "";
 });
 
-const logout = async () => {
-  await supabase.auth.signOut();
-  navigateTo("/");
+// ----------------------------------------
+// ADMIN STATUS
+// ----------------------------------------
+
+const isAdmin = ref(false);
+
+// ----------------------------------------
+// CHECK ADMIN
+// ----------------------------------------
+
+const checkAdmin = async () => {
+  isAdmin.value = false;
+
+  if (!user.value) {
+    return;
+  }
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return;
+    }
+
+    await $fetch("/api/admin/check", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    // If the API didn't throw an error,
+    // the user is an admin.
+
+    isAdmin.value = true;
+
+    console.log("ADMIN USER:", user.value.email);
+  } catch (error) {
+    isAdmin.value = false;
+
+    console.log("USER IS NOT ADMIN");
+  }
 };
 
-const cart = useCartStore();
+// ----------------------------------------
+// WATCH USER
+// ----------------------------------------
+
+watch(
+  user,
+  async () => {
+    await checkAdmin();
+  },
+  {
+    immediate: true,
+  },
+);
+
+// ----------------------------------------
+// LOGOUT
+// ----------------------------------------
+
+const logout = async () => {
+  await supabase.auth.signOut();
+
+  isAdmin.value = false;
+
+  await navigateTo("/");
+};
 </script>
