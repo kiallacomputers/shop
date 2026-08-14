@@ -4,12 +4,12 @@ import { requireAdmin } from "~~/server/utils/adminAuth";
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
 
-  const productId = getRouterParam(event, "id");
+  const productId = Number(getRouterParam(event, "id"));
 
   if (!productId) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Product ID is required",
+      statusMessage: "Invalid product ID",
     });
   }
 
@@ -33,11 +33,11 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (error) {
-    console.error("GET PRODUCT ERROR:", error);
+    console.error("ADMIN PRODUCT GET ERROR:", error);
 
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || "Unable to load product",
+      statusMessage: error.message,
     });
   }
 

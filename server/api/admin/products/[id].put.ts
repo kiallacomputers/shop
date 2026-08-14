@@ -2,93 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  // ----------------------------------------
-  // ADMIN AUTH
-  // ----------------------------------------
-
   await requireAdmin(event);
 
-  // ----------------------------------------
-  // PRODUCT ID
-  // ----------------------------------------
-
-  const productId = getRouterParam(event, "id");
+  const productId = Number(getRouterParam(event, "id"));
 
   if (!productId) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Product ID is required",
+      statusMessage: "Invalid product ID",
     });
   }
-
-  // ----------------------------------------
-  // REQUEST BODY
-  // ----------------------------------------
 
   const body = await readBody(event);
-
-  // ----------------------------------------
-  // NAME
-  // ----------------------------------------
-
-  if (!body.name || !body.name.trim()) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Product name is required",
-    });
-  }
-
-  // ----------------------------------------
-  // PRICE
-  // ----------------------------------------
-
-  const price = Number(body.price);
-
-  if (!Number.isFinite(price) || price < 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Invalid price",
-    });
-  }
-
-  // ----------------------------------------
-  // STOCK
-  // ----------------------------------------
-
-  const stock = Number(body.stock);
-
-  if (!Number.isFinite(stock) || stock < 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Invalid stock",
-    });
-  }
-
-  // ----------------------------------------
-  // IMAGE JSON ARRAY
-  // ----------------------------------------
-
-  if (!Array.isArray(body.image)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Image must be a JSON array",
-    });
-  }
-
-  // ----------------------------------------
-  // DESCRIPTION JSON ARRAY
-  // ----------------------------------------
-
-  if (!Array.isArray(body.description)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Description must be a JSON array",
-    });
-  }
-
-  // ----------------------------------------
-  // SUPABASE
-  // ----------------------------------------
 
   const config = useRuntimeConfig();
 
@@ -103,51 +28,120 @@ export default defineEventHandler(async (event) => {
     },
   );
 
-  // ----------------------------------------
-  // UPDATE
-  // ----------------------------------------
+  /*
+   * ----------------------------------------
+   * VALIDATE DATA
+   * ----------------------------------------
+   */
+
+  if (!body.name) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Product name is required",
+    });
+  }
+
+  /*
+   * ----------------------------------------
+   * PREPARE IMAGES
+   * ----------------------------------------
+   */
+
+  let images: string[] = [];
+
+  if (Array.isArray(body.images)) {
+    images = body.images.filter(
+      (image: any) => typeof image === "string" && image.trim() !== "",
+    );
+  }
+
+  /*
+   * ----------------------------------------
+   * PREPARE DESCRIPTION
+   * ----------------------------------------
+   */
+
+  let description: any[] = [];
+
+  if (Array.isArray(body.description)) {
+    description = body.description;
+  }
+
+  /*
+   * ----------------------------------------
+   * UPDATE PRODUCT
+   * ----------------------------------------
+   */
 
   const { data, error } = await supabase
     .from("products")
     .update({
       name: body.name.trim(),
 
-      price: price,
+      slug: body.slug ? body.slug.trim() : null,
 
-      stock: Math.floor(stock),
+      blurb: body.blurb ? body.blurb.trim() : null,
 
-      category: body.category_id ? Number(body.category_id) : null,
+      price:
+        body.price !== null && body.price !== undefined
+          ? Number(body.price)
+          : 0,
 
-      images: Array.isArray(body.images) ? body.images : [],
+      oldPrice:
+        body.oldPrice !== null &&
+        body.oldPrice !== undefined &&
+        body.oldPrice !== ""
+          ? Number(body.oldPrice)
+          : null,
 
-      description: body.description,
+      stock:
+        body.stock !== null && body.stock !== undefined
+          ? Number(body.stock)
+          : 0,
+
+      category_id:
+        body.category_id !== null &&
+        body.category_id !== undefined &&
+        body.category_id !== ""
+          ? Number(body.category_id)
+          : null,
+
+      featured: Boolean(body.featured),
+
+      refurbished:
+        body.refurbished === null || body.refurbished === undefined
+          ? null
+          : Boolean(body.refurbished),
+
+      active: body.active === undefined ? true : Boolean(body.active),
+
+      /*
+       * IMPORTANT
+       *
+       * Database column is "images"
+       */
+      images,
+
+      /*
+       * Database column is "description"
+       * and contains a JSON array.
+       */
+      description,
     })
     .eq("id", productId)
     .select("*")
     .single();
 
-  // ----------------------------------------
-  // SUPABASE ERROR
-  // ----------------------------------------
-
   if (error) {
-    console.error("UPDATE PRODUCT ERROR:", error);
+    console.error("ADMIN PRODUCT UPDATE ERROR:", error);
 
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || "Unable to update product",
+      statusMessage: error.message,
     });
   }
 
-  console.log(`ADMIN PRODUCT UPDATED: ${productId}`);
+  console.log("🔥 PRODUCT UPDATED:", data);
 
-  // ----------------------------------------
-  // RETURN
-  // ----------------------------------------
-
-  return {
-    success: true,
-
-    product: data,
-  };
+  return data;
 });
