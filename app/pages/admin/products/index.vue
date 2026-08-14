@@ -101,10 +101,10 @@
               <!-- CATEGORY -->
               <td class="px-6 py-4">
                 <span
-                  v-if="getCategoryName(product.category)"
+                  v-if="getCategoryName(product.category_id)"
                   class="inline-flex px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium"
                 >
-                  {{ getCategoryName(product.category) }}
+                  {{ getCategoryName(product.category_id) }}
                 </span>
 
                 <span v-else class="text-gray-400"> Uncategorised </span>
@@ -390,7 +390,7 @@ const updateStock = async (product: any) => {
 
         stock: stock,
 
-        category: product.category,
+        category: product.category_id,
 
         image: Array.isArray(product.image) ? product.image : [],
 
