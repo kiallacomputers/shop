@@ -1,21 +1,31 @@
 export default defineNuxtRouteMiddleware(async () => {
   const supabase = useSupabaseClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // ----------------------------------------
+  // CHECK LOGIN
+  // ----------------------------------------
 
-  if (!user) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
     return navigateTo("/auth/signin");
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  // ----------------------------------------
+  // CHECK ADMIN
+  // ----------------------------------------
 
-  if (error || !profile || profile.role !== "admin") {
+  try {
+    await $fetch("/api/admin/check", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+  } catch (error: any) {
+    console.error("ADMIN CHECK FAILED:", error);
+
     return navigateTo("/");
   }
 });
