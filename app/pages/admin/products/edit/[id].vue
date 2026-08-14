@@ -188,6 +188,10 @@
 </template>
 
 <script setup lang="ts">
+const descriptionJson = ref("");
+
+const descriptionError = ref("");
+
 // ----------------------------------------
 // ADMIN AUTH
 // ----------------------------------------
