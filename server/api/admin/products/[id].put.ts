@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   await requireAdmin(event);
 
   // ----------------------------------------
-  // GET PRODUCT ID
+  // PRODUCT ID
   // ----------------------------------------
 
   const productId = getRouterParam(event, "id");
@@ -22,44 +22,45 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // GET REQUEST BODY
+  // BODY
   // ----------------------------------------
 
   const body = await readBody(event);
 
   // ----------------------------------------
-  // VALIDATE STOCK
+  // VALIDATE
   // ----------------------------------------
 
-  if (body.stock === undefined || body.stock === null) {
+  if (!body.name) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Stock value is required",
+      statusMessage: "Product name is required",
     });
   }
 
+  const price = Number(body.price);
+
   const stock = Number(body.stock);
+
+  if (!Number.isFinite(price) || price < 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Invalid price",
+    });
+  }
 
   if (!Number.isFinite(stock) || stock < 0) {
     throw createError({
       statusCode: 400,
-      statusMessage:
-        "Stock must be a valid number greater than or equal to zero",
+      statusMessage: "Invalid stock",
     });
   }
 
-  // Make sure stock is an integer
-  const newStock = Math.floor(stock);
-
   // ----------------------------------------
-  // RUNTIME CONFIG
+  // SUPABASE
   // ----------------------------------------
 
   const config = useRuntimeConfig();
-
-  // ----------------------------------------
-  // SERVER SUPABASE CLIENT
-  // ----------------------------------------
 
   const supabase = createClient(
     config.public.supabaseUrl,
@@ -73,20 +74,30 @@ export default defineEventHandler(async (event) => {
   );
 
   // ----------------------------------------
-  // UPDATE PRODUCT
+  // UPDATE
   // ----------------------------------------
 
   const { data, error } = await supabase
     .from("products")
     .update({
-      stock: newStock,
+      name: body.name,
+
+      price: price,
+
+      stock: Math.floor(stock),
+
+      image: body.image || null,
+
+      category: body.category || null,
+
+      description: body.description || null,
     })
     .eq("id", productId)
-    .select("id, name, price, stock, image")
+    .select("*")
     .single();
 
   // ----------------------------------------
-  // DATABASE ERROR
+  // ERROR
   // ----------------------------------------
 
   if (error) {
@@ -102,7 +113,7 @@ export default defineEventHandler(async (event) => {
   // SUCCESS
   // ----------------------------------------
 
-  console.log(`ADMIN STOCK UPDATE: Product ${productId} stock = ${newStock}`);
+  console.log(`PRODUCT UPDATED: ${productId}`);
 
   return {
     success: true,
