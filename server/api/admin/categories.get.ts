@@ -17,19 +17,16 @@ export default defineEventHandler(async (event) => {
     },
   );
 
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .order("name", {
-      ascending: true,
-    });
+  const { data, error } = await supabase.from("categories").select("*");
+
+  console.log("🔥 SUPABASE CATEGORIES:", data);
+
+  console.log("🔥 SUPABASE CATEGORY ERROR:", error);
 
   if (error) {
-    console.error("ADMIN CATEGORIES ERROR:", error);
-
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || "Unable to load categories",
+      statusMessage: error.message,
     });
   }
 

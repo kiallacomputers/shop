@@ -301,25 +301,22 @@ const getFirstImage = (images: any) => {
 // ----------------------------------------
 
 const getCategoryName = (categoryId: any) => {
-  console.log("=================================");
-  console.log("PRODUCT CATEGORY VALUE:", categoryId);
-  console.log("PRODUCT CATEGORY TYPE:", typeof categoryId);
-  console.log("ALL CATEGORIES:", categories.value);
+  console.log("🔎 LOOKING FOR CATEGORY:", categoryId);
 
-  if (categoryId === null || categoryId === undefined || categoryId === "") {
-    console.log("NO CATEGORY VALUE");
-    return "";
-  }
+  console.log("🔎 AVAILABLE CATEGORIES:", categories.value);
 
   const category = categories.value.find(
     (item) => String(item.id) === String(categoryId),
   );
 
-  console.log("MATCHED CATEGORY:", category);
+  console.log("🔎 MATCH:", category);
 
-  return category?.name || "";
+  if (!category) {
+    return "";
+  }
+
+  return category.name ?? category.category_name ?? category.title ?? "";
 };
-
 // ----------------------------------------
 // LOAD PRODUCTS
 // ----------------------------------------
@@ -351,14 +348,17 @@ const loadProducts = async () => {
 // ----------------------------------------
 
 const loadCategories = async () => {
+  console.log("🔥 LOADING CATEGORIES");
+
   try {
     const data = await adminFetch<any[]>("/api/admin/categories");
 
-    console.log("ADMIN CATEGORIES:", data);
+    console.log("🔥 CATEGORIES RESPONSE:");
+    console.table(data);
 
     categories.value = data || [];
   } catch (error: any) {
-    console.error("LOAD CATEGORIES ERROR:", error);
+    console.error("🔥 LOAD CATEGORIES ERROR:", error);
 
     throw error;
   }
