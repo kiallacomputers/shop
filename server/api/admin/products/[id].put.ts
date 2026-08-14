@@ -3,7 +3,7 @@ import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   // ----------------------------------------
-  // CHECK ADMIN
+  // ADMIN
   // ----------------------------------------
 
   await requireAdmin(event);
@@ -28,19 +28,21 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   // ----------------------------------------
-  // VALIDATE
+  // VALIDATE NAME
   // ----------------------------------------
 
-  if (!body.name) {
+  if (!body.name || !body.name.trim()) {
     throw createError({
       statusCode: 400,
       statusMessage: "Product name is required",
     });
   }
 
-  const price = Number(body.price);
+  // ----------------------------------------
+  // PRICE
+  // ----------------------------------------
 
-  const stock = Number(body.stock);
+  const price = Number(body.price);
 
   if (!Number.isFinite(price) || price < 0) {
     throw createError({
@@ -49,10 +51,27 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // ----------------------------------------
+  // STOCK
+  // ----------------------------------------
+
+  const stock = Number(body.stock);
+
   if (!Number.isFinite(stock) || stock < 0) {
     throw createError({
       statusCode: 400,
       statusMessage: "Invalid stock",
+    });
+  }
+
+  // ----------------------------------------
+  // DESCRIPTION
+  // ----------------------------------------
+
+  if (!Array.isArray(body.description)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Description must be a JSON array",
     });
   }
 
@@ -80,7 +99,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await supabase
     .from("products")
     .update({
-      name: body.name,
+      name: body.name.trim(),
 
       price: price,
 
@@ -88,9 +107,9 @@ export default defineEventHandler(async (event) => {
 
       image: body.image || null,
 
-      category: body.category || null,
+      category: body.category ? Number(body.category) : null,
 
-      description: body.description || null,
+      description: body.description,
     })
     .eq("id", productId)
     .select("*")
@@ -113,10 +132,11 @@ export default defineEventHandler(async (event) => {
   // SUCCESS
   // ----------------------------------------
 
-  console.log(`PRODUCT UPDATED: ${productId}`);
+  console.log(`ADMIN PRODUCT UPDATED: ${productId}`);
 
   return {
     success: true,
+
     product: data,
   };
 });

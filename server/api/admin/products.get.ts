@@ -2,31 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  console.log("=================================");
-  console.log("ADMIN PRODUCTS API");
-  console.log("=================================");
-
-  // ----------------------------------------
-  // CHECK ADMIN
-  // ----------------------------------------
-
   await requireAdmin(event);
 
-  console.log("ADMIN CHECK PASSED");
-
-  // ----------------------------------------
-  // RUNTIME CONFIG
-  // ----------------------------------------
-
   const config = useRuntimeConfig();
-
-  console.log("SUPABASE URL:", config.public.supabaseUrl);
-
-  console.log("SECRET KEY EXISTS:", !!config.supabaseSecretKey);
-
-  // ----------------------------------------
-  // SERVER SUPABASE CLIENT
-  // ----------------------------------------
 
   const supabase = createClient(
     config.public.supabaseUrl,
@@ -39,23 +17,15 @@ export default defineEventHandler(async (event) => {
     },
   );
 
-  // ----------------------------------------
-  // GET PRODUCTS
-  // ----------------------------------------
-
-  const { data: products, error } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .select("*")
     .order("name", {
       ascending: true,
     });
 
-  // ----------------------------------------
-  // ERROR
-  // ----------------------------------------
-
   if (error) {
-    console.error("SUPABASE PRODUCTS ERROR:", error);
+    console.error("ADMIN PRODUCTS ERROR:", error);
 
     throw createError({
       statusCode: 500,
@@ -63,13 +33,5 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  console.log("PRODUCT COUNT:", products?.length || 0);
-
-  console.log("PRODUCTS:", products);
-
-  // ----------------------------------------
-  // RETURN
-  // ----------------------------------------
-
-  return products || [];
+  return data || [];
 });

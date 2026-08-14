@@ -3,13 +3,13 @@ import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   // ----------------------------------------
-  // CHECK ADMIN
+  // ADMIN
   // ----------------------------------------
 
   await requireAdmin(event);
 
   // ----------------------------------------
-  // GET PRODUCT ID
+  // PRODUCT ID
   // ----------------------------------------
 
   const productId = getRouterParam(event, "id");
@@ -22,13 +22,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // RUNTIME CONFIG
+  // CONFIG
   // ----------------------------------------
 
   const config = useRuntimeConfig();
 
   // ----------------------------------------
-  // SERVER SUPABASE CLIENT
+  // SUPABASE
   // ----------------------------------------
 
   const supabase = createClient(
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // ----------------------------------------
-  // GET PRODUCT FIRST
+  // FIND PRODUCT
   // ----------------------------------------
 
   const { data: product, error: findError } = await supabase
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // DELETE PRODUCT
+  // DELETE
   // ----------------------------------------
 
   const { error: deleteError } = await supabase
@@ -94,7 +94,9 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
+
     message: "Product deleted successfully",
+
     productId: product.id,
   };
 });

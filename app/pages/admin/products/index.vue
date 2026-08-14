@@ -34,7 +34,7 @@
 
     <!-- Products -->
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
-      <!-- Desktop Table -->
+      <!-- Desktop -->
       <div class="hidden md:block overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b">
@@ -100,7 +100,7 @@
 
               <!-- Category -->
               <td class="px-6 py-4 text-gray-600">
-                {{ product.category?.name || "Uncategorised" }}
+                {{ product.category || "Uncategorised" }}
               </td>
 
               <!-- Price -->
@@ -175,7 +175,7 @@
         </table>
       </div>
 
-      <!-- Mobile Cards -->
+      <!-- Mobile -->
       <div class="md:hidden divide-y">
         <div v-for="product in products" :key="product.id" class="p-5">
           <div class="flex gap-4">
@@ -199,7 +199,7 @@
               </h2>
 
               <p class="text-sm text-gray-500 mt-1">
-                {{ product.category?.name || "Uncategorised" }}
+                Category: {{ product.category || "Uncategorised" }}
               </p>
 
               <p class="font-semibold mt-2">
@@ -207,8 +207,6 @@
               </p>
             </div>
           </div>
-
-          <!-- Mobile Stock -->
 
           <div class="mt-4 flex items-center justify-between">
             <label class="font-semibold text-gray-700"> Stock </label>
@@ -221,8 +219,6 @@
               @change="updateStock(product)"
             />
           </div>
-
-          <!-- Mobile Actions -->
 
           <div class="mt-4 flex gap-2">
             <NuxtLink
@@ -242,7 +238,7 @@
         </div>
       </div>
 
-      <!-- No Products -->
+      <!-- No products -->
 
       <div v-if="products.length === 0" class="p-10 text-center text-gray-500">
         No products found.
@@ -252,23 +248,11 @@
 </template>
 
 <script setup lang="ts">
-// ----------------------------------------
-// ADMIN AUTHENTICATION
-// ----------------------------------------
-
 definePageMeta({
   middleware: "admin",
 });
 
-// ----------------------------------------
-// ADMIN API
-// ----------------------------------------
-
 const { adminFetch } = useAdminFetch();
-
-// ----------------------------------------
-// STATE
-// ----------------------------------------
 
 const products = ref<any[]>([]);
 
@@ -286,9 +270,9 @@ const loadProducts = async () => {
   errorMessage.value = "";
 
   try {
-    const result = await adminFetch<any[]>("/api/admin/products");
+    const data = await adminFetch<any[]>("/api/admin/products");
 
-    products.value = result;
+    products.value = data || [];
   } catch (error: any) {
     console.error("LOAD PRODUCTS ERROR:", error);
 
@@ -313,11 +297,14 @@ const updateStock = async (product: any) => {
       method: "PUT",
 
       body: {
+        name: product.name,
+        price: Number(product.price),
         stock: stock,
+        image: product.image,
+        category: product.category,
+        description: product.description || [],
       },
     });
-
-    console.log(`Product ${product.id} stock updated to ${stock}`);
   } catch (error: any) {
     console.error("STOCK UPDATE ERROR:", error);
 
@@ -356,7 +343,7 @@ const deleteProduct = async (product: any) => {
 };
 
 // ----------------------------------------
-// LOAD
+// INITIAL LOAD
 // ----------------------------------------
 
 await loadProducts();

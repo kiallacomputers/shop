@@ -1,11 +1,15 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 py-8">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
+    >
       <div>
         <h1 class="text-3xl font-bold text-slate-800">Edit Product</h1>
 
-        <p class="text-gray-500 mt-1">Update product details and stock.</p>
+        <p class="text-gray-500 mt-1">
+          Update product details, pricing, stock and description.
+        </p>
       </div>
 
       <NuxtLink
@@ -29,7 +33,7 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Product Form -->
+    <!-- Form -->
     <form
       v-else
       @submit.prevent="updateProduct"
@@ -120,37 +124,34 @@
       <div>
         <label class="block font-semibold text-gray-700 mb-2"> Category </label>
 
-        <select
+        <input
           v-model="product.category"
-          class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select Category</option>
+          type="number"
+          min="1"
+          placeholder="Category ID"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
 
-          <option
-            v-for="category in categories"
-            :key="category.id"
-            :value="category.id"
-          >
-            {{ category.name }}
-          </option>
-        </select>
+        <p class="text-xs text-gray-500 mt-1">
+          Category ID currently stored in the products table.
+        </p>
       </div>
 
-      <!-- Description JSON -->
+      <!-- JSON Description -->
       <div>
         <div class="flex items-center justify-between mb-2">
           <label class="block font-semibold text-gray-700">
             Product Description
           </label>
 
-          <span class="text-xs text-gray-500"> JSON format </span>
+          <span class="text-xs text-gray-500"> JSON Array </span>
         </div>
 
         <textarea
           v-model="descriptionJson"
-          rows="20"
+          rows="25"
           spellcheck="false"
-          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         ></textarea>
 
         <p v-if="descriptionError" class="text-red-600 text-sm mt-2">
@@ -170,7 +171,7 @@
         <button
           type="submit"
           :disabled="saving"
-          class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           {{ saving ? "Saving..." : "Save Product" }}
         </button>
@@ -188,10 +189,6 @@
 </template>
 
 <script setup lang="ts">
-const descriptionJson = ref("");
-
-const descriptionError = ref("");
-
 // ----------------------------------------
 // ADMIN AUTH
 // ----------------------------------------
@@ -226,6 +223,8 @@ const errorMessage = ref("");
 
 const successMessage = ref("");
 
+const descriptionError = ref("");
+
 // ----------------------------------------
 // PRODUCT
 // ----------------------------------------
@@ -236,15 +235,15 @@ const product = ref<any>({
   price: 0,
   stock: 0,
   image: "",
-  category: "",
-  description: "",
+  category: null,
+  description: [],
 });
 
 // ----------------------------------------
-// CATEGORIES
+// JSON DESCRIPTION
 // ----------------------------------------
 
-const categories = ref<any[]>([]);
+const descriptionJson = ref("[]");
 
 // ----------------------------------------
 // LOAD PRODUCT
@@ -262,6 +261,11 @@ const loadProduct = async () => {
       ...product.value,
       ...data,
     };
+
+    // Convert JSON array
+    // into formatted text
+
+    descriptionJson.value = JSON.stringify(data.description || [], null, 2);
   } catch (error: any) {
     console.error("LOAD PRODUCT ERROR:", error);
 
@@ -269,20 +273,6 @@ const loadProduct = async () => {
       error?.data?.message || error?.message || "Unable to load product.";
   } finally {
     loading.value = false;
-  }
-};
-
-// ----------------------------------------
-// LOAD CATEGORIES
-// ----------------------------------------
-
-const loadCategories = async () => {
-  try {
-    const data = await adminFetch<any[]>("/api/admin/categories");
-
-    categories.value = data || [];
-  } catch (error) {
-    console.error("LOAD CATEGORIES ERROR:", error);
   }
 };
 
@@ -297,8 +287,42 @@ const updateProduct = async () => {
 
   successMessage.value = "";
 
+  descriptionError.value = "";
+
+  // ----------------------------------------
+  // PARSE DESCRIPTION
+  // ----------------------------------------
+
+  let description;
+
   try {
-    const updated = await adminFetch<any>(`/api/admin/products/${productId}`, {
+    description = JSON.parse(descriptionJson.value);
+  } catch (error) {
+    descriptionError.value = "The product description contains invalid JSON.";
+
+    saving.value = false;
+
+    return;
+  }
+
+  // ----------------------------------------
+  // MUST BE ARRAY
+  // ----------------------------------------
+
+  if (!Array.isArray(description)) {
+    descriptionError.value = "The product description must be a JSON array.";
+
+    saving.value = false;
+
+    return;
+  }
+
+  // ----------------------------------------
+  // UPDATE
+  // ----------------------------------------
+
+  try {
+    const result = await adminFetch<any>(`/api/admin/products/${productId}`, {
       method: "PUT",
 
       body: {
@@ -308,18 +332,30 @@ const updateProduct = async () => {
 
         stock: Number(product.value.stock),
 
-        image: product.value.image,
+        image: product.value.image || null,
 
-        category: product.value.category,
+        category: product.value.category
+          ? Number(product.value.category)
+          : null,
 
-        description: product.value.description,
+        description: description,
       },
     });
 
+    // ----------------------------------------
+    // UPDATE LOCAL DATA
+    // ----------------------------------------
+
     product.value = {
       ...product.value,
-      ...updated.product,
+      ...result.product,
     };
+
+    descriptionJson.value = JSON.stringify(
+      result.product.description || [],
+      null,
+      2,
+    );
 
     successMessage.value = "Product updated successfully.";
   } catch (error: any) {
@@ -333,8 +369,8 @@ const updateProduct = async () => {
 };
 
 // ----------------------------------------
-// LOAD DATA
+// LOAD
 // ----------------------------------------
 
-await Promise.all([loadProduct(), loadCategories()]);
+await loadProduct();
 </script>
