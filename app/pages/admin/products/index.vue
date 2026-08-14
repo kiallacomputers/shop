@@ -325,14 +325,22 @@ const getCategoryName = (categoryId: any) => {
 // ----------------------------------------
 
 const loadProducts = async () => {
+  console.log("🔥 LOAD PRODUCTS STARTED");
+
   try {
     const data = await adminFetch<any[]>("/api/admin/products");
 
-    console.log("ADMIN PRODUCTS:", data);
+    console.log("🔥 ADMIN PRODUCTS RESPONSE:");
+    console.log(data);
 
     products.value = data || [];
+
+    console.log("🔥 PRODUCTS STORED:", products.value);
   } catch (error: any) {
-    console.error("LOAD PRODUCTS ERROR:", error);
+    console.error("🔥 LOAD PRODUCTS ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.message || error?.message || "Unable to load products.";
 
     throw error;
   }
@@ -444,6 +452,8 @@ const load = async () => {
     loading.value = false;
   }
 };
+
+console.log("🔥 ADMIN PRODUCTS PAGE LOADING");
 
 await load();
 </script>
