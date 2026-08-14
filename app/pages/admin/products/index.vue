@@ -209,7 +209,7 @@
                 Category:
 
                 <span class="font-medium text-gray-700">
-                  {{ getCategoryName(product.category) || "Uncategorised" }}
+                  {{ getCategoryName(product.category_id) || "Uncategorised" }}
                 </span>
               </p>
 
