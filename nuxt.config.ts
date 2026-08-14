@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   ],
   supabase: {
     url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_SECRET_KEY,
+    key: process.env.SUPABASE_ANON_KEY,
     redirect: false,
   },
   pinia: {
