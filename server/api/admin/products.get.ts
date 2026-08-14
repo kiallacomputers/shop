@@ -19,7 +19,19 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(
+      `
+      id,
+      slug,
+      name,
+      category_id,
+      blurb,
+      price,
+      stock,
+      image,
+      description
+    `,
+    )
     .order("name", {
       ascending: true,
     });
@@ -32,6 +44,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: error.message || "Unable to load products",
     });
   }
+
+  console.log("🔥 PRODUCTS FROM SUPABASE:", data);
 
   return data || [];
 });
