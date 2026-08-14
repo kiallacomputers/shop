@@ -1,20 +1,41 @@
-export const useAdminFetch = async <T>(url: string, options: any = {}) => {
-  const supabase = useSupabaseClient();
+export const useAdminFetch = () => {
+  const user = useSupabaseUser();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const adminFetch = async (url: string, options: any = {}) => {
+    if (!user.value) {
+      throw new Error("Authentication required");
+    }
 
-  if (!session?.access_token) {
-    throw new Error("Authentication required");
-  }
+    const supabase = useSupabaseClient();
 
-  return await $fetch<T>(url, {
-    ...options,
+    // Get the current Supabase session
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
-    headers: {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
+    if (error) {
+      console.error("SESSION ERROR:", error);
+      throw error;
+    }
+
+    if (!session?.access_token) {
+      throw new Error("Authentication required");
+    }
+
+    console.log("🔥 ADMIN FETCH:", url);
+
+    return await $fetch(url, {
+      ...options,
+
+      headers: {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+  };
+
+  return {
+    adminFetch,
+  };
 };
