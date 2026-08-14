@@ -325,9 +325,17 @@ const getCategoryName = (categoryId: any) => {
 // ----------------------------------------
 
 const loadProducts = async () => {
-  const data = await adminFetch<any[]>("/api/admin/products");
+  try {
+    const data = await adminFetch<any[]>("/api/admin/products");
 
-  products.value = data || [];
+    console.log("ADMIN PRODUCTS:", data);
+
+    products.value = data || [];
+  } catch (error: any) {
+    console.error("LOAD PRODUCTS ERROR:", error);
+
+    throw error;
+  }
 };
 
 // ----------------------------------------
@@ -335,9 +343,17 @@ const loadProducts = async () => {
 // ----------------------------------------
 
 const loadCategories = async () => {
-  const data = await adminFetch<any[]>("/api/admin/categories");
+  try {
+    const data = await adminFetch<any[]>("/api/admin/categories");
 
-  categories.value = data || [];
+    console.log("ADMIN CATEGORIES:", data);
+
+    categories.value = data || [];
+  } catch (error: any) {
+    console.error("LOAD CATEGORIES ERROR:", error);
+
+    throw error;
+  }
 };
 
 // ----------------------------------------
