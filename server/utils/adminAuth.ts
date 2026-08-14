@@ -12,7 +12,7 @@ export async function requireAdmin(event: any) {
     });
   }
 
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace(/^Bearer\s+/i, "");
 
   if (!token) {
     throw createError({
@@ -20,6 +20,10 @@ export async function requireAdmin(event: any) {
       statusMessage: "Authentication required",
     });
   }
+
+  /*
+   * Check logged-in user
+   */
 
   const supabase = createClient(
     config.public.supabaseUrl,
@@ -32,7 +36,7 @@ export async function requireAdmin(event: any) {
   } = await supabase.auth.getUser(token);
 
   if (userError || !user) {
-    console.error("ADMIN AUTH ERROR:", userError);
+    console.error("AUTH ERROR:", userError);
 
     throw createError({
       statusCode: 401,
@@ -42,7 +46,10 @@ export async function requireAdmin(event: any) {
 
   console.log("Authenticated user:", user.email);
 
-  // Use the server secret key here.
+  /*
+   * Check admin_users table
+   */
+
   const adminSupabase = createClient(
     config.public.supabaseUrl,
     config.supabaseSecretKey,
