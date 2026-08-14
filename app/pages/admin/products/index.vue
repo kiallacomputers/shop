@@ -74,7 +74,6 @@
               <!-- PRODUCT -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
-                  <!-- First image from JSON array -->
                   <img
                     v-if="getFirstImage(product.image)"
                     :src="getFirstImage(product.image)"
@@ -100,8 +99,15 @@
               </td>
 
               <!-- CATEGORY -->
-              <td class="px-6 py-4 text-gray-600">
-                {{ product.category || "Uncategorised" }}
+              <td class="px-6 py-4">
+                <span
+                  v-if="getCategoryName(product.category)"
+                  class="inline-flex px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium"
+                >
+                  {{ getCategoryName(product.category) }}
+                </span>
+
+                <span v-else class="text-gray-400"> Uncategorised </span>
               </td>
 
               <!-- PRICE -->
@@ -201,7 +207,10 @@
 
               <p class="text-sm text-gray-500 mt-1">
                 Category:
-                {{ product.category || "Uncategorised" }}
+
+                <span class="font-medium text-gray-700">
+                  {{ getCategoryName(product.category) || "Uncategorised" }}
+                </span>
               </p>
 
               <p class="font-semibold mt-2">
@@ -249,6 +258,10 @@
 </template>
 
 <script setup lang="ts">
+// ----------------------------------------
+// ADMIN AUTH
+// ----------------------------------------
+
 definePageMeta({
   middleware: "admin",
 });
@@ -265,12 +278,14 @@ const { adminFetch } = useAdminFetch();
 
 const products = ref<any[]>([]);
 
+const categories = ref<any[]>([]);
+
 const loading = ref(true);
 
 const errorMessage = ref("");
 
 // ----------------------------------------
-// FIRST IMAGE
+// FIRST PRODUCT IMAGE
 // ----------------------------------------
 
 const getFirstImage = (images: any) => {
@@ -282,26 +297,39 @@ const getFirstImage = (images: any) => {
 };
 
 // ----------------------------------------
+// GET CATEGORY NAME
+// ----------------------------------------
+
+const getCategoryName = (categoryId: any) => {
+  if (categoryId === null || categoryId === undefined || categoryId === "") {
+    return "";
+  }
+
+  const category = categories.value.find(
+    (item) => Number(item.id) === Number(categoryId),
+  );
+
+  return category?.name || "";
+};
+
+// ----------------------------------------
 // LOAD PRODUCTS
 // ----------------------------------------
 
 const loadProducts = async () => {
-  loading.value = true;
+  const data = await adminFetch<any[]>("/api/admin/products");
 
-  errorMessage.value = "";
+  products.value = data || [];
+};
 
-  try {
-    const data = await adminFetch<any[]>("/api/admin/products");
+// ----------------------------------------
+// LOAD CATEGORIES
+// ----------------------------------------
 
-    products.value = data || [];
-  } catch (error: any) {
-    console.error("LOAD PRODUCTS ERROR:", error);
+const loadCategories = async () => {
+  const data = await adminFetch<any[]>("/api/admin/categories");
 
-    errorMessage.value =
-      error?.data?.message || error?.message || "Unable to load products.";
-  } finally {
-    loading.value = false;
-  }
+  categories.value = data || [];
 };
 
 // ----------------------------------------
@@ -324,9 +352,9 @@ const updateStock = async (product: any) => {
 
         stock: stock,
 
-        image: Array.isArray(product.image) ? product.image : [],
-
         category: product.category,
+
+        image: Array.isArray(product.image) ? product.image : [],
 
         description: Array.isArray(product.description)
           ? product.description
@@ -344,7 +372,7 @@ const updateStock = async (product: any) => {
 };
 
 // ----------------------------------------
-// DELETE
+// DELETE PRODUCT
 // ----------------------------------------
 
 const deleteProduct = async (product: any) => {
@@ -371,8 +399,27 @@ const deleteProduct = async (product: any) => {
 };
 
 // ----------------------------------------
-// LOAD
+// LOAD EVERYTHING
 // ----------------------------------------
 
-await loadProducts();
+const load = async () => {
+  loading.value = true;
+
+  errorMessage.value = "";
+
+  try {
+    await Promise.all([loadProducts(), loadCategories()]);
+  } catch (error: any) {
+    console.error("ADMIN PRODUCTS LOAD ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.message ||
+      error?.message ||
+      "Unable to load products or categories.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+await load();
 </script>
