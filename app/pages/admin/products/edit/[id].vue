@@ -1,95 +1,75 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ===================================== -->
-    <!-- HEADER -->
-    <!-- ===================================== -->
-
-    <div
-      class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
-    >
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
       <div>
         <h1 class="text-3xl font-bold text-slate-800">Edit Product</h1>
 
         <p class="text-gray-500 mt-1">
-          Update product information, stock, images and description.
+          Update product information, pricing, stock and images.
         </p>
       </div>
 
       <NuxtLink
         to="/admin/products"
-        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
       >
         ← Back to Products
       </NuxtLink>
     </div>
 
-    <!-- ===================================== -->
-    <!-- LOADING -->
-    <!-- ===================================== -->
-
-    <div v-if="loading" class="bg-white border rounded-xl p-10 text-center">
+    <!-- Loading -->
+    <div v-if="loading" class="bg-white rounded-lg shadow p-10 text-center">
       <p class="text-gray-500">Loading product...</p>
     </div>
 
-    <!-- ===================================== -->
-    <!-- ERROR -->
-    <!-- ===================================== -->
-
+    <!-- Error -->
     <div
       v-else-if="errorMessage"
-      class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-5 mb-6"
+      class="bg-red-100 border border-red-300 text-red-700 rounded-lg p-4 mb-6"
     >
       {{ errorMessage }}
     </div>
 
-    <!-- ===================================== -->
-    <!-- FORM -->
-    <!-- ===================================== -->
-
+    <!-- Product Form -->
     <form v-else @submit.prevent="saveProduct" class="space-y-8">
-      <!-- =================================== -->
-      <!-- PRODUCT INFORMATION -->
-      <!-- =================================== -->
-
-      <section class="bg-white border border-gray-200 rounded-xl p-6">
+      <!-- Basic Information -->
+      <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold mb-6">Product Information</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- NAME -->
-
+          <!-- Name -->
           <div class="md:col-span-2">
             <label class="block font-semibold mb-2"> Product Name </label>
 
             <input
-              v-model="product.name"
+              v-model="form.name"
               type="text"
-              required
               class="w-full border rounded-lg px-4 py-3"
+              required
             />
           </div>
 
-          <!-- SLUG -->
-
+          <!-- Slug -->
           <div>
             <label class="block font-semibold mb-2"> Slug </label>
 
             <input
-              v-model="product.slug"
+              v-model="form.slug"
               type="text"
               class="w-full border rounded-lg px-4 py-3"
             />
           </div>
 
-          <!-- CATEGORY -->
-
+          <!-- Category -->
           <div>
             <label class="block font-semibold mb-2"> Category </label>
 
             <select
-              v-model="product.category_id"
-              class="w-full border rounded-lg px-4 py-3 bg-white"
+              v-model="form.category_id"
+              class="w-full border rounded-lg px-4 py-3"
             >
-              <option :value="null">Uncategorised</option>
+              <option :value="null">Select Category</option>
 
               <option
                 v-for="category in categories"
@@ -101,35 +81,30 @@
             </select>
           </div>
 
-          <!-- BLURB -->
-
+          <!-- Blurb -->
           <div class="md:col-span-2">
             <label class="block font-semibold mb-2"> Short Description </label>
 
             <textarea
-              v-model="product.blurb"
+              v-model="form.blurb"
               rows="4"
               class="w-full border rounded-lg px-4 py-3"
             ></textarea>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- =================================== -->
-      <!-- PRICE / STOCK -->
-      <!-- =================================== -->
-
-      <section class="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-6">Price & Stock</h2>
+      <!-- Pricing & Stock -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-6">Pricing & Stock</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- PRICE -->
-
+          <!-- Price -->
           <div>
             <label class="block font-semibold mb-2"> Price </label>
 
             <input
-              v-model.number="product.price"
+              v-model.number="form.price"
               type="number"
               step="0.01"
               min="0"
@@ -137,13 +112,12 @@
             />
           </div>
 
-          <!-- OLD PRICE -->
-
+          <!-- Old Price -->
           <div>
             <label class="block font-semibold mb-2"> Old Price </label>
 
             <input
-              v-model.number="product.oldPrice"
+              v-model.number="form.oldPrice"
               type="number"
               step="0.01"
               min="0"
@@ -151,171 +125,301 @@
             />
           </div>
 
-          <!-- STOCK -->
-
+          <!-- Stock -->
           <div>
             <label class="block font-semibold mb-2"> Stock </label>
 
             <input
-              v-model.number="product.stock"
+              v-model.number="form.stock"
               type="number"
               min="0"
-              step="1"
               class="w-full border rounded-lg px-4 py-3"
             />
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- =================================== -->
-      <!-- IMAGES -->
-      <!-- =================================== -->
+      <!-- Product Images -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold">Product Images</h2>
 
-      <section class="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-6">Product Images</h2>
-
-        <!-- DEBUG INFORMATION -->
-
-        <div class="bg-gray-100 rounded-lg p-4 mb-6">
-          <p class="font-bold">Images returned from database:</p>
-
-          <pre class="text-xs mt-2 whitespace-pre-wrap break-all">{{
-            JSON.stringify(product.images, null, 2)
-          }}</pre>
-
-          <p class="font-bold mt-4">Images currently being edited:</p>
-
-          <pre class="text-xs mt-2 whitespace-pre-wrap break-all">{{
-            JSON.stringify(images, null, 2)
-          }}</pre>
-        </div>
-
-        <!-- IMAGE GRID -->
-
-        <div
-          v-if="images.length > 0"
-          class="grid grid-cols-2 md:grid-cols-4 gap-5"
-        >
-          <div
-            v-for="(image, index) in images"
-            :key="index"
-            class="border rounded-lg bg-gray-50 p-2 relative"
-          >
-            <img
-              :src="image"
-              :alt="product.name"
-              class="w-full h-40 object-contain"
-            />
-
-            <button
-              type="button"
-              @click="removeImage(index)"
-              class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-8 h-8"
-            >
-              ×
-            </button>
-
-            <p class="text-xs text-gray-500 mt-2 break-all">
-              {{ image }}
+            <p class="text-sm text-gray-500 mt-1">
+              Images are stored as a JSON array.
             </p>
           </div>
+
+          <button
+            type="button"
+            @click="addImage"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            + Add Image
+          </button>
         </div>
 
-        <!-- NO IMAGE -->
+        <!-- Images -->
+        <div v-if="form.images.length" class="space-y-4">
+          <div
+            v-for="(image, index) in form.images"
+            :key="index"
+            class="flex gap-4 items-center"
+          >
+            <!-- Preview -->
+            <div
+              class="w-24 h-24 border rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0"
+            >
+              <img
+                v-if="image"
+                :src="image"
+                class="w-full h-full object-contain"
+              />
 
-        <div
-          v-else
-          class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
-        >
-          <p class="text-gray-500">No images found.</p>
-        </div>
+              <span v-else class="text-xs text-gray-400"> No Image </span>
+            </div>
 
-        <!-- ADD IMAGE -->
-
-        <div class="mt-6">
-          <label class="block font-semibold mb-2"> Add Image URL </label>
-
-          <div class="flex flex-col md:flex-row gap-3">
+            <!-- URL -->
             <input
-              v-model="newImage"
+              v-model="form.images[index]"
               type="text"
               placeholder="/images/products/example.png"
               class="flex-1 border rounded-lg px-4 py-3"
             />
 
+            <!-- Remove -->
             <button
               type="button"
-              @click="addImage"
-              class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              @click="removeImage(index)"
+              class="px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg"
             >
-              Add Image
+              Remove
             </button>
           </div>
         </div>
-      </section>
 
-      <!-- =================================== -->
-      <!-- DESCRIPTION -->
-      <!-- =================================== -->
+        <!-- No Images -->
+        <div
+          v-else
+          class="border border-dashed rounded-lg p-8 text-center text-gray-400"
+        >
+          No product images.
 
-      <section class="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-4">Product Description</h2>
+          <button type="button" @click="addImage" class="text-blue-600 ml-2">
+            Add one
+          </button>
+        </div>
+      </div>
 
-        <p class="text-sm text-gray-500 mb-4">
-          Description is stored as a JSON array.
-        </p>
+      <!-- Product Options -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-6">Product Options</h2>
 
-        <textarea
-          v-model="descriptionJson"
-          rows="20"
-          class="w-full border rounded-lg px-4 py-3 font-mono text-sm"
-        ></textarea>
-
-        <p v-if="descriptionError" class="text-red-600 mt-2">
-          {{ descriptionError }}
-        </p>
-      </section>
-
-      <!-- =================================== -->
-      <!-- OPTIONS -->
-      <!-- =================================== -->
-
-      <section class="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 class="text-xl font-bold mb-6">Options</h2>
-
-        <div class="space-y-4">
-          <label class="flex gap-3 items-center">
-            <input v-model="product.featured" type="checkbox" class="w-5 h-5" />
-
-            <span> Featured Product </span>
-          </label>
-
-          <label class="flex gap-3 items-center">
-            <input
-              v-model="product.refurbished"
-              type="checkbox"
-              class="w-5 h-5"
-            />
-
-            <span> Refurbished Product </span>
-          </label>
-
-          <label class="flex gap-3 items-center">
-            <input v-model="product.active" type="checkbox" class="w-5 h-5" />
+        <div class="flex flex-wrap gap-8">
+          <label class="flex items-center gap-3">
+            <input v-model="form.active" type="checkbox" class="w-5 h-5" />
 
             <span> Active </span>
           </label>
+
+          <label class="flex items-center gap-3">
+            <input v-model="form.featured" type="checkbox" class="w-5 h-5" />
+
+            <span> Featured </span>
+          </label>
+
+          <label class="flex items-center gap-3">
+            <input v-model="form.refurbished" type="checkbox" class="w-5 h-5" />
+
+            <span> Refurbished </span>
+          </label>
         </div>
-      </section>
+      </div>
 
-      <!-- =================================== -->
-      <!-- BUTTONS -->
-      <!-- =================================== -->
+      <!-- Description JSON -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold">Product Description</h2>
 
-      <div class="flex flex-col sm:flex-row justify-end gap-3">
+            <p class="text-sm text-gray-500 mt-1">Stored as a JSON array.</p>
+          </div>
+
+          <button
+            type="button"
+            @click="addDescriptionBlock"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            + Add Section
+          </button>
+        </div>
+
+        <div v-if="form.description.length" class="space-y-6">
+          <div
+            v-for="(block, index) in form.description"
+            :key="index"
+            class="border rounded-lg p-5 bg-gray-50"
+          >
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold">Section {{ index + 1 }}</h3>
+
+              <button
+                type="button"
+                @click="removeDescriptionBlock(index)"
+                class="text-red-600 hover:text-red-800"
+              >
+                Remove
+              </button>
+            </div>
+
+            <!-- Type -->
+            <div class="mb-4">
+              <label class="block font-semibold mb-2"> Type </label>
+
+              <select
+                v-model="block.type"
+                class="w-full border rounded-lg px-4 py-3"
+              >
+                <option value="heading">Heading</option>
+
+                <option value="paragraph">Paragraph</option>
+
+                <option value="quote">Quote</option>
+
+                <option value="warning">Warning</option>
+
+                <option value="list">List</option>
+
+                <option value="table">Table</option>
+              </select>
+            </div>
+
+            <!-- Text -->
+            <div
+              v-if="
+                block.type === 'heading' ||
+                block.type === 'paragraph' ||
+                block.type === 'quote' ||
+                block.type === 'warning'
+              "
+            >
+              <label class="block font-semibold mb-2"> Text </label>
+
+              <textarea
+                v-model="block.text"
+                rows="4"
+                class="w-full border rounded-lg px-4 py-3"
+              ></textarea>
+            </div>
+
+            <!-- List -->
+            <div v-if="block.type === 'list'">
+              <label class="block font-semibold mb-2"> List Items </label>
+
+              <div
+                v-for="(item, itemIndex) in block.items || []"
+                :key="itemIndex"
+                class="flex gap-2 mb-2"
+              >
+                <input
+                  v-model="block.items[itemIndex]"
+                  type="text"
+                  class="flex-1 border rounded-lg px-4 py-2"
+                />
+
+                <button
+                  type="button"
+                  @click="block.items.splice(itemIndex, 1)"
+                  class="text-red-600 px-3"
+                >
+                  ×
+                </button>
+              </div>
+
+              <button
+                type="button"
+                @click="
+                  block.items = block.items || [];
+                  block.items.push('');
+                "
+                class="text-blue-600 text-sm"
+              >
+                + Add Item
+              </button>
+            </div>
+
+            <!-- Table -->
+            <div v-if="block.type === 'table'">
+              <div class="mb-4">
+                <label class="block font-semibold mb-2"> Headers </label>
+
+                <div class="grid grid-cols-2 gap-2">
+                  <input
+                    v-for="(header, headerIndex) in block.headers || []"
+                    :key="headerIndex"
+                    v-model="block.headers[headerIndex]"
+                    type="text"
+                    class="border rounded-lg px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <label class="block font-semibold mb-2"> Rows </label>
+
+              <div
+                v-for="(row, rowIndex) in block.rows || []"
+                :key="rowIndex"
+                class="flex gap-2 mb-2"
+              >
+                <input
+                  v-for="(cell, cellIndex) in row"
+                  :key="cellIndex"
+                  v-model="row[cellIndex]"
+                  type="text"
+                  class="flex-1 border rounded-lg px-3 py-2"
+                />
+
+                <button
+                  type="button"
+                  @click="block.rows.splice(rowIndex, 1)"
+                  class="text-red-600 px-3"
+                >
+                  ×
+                </button>
+              </div>
+
+              <button
+                type="button"
+                @click="addTableRow(block)"
+                class="text-blue-600 text-sm"
+              >
+                + Add Row
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="border border-dashed rounded-lg p-8 text-center text-gray-400"
+        >
+          No description sections.
+
+          <button
+            type="button"
+            @click="addDescriptionBlock"
+            class="text-blue-600 ml-2"
+          >
+            Add one
+          </button>
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div class="flex items-center justify-end gap-4">
         <NuxtLink
           to="/admin/products"
-          class="px-6 py-3 border rounded-lg text-center hover:bg-gray-50"
+          class="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg"
         >
           Cancel
         </NuxtLink>
@@ -323,369 +427,306 @@
         <button
           type="submit"
           :disabled="saving"
-          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+          class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg"
         >
           {{ saving ? "Saving..." : "Save Product" }}
         </button>
+      </div>
+
+      <!-- Save Message -->
+      <div
+        v-if="successMessage"
+        class="bg-green-100 border border-green-300 text-green-700 rounded-lg p-4"
+      >
+        {{ successMessage }}
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-/*
- * ========================================
- * PAGE
- * ========================================
- */
-
 definePageMeta({
-  layout: "default",
+  middleware: "admin",
 });
 
-/*
- * ========================================
- * ROUTE
- * ========================================
- */
+console.log("🔥🔥🔥 EDIT PRODUCT PAGE LOADING");
 
 const route = useRoute();
 
-/*
- * ========================================
- * STATE
- * ========================================
- */
+const { adminFetch } = useAdminFetch();
+
+// --------------------------------------------------
+// STATE
+// --------------------------------------------------
 
 const loading = ref(true);
-
 const saving = ref(false);
 
 const errorMessage = ref("");
-
-const descriptionError = ref("");
-
-const newImage = ref("");
-
-/*
- * ========================================
- * PRODUCT
- * ========================================
- */
-
-const product = ref<any>({
-  id: null,
-  name: "",
-  slug: "",
-  blurb: "",
-  category_id: null,
-  price: 0,
-  oldPrice: null,
-  stock: 0,
-
-  /*
-   * JSON ARRAY
-   */
-  images: [],
-
-  /*
-   * JSON ARRAY
-   */
-  description: [],
-
-  featured: false,
-  refurbished: null,
-  active: true,
-});
-
-/*
- * ========================================
- * IMAGES
- * ========================================
- */
-
-const images = ref<string[]>([]);
-
-/*
- * ========================================
- * CATEGORIES
- * ========================================
- */
+const successMessage = ref("");
 
 const categories = ref<any[]>([]);
 
-/*
- * ========================================
- * DESCRIPTION
- * ========================================
- */
+// --------------------------------------------------
+// FORM
+// --------------------------------------------------
 
-const descriptionJson = ref("[]");
+const form = reactive<any>({
+  id: null,
 
-/*
- * ========================================
- * LOAD PRODUCT
- * ========================================
- */
+  name: "",
+
+  slug: "",
+
+  category_id: null,
+
+  blurb: "",
+
+  price: 0,
+
+  oldPrice: null,
+
+  stock: 0,
+
+  featured: false,
+
+  refurbished: false,
+
+  active: true,
+
+  images: [],
+
+  description: [],
+});
+
+// --------------------------------------------------
+// PRODUCT ID
+// --------------------------------------------------
+
+const productId = computed(() => {
+  return route.params.id;
+});
+
+// --------------------------------------------------
+// LOAD PRODUCT
+// --------------------------------------------------
 
 const loadProduct = async () => {
-  loading.value = true;
-
-  errorMessage.value = "";
+  console.log("🔥🔥🔥 LOAD PRODUCT", productId.value);
 
   try {
-    console.log("🔥🔥🔥 LOADING PRODUCT", route.params.id);
+    const response = await adminFetch(`/api/admin/products/${productId.value}`);
 
-    const data: any = await $fetch(`/api/admin/products/${route.params.id}`, {
-      credentials: "include",
-    });
+    console.log("🔥🔥🔥 PRODUCT RESPONSE:", response);
 
-    console.log("🔥🔥🔥 FULL PRODUCT RESPONSE:", data);
-
-    console.log("🔥 PRODUCT IMAGES:", data?.images);
-
-    console.log("🔥 IMAGE TYPE:", typeof data?.images);
-
-    console.log("🔥 IS ARRAY:", Array.isArray(data?.images));
-
-    /*
-     * Store product
-     */
-
-    product.value = {
-      ...data,
-    };
-
-    /*
-     * ------------------------------------
-     * IMAGES
-     * ------------------------------------
-     *
-     * This is the important part.
-     */
-
-    if (Array.isArray(data?.images)) {
-      images.value = [...data.images];
-    } else {
-      images.value = [];
+    if (!response) {
+      throw new Error("Product not found");
     }
 
-    /*
-     * Force product.images
-     * to use the same array.
-     */
+    // ---------------------------------------------
+    // BASIC FIELDS
+    // ---------------------------------------------
 
-    product.value.images = [...images.value];
+    form.id = response.id;
 
-    console.log("🔥🔥🔥 IMAGES REF:", images.value);
+    form.name = response.name || "";
 
-    /*
-     * ------------------------------------
-     * DESCRIPTION
-     * ------------------------------------
-     */
+    form.slug = response.slug || "";
 
-    if (Array.isArray(data?.description)) {
-      descriptionJson.value = JSON.stringify(data.description, null, 2);
+    form.category_id = response.category_id ?? null;
+
+    form.blurb = response.blurb || "";
+
+    form.price = Number(response.price) || 0;
+
+    form.oldPrice =
+      response.oldPrice !== null && response.oldPrice !== undefined
+        ? Number(response.oldPrice)
+        : null;
+
+    form.stock = Number(response.stock) || 0;
+
+    form.featured = response.featured === true;
+
+    form.refurbished = response.refurbished === true;
+
+    form.active = response.active !== false;
+
+    // ---------------------------------------------
+    // IMAGES
+    // ---------------------------------------------
+
+    console.log("🔥 PRODUCT IMAGES FROM DATABASE:", response.images);
+
+    if (Array.isArray(response.images)) {
+      form.images = [...response.images];
     } else {
-      descriptionJson.value = "[]";
+      form.images = [];
     }
+
+    console.log("🔥 IMAGES STORED IN FORM:", form.images);
+
+    // ---------------------------------------------
+    // DESCRIPTION
+    // ---------------------------------------------
+
+    console.log("🔥 PRODUCT DESCRIPTION:", response.description);
+
+    if (Array.isArray(response.description)) {
+      form.description = JSON.parse(JSON.stringify(response.description));
+    } else {
+      form.description = [];
+    }
+
+    console.log("🔥 DESCRIPTION STORED:", form.description);
   } catch (error: any) {
     console.error("🔥🔥🔥 LOAD PRODUCT ERROR:", error);
 
     errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.data?.message ||
-      error?.message ||
-      "Unable to load product.";
+      error?.data?.statusMessage || error?.message || "Unable to load product";
   } finally {
     loading.value = false;
   }
 };
 
-/*
- * ========================================
- * LOAD CATEGORIES
- * ========================================
- */
+// --------------------------------------------------
+// LOAD CATEGORIES
+// --------------------------------------------------
 
 const loadCategories = async () => {
+  console.log("🔥🔥🔥 LOAD CATEGORIES");
+
   try {
-    console.log("🔥 LOADING CATEGORIES");
+    const response = await adminFetch("/api/admin/categories");
 
-    const data: any[] = await $fetch("/api/admin/categories", {
-      credentials: "include",
-    });
+    console.log("🔥 CATEGORIES:", response);
 
-    console.log("🔥 CATEGORIES:", data);
-
-    categories.value = Array.isArray(data) ? data : [];
-  } catch (error: any) {
-    console.error("🔥 CATEGORY ERROR:", error);
+    categories.value = response || [];
+  } catch (error) {
+    console.error("🔥 CATEGORY LOAD ERROR:", error);
   }
 };
 
-/*
- * ========================================
- * ADD IMAGE
- * ========================================
- */
+// --------------------------------------------------
+// ADD IMAGE
+// --------------------------------------------------
 
 const addImage = () => {
-  const image = newImage.value.trim();
-
-  if (!image) {
-    return;
-  }
-
-  if (!images.value.includes(image)) {
-    images.value.push(image);
-  }
-
-  /*
-   * Keep product.images
-   * synchronised.
-   */
-
-  product.value.images = [...images.value];
-
-  newImage.value = "";
+  form.images.push("");
 };
 
-/*
- * ========================================
- * REMOVE IMAGE
- * ========================================
- */
+// --------------------------------------------------
+// REMOVE IMAGE
+// --------------------------------------------------
 
 const removeImage = (index: number) => {
-  images.value.splice(index, 1);
-
-  /*
-   * Keep product.images
-   * synchronised.
-   */
-
-  product.value.images = [...images.value];
+  form.images.splice(index, 1);
 };
 
-/*
- * ========================================
- * SAVE
- * ========================================
- */
+// --------------------------------------------------
+// ADD DESCRIPTION BLOCK
+// --------------------------------------------------
+
+const addDescriptionBlock = () => {
+  form.description.push({
+    type: "paragraph",
+
+    text: "",
+  });
+};
+
+// --------------------------------------------------
+// REMOVE DESCRIPTION BLOCK
+// --------------------------------------------------
+
+const removeDescriptionBlock = (index: number) => {
+  form.description.splice(index, 1);
+};
+
+// --------------------------------------------------
+// ADD TABLE ROW
+// --------------------------------------------------
+
+const addTableRow = (block: any) => {
+  if (!block.rows) {
+    block.rows = [];
+  }
+
+  const columnCount = block.headers?.length || 2;
+
+  block.rows.push(Array(columnCount).fill(""));
+};
+
+// --------------------------------------------------
+// SAVE PRODUCT
+// --------------------------------------------------
 
 const saveProduct = async () => {
+  console.log("🔥🔥🔥 SAVE PRODUCT");
+
   saving.value = true;
 
   errorMessage.value = "";
-
-  descriptionError.value = "";
-
-  /*
-   * Parse description
-   */
-
-  let description: any[];
+  successMessage.value = "";
 
   try {
-    description = JSON.parse(descriptionJson.value);
+    const payload = {
+      name: form.name,
 
-    if (!Array.isArray(description)) {
-      throw new Error("Description must be a JSON array.");
-    }
+      slug: form.slug,
+
+      category_id: form.category_id,
+
+      blurb: form.blurb,
+
+      price: form.price,
+
+      oldPrice: form.oldPrice,
+
+      stock: form.stock,
+
+      featured: form.featured,
+
+      refurbished: form.refurbished,
+
+      active: form.active,
+
+      images: form.images,
+
+      description: form.description,
+    };
+
+    console.log("🔥 UPDATE PAYLOAD:", payload);
+
+    const response = await adminFetch(
+      `/api/admin/products/${productId.value}`,
+      {
+        method: "PUT",
+
+        body: payload,
+      },
+    );
+
+    console.log("🔥 UPDATE RESPONSE:", response);
+
+    successMessage.value = "Product updated successfully.";
   } catch (error: any) {
-    descriptionError.value = error?.message || "Invalid description JSON.";
-
-    saving.value = false;
-
-    return;
-  }
-
-  /*
-   * Make sure images
-   * is an array.
-   */
-
-  const productImages = Array.isArray(images.value) ? [...images.value] : [];
-
-  /*
-   * Request body
-   */
-
-  const body = {
-    name: product.value.name?.trim() || "",
-
-    slug: product.value.slug?.trim() || "",
-
-    blurb: product.value.blurb?.trim() || "",
-
-    category_id:
-      product.value.category_id === null || product.value.category_id === ""
-        ? null
-        : Number(product.value.category_id),
-
-    price: Number(product.value.price) || 0,
-
-    oldPrice:
-      product.value.oldPrice === null || product.value.oldPrice === ""
-        ? null
-        : Number(product.value.oldPrice),
-
-    stock: Math.max(0, Number(product.value.stock) || 0),
-
-    /*
-     * JSON ARRAY
-     */
-    images: productImages,
-
-    /*
-     * JSON ARRAY
-     */
-    description,
-
-    featured: Boolean(product.value.featured),
-
-    refurbished:
-      product.value.refurbished === null
-        ? null
-        : Boolean(product.value.refurbished),
-
-    active: Boolean(product.value.active),
-  };
-
-  console.log("🔥🔥🔥 SAVING PRODUCT:", body);
-
-  try {
-    const result: any = await $fetch(`/api/admin/products/${route.params.id}`, {
-      method: "PUT",
-
-      credentials: "include",
-
-      body,
-    });
-
-    console.log("🔥🔥🔥 SAVE RESULT:", result);
-
-    await navigateTo("/admin/products");
-  } catch (error: any) {
-    console.error("🔥🔥🔥 SAVE ERROR:", error);
+    console.error("🔥🔥🔥 SAVE PRODUCT ERROR:", error);
 
     errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.data?.message ||
-      error?.message ||
-      "Unable to save product.";
+      error?.data?.statusMessage || error?.message || "Unable to save product";
   } finally {
     saving.value = false;
   }
 };
 
-/*
- * ========================================
- * LOAD
- * ========================================
- */
+// --------------------------------------------------
+// LOAD
+// --------------------------------------------------
 
-await Promise.all([loadProduct(), loadCategories()]);
+onMounted(async () => {
+  console.log("🔥🔥🔥 EDIT PRODUCT MOUNTED");
+
+  await Promise.all([loadProduct(), loadCategories()]);
+});
 </script>

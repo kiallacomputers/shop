@@ -109,7 +109,7 @@
               <!-- Actions -->
               <td class="p-4 text-right">
                 <NuxtLink
-                  :to="`/admin/products/${product.id}`"
+                  :to="`/admin/products/edit/${product.id}`"
                   class="text-blue-600 hover:text-blue-800 font-semibold"
                 >
                   Edit
