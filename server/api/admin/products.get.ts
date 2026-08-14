@@ -19,33 +19,23 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("products")
-    .select(
-      `
-      id,
-      slug,
-      name,
-      category_id,
-      blurb,
-      price,
-      stock,
-      image,
-      description
-    `,
-    )
+    .select("*")
     .order("name", {
       ascending: true,
     });
 
-  if (error) {
-    console.error("ADMIN PRODUCTS ERROR:", error);
+  console.log("🔥 ADMIN PRODUCTS SUPABASE RESULT:");
+  console.log(JSON.stringify(data, null, 2));
 
+  console.log("🔥 ADMIN PRODUCTS SUPABASE ERROR:");
+  console.log(error);
+
+  if (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: error.message || "Unable to load products",
+      statusMessage: error.message,
     });
   }
-
-  console.log("🔥 PRODUCTS FROM SUPABASE:", data);
 
   return data || [];
 });
