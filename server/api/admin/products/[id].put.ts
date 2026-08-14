@@ -3,7 +3,7 @@ import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   // ----------------------------------------
-  // ADMIN
+  // ADMIN AUTH
   // ----------------------------------------
 
   await requireAdmin(event);
@@ -22,13 +22,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // BODY
+  // REQUEST BODY
   // ----------------------------------------
 
   const body = await readBody(event);
 
   // ----------------------------------------
-  // VALIDATE NAME
+  // NAME
   // ----------------------------------------
 
   if (!body.name || !body.name.trim()) {
@@ -65,7 +65,18 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // DESCRIPTION
+  // IMAGE JSON ARRAY
+  // ----------------------------------------
+
+  if (!Array.isArray(body.image)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Image must be a JSON array",
+    });
+  }
+
+  // ----------------------------------------
+  // DESCRIPTION JSON ARRAY
   // ----------------------------------------
 
   if (!Array.isArray(body.description)) {
@@ -105,9 +116,9 @@ export default defineEventHandler(async (event) => {
 
       stock: Math.floor(stock),
 
-      image: body.image || null,
-
       category: body.category ? Number(body.category) : null,
+
+      image: body.image,
 
       description: body.description,
     })
@@ -116,7 +127,7 @@ export default defineEventHandler(async (event) => {
     .single();
 
   // ----------------------------------------
-  // ERROR
+  // SUPABASE ERROR
   // ----------------------------------------
 
   if (error) {
@@ -128,11 +139,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
-  // SUCCESS
-  // ----------------------------------------
-
   console.log(`ADMIN PRODUCT UPDATED: ${productId}`);
+
+  // ----------------------------------------
+  // RETURN
+  // ----------------------------------------
 
   return {
     success: true,

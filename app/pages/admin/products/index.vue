@@ -34,7 +34,7 @@
 
     <!-- Products -->
     <div v-else class="bg-white rounded-lg shadow overflow-hidden">
-      <!-- Desktop -->
+      <!-- DESKTOP -->
       <div class="hidden md:block overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50 border-b">
@@ -71,19 +71,20 @@
               :key="product.id"
               class="hover:bg-gray-50"
             >
-              <!-- Product -->
+              <!-- PRODUCT -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-4">
+                  <!-- First image from JSON array -->
                   <img
-                    v-if="product.image"
-                    :src="product.image"
+                    v-if="getFirstImage(product.image)"
+                    :src="getFirstImage(product.image)"
                     :alt="product.name"
                     class="w-14 h-14 object-contain rounded border bg-white"
                   />
 
                   <div
                     v-else
-                    class="w-14 h-14 flex items-center justify-center bg-gray-100 rounded border text-gray-400"
+                    class="w-14 h-14 flex items-center justify-center bg-gray-100 rounded border text-gray-400 text-xs"
                   >
                     No Image
                   </div>
@@ -98,17 +99,17 @@
                 </div>
               </td>
 
-              <!-- Category -->
+              <!-- CATEGORY -->
               <td class="px-6 py-4 text-gray-600">
                 {{ product.category || "Uncategorised" }}
               </td>
 
-              <!-- Price -->
+              <!-- PRICE -->
               <td class="px-6 py-4 font-semibold">
                 ${{ Number(product.price || 0).toFixed(2) }}
               </td>
 
-              <!-- Stock -->
+              <!-- STOCK -->
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
                   <input
@@ -135,7 +136,7 @@
                 </div>
               </td>
 
-              <!-- Status -->
+              <!-- STATUS -->
               <td class="px-6 py-4">
                 <span
                   v-if="product.stock > 0"
@@ -152,7 +153,7 @@
                 </span>
               </td>
 
-              <!-- Actions -->
+              <!-- ACTIONS -->
               <td class="px-6 py-4">
                 <div class="flex justify-end gap-2">
                   <NuxtLink
@@ -175,13 +176,13 @@
         </table>
       </div>
 
-      <!-- Mobile -->
+      <!-- MOBILE -->
       <div class="md:hidden divide-y">
         <div v-for="product in products" :key="product.id" class="p-5">
           <div class="flex gap-4">
             <img
-              v-if="product.image"
-              :src="product.image"
+              v-if="getFirstImage(product.image)"
+              :src="getFirstImage(product.image)"
               :alt="product.name"
               class="w-20 h-20 object-contain rounded border"
             />
@@ -199,7 +200,8 @@
               </h2>
 
               <p class="text-sm text-gray-500 mt-1">
-                Category: {{ product.category || "Uncategorised" }}
+                Category:
+                {{ product.category || "Uncategorised" }}
               </p>
 
               <p class="font-semibold mt-2">
@@ -238,8 +240,7 @@
         </div>
       </div>
 
-      <!-- No products -->
-
+      <!-- NO PRODUCTS -->
       <div v-if="products.length === 0" class="p-10 text-center text-gray-500">
         No products found.
       </div>
@@ -252,13 +253,33 @@ definePageMeta({
   middleware: "admin",
 });
 
+// ----------------------------------------
+// ADMIN FETCH
+// ----------------------------------------
+
 const { adminFetch } = useAdminFetch();
+
+// ----------------------------------------
+// STATE
+// ----------------------------------------
 
 const products = ref<any[]>([]);
 
 const loading = ref(true);
 
 const errorMessage = ref("");
+
+// ----------------------------------------
+// FIRST IMAGE
+// ----------------------------------------
+
+const getFirstImage = (images: any) => {
+  if (!Array.isArray(images)) {
+    return "";
+  }
+
+  return images[0] || "";
+};
 
 // ----------------------------------------
 // LOAD PRODUCTS
@@ -298,11 +319,18 @@ const updateStock = async (product: any) => {
 
       body: {
         name: product.name,
+
         price: Number(product.price),
+
         stock: stock,
-        image: product.image,
+
+        image: Array.isArray(product.image) ? product.image : [],
+
         category: product.category,
-        description: product.description || [],
+
+        description: Array.isArray(product.description)
+          ? product.description
+          : [],
       },
     });
   } catch (error: any) {
@@ -316,7 +344,7 @@ const updateStock = async (product: any) => {
 };
 
 // ----------------------------------------
-// DELETE PRODUCT
+// DELETE
 // ----------------------------------------
 
 const deleteProduct = async (product: any) => {
@@ -343,7 +371,7 @@ const deleteProduct = async (product: any) => {
 };
 
 // ----------------------------------------
-// INITIAL LOAD
+// LOAD
 // ----------------------------------------
 
 await loadProducts();

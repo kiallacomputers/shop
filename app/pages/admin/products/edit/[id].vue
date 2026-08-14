@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 py-8">
-    <!-- Header -->
+    <!-- HEADER -->
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
     >
@@ -8,7 +8,7 @@
         <h1 class="text-3xl font-bold text-slate-800">Edit Product</h1>
 
         <p class="text-gray-500 mt-1">
-          Update product details, pricing, stock and description.
+          Update product details, images, stock and description.
         </p>
       </div>
 
@@ -20,12 +20,12 @@
       </NuxtLink>
     </div>
 
-    <!-- Loading -->
+    <!-- LOADING -->
     <div v-if="loading" class="bg-white rounded-lg shadow p-8 text-center">
       Loading product...
     </div>
 
-    <!-- Error -->
+    <!-- ERROR -->
     <div
       v-else-if="errorMessage"
       class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6"
@@ -33,13 +33,13 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Form -->
+    <!-- FORM -->
     <form
       v-else
       @submit.prevent="updateProduct"
       class="bg-white rounded-lg shadow p-6 space-y-6"
     >
-      <!-- Product Name -->
+      <!-- NAME -->
       <div>
         <label class="block font-semibold text-gray-700 mb-2">
           Product Name
@@ -53,7 +53,7 @@
         />
       </div>
 
-      <!-- Price -->
+      <!-- PRICE -->
       <div>
         <label class="block font-semibold text-gray-700 mb-2"> Price </label>
 
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <!-- Stock -->
+      <!-- STOCK -->
       <div>
         <label class="block font-semibold text-gray-700 mb-2"> Stock </label>
 
@@ -89,38 +89,7 @@
         </p>
       </div>
 
-      <!-- Image -->
-      <div>
-        <label class="block font-semibold text-gray-700 mb-2">
-          Product Image
-        </label>
-
-        <input
-          v-model="product.image"
-          type="text"
-          placeholder="/images/products/product.png"
-          class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <!-- Image Preview -->
-      <div v-if="product.image">
-        <label class="block font-semibold text-gray-700 mb-2">
-          Image Preview
-        </label>
-
-        <div
-          class="w-48 h-48 border rounded-lg flex items-center justify-center bg-gray-50 p-4"
-        >
-          <img
-            :src="product.image"
-            :alt="product.name"
-            class="max-w-full max-h-full object-contain"
-          />
-        </div>
-      </div>
-
-      <!-- Category -->
+      <!-- CATEGORY -->
       <div>
         <label class="block font-semibold text-gray-700 mb-2"> Category </label>
 
@@ -133,11 +102,64 @@
         />
 
         <p class="text-xs text-gray-500 mt-1">
-          Category ID currently stored in the products table.
+          Category ID stored in the products table.
         </p>
       </div>
 
-      <!-- JSON Description -->
+      <!-- IMAGES JSON -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block font-semibold text-gray-700">
+            Product Images
+          </label>
+
+          <span class="text-xs text-gray-500"> JSON Array </span>
+        </div>
+
+        <textarea
+          v-model="imageJson"
+          rows="8"
+          spellcheck="false"
+          class="w-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder='[
+  "/images/products/product.png"
+]'
+        ></textarea>
+
+        <p v-if="imageError" class="text-red-600 text-sm mt-2">
+          {{ imageError }}
+        </p>
+      </div>
+
+      <!-- IMAGE PREVIEW -->
+      <div>
+        <label class="block font-semibold text-gray-700 mb-3">
+          Image Preview
+        </label>
+
+        <div
+          v-if="imagePreview.length"
+          class="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          <div
+            v-for="(image, index) in imagePreview"
+            :key="index"
+            class="border rounded-lg bg-gray-50 p-3"
+          >
+            <img
+              :src="image"
+              :alt="`${product.name} image ${index + 1}`"
+              class="w-full h-32 object-contain"
+            />
+          </div>
+        </div>
+
+        <div v-else class="border rounded-lg p-8 text-center text-gray-400">
+          No images
+        </div>
+      </div>
+
+      <!-- DESCRIPTION JSON -->
       <div>
         <div class="flex items-center justify-between mb-2">
           <label class="block font-semibold text-gray-700">
@@ -159,7 +181,7 @@
         </p>
       </div>
 
-      <!-- Buttons -->
+      <!-- BUTTONS -->
       <div class="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
         <NuxtLink
           to="/admin/products"
@@ -177,7 +199,7 @@
         </button>
       </div>
 
-      <!-- Success -->
+      <!-- SUCCESS -->
       <div
         v-if="successMessage"
         class="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4"
@@ -198,7 +220,7 @@ definePageMeta({
 });
 
 // ----------------------------------------
-// ADMIN API
+// ADMIN FETCH
 // ----------------------------------------
 
 const { adminFetch } = useAdminFetch();
@@ -225,6 +247,8 @@ const successMessage = ref("");
 
 const descriptionError = ref("");
 
+const imageError = ref("");
+
 // ----------------------------------------
 // PRODUCT
 // ----------------------------------------
@@ -234,16 +258,38 @@ const product = ref<any>({
   name: "",
   price: 0,
   stock: 0,
-  image: "",
   category: null,
+  image: [],
   description: [],
 });
 
 // ----------------------------------------
-// JSON DESCRIPTION
+// JSON EDITORS
 // ----------------------------------------
 
+const imageJson = ref("[]");
+
 const descriptionJson = ref("[]");
+
+// ----------------------------------------
+// IMAGE PREVIEW
+// ----------------------------------------
+
+const imagePreview = computed(() => {
+  try {
+    const images = JSON.parse(imageJson.value);
+
+    if (!Array.isArray(images)) {
+      return [];
+    }
+
+    return images.filter(
+      (image: any) => typeof image === "string" && image.length > 0,
+    );
+  } catch {
+    return [];
+  }
+});
 
 // ----------------------------------------
 // LOAD PRODUCT
@@ -259,13 +305,25 @@ const loadProduct = async () => {
 
     product.value = {
       ...product.value,
+
       ...data,
     };
 
-    // Convert JSON array
-    // into formatted text
+    // IMAGE JSON
 
-    descriptionJson.value = JSON.stringify(data.description || [], null, 2);
+    imageJson.value = JSON.stringify(
+      Array.isArray(data.image) ? data.image : [],
+      null,
+      2,
+    );
+
+    // DESCRIPTION JSON
+
+    descriptionJson.value = JSON.stringify(
+      Array.isArray(data.description) ? data.description : [],
+      null,
+      2,
+    );
   } catch (error: any) {
     console.error("LOAD PRODUCT ERROR:", error);
 
@@ -287,7 +345,37 @@ const updateProduct = async () => {
 
   successMessage.value = "";
 
+  imageError.value = "";
+
   descriptionError.value = "";
+
+  // ----------------------------------------
+  // PARSE IMAGES
+  // ----------------------------------------
+
+  let images;
+
+  try {
+    images = JSON.parse(imageJson.value);
+  } catch {
+    imageError.value = "Product images contain invalid JSON.";
+
+    saving.value = false;
+
+    return;
+  }
+
+  // ----------------------------------------
+  // CHECK IMAGE ARRAY
+  // ----------------------------------------
+
+  if (!Array.isArray(images)) {
+    imageError.value = "Product images must be a JSON array.";
+
+    saving.value = false;
+
+    return;
+  }
 
   // ----------------------------------------
   // PARSE DESCRIPTION
@@ -297,8 +385,8 @@ const updateProduct = async () => {
 
   try {
     description = JSON.parse(descriptionJson.value);
-  } catch (error) {
-    descriptionError.value = "The product description contains invalid JSON.";
+  } catch {
+    descriptionError.value = "Product description contains invalid JSON.";
 
     saving.value = false;
 
@@ -306,11 +394,11 @@ const updateProduct = async () => {
   }
 
   // ----------------------------------------
-  // MUST BE ARRAY
+  // CHECK DESCRIPTION ARRAY
   // ----------------------------------------
 
   if (!Array.isArray(description)) {
-    descriptionError.value = "The product description must be a JSON array.";
+    descriptionError.value = "Product description must be a JSON array.";
 
     saving.value = false;
 
@@ -318,7 +406,7 @@ const updateProduct = async () => {
   }
 
   // ----------------------------------------
-  // UPDATE
+  // UPDATE API
   // ----------------------------------------
 
   try {
@@ -332,24 +420,35 @@ const updateProduct = async () => {
 
         stock: Number(product.value.stock),
 
-        image: product.value.image || null,
-
         category: product.value.category
           ? Number(product.value.category)
           : null,
+
+        image: images,
 
         description: description,
       },
     });
 
     // ----------------------------------------
-    // UPDATE LOCAL DATA
+    // UPDATE LOCAL PRODUCT
     // ----------------------------------------
 
     product.value = {
       ...product.value,
+
       ...result.product,
     };
+
+    // ----------------------------------------
+    // REFORMAT IMAGE JSON
+    // ----------------------------------------
+
+    imageJson.value = JSON.stringify(result.product.image || [], null, 2);
+
+    // ----------------------------------------
+    // REFORMAT DESCRIPTION JSON
+    // ----------------------------------------
 
     descriptionJson.value = JSON.stringify(
       result.product.description || [],

@@ -3,7 +3,7 @@ import { requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   // ----------------------------------------
-  // ADMIN
+  // ADMIN AUTH
   // ----------------------------------------
 
   await requireAdmin(event);
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // ----------------------------------------
-  // FIND PRODUCT
+  // CHECK PRODUCT
   // ----------------------------------------
 
   const { data: product, error: findError } = await supabase
@@ -85,10 +85,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: deleteError.message || "Unable to delete product",
     });
   }
-
-  // ----------------------------------------
-  // SUCCESS
-  // ----------------------------------------
 
   console.log(`ADMIN PRODUCT DELETED: ${product.id} - ${product.name}`);
 
