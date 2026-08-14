@@ -46,13 +46,16 @@
 
       <!-- Quautity -->
       <div class="flex items-center mt-3">
-              <span class="font-semibold text-[#566C9D]">Availablity : </span>
-              <span v-if="product.stock > 0" class="ml-2 font-semibold text-sm text-[#00C409]">
-                In Stock
-              </span>
-              <span v-else class="ml-2 text-sm font-semibold text-red-800">
-                Out of Stock
-              </span>
+        <span class="font-semibold text-[#566C9D]">Availablity : </span>
+        <span
+          v-if="product.stock > 0"
+          class="ml-2 font-semibold text-sm text-[#00C409]"
+        >
+          {{ product.stock }} in stock.
+        </span>
+        <span v-else class="ml-2 text-sm font-semibold text-red-800">
+          Backorder please call.
+        </span>
       </div>
 
       <!-- Rating --><!--
@@ -113,7 +116,6 @@ const supabase = useSupabaseClient();
 //   return data;
 // });
 
-  
 const cart = useCartStore();
 
 function addToCart() {
