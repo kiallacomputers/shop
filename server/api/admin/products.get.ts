@@ -17,18 +17,11 @@ export default defineEventHandler(async (event) => {
     },
   );
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .order("name", {
-      ascending: true,
-    });
+  const { data, error } = await supabase.from("products").select("*");
 
-  console.log("🔥 ADMIN PRODUCTS SUPABASE RESULT:");
-  console.log(JSON.stringify(data, null, 2));
+  console.log("🔥🔥🔥 SERVER PRODUCTS 🔥🔥🔥", JSON.stringify(data, null, 2));
 
-  console.log("🔥 ADMIN PRODUCTS SUPABASE ERROR:");
-  console.log(error);
+  console.log("🔥🔥🔥 SERVER ERROR 🔥🔥🔥", error);
 
   if (error) {
     throw createError({
