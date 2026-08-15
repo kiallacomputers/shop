@@ -26,13 +26,19 @@
         <p class="text-sm text-gray-500 mt-1">ID: {{ product.id }}</p>
 
         <div class="flex flex-wrap gap-3 mt-2 text-sm">
+          <!-- PRICE -->
+
           <span class="font-semibold text-[#2CB6D5]">
             ${{ product.price }}
           </span>
 
+          <!-- STOCK -->
+
           <span :class="product.stock > 0 ? 'text-green-600' : 'text-red-600'">
             Stock: {{ product.stock }}
           </span>
+
+          <!-- FEATURED -->
 
           <span
             v-if="product.featured"
@@ -41,12 +47,16 @@
             Featured
           </span>
 
+          <!-- REFURBISHED -->
+
           <span
             v-if="product.refurbished"
             class="px-2 py-1 bg-orange-100 text-orange-700 rounded"
           >
             Refurbished
           </span>
+
+          <!-- MULTIPLE IMAGES -->
 
           <span
             v-if="product.images?.length > 1"
@@ -57,38 +67,185 @@
         </div>
       </div>
 
-      <!-- ACTIONS -->
+      <!-- ========================================== -->
+      <!-- THREE DOT MENU -->
+      <!-- ========================================== -->
 
-      <div class="flex gap-2 shrink-0">
-        <NuxtLink
-          :to="`/admin/products/edit/${product.id}`"
-          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
-        >
-          Edit
-        </NuxtLink>
+      <div class="relative shrink-0">
+        <!-- MENU BUTTON -->
 
         <button
           type="button"
-          @click="$emit('delete', product)"
-          :disabled="deletingId === product.id"
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg text-sm"
+          @click.stop="toggleMenu"
+          class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 transition"
+          aria-label="Product actions"
         >
-          {{ deletingId === product.id ? "Deleting..." : "Delete" }}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-6 h-6 text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
+            />
+          </svg>
         </button>
+
+        <!-- ======================================== -->
+        <!-- POPUP MENU -->
+        <!-- ======================================== -->
+
+        <Transition name="menu">
+          <div
+            v-if="menuOpen"
+            class="absolute right-0 top-12 z-50 w-44 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
+          >
+            <!-- VIEW -->
+
+            <NuxtLink
+              :to="`/product/${product.slug}`"
+              @click="closeMenu"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+            >
+              <!-- Eye -->
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+
+              <span> View </span>
+            </NuxtLink>
+
+            <!-- EDIT -->
+
+            <NuxtLink
+              :to="`/admin/products/edit/${product.id}`"
+              @click="closeMenu"
+              class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+            >
+              <!-- Pencil -->
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.862 4.487a2.25 2.25 0 113.182 3.182L8.25 19.463 4 20.5l1.037-4.25L16.862 4.487z"
+                />
+              </svg>
+
+              <span> Edit </span>
+            </NuxtLink>
+
+            <!-- DIVIDER -->
+
+            <div class="border-t border-gray-100"></div>
+
+            <!-- DELETE -->
+
+            <button
+              type="button"
+              @click="handleDelete"
+              :disabled="deletingId === product.id"
+              class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+            >
+              <!-- Trash -->
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 7h12M9 7V4h6v3m-7 0v12a2 2 0 002 2h4a2 2 0 002-2V7M10 11v6M14 11v6"
+                />
+              </svg>
+
+              <span>
+                {{ deletingId === product.id ? "Deleting..." : "Delete" }}
+              </span>
+            </button>
+          </div>
+        </Transition>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+// =====================================================
+// PROPS
+// =====================================================
+
 const props = defineProps<{
   product: any;
   deletingId: number | null;
 }>();
 
-defineEmits<{
+// =====================================================
+// EMITS
+// =====================================================
+
+const emit = defineEmits<{
   delete: [product: any];
 }>();
+
+// =====================================================
+// MENU
+// =====================================================
+
+const menuOpen = ref(false);
+
+const toggleMenu = () => {
+  menuOpen.value = !menuOpen.value;
+};
+
+const closeMenu = () => {
+  menuOpen.value = false;
+};
+
+// =====================================================
+// DELETE
+// =====================================================
+
+const handleDelete = () => {
+  menuOpen.value = false;
+
+  emit("delete", props.product);
+};
 
 // =====================================================
 // FIRST IMAGE
@@ -107,4 +264,35 @@ const firstImage = computed(() => {
     ) || ""
   );
 });
+
+// =====================================================
+// CLOSE MENU WHEN CLICKING OUTSIDE
+// =====================================================
+
+const handleDocumentClick = () => {
+  menuOpen.value = false;
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleDocumentClick);
+});
 </script>
+
+<style scoped>
+.menu-enter-active,
+.menu-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.menu-enter-from,
+.menu-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+</style>
