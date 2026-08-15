@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- HEADER -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
@@ -24,9 +24,9 @@
       </NuxtLink>
     </div>
 
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- LOADING -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div
       v-if="loading"
@@ -41,9 +41,9 @@
       <p class="text-sm text-gray-400 mt-1">Please wait</p>
     </div>
 
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- ERROR -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div
       v-else-if="errorMessage"
@@ -64,14 +64,14 @@
       </button>
     </div>
 
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- CONTENT -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div v-else>
-      <!-- ================================================= -->
+      <!-- ============================================== -->
       <!-- SUMMARY -->
-      <!-- ================================================= -->
+      <!-- ============================================== -->
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow p-5">
@@ -99,9 +99,9 @@
         </div>
       </div>
 
-      <!-- ================================================= -->
+      <!-- ============================================== -->
       <!-- NO PRODUCTS -->
-      <!-- ================================================= -->
+      <!-- ============================================== -->
 
       <div
         v-if="products.length === 0"
@@ -123,28 +123,30 @@
         </NuxtLink>
       </div>
 
-      <!-- ================================================= -->
+      <!-- ============================================== -->
       <!-- CATEGORY GROUPS -->
-      <!-- ================================================= -->
+      <!-- ============================================== -->
 
       <div v-else class="space-y-6">
+        <!-- ============================================ -->
+        <!-- MAIN CATEGORY -->
+        <!-- ============================================ -->
+
         <section
           v-for="category in categoryGroups"
           :key="category.id"
           class="bg-white rounded-xl shadow overflow-visible"
         >
-          <!-- ================================================= -->
-          <!-- MAIN CATEGORY HEADER -->
-          <!-- ================================================= -->
+          <!-- ========================================== -->
+          <!-- CATEGORY HEADER -->
+          <!-- ========================================== -->
 
           <button
             type="button"
             @click="toggleCategory(category.id)"
-            class="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition text-left"
+            class="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition text-left rounded-t-xl"
           >
             <div class="flex items-center gap-3">
-              <!-- Arrow -->
-
               <span
                 class="w-6 h-6 flex items-center justify-center text-gray-500 transition-transform duration-200"
                 :class="{
@@ -174,17 +176,17 @@
             </span>
           </button>
 
-          <!-- ================================================= -->
-          <!-- MAIN CATEGORY CONTENT -->
-          <!-- ================================================= -->
+          <!-- ========================================== -->
+          <!-- CATEGORY CONTENT -->
+          <!-- ========================================== -->
 
           <div
             v-show="!collapsedCategories.has(category.id)"
             class="border-t border-gray-200"
           >
-            <!-- ================================================= -->
-            <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
-            <!-- ================================================= -->
+            <!-- ======================================== -->
+            <!-- PRODUCTS IN MAIN CATEGORY -->
+            <!-- ======================================== -->
 
             <div v-if="category.products.length" class="p-4">
               <div
@@ -194,27 +196,206 @@
               </div>
 
               <div class="space-y-2">
-                <ProductItem
+                <!-- PRODUCT -->
+
+                <div
                   v-for="product in category.products"
                   :key="product.id"
-                  :product="product"
-                  :open-menu-id="openMenuId"
-                  @toggle-menu="toggleMenu"
-                  @delete="deleteProduct"
-                />
+                  class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
+                  @click.stop
+                >
+                  <!-- IMAGE -->
+
+                  <div
+                    class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
+                  >
+                    <img
+                      v-if="
+                        Array.isArray(product.images) && product.images.length
+                      "
+                      :src="product.images[0]"
+                      :alt="product.name"
+                      class="w-full h-full object-contain p-1"
+                    />
+
+                    <span v-else class="text-gray-400 text-xs"> No image </span>
+                  </div>
+
+                  <!-- PRODUCT INFORMATION -->
+
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-slate-800 truncate">
+                      {{ product.name }}
+                    </div>
+
+                    <div
+                      class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
+                    >
+                      <span class="font-bold text-blue-600">
+                        ${{ product.price }}
+                      </span>
+
+                      <span v-if="product.stock > 0" class="text-green-600">
+                        {{ product.stock }} in stock
+                      </span>
+
+                      <span v-else class="text-red-600"> Out of stock </span>
+
+                      <span
+                        v-if="product.featured"
+                        class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
+                      >
+                        Featured
+                      </span>
+
+                      <span
+                        v-if="product.refurbished"
+                        class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
+                      >
+                        Refurbished
+                      </span>
+
+                      <span
+                        v-if="product.active === false"
+                        class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
+                      >
+                        Inactive
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- ================================== -->
+                  <!-- ACTION MENU -->
+                  <!-- ================================== -->
+
+                  <div class="relative shrink-0">
+                    <!-- THREE DOTS -->
+
+                    <button
+                      type="button"
+                      title="Product actions"
+                      class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
+                      @click.stop="toggleMenu(product.id)"
+                    >
+                      <span
+                        class="text-xl font-bold leading-none tracking-[3px]"
+                      >
+                        •••
+                      </span>
+                    </button>
+
+                    <!-- MENU -->
+
+                    <div
+                      v-if="openMenuId === product.id"
+                      class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[90] overflow-hidden"
+                      @click.stop
+                    >
+                      <!-- VIEW -->
+
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                        @click="viewProduct(product)"
+                      >
+                        <svg
+                          class="w-5 h-5 text-blue-600 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
+                        </svg>
+
+                        <span> View </span>
+                      </button>
+
+                      <!-- EDIT -->
+
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                        @click="editProduct(product)"
+                      >
+                        <svg
+                          class="w-5 h-5 text-blue-600 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
+                          />
+
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1-4 1 1-4 9.5-9.5z"
+                          />
+                        </svg>
+
+                        <span> Edit </span>
+                      </button>
+
+                      <!-- DIVIDER -->
+
+                      <div class="border-t border-gray-100"></div>
+
+                      <!-- DELETE -->
+
+                      <button
+                        type="button"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
+                        @click="deleteProduct(product)"
+                      >
+                        <svg
+                          class="w-5 h-5 shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
+                          />
+                        </svg>
+
+                        <span> Delete </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- ================================================= -->
+            <!-- ======================================== -->
             <!-- SUBCATEGORIES -->
-            <!-- ================================================= -->
+            <!-- ======================================== -->
 
             <div
               v-for="subcategory in category.children"
               :key="subcategory.id"
               class="border-t border-gray-100"
             >
-              <!-- Subcategory heading -->
+              <!-- SUBCATEGORY HEADER -->
 
               <div class="px-6 py-4 bg-gray-50">
                 <div class="flex items-center justify-between">
@@ -233,29 +414,208 @@
                 </div>
               </div>
 
-              <!-- Subcategory products -->
+              <!-- SUBCATEGORY PRODUCTS -->
 
               <div v-if="subcategory.products.length" class="p-4">
                 <div class="space-y-2">
-                  <ProductItem
+                  <!-- PRODUCT -->
+
+                  <div
                     v-for="product in subcategory.products"
                     :key="product.id"
-                    :product="product"
-                    :open-menu-id="openMenuId"
-                    @toggle-menu="toggleMenu"
-                    @delete="deleteProduct"
-                  />
+                    class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
+                    @click.stop
+                  >
+                    <!-- IMAGE -->
+
+                    <div
+                      class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
+                    >
+                      <img
+                        v-if="
+                          Array.isArray(product.images) && product.images.length
+                        "
+                        :src="product.images[0]"
+                        :alt="product.name"
+                        class="w-full h-full object-contain p-1"
+                      />
+
+                      <span v-else class="text-gray-400 text-xs">
+                        No image
+                      </span>
+                    </div>
+
+                    <!-- PRODUCT INFORMATION -->
+
+                    <div class="flex-1 min-w-0">
+                      <div class="font-semibold text-slate-800 truncate">
+                        {{ product.name }}
+                      </div>
+
+                      <div
+                        class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
+                      >
+                        <span class="font-bold text-blue-600">
+                          ${{ product.price }}
+                        </span>
+
+                        <span v-if="product.stock > 0" class="text-green-600">
+                          {{ product.stock }} in stock
+                        </span>
+
+                        <span v-else class="text-red-600"> Out of stock </span>
+
+                        <span
+                          v-if="product.featured"
+                          class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
+                        >
+                          Featured
+                        </span>
+
+                        <span
+                          v-if="product.refurbished"
+                          class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
+                        >
+                          Refurbished
+                        </span>
+
+                        <span
+                          v-if="product.active === false"
+                          class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
+                        >
+                          Inactive
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- ACTIONS -->
+
+                    <div class="relative shrink-0">
+                      <!-- THREE DOTS -->
+
+                      <button
+                        type="button"
+                        title="Product actions"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
+                        @click.stop="toggleMenu(product.id)"
+                      >
+                        <span
+                          class="text-xl font-bold leading-none tracking-[3px]"
+                        >
+                          •••
+                        </span>
+                      </button>
+
+                      <!-- MENU -->
+
+                      <div
+                        v-if="openMenuId === product.id"
+                        class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[90] overflow-hidden"
+                        @click.stop
+                      >
+                        <!-- VIEW -->
+
+                        <button
+                          type="button"
+                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                          @click="viewProduct(product)"
+                        >
+                          <svg
+                            class="w-5 h-5 text-blue-600 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+
+                          <span> View </span>
+                        </button>
+
+                        <!-- EDIT -->
+
+                        <button
+                          type="button"
+                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                          @click="editProduct(product)"
+                        >
+                          <svg
+                            class="w-5 h-5 text-blue-600 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
+                            />
+
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1-4 1 1-4 9.5-9.5z"
+                            />
+                          </svg>
+
+                          <span> Edit </span>
+                        </button>
+
+                        <!-- DIVIDER -->
+
+                        <div class="border-t border-gray-100"></div>
+
+                        <!-- DELETE -->
+
+                        <button
+                          type="button"
+                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
+                          @click="deleteProduct(product)"
+                        >
+                          <svg
+                            class="w-5 h-5 shrink-0"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
+                            />
+                          </svg>
+
+                          <span> Delete </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <!-- NO PRODUCTS -->
 
               <div v-else class="px-6 py-4 text-sm text-gray-400">
                 No products in this subcategory.
               </div>
             </div>
 
-            <!-- ================================================= -->
             <!-- EMPTY CATEGORY -->
-            <!-- ================================================= -->
 
             <div
               v-if="
@@ -270,19 +630,19 @@
       </div>
     </div>
 
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- DELETE CONFIRMATION -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div
       v-if="deleteDialog"
       class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <!-- Background -->
+      <!-- BACKDROP -->
 
       <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
 
-      <!-- Dialog -->
+      <!-- DIALOG -->
 
       <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         <div
@@ -325,9 +685,9 @@
       </div>
     </div>
 
-    <!-- ================================================= -->
+    <!-- ================================================ -->
     <!-- DELETE ERROR -->
-    <!-- ================================================= -->
+    <!-- ================================================ -->
 
     <div
       v-if="deleteError"
@@ -343,6 +703,10 @@
 </template>
 
 <script setup lang="ts">
+// ======================================================
+// ADMIN MIDDLEWARE
+// ======================================================
+
 definePageMeta({
   middleware: "admin",
 });
@@ -352,6 +716,12 @@ definePageMeta({
 // ======================================================
 
 const adminFetch = useAdminFetch();
+
+// ======================================================
+// ROUTER
+// ======================================================
+
+const router = useRouter();
 
 // ======================================================
 // STATE
@@ -392,9 +762,7 @@ const mainCategories = computed(() => {
 // ======================================================
 
 const categoryGroups = computed(() => {
-  const parents = mainCategories.value;
-
-  return parents.map((parent) => {
+  return mainCategories.value.map((parent) => {
     const children = categories.value
       .filter((category) => Number(category.parent_id) === Number(parent.id))
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
@@ -444,6 +812,7 @@ const loadData = async () => {
 
     const [productResponse, categoryResponse] = await Promise.all([
       adminFetch("/api/admin/products"),
+
       adminFetch("/api/admin/categories"),
     ]);
 
@@ -451,9 +820,9 @@ const loadData = async () => {
 
     console.log("🔥 CATEGORIES RESPONSE:", categoryResponse);
 
-    // ----------------------------------------------
+    // ================================================
     // PRODUCTS
-    // ----------------------------------------------
+    // ================================================
 
     if (Array.isArray(productResponse)) {
       products.value = productResponse;
@@ -465,9 +834,9 @@ const loadData = async () => {
       products.value = [];
     }
 
-    // ----------------------------------------------
+    // ================================================
     // CATEGORIES
-    // ----------------------------------------------
+    // ================================================
 
     if (Array.isArray(categoryResponse)) {
       categories.value = categoryResponse;
@@ -483,9 +852,9 @@ const loadData = async () => {
 
     console.log(`🔥 ${categories.value.length} categories loaded`);
 
-    console.log(`🔥 ${mainCategories.value.length} main categories loaded`);
-
-    // Start all categories collapsed.
+    // ================================================
+    // START COLLAPSED
+    // ================================================
 
     collapsedCategories.value = new Set(
       mainCategories.value.map((category) => Number(category.id)),
@@ -526,37 +895,36 @@ const toggleMenu = (id: number) => {
   if (openMenuId.value === id) {
     openMenuId.value = null;
   } else {
-    // This automatically closes any other open menu.
     openMenuId.value = id;
   }
 };
 
 // ======================================================
-// VIEW
+// VIEW PRODUCT
 // ======================================================
 
 const viewProduct = (product: any) => {
   openMenuId.value = null;
 
   if (product?.slug) {
-    navigateTo(`/product/${product.slug}`);
+    router.push(`/product/${product.slug}`);
   } else {
-    navigateTo(`/product/${product.id}`);
+    router.push(`/product/${product.id}`);
   }
 };
 
 // ======================================================
-// EDIT
+// EDIT PRODUCT
 // ======================================================
 
 const editProduct = (product: any) => {
   openMenuId.value = null;
 
-  navigateTo(`/admin/products/edit/${product.id}`);
+  router.push(`/admin/products/edit/${product.id}`);
 };
 
 // ======================================================
-// DELETE
+// DELETE PRODUCT
 // ======================================================
 
 const deleteProduct = (product: any) => {
@@ -605,8 +973,6 @@ const confirmDelete = async () => {
       method: "DELETE",
     });
 
-    // Remove from local list immediately.
-
     products.value = products.value.filter(
       (product) => Number(product.id) !== Number(id),
     );
@@ -636,263 +1002,21 @@ const handleDocumentClick = () => {
   openMenuId.value = null;
 };
 
+// ======================================================
+// MOUNT
+// ======================================================
+
 onMounted(async () => {
   document.addEventListener("click", handleDocumentClick);
 
   await loadData();
 });
 
+// ======================================================
+// UNMOUNT
+// ======================================================
+
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
-</script>
-
-<!-- ================================================== -->
-<!-- PRODUCT ITEM COMPONENT -->
-<!-- ================================================== -->
-
-<script lang="ts">
-export default {
-  components: {
-    ProductItem: {
-      props: {
-        product: {
-          type: Object,
-          required: true,
-        },
-
-        openMenuId: {
-          type: [Number, null],
-          default: null,
-        },
-      },
-
-      emits: [
-        "toggle-menu",
-        "delete",
-      ],
-
-      template: `
-        <div
-          class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
-          @click.stop
-        >
-          <!-- IMAGE -->
-
-          <div
-            class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
-          >
-            <img
-              v-if="
-                product.images &&
-                Array.isArray(product.images) &&
-                product.images.length
-              "
-              :src="product.images[0]"
-              :alt="product.name"
-              class="w-full h-full object-contain p-1"
-            />
-
-            <span
-              v-else
-              class="text-gray-400 text-xs"
-            >
-              No image
-            </span>
-          </div>
-
-          <!-- PRODUCT DETAILS -->
-
-          <div class="flex-1 min-w-0">
-            <div
-              class="font-semibold text-slate-800 truncate"
-            >
-              {{ product.name }}
-            </div>
-
-            <div
-              class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
-            >
-              <span
-                class="font-bold text-blue-600"
-              >
-                ${{ product.price }}
-              </span>
-
-              <span
-                v-if="product.stock > 0"
-                class="text-green-600"
-              >
-                {{ product.stock }} in stock
-              </span>
-
-              <span
-                v-else
-                class="text-red-600"
-              >
-                Out of stock
-              </span>
-
-              <span
-                v-if="product.featured"
-                class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
-              >
-                Featured
-              </span>
-
-              <span
-                v-if="product.refurbished"
-                class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
-              >
-                Refurbished
-              </span>
-
-              <span
-                v-if="product.active === false"
-                class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
-              >
-                Inactive
-              </span>
-            </div>
-          </div>
-
-          <!-- ================================================= -->
-          <!-- THREE DOTS -->
-          <!-- ================================================= -->
-
-          <div
-            class="relative shrink-0"
-          >
-            <button
-              type="button"
-              class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
-              title="Product actions"
-              @click.stop="$emit('toggle-menu', product.id)"
-            >
-              <span
-                class="text-xl font-bold leading-none tracking-[3px]"
-              >
-                •••
-              </span>
-            </button>
-
-            <!-- ================================================= -->
-            <!-- ACTION MENU -->
-            <!-- ================================================= -->
-
-            <div
-              v-if="openMenuId === product.id"
-              class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[80] overflow-hidden"
-              @click.stop
-            >
-              <!-- VIEW -->
-
-              <button
-                type="button"
-                class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                @click="
-                  $emit('toggle-menu', null);
-                  $router.push(
-                    product.slug
-                      ? '/product/' + product.slug
-                      : '/product/' + product.id
-                  );
-                "
-              >
-                <svg
-                  class="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-
-                <span>View</span>
-              </button>
-
-              <!-- EDIT -->
-
-              <button
-                type="button"
-                class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                @click="
-                  $emit('toggle-menu', null);
-                  $router.push(
-                    '/admin/products/edit/' + product.id
-                  );
-                "
-              >
-                <svg
-                  class="w-5 h-5 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
-                  />
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-                  />
-                </svg>
-
-                <span>Edit</span>
-              </button>
-
-              <!-- DIVIDER -->
-
-              <div
-                class="border-t border-gray-100"
-              ></div>
-
-              <!-- DELETE -->
-
-              <button
-                type="button"
-                class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
-                @click="
-                  $emit('delete', product)
-                "
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
-                  />
-                </svg>
-
-                <span>Delete</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      `,
-    },
-  },
-};
 </script>
