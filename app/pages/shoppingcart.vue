@@ -1,13 +1,8 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-6 md:flex gap-6">
-    <!-- Side Menu -->
-    <aside class="w-full md:w-64 shrink-0 mb-6 md:mb-0">
-      <SideMenu />
-    </aside>
-
+  <div class="max-w-7xl mx-auto px-4 py-6">
     <!-- Cart Items -->
-    <main class="flex-1 min-w-0">
-      <!-- Cart Products -->
+    <main class="w-full">
+      <!-- Products -->
       <div
         v-for="item in cart.items"
         :key="item.id"
@@ -33,7 +28,7 @@
         </div>
 
         <!-- Product Information -->
-        <div class="flex w-full h-10 items-center gap-4 min-w-0">
+        <div class="flex flex-1 h-10 items-center gap-4 min-w-0">
           <!-- Product Name -->
           <div class="w-[70%] min-w-0">
             <h3 class="truncate font-medium">
@@ -122,49 +117,31 @@ const loading = ref(false);
 // ========================================
 
 function getProductImage(image: any): string {
-  // --------------------------------------
-  // NO IMAGE
-  // --------------------------------------
-
   if (!image) {
     return "";
   }
 
-  // --------------------------------------
-  // IMAGE IS AN ARRAY
-  // --------------------------------------
-
+  // Image is an array
   if (Array.isArray(image)) {
     if (image.length === 0) {
       return "";
     }
 
-    // Use the first image
     image = image[0];
   }
 
-  // --------------------------------------
-  // IMAGE IS AN OBJECT
-  // --------------------------------------
-
+  // Image is an object
   if (typeof image === "object") {
     image =
       image.url || image.path || image.name || image.src || image.image || "";
   }
 
-  // --------------------------------------
-  // MAKE SURE IMAGE IS A STRING
-  // --------------------------------------
-
+  // Make sure it is a string
   if (typeof image !== "string") {
-    console.error("❌ INVALID PRODUCT IMAGE:", image);
+    console.error("Invalid product image:", image);
 
     return "";
   }
-
-  // --------------------------------------
-  // REMOVE WHITESPACE
-  // --------------------------------------
 
   image = image.trim();
 
@@ -172,24 +149,15 @@ function getProductImage(image: any): string {
     return "";
   }
 
-  // --------------------------------------
-  // IMAGE IS ALREADY A FULL URL
-  // --------------------------------------
-
+  // Already a URL
   if (image.startsWith("http://") || image.startsWith("https://")) {
     return image;
   }
 
-  // --------------------------------------
-  // REMOVE LEADING SLASHES
-  // --------------------------------------
-
+  // Remove leading slash
   const imagePath = image.replace(/^\/+/, "");
 
-  // --------------------------------------
-  // SUPABASE STORAGE PUBLIC URL
-  // --------------------------------------
-
+  // Supabase Storage
   const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(imagePath);
 
   return data.publicUrl;
@@ -200,8 +168,6 @@ function getProductImage(image: any): string {
 // ========================================
 
 function imageError(item: any) {
-  console.error("=================================");
-
   console.error("❌ PRODUCT IMAGE FAILED");
 
   console.error("Product:", item.name);
@@ -211,64 +177,29 @@ function imageError(item: any) {
   console.error("Image type:", typeof item.image);
 
   console.error("Generated URL:", getProductImage(item.image));
-
-  console.error("=================================");
 }
 
 // ========================================
-// DEBUG CART
+// DEBUG
 // ========================================
 
-console.log("=================================");
-
-console.log("🛒 CART ITEMS:", cart.items);
-
-console.log("🖼️ CART IMAGES:");
-
-cart.items.forEach((item: any) => {
-  console.log({
-    name: item.name,
-    image: item.image,
-    imageType: typeof item.image,
-    imageUrl: getProductImage(item.image),
-  });
-});
-
-console.log("=================================");
+console.log("CART ITEMS:", cart.items);
 
 // ========================================
 // CHECKOUT
 // ========================================
 
 async function checkout() {
-  // --------------------------------------
-  // CHECK EMPTY CART
-  // --------------------------------------
-
   if (!cart.items.length) {
     console.log("Cart is empty");
 
     return;
   }
 
-  // --------------------------------------
-  // START LOADING
-  // --------------------------------------
-
   loading.value = true;
 
   try {
-    console.log("=================================");
-
-    console.log("🛒 SENDING CART TO STRIPE");
-
-    console.log(cart.items);
-
-    console.log("=================================");
-
-    // ------------------------------------
-    // CREATE STRIPE CHECKOUT
-    // ------------------------------------
+    console.log("Sending cart to Stripe:", cart.items);
 
     const response = await $fetch("/api/stripe/create-checkout", {
       method: "POST",
@@ -278,11 +209,7 @@ async function checkout() {
       },
     });
 
-    console.log("STRIPE RESPONSE:", response);
-
-    // ------------------------------------
-    // REDIRECT TO STRIPE
-    // ------------------------------------
+    console.log("Stripe Response:", response);
 
     if (response?.url) {
       window.location.href = response.url;
@@ -290,19 +217,9 @@ async function checkout() {
       return;
     }
 
-    // ------------------------------------
-    // NO URL RETURNED
-    // ------------------------------------
-
-    console.error("❌ STRIPE DID NOT RETURN A CHECKOUT URL");
-  } catch (error: any) {
-    console.error("=================================");
-
-    console.error("❌ CHECKOUT ERROR");
-
-    console.error(error);
-
-    console.error("=================================");
+    console.error("❌ Stripe did not return a checkout URL");
+  } catch (error) {
+    console.error("❌ Checkout error:", error);
   } finally {
     loading.value = false;
   }
