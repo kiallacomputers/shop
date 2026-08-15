@@ -146,6 +146,7 @@
 
                 <p class="text-sm text-gray-500">
                   {{ getChildren(category.id).length }}
+
                   {{
                     getChildren(category.id).length === 1
                       ? "subcategory"
@@ -171,9 +172,7 @@
                 {{ category.active ? "Active" : "Inactive" }}
               </span>
 
-              <!-- ================================== -->
               <!-- THREE DOT MENU -->
-              <!-- ================================== -->
 
               <div class="relative">
                 <button
@@ -244,7 +243,7 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 011 3v3m-4 0h14"
                       />
                     </svg>
 
@@ -336,9 +335,7 @@
                       viewBox="0 0 24 24"
                     >
                       <circle cx="5" cy="12" r="2" />
-
                       <circle cx="12" cy="12" r="2" />
-
                       <circle cx="19" cy="12" r="2" />
                     </svg>
                   </button>
@@ -612,10 +609,6 @@ const mainCategories = computed(() => {
 // ============================================
 // AVAILABLE PARENT CATEGORIES
 // ============================================
-//
-// When editing a category, don't allow it to
-// select itself as its own parent.
-//
 
 const availableParentCategories = computed(() => {
   return mainCategories.value.filter(
@@ -629,7 +622,9 @@ const availableParentCategories = computed(() => {
 
 const getChildren = (parentId: string | number) => {
   return categories.value
+
     .filter((category) => category.parent_id === parentId)
+
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 };
 
@@ -753,10 +748,6 @@ const editCategory = (category: any) => {
 // ============================================
 
 const closeModal = () => {
-  if (saving.value) {
-    return;
-  }
-
   showModal.value = false;
 
   editingCategory.value = null;
@@ -778,12 +769,19 @@ const closeModal = () => {
 
 const generateSlug = (name: string) => {
   return name
+
     .toLowerCase()
+
     .trim()
+
     .replace(/&/g, "and")
+
     .replace(/[^a-z0-9\s-]/g, "")
+
     .replace(/\s+/g, "-")
+
     .replace(/-+/g, "-")
+
     .replace(/^-|-$/g, "");
 };
 
@@ -849,13 +847,28 @@ const saveCategory = async () => {
     }
 
     // ==========================================
-    // CLOSE
+    // IMPORTANT
+    // CLOSE MODAL AFTER SUCCESS
     // ==========================================
 
-    closeModal();
+    showModal.value = false;
+
+    editingCategory.value = null;
+
+    formError.value = "";
+
+    newCategory.id = null;
+
+    newCategory.name = "";
+
+    newCategory.parent_id = null;
+
+    newCategory.active = true;
+
+    openMenuId.value = null;
 
     // ==========================================
-    // RELOAD
+    // RELOAD CATEGORIES
     // ==========================================
 
     await loadCategories();
