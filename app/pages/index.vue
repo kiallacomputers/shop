@@ -66,10 +66,6 @@ const { data: featuredProducts, error } = await useAsyncData(
   },
 );
 
-// watchEffect(() => {
-//   console.log("featuredProducts:", featuredProducts.value);
-// });
-
 const currentAd = ref(0);
 
 onMounted(() => {
