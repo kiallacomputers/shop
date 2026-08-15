@@ -22,26 +22,12 @@
               Home
             </NuxtLink>
 
-            <NuxtLink
-              to="/products"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              Products
-            </NuxtLink>
-
-            <NuxtLink
-              to="/about"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              About
-            </NuxtLink>
-
-            <NuxtLink
+            <!-- <NuxtLink
               to="/contact"
               class="text-gray-700 hover:text-sky-600 font-medium transition"
             >
               Contact
-            </NuxtLink>
+            </NuxtLink> -->
 
             <!-- Account -->
             <NuxtLink
@@ -197,30 +183,14 @@
             Home
           </NuxtLink>
 
-          <NuxtLink
-            to="/products"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
-          >
-            Products
-          </NuxtLink>
-
-          <NuxtLink
-            to="/about"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
-          >
-            About
-          </NuxtLink>
-
-          <NuxtLink
+          <!-- <NuxtLink
             to="/contact"
             @click="mobileMenuOpen = false"
             class="text-gray-700 hover:text-sky-600 font-medium py-2"
           >
             Contact
           </NuxtLink>
-
+ -->
           <NuxtLink
             v-if="user"
             to="/account"
