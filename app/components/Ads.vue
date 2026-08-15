@@ -2,7 +2,7 @@
   <!-- Advertisement -->
   <section class="w-full flex justify-center overflow-hidden">
     <div
-      class="relative w-[280px] md:w-full md:max-w-[800px] h-[116px] md:h-[240px] overflow-hidden rounded-lg"
+      class="relative w-[400px] md:w-full md:max-w-[800px] h-[116px] md:h-[240px] overflow-hidden rounded-lg"
     >
       <Transition name="slide">
         <NuxtLink
