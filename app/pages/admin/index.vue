@@ -55,7 +55,7 @@ await loadAdmin();
       </NuxtLink>
 
       <NuxtLink
-        to="/admin/#"
+        to="/admin/categories/"
         class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
       >
         <h2 class="text-xl font-semibold">Categories</h2>
