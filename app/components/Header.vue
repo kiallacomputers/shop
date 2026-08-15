@@ -13,20 +13,6 @@
             Home
           </NuxtLink>
 
-          <NuxtLink
-            to="/products"
-            class="text-gray-700 hover:text-sky-600 font-medium"
-          >
-            Products
-          </NuxtLink>
-
-          <NuxtLink
-            to="/about"
-            class="text-gray-700 hover:text-sky-600 font-medium"
-          >
-            About
-          </NuxtLink>
-
           <!-- ADMIN -->
           <NuxtLink
             v-if="showAdmin"
@@ -123,22 +109,6 @@
             @click="mobileMenuOpen = false"
           >
             Home
-          </NuxtLink>
-
-          <NuxtLink
-            to="/products"
-            class="px-2 py-2 text-gray-700 hover:text-sky-600"
-            @click="mobileMenuOpen = false"
-          >
-            Products
-          </NuxtLink>
-
-          <NuxtLink
-            to="/about"
-            class="px-2 py-2 text-gray-700 hover:text-sky-600"
-            @click="mobileMenuOpen = false"
-          >
-            About
           </NuxtLink>
 
           <!-- MOBILE ADMIN -->
