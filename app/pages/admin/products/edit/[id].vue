@@ -102,7 +102,7 @@
               <template v-for="category in sortedCategories" :key="category.id">
                 <!-- MAIN CATEGORY -->
 
-                <option :value="category.id" class="font-bold">
+                <option :value="category.id">
                   {{ category.name }}
                 </option>
 
@@ -113,8 +113,7 @@
                   :key="child.id"
                   :value="child.id"
                 >
-                  &nbsp;&nbsp;&nbsp;└─
-                  {{ child.name }}
+                  &nbsp;&nbsp;&nbsp;└─ {{ child.name }}
                 </option>
               </template>
             </select>
@@ -142,8 +141,6 @@
         <h2 class="text-xl font-bold text-slate-800 mb-6">Price & Stock</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- PRICE -->
-
           <div>
             <label class="block font-semibold mb-2"> Price </label>
 
@@ -156,8 +153,6 @@
             />
           </div>
 
-          <!-- OLD PRICE -->
-
           <div>
             <label class="block font-semibold mb-2"> Old Price </label>
 
@@ -169,8 +164,6 @@
               class="w-full border rounded-lg px-4 py-3"
             />
           </div>
-
-          <!-- STOCK -->
 
           <div>
             <label class="block font-semibold mb-2"> Stock </label>
@@ -197,7 +190,7 @@
             <h2 class="text-xl font-bold text-slate-800">Product Images</h2>
 
             <p class="text-sm text-gray-500 mt-1">
-              Upload multiple images or edit the existing image paths.
+              Upload multiple images or edit existing image paths.
             </p>
           </div>
 
@@ -270,6 +263,8 @@
                 <label class="block text-sm font-semibold mb-2">
                   Image {{ index + 1 }}
                 </label>
+
+                <!-- IMAGE URL -->
 
                 <input
                   v-model="form.images[index]"
@@ -553,13 +548,17 @@
 </template>
 
 <script setup lang="ts">
+// ==================================================
+// ADMIN MIDDLEWARE
+// ==================================================
+
 definePageMeta({
   middleware: "admin",
 });
 
-// ============================================
-// ADMIN FETCH
-// ============================================
+// ==================================================
+// COMPOSABLES
+// ==================================================
 
 const adminFetch = useAdminFetch();
 
@@ -567,9 +566,9 @@ const route = useRoute();
 
 const supabase = useSupabaseClient();
 
-// ============================================
+// ==================================================
 // STATE
-// ============================================
+// ==================================================
 
 const loading = ref(true);
 
@@ -589,9 +588,9 @@ const imageInput = ref<HTMLInputElement | null>(null);
 
 const categories = ref<any[]>([]);
 
-// ============================================
+// ==================================================
 // FORM
-// ============================================
+// ==================================================
 
 const form = reactive<any>({
   id: null,
@@ -621,9 +620,9 @@ const form = reactive<any>({
   description: [],
 });
 
-// ============================================
+// ==================================================
 // CATEGORY SORTING
-// ============================================
+// ==================================================
 
 const sortedCategories = computed(() => {
   const parents = categories.value
@@ -642,15 +641,15 @@ const sortedCategories = computed(() => {
   });
 });
 
-// ============================================
+// ==================================================
 // PRODUCT ID
-// ============================================
+// ==================================================
 
 const productId = computed(() => route.params.id);
 
-// ============================================
+// ==================================================
 // LOAD PRODUCT
-// ============================================
+// ==================================================
 
 const loadProduct = async () => {
   try {
@@ -685,9 +684,9 @@ const loadProduct = async () => {
 
     form.active = response.active !== false;
 
-    // ========================================
+    // ==============================================
     // IMAGES
-    // ========================================
+    // ==============================================
 
     if (Array.isArray(response.images)) {
       form.images = JSON.parse(JSON.stringify(response.images));
@@ -695,9 +694,9 @@ const loadProduct = async () => {
       form.images = [];
     }
 
-    // ========================================
+    // ==============================================
     // DESCRIPTION
-    // ========================================
+    // ==============================================
 
     if (Array.isArray(response.description)) {
       form.description = JSON.parse(JSON.stringify(response.description));
@@ -714,9 +713,9 @@ const loadProduct = async () => {
   }
 };
 
-// ============================================
+// ==================================================
 // LOAD CATEGORIES
-// ============================================
+// ==================================================
 
 const loadCategories = async () => {
   try {
@@ -728,9 +727,9 @@ const loadCategories = async () => {
   }
 };
 
-// ============================================
+// ==================================================
 // UPLOAD MULTIPLE IMAGES
-// ============================================
+// ==================================================
 
 const uploadImages = async (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -758,9 +757,9 @@ const uploadImages = async (event: Event) => {
       "image/gif",
     ];
 
-    // ========================================
+    // ==============================================
     // VALIDATE FILES
-    // ========================================
+    // ==============================================
 
     for (const file of selectedFiles) {
       if (file.size > 5 * 1024 * 1024) {
@@ -772,9 +771,9 @@ const uploadImages = async (event: Event) => {
       }
     }
 
-    // ========================================
+    // ==============================================
     // GET SESSION
-    // ========================================
+    // ==============================================
 
     const {
       data: { session },
@@ -784,9 +783,9 @@ const uploadImages = async (event: Event) => {
       throw new Error("Authentication required.");
     }
 
-    // ========================================
-    // UPLOAD EACH IMAGE
-    // ========================================
+    // ==============================================
+    // UPLOAD FILES
+    // ==============================================
 
     let uploadedCount = 0;
 
@@ -794,8 +793,6 @@ const uploadImages = async (event: Event) => {
       const formData = new FormData();
 
       formData.append("file", file);
-
-      console.log("🔥 UPLOADING:", file.name);
 
       const response = await $fetch("/api/admin/products/upload-image", {
         method: "POST",
@@ -806,8 +803,6 @@ const uploadImages = async (event: Event) => {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
-
-      console.log("🔥 UPLOAD RESPONSE:", response);
 
       if (response && response.url) {
         form.images.push(response.url);
@@ -833,9 +828,9 @@ const uploadImages = async (event: Event) => {
   }
 };
 
-// ============================================
+// ==================================================
 // REMOVE IMAGE
-// ============================================
+// ==================================================
 
 const removeImage = async (index: number) => {
   const image = form.images[index];
@@ -843,10 +838,6 @@ const removeImage = async (index: number) => {
   if (!image) {
     return;
   }
-
-  // ========================================
-  // CONFIRM DELETE
-  // ========================================
 
   const confirmed = window.confirm(
     "Are you sure you want to delete this image?\n\nThe image will be permanently deleted from Supabase Storage.",
@@ -865,9 +856,9 @@ const removeImage = async (index: number) => {
   try {
     console.log("🔥 DELETING IMAGE:", image);
 
-    // ========================================
+    // ==============================================
     // GET SESSION
-    // ========================================
+    // ==============================================
 
     const {
       data: { session },
@@ -877,37 +868,31 @@ const removeImage = async (index: number) => {
       throw new Error("Authentication required.");
     }
 
-    console.log("✅ SESSION FOUND");
-
-    // ========================================
-    // DELETE FROM STORAGE
-    // ========================================
+    // ==============================================
+    // DELETE STORAGE FILE
+    // ==============================================
 
     const response = await $fetch("/api/admin/products/delete-image", {
       method: "POST",
 
-      body: {
-        image,
-      },
-
       headers: {
         Authorization: `Bearer ${session.access_token}`,
+      },
+
+      body: {
+        image,
       },
     });
 
     console.log("🔥 DELETE RESPONSE:", response);
 
-    // ========================================
-    // REMOVE FROM ARRAY ONLY AFTER SUCCESS
-    // ========================================
+    // ==============================================
+    // REMOVE FROM ARRAY
+    // ==============================================
 
-    if (response?.success) {
-      form.images.splice(index, 1);
+    form.images.splice(index, 1);
 
-      uploadMessage.value = "Image deleted successfully.";
-    } else {
-      throw new Error("The image could not be deleted.");
-    }
+    uploadMessage.value = "Image deleted successfully.";
   } catch (error: any) {
     console.error("🔥 IMAGE DELETE ERROR:", error);
 
@@ -920,9 +905,9 @@ const removeImage = async (index: number) => {
   }
 };
 
-// ============================================
+// ==================================================
 // DESCRIPTION
-// ============================================
+// ==================================================
 
 const addDescriptionBlock = () => {
   form.description.push({
@@ -935,9 +920,9 @@ const removeDescriptionBlock = (index: number) => {
   form.description.splice(index, 1);
 };
 
-// ============================================
+// ==================================================
 // LIST
-// ============================================
+// ==================================================
 
 const addListItem = (block: any) => {
   if (!Array.isArray(block.items)) {
@@ -947,9 +932,9 @@ const addListItem = (block: any) => {
   block.items.push("");
 };
 
-// ============================================
+// ==================================================
 // TABLE
-// ============================================
+// ==================================================
 
 const addTableRow = (block: any) => {
   if (!Array.isArray(block.rows)) {
@@ -970,9 +955,9 @@ const removeTableRow = (block: any, index: number) => {
   }
 };
 
-// ============================================
+// ==================================================
 // SAVE PRODUCT
-// ============================================
+// ==================================================
 
 const saveProduct = async () => {
   saving.value = true;
@@ -1012,7 +997,6 @@ const saveProduct = async () => {
 
     await adminFetch(`/api/admin/products/${productId.value}`, {
       method: "PUT",
-
       body: payload,
     });
 
@@ -1032,9 +1016,9 @@ const saveProduct = async () => {
   }
 };
 
-// ============================================
+// ==================================================
 // LOAD
-// ============================================
+// ==================================================
 
 onMounted(async () => {
   await Promise.all([loadProduct(), loadCategories()]);
