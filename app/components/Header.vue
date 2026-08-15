@@ -18,74 +18,76 @@
       </NuxtLink>
 
       <!-- ======================================= -->
-      <!-- DESKTOP MENU -->
-      <!-- ======================================= -->
-
-      <nav class="hidden md:flex items-right gap-8">
-        <!-- Signup / Login -->
-        <NuxtLink
-          v-if="!user"
-          to="/auth/signin"
-          class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
-        >
-          Signup/Login
-        </NuxtLink>
-
-        <!-- Welcome -->
-        <p v-if="user" class="text-[#566C9D] font-bold">
-          Welcome {{ firstName }}
-        </p>
-
-        <!-- My Account -->
-        <NuxtLink
-          v-if="user"
-          to="/admin/dashboard"
-          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-        >
-          My Account
-        </NuxtLink>
-
-        <!-- ADMIN -->
-        <NuxtLink
-          v-if="user && isAdmin"
-          to="/admin"
-          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-        >
-          Admin
-        </NuxtLink>
-
-        <!-- Logout -->
-        <button
-          v-if="user"
-          @click="logout"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
-          title="Sign Out"
-        >
-          <!-- Sign out icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-            />
-          </svg>
-
-          <span>Logout</span>
-        </button>
-      </nav>
-
-      <!-- ======================================= -->
       <!-- RIGHT SIDE -->
+      <!-- DESKTOP MENU + CART + MOBILE BUTTON -->
       <!-- ======================================= -->
 
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-6">
+        <!-- ===================================== -->
+        <!-- DESKTOP MENU -->
+        <!-- ===================================== -->
+
+        <nav class="hidden md:flex items-center gap-6">
+          <!-- Signup / Login -->
+          <NuxtLink
+            v-if="!user"
+            to="/auth/signin"
+            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
+          >
+            Signup/Login
+          </NuxtLink>
+
+          <!-- Welcome -->
+          <p v-if="user" class="text-[#566C9D] font-bold">
+            Welcome {{ firstName }}
+          </p>
+
+          <!-- My Account -->
+          <NuxtLink
+            v-if="user"
+            to="/admin/dashboard"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
+          >
+            My Account
+          </NuxtLink>
+
+          <!-- ADMIN -->
+          <NuxtLink
+            v-if="user && isAdmin"
+            to="/admin"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
+          >
+            Admin
+          </NuxtLink>
+
+          <!-- Logout -->
+          <button
+            v-if="user"
+            type="button"
+            @click="logout"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
+            title="Sign Out"
+          >
+            <!-- Sign out icon -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+              />
+            </svg>
+
+            <span>Logout</span>
+          </button>
+        </nav>
+
         <!-- ===================================== -->
         <!-- SHOPPING CART -->
         <!-- ===================================== -->
@@ -110,6 +112,7 @@
             />
           </svg>
 
+          <!-- Cart Count -->
           <span
             v-if="cart.count > 0"
             class="absolute -top-2 -right-2 bg-red-800 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center"
@@ -439,5 +442,26 @@ const logout = async () => {
 
 .mobile-menu-item:last-child {
   border-bottom: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
