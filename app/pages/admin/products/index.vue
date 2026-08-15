@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
     <!-- HEADER -->
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
@@ -14,499 +14,542 @@
       </div>
 
       <NuxtLink
-        to="/admin/products/new"
+        to="/admin/products/add"
         class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
       >
         + Add Product
       </NuxtLink>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- LOADING -->
-    <!-- ========================================================= -->
-
-    <div v-if="loading" class="bg-white rounded-xl shadow p-10 text-center">
-      <div class="text-gray-500">Loading products...</div>
-    </div>
-
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
     <!-- ERROR -->
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
 
     <div
-      v-else-if="errorMessage"
-      class="bg-red-100 border border-red-300 text-red-700 rounded-lg p-5"
+      v-if="errorMessage"
+      class="mb-6 bg-red-100 border border-red-300 text-red-700 rounded-lg p-4"
     >
-      <p class="font-semibold">Unable to load products</p>
+      <p class="font-semibold">Error loading products</p>
 
-      <p class="mt-1">
+      <p class="text-sm mt-1">
         {{ errorMessage }}
       </p>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- NO PRODUCTS -->
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
+    <!-- LOADING -->
+    <!-- ===================================================== -->
 
-    <div
-      v-else-if="products.length === 0"
-      class="bg-white rounded-xl shadow p-10 text-center"
-    >
-      <p class="text-gray-500 text-lg">No products found.</p>
+    <div v-if="loading" class="bg-white rounded-xl shadow p-10 text-center">
+      <div class="flex justify-center mb-4">
+        <div
+          class="w-8 h-8 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
+        ></div>
+      </div>
 
-      <NuxtLink
-        to="/admin/products/new"
-        class="inline-block mt-4 text-blue-600 hover:text-blue-800"
-      >
-        Add your first product
-      </NuxtLink>
+      <p class="text-gray-500">Loading products...</p>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- PRODUCTS -->
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
+    <!-- CONTENT -->
+    <!-- ===================================================== -->
 
-    <div v-else class="space-y-6">
-      <!-- ======================================================= -->
-      <!-- MAIN CATEGORY -->
-      <!-- ======================================================= -->
+    <div v-else>
+      <!-- =================================================== -->
+      <!-- SUMMARY -->
+      <!-- =================================================== -->
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-5">
+          <p class="text-sm text-gray-500">Products</p>
+
+          <p class="text-2xl font-bold text-slate-800">
+            {{ products.length }}
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+          <p class="text-sm text-gray-500">Categories</p>
+
+          <p class="text-2xl font-bold text-slate-800">
+            {{ categories.length }}
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-5">
+          <p class="text-sm text-gray-500">Main Categories</p>
+
+          <p class="text-2xl font-bold text-slate-800">
+            {{ categoryTree.length }}
+          </p>
+        </div>
+      </div>
+
+      <!-- =================================================== -->
+      <!-- NO PRODUCTS -->
+      <!-- =================================================== -->
 
       <div
-        v-for="category in categoryHierarchy"
-        :key="category.id"
-        class="bg-white rounded-xl shadow border border-gray-200"
+        v-if="products.length === 0"
+        class="bg-white rounded-xl shadow p-10 text-center"
       >
-        <!-- ===================================================== -->
-        <!-- MAIN CATEGORY HEADER -->
-        <!-- ===================================================== -->
+        <p class="text-gray-500">No products found.</p>
 
-        <button
-          type="button"
-          @click="toggleCategory(category.id)"
-          class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
+        <NuxtLink
+          to="/admin/products/add"
+          class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
         >
-          <div class="flex items-center gap-3">
-            <!-- ARROW -->
+          Add Product
+        </NuxtLink>
+      </div>
+
+      <!-- =================================================== -->
+      <!-- CATEGORY TREE -->
+      <!-- =================================================== -->
+
+      <div v-else class="space-y-5">
+        <div
+          v-for="category in categoryTree"
+          :key="category.id"
+          class="bg-white rounded-xl shadow overflow-visible"
+        >
+          <!-- =============================================== -->
+          <!-- MAIN CATEGORY HEADER -->
+          <!-- =============================================== -->
+
+          <button
+            type="button"
+            @click="toggleCategory(category.id)"
+            class="w-full flex items-center justify-between px-5 py-4 bg-slate-50 hover:bg-slate-100 rounded-t-xl transition"
+          >
+            <div class="flex items-center gap-3">
+              <!-- PLUS / MINUS -->
+
+              <span
+                class="flex items-center justify-center w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-lg"
+              >
+                {{ isCategoryOpen(category.id) ? "−" : "+" }}
+              </span>
+
+              <!-- CATEGORY NAME -->
+
+              <div class="text-left">
+                <h2 class="text-lg md:text-xl font-bold text-slate-800">
+                  {{ category.name }}
+                </h2>
+
+                <p class="text-xs text-gray-500">
+                  {{ totalProductsInCategory(category) }}
+                  product{{
+                    totalProductsInCategory(category) === 1 ? "" : "s"
+                  }}
+                </p>
+              </div>
+            </div>
+
+            <!-- CATEGORY ARROW -->
 
             <svg
               class="w-5 h-5 text-gray-500 transition-transform duration-200"
               :class="{
-                'rotate-90': openCategories.has(category.id),
+                'rotate-180': isCategoryOpen(category.id),
               }"
-              xmlns="http://www.w3.org/2000/svg"
               fill="none"
-              viewBox="0 0 24 24"
               stroke="currentColor"
+              viewBox="0 0 24 24"
             >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M9 5l7 7-7 7"
+                d="M19 9l-7 7-7-7"
               />
             </svg>
+          </button>
 
-            <!-- CATEGORY NAME -->
+          <!-- =============================================== -->
+          <!-- CATEGORY CONTENT -->
+          <!-- =============================================== -->
 
-            <span class="text-xl font-bold text-slate-800">
-              {{ category.name }}
-            </span>
+          <div v-if="isCategoryOpen(category.id)" class="p-4 space-y-5">
+            <!-- ============================================= -->
+            <!-- PRODUCTS DIRECTLY UNDER MAIN CATEGORY -->
+            <!-- ============================================= -->
 
-            <!-- COUNT -->
-
-            <span
-              class="text-sm bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
-            >
-              {{ category.totalProducts }}
-            </span>
-          </div>
-
-          <span class="text-sm text-gray-400">
-            {{ openCategories.has(category.id) ? "Collapse" : "Expand" }}
-          </span>
-        </button>
-
-        <!-- ===================================================== -->
-        <!-- CATEGORY CONTENT -->
-        <!-- ===================================================== -->
-
-        <div
-          v-if="openCategories.has(category.id)"
-          class="border-t border-gray-200"
-        >
-          <!-- =================================================== -->
-          <!-- PRODUCTS DIRECTLY UNDER MAIN CATEGORY -->
-          <!-- =================================================== -->
-
-          <div v-if="category.products.length" class="p-4 space-y-3">
-            <div
-              v-for="product in category.products"
-              :key="product.id"
-              class="relative bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-white hover:shadow-sm transition"
-            >
-              <ProductRow :product="product" />
-
-              <!-- ================================================= -->
-              <!-- ACTIONS -->
-              <!-- ================================================= -->
-
-              <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                <button
-                  type="button"
-                  :data-product-action="product.id"
-                  @click.stop="toggleActionMenu(product.id)"
-                  class="p-2 rounded-lg hover:bg-gray-200 text-gray-600 transition"
-                  title="Actions"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-6 h-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle cx="12" cy="5" r="1.8" />
-
-                    <circle cx="12" cy="12" r="1.8" />
-
-                    <circle cx="12" cy="19" r="1.8" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- =================================================== -->
-          <!-- SUB CATEGORIES -->
-          <!-- =================================================== -->
-
-          <div
-            v-for="subCategory in category.children"
-            :key="subCategory.id"
-            class="border-t border-gray-200"
-          >
-            <!-- SUB CATEGORY HEADER -->
-
-            <div class="px-6 py-3 bg-gray-50">
-              <div class="flex items-center gap-2">
-                <span class="text-gray-400"> └─ </span>
-
+            <div v-if="category.products.length" class="space-y-3">
+              <div class="flex items-center gap-2 pb-2 border-b">
                 <span class="font-semibold text-slate-700">
-                  {{ subCategory.name }}
+                  {{ category.name }}
                 </span>
 
                 <span
-                  class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full"
+                  class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
                 >
-                  {{ subCategory.products.length }}
+                  {{ category.products.length }}
                 </span>
               </div>
+
+              <ProductRow
+                v-for="product in category.products"
+                :key="product.id"
+                :product="product"
+                @view="viewProduct"
+                @edit="editProduct"
+                @delete="confirmDelete"
+              />
             </div>
 
-            <!-- SUB CATEGORY PRODUCTS -->
+            <!-- ============================================= -->
+            <!-- SUB CATEGORIES -->
+            <!-- ============================================= -->
 
-            <div v-if="subCategory.products.length" class="p-4 space-y-3">
+            <div
+              v-for="child in category.children"
+              :key="child.id"
+              class="border border-gray-200 rounded-lg overflow-visible"
+            >
+              <!-- SUB CATEGORY HEADER -->
+
               <div
-                v-for="product in subCategory.products"
-                :key="product.id"
-                class="relative bg-gray-50 border border-gray-200 rounded-lg p-4 hover:bg-white hover:shadow-sm transition"
+                class="flex items-center justify-between px-4 py-3 bg-gray-50"
               >
-                <ProductRow :product="product" />
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-400"> └─ </span>
 
-                <!-- ACTIONS -->
+                  <h3 class="font-semibold text-slate-700">
+                    {{ child.name }}
+                  </h3>
 
-                <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                  <button
-                    type="button"
-                    :data-product-action="product.id"
-                    @click.stop="toggleActionMenu(product.id)"
-                    class="p-2 rounded-lg hover:bg-gray-200 text-gray-600 transition"
-                    title="Actions"
+                  <span
+                    class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle cx="12" cy="5" r="1.8" />
-                      <circle cx="12" cy="12" r="1.8" />
-                      <circle cx="12" cy="19" r="1.8" />
-                    </svg>
-                  </button>
+                    {{ child.products.length }}
+                  </span>
                 </div>
+              </div>
+
+              <!-- =========================================== -->
+              <!-- SUB CATEGORY PRODUCTS -->
+              <!-- =========================================== -->
+
+              <div v-if="child.products.length" class="p-3 space-y-3">
+                <ProductRow
+                  v-for="product in child.products"
+                  :key="product.id"
+                  :product="product"
+                  @view="viewProduct"
+                  @edit="editProduct"
+                  @delete="confirmDelete"
+                />
+              </div>
+
+              <!-- NO PRODUCTS -->
+
+              <div v-else class="p-4 text-sm text-gray-400">
+                No products in this category.
               </div>
             </div>
 
-            <div v-else class="px-8 py-4 text-sm text-gray-400">
-              No products in this subcategory.
+            <!-- ============================================= -->
+            <!-- NOTHING -->
+            <!-- ============================================= -->
+
+            <div
+              v-if="
+                !category.products.length &&
+                !category.children.some((child) => child.products.length)
+              "
+              class="text-center py-6 text-gray-400"
+            >
+              No products in this category.
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- FIXED ACTION MENU -->
-    <!-- ========================================================= -->
+    <!-- ===================================================== -->
+    <!-- DELETE CONFIRMATION MODAL -->
+    <!-- ===================================================== -->
 
-    <div
-      v-if="openActionMenu !== null"
-      class="fixed z-[99999] w-44 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden"
-      :style="getMenuPosition(openActionMenu)"
-      @click.stop
-    >
-      <!-- VIEW -->
-
-      <NuxtLink
-        v-if="selectedProduct"
-        :to="`/product/${selectedProduct.slug}`"
-        @click="closeActionMenu"
-        class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+    <Teleport to="body">
+      <div
+        v-if="deleteProduct"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+        <!-- BACKDROP -->
+
+        <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
+
+        <!-- MODAL -->
+
+        <div
+          class="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-          />
+          <div class="flex items-start gap-4">
+            <!-- WARNING ICON -->
 
-          <circle cx="12" cy="12" r="3" />
-        </svg>
+            <div
+              class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A2 2 0 004.52 20h14.96a2 2 0 001.73-3.14l-7.5-13a2 2 0 00-3.42 0z"
+                />
+              </svg>
+            </div>
 
-        View
-      </NuxtLink>
+            <div class="flex-1">
+              <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
 
-      <!-- EDIT -->
+              <p class="mt-2 text-gray-600">
+                Are you sure you really want to delete:
+              </p>
 
-      <NuxtLink
-        v-if="selectedProduct"
-        :to="`/admin/products/edit/${selectedProduct.id}`"
-        @click="closeActionMenu"
-        class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+              <p class="mt-2 font-semibold text-slate-800">
+                {{ deleteProduct.name }}
+              </p>
+
+              <p class="mt-3 text-sm text-red-600">
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
+
+          <!-- MODAL BUTTONS -->
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              @click="cancelDelete"
+              :disabled="deleting"
+              class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              @click="deleteProductNow"
+              :disabled="deleting"
+              class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-lg"
+            >
+              {{ deleting ? "Deleting..." : "Yes, Delete" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ===================================================== -->
+    <!-- SUCCESS MESSAGE -->
+    <!-- ===================================================== -->
+
+    <Teleport to="body">
+      <div
+        v-if="successMessage"
+        class="fixed bottom-6 right-6 z-[10000] bg-green-600 text-white px-6 py-4 rounded-lg shadow-xl"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h5"
-          />
-
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1-1-4 9.5-9.5z"
-          />
-        </svg>
-
-        Edit
-      </NuxtLink>
-
-      <!-- DELETE -->
-
-      <button
-        v-if="selectedProduct"
-        type="button"
-        @click="confirmDelete(selectedProduct)"
-        class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7"
-          />
-
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 11v6M14 11v6"
-          />
-
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 7h16"
-          />
-
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 7V4h4v3"
-          />
-        </svg>
-
-        Delete
-      </button>
-    </div>
+        {{ successMessage }}
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-// =========================================================
-// ADMIN MIDDLEWARE
-// =========================================================
+/* ==========================================================
+   ADMIN MIDDLEWARE
+========================================================== */
 
 definePageMeta({
   middleware: "admin",
 });
 
-// =========================================================
-// ADMIN FETCH
-// =========================================================
+/* ==========================================================
+   ADMIN FETCH
+
+   IMPORTANT:
+   Your useAdminFetch composable returns the function directly:
+
+   const adminFetch = useAdminFetch();
+
+   NOT:
+
+   const { adminFetch } = useAdminFetch();
+========================================================== */
 
 const adminFetch = useAdminFetch();
 
-// =========================================================
-// STATE
-// =========================================================
+const router = useRouter();
+
+/* ==========================================================
+   TYPES
+========================================================== */
+
+interface Product {
+  id: number;
+  slug: string;
+  name: string;
+  category_id: number | null;
+  blurb?: string;
+  images?: string[];
+  price?: number | string;
+  oldPrice?: number | string | null;
+  stock?: number;
+  featured?: boolean;
+  refurbished?: boolean;
+  active?: boolean;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  slug?: string;
+  parent_id: number | null;
+  active?: boolean;
+}
+
+interface CategoryNode extends Category {
+  products: Product[];
+  children: CategoryNode[];
+}
+
+/* ==========================================================
+   STATE
+========================================================== */
 
 const loading = ref(true);
 
+const products = ref<Product[]>([]);
+
+const categories = ref<Category[]>([]);
+
 const errorMessage = ref("");
 
-const products = ref<any[]>([]);
+const successMessage = ref("");
 
-const categories = ref<any[]>([]);
+/* ==========================================================
+   COLLAPSED CATEGORIES
+
+   Starts EMPTY.
+
+   Since isCategoryOpen() checks for an ID in this set,
+   all categories start collapsed.
+========================================================== */
 
 const openCategories = ref<Set<number>>(new Set());
 
-const openActionMenu = ref<number | null>(null);
+/* ==========================================================
+   DELETE
+========================================================== */
 
-const menuPositions = ref<Record<number, any>>({});
+const deleteProduct = ref<Product | null>(null);
 
-const selectedProduct = ref<any | null>(null);
+const deleting = ref(false);
 
-const deleting = ref<number | null>(null);
+/* ==========================================================
+   CATEGORY TREE
+========================================================== */
 
-// =========================================================
-// LOAD PRODUCTS
-// =========================================================
+const categoryTree = computed<CategoryNode[]>(() => {
+  const categoryMap = new Map<number, CategoryNode>();
 
-const loadProducts = async () => {
-  try {
-    console.log("🔥 LOAD PRODUCTS STARTED");
+  /*
+   * Create nodes
+   */
 
-    const response = await adminFetch("/api/admin/products");
-
-    console.log("🔥 ADMIN PRODUCTS RESPONSE:", response);
-
-    if (Array.isArray(response)) {
-      products.value = response;
-    } else if (response?.products) {
-      products.value = response.products;
-    } else {
-      products.value = [];
-    }
-
-    console.log("🔥 PRODUCTS STORED:", products.value);
-  } catch (error: any) {
-    console.error("🔥 LOAD PRODUCTS ERROR:", error);
-
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to load products.";
-  }
-};
-
-// =========================================================
-// LOAD CATEGORIES
-// =========================================================
-
-const loadCategories = async () => {
-  try {
-    console.log("🔥 LOADING CATEGORIES");
-
-    const response = await adminFetch("/api/admin/categories");
-
-    console.log("🔥 CATEGORIES RESPONSE:", response);
-
-    if (Array.isArray(response)) {
-      categories.value = response;
-    } else if (response?.categories) {
-      categories.value = response.categories;
-    } else {
-      categories.value = [];
-    }
-  } catch (error: any) {
-    console.error("🔥 LOAD CATEGORIES ERROR:", error);
-  }
-};
-
-// =========================================================
-// CATEGORY HIERARCHY
-// =========================================================
-
-const categoryHierarchy = computed(() => {
-  const mainCategories = categories.value
-    .filter(
-      (category) =>
-        category.parent_id === null || category.parent_id === undefined,
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  return mainCategories.map((parent) => {
-    const children = categories.value
-      .filter((category) => Number(category.parent_id) === Number(parent.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    const parentProducts = products.value
-      .filter((product) => Number(product.category_id) === Number(parent.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    const mappedChildren = children.map((child) => {
-      const childProducts = products.value
-        .filter((product) => Number(product.category_id) === Number(child.id))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      return {
-        ...child,
-        products: childProducts,
-      };
+  categories.value.forEach((category) => {
+    categoryMap.set(category.id, {
+      ...category,
+      products: [],
+      children: [],
     });
-
-    const childProductCount = mappedChildren.reduce(
-      (total, child) => total + child.products.length,
-      0,
-    );
-
-    return {
-      ...parent,
-      products: parentProducts,
-      children: mappedChildren,
-      totalProducts: parentProducts.length + childProductCount,
-    };
   });
+
+  /*
+   * Put products into their category
+   */
+
+  products.value.forEach((product) => {
+    if (product.category_id === null) {
+      return;
+    }
+
+    const category = categoryMap.get(Number(product.category_id));
+
+    if (category) {
+      category.products.push(product);
+    }
+  });
+
+  /*
+   * Sort products alphabetically
+   */
+
+  categoryMap.forEach((category) => {
+    category.products.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || ""),
+    );
+  });
+
+  /*
+   * Build hierarchy
+   */
+
+  const parents: CategoryNode[] = [];
+
+  categoryMap.forEach((category) => {
+    if (!category.parent_id) {
+      parents.push(category);
+    }
+  });
+
+  /*
+   * Attach children
+   */
+
+  categoryMap.forEach((category) => {
+    if (category.parent_id) {
+      const parent = categoryMap.get(Number(category.parent_id));
+
+      if (parent) {
+        parent.children.push(category);
+      }
+    }
+  });
+
+  /*
+   * Sort children
+   */
+
+  categoryMap.forEach((category) => {
+    category.children.sort((a, b) => a.name.localeCompare(b.name));
+  });
+
+  /*
+   * Sort main categories
+   */
+
+  parents.sort((a, b) => a.name.localeCompare(b.name));
+
+  return parents;
 });
 
-// =========================================================
-// TOGGLE CATEGORY
-// =========================================================
+/* ==========================================================
+   CATEGORY OPEN/CLOSE
+========================================================== */
+
+const isCategoryOpen = (categoryId: number) => {
+  return openCategories.value.has(categoryId);
+};
 
 const toggleCategory = (categoryId: number) => {
   const newSet = new Set(openCategories.value);
@@ -520,210 +563,234 @@ const toggleCategory = (categoryId: number) => {
   openCategories.value = newSet;
 };
 
-// =========================================================
-// GET FIRST IMAGE
-// =========================================================
+/* ==========================================================
+   COUNT PRODUCTS
+========================================================== */
 
-const getFirstImage = (product: any) => {
-  if (Array.isArray(product.images) && product.images.length) {
-    return product.images[0];
-  }
+const totalProductsInCategory = (category: CategoryNode): number => {
+  let count = category.products.length;
 
-  return "";
-};
-
-// =========================================================
-// ACTION MENU
-// =========================================================
-
-const toggleActionMenu = (productId: number) => {
-  if (openActionMenu.value === productId) {
-    closeActionMenu();
-
-    return;
-  }
-
-  const product = products.value.find(
-    (item) => Number(item.id) === Number(productId),
-  );
-
-  if (!product) {
-    return;
-  }
-
-  selectedProduct.value = product;
-
-  openActionMenu.value = productId;
-
-  nextTick(() => {
-    const button = document.querySelector(
-      `[data-product-action="${productId}"]`,
-    ) as HTMLElement | null;
-
-    if (!button) {
-      return;
-    }
-
-    const rect = button.getBoundingClientRect();
-
-    const menuWidth = 176;
-
-    let left = rect.right - menuWidth;
-
-    let top = rect.bottom + 6;
-
-    // =====================================================
-    // KEEP MENU ON SCREEN HORIZONTALLY
-    // =====================================================
-
-    if (left < 10) {
-      left = 10;
-    }
-
-    if (left + menuWidth > window.innerWidth - 10) {
-      left = window.innerWidth - menuWidth - 10;
-    }
-
-    // =====================================================
-    // IF TOO LOW, DISPLAY ABOVE BUTTON
-    // =====================================================
-
-    const menuHeight = 140;
-
-    if (top + menuHeight > window.innerHeight - 10) {
-      top = rect.top - menuHeight - 6;
-    }
-
-    if (top < 10) {
-      top = 10;
-    }
-
-    menuPositions.value[productId] = {
-      position: "fixed",
-      top: `${top}px`,
-      left: `${left}px`,
-    };
+  category.children.forEach((child) => {
+    count += child.products.length;
   });
+
+  return count;
 };
 
-// =========================================================
-// MENU POSITION
-// =========================================================
+/* ==========================================================
+   LOAD PRODUCTS
+========================================================== */
 
-const getMenuPosition = (productId: number) => {
-  return (
-    menuPositions.value[productId] || {
-      position: "fixed",
-      top: "10px",
-      left: "10px",
-    }
-  );
+const loadProducts = async () => {
+  console.log("🔥 ADMIN PRODUCTS: LOADING PRODUCTS");
+
+  const response = await adminFetch("/api/admin/products");
+
+  console.log("🔥 ADMIN PRODUCTS RESPONSE:", response);
+
+  /*
+   * API may return:
+   *
+   * [
+   *   products...
+   * ]
+   *
+   * OR:
+   *
+   * {
+   *   products: [...]
+   * }
+   */
+
+  if (Array.isArray(response)) {
+    products.value = response;
+  } else if (response && Array.isArray(response.products)) {
+    products.value = response.products;
+  } else {
+    products.value = [];
+  }
+
+  console.log("🔥 PRODUCTS STORED:", products.value);
 };
 
-// =========================================================
-// CLOSE MENU
-// =========================================================
+/* ==========================================================
+   LOAD CATEGORIES
+========================================================== */
 
-const closeActionMenu = () => {
-  openActionMenu.value = null;
+const loadCategories = async () => {
+  console.log("🔥 ADMIN PRODUCTS: LOADING CATEGORIES");
 
-  selectedProduct.value = null;
+  const response = await adminFetch("/api/admin/categories");
+
+  console.log("🔥 CATEGORIES RESPONSE:", response);
+
+  if (Array.isArray(response)) {
+    categories.value = response;
+  } else if (response && Array.isArray(response.categories)) {
+    categories.value = response.categories;
+  } else {
+    categories.value = [];
+  }
+
+  console.log("🔥 CATEGORIES STORED:", categories.value);
 };
 
-// =========================================================
-// DELETE CONFIRMATION
-// =========================================================
+/* ==========================================================
+   VIEW PRODUCT
+========================================================== */
 
-const confirmDelete = async (product: any) => {
-  closeActionMenu();
-
-  const confirmed = window.confirm(
-    `Are you sure you want to delete "${product.name}"?\n\nThis action cannot be undone.`,
-  );
-
-  if (!confirmed) {
+const viewProduct = (product: Product) => {
+  if (!product.slug) {
     return;
   }
 
-  await deleteProduct(product);
+  router.push(`/product/${product.slug}`);
 };
 
-// =========================================================
-// DELETE PRODUCT
-// =========================================================
+/* ==========================================================
+   EDIT PRODUCT
+========================================================== */
 
-const deleteProduct = async (product: any) => {
+const editProduct = (product: Product) => {
+  router.push(`/admin/products/edit/${product.id}`);
+};
+
+/* ==========================================================
+   CONFIRM DELETE
+========================================================== */
+
+const confirmDelete = (product: Product) => {
+  deleteProduct.value = product;
+};
+
+/* ==========================================================
+   CANCEL DELETE
+========================================================== */
+
+const cancelDelete = () => {
+  if (deleting.value) {
+    return;
+  }
+
+  deleteProduct.value = null;
+};
+
+/* ==========================================================
+   DELETE PRODUCT
+========================================================== */
+
+const deleteProductNow = async () => {
+  if (!deleteProduct.value) {
+    return;
+  }
+
+  deleting.value = true;
+
+  errorMessage.value = "";
+
   try {
-    deleting.value = product.id;
+    const id = deleteProduct.value.id;
 
-    console.log("🔥 DELETING PRODUCT:", product.id);
+    console.log("🔥 DELETING PRODUCT:", id);
 
-    await adminFetch(`/api/admin/products/${product.id}`, {
+    await adminFetch(`/api/admin/products/${id}`, {
       method: "DELETE",
     });
 
-    // ===================================================
-    // REMOVE FROM LOCAL ARRAY
-    // ===================================================
+    /*
+     * Remove product locally immediately
+     */
 
-    products.value = products.value.filter(
-      (item) => Number(item.id) !== Number(product.id),
-    );
+    products.value = products.value.filter((product) => product.id !== id);
 
-    console.log("✅ PRODUCT DELETED");
+    successMessage.value = "Product deleted successfully.";
+
+    deleteProduct.value = null;
+
+    /*
+     * Hide success message after 3 seconds
+     */
+
+    setTimeout(() => {
+      successMessage.value = "";
+    }, 3000);
   } catch (error: any) {
     console.error("🔥 DELETE PRODUCT ERROR:", error);
 
-    alert(
+    errorMessage.value =
       error?.data?.statusMessage ||
-        error?.message ||
-        "Unable to delete product.",
-    );
+      error?.message ||
+      "Unable to delete product.";
+
+    deleteProduct.value = null;
   } finally {
-    deleting.value = null;
+    deleting.value = false;
   }
 };
 
-// =========================================================
-// CLOSE MENU WHEN CLICKING ELSEWHERE
-// =========================================================
+/* ==========================================================
+   LOAD EVERYTHING
+========================================================== */
 
-const handleDocumentClick = () => {
-  closeActionMenu();
-};
+const load = async () => {
+  loading.value = true;
 
-// =========================================================
-// LOAD
-// =========================================================
-
-onMounted(async () => {
-  document.addEventListener("click", handleDocumentClick);
+  errorMessage.value = "";
 
   try {
     await Promise.all([loadProducts(), loadCategories()]);
+
+    console.log("=================================");
+
+    console.log("🔥 ADMIN PRODUCTS LOADED");
+
+    console.log("Products:", products.value.length);
+
+    console.log("Categories:", categories.value.length);
+
+    console.log("Main Categories:", categoryTree.value.length);
+
+    console.log("=================================");
+  } catch (error: any) {
+    console.error("🔥 ADMIN PRODUCTS LOAD ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to load products.";
   } finally {
     loading.value = false;
   }
-});
+};
 
-// =========================================================
-// CLEANUP
-// =========================================================
+/* ==========================================================
+   INITIAL LOAD
+========================================================== */
 
-onBeforeUnmount(() => {
-  document.removeEventListener("click", handleDocumentClick);
-});
+await load();
 </script>
 
-<!-- ========================================================= -->
-<!-- PRODUCT ROW COMPONENT -->
-<!-- ========================================================= -->
+<!-- ==========================================================
+     PRODUCT ROW COMPONENT
+
+     This keeps the main page much cleaner while providing:
+       - Image
+       - Product name
+       - Price
+       - Stock
+       - Three-dot menu
+========================================================== -->
 
 <script lang="ts">
+import { defineComponent, h, ref } from "vue";
 
-export default {
+export default defineComponent({
+  name: "AdminProductsPage",
+
   components: {
     ProductRow: defineComponent({
+      name: "ProductRow",
+
       props: {
         product: {
           type: Object,
@@ -731,128 +798,342 @@ export default {
         },
       },
 
-      setup(props) {
+      emits: ["view", "edit", "delete"],
 
-        const getFirstImage = (
-          product: any
-        ) => {
+      setup(props, { emit }) {
+        const menuOpen = ref(false);
 
-          if (
-            Array.isArray(product.images) &&
-            product.images.length
-          ) {
-            return product.images[0];
+        const closeMenu = () => {
+          menuOpen.value = false;
+        };
+
+        const handleAction = (action: string) => {
+          closeMenu();
+
+          if (action === "view") {
+            emit("view", props.product);
           }
 
-          return "";
+          if (action === "edit") {
+            emit("edit", props.product);
+          }
+
+          if (action === "delete") {
+            emit("delete", props.product);
+          }
         };
 
-        return {
-          getFirstImage,
-        };
+        return () =>
+          h(
+            "div",
+            {
+              class:
+                "relative flex flex-col md:flex-row md:items-center gap-4 border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition",
+            },
+            [
+              /*
+               * IMAGE
+               */
+
+              h(
+                "div",
+                {
+                  class:
+                    "w-full md:w-24 h-24 flex-shrink-0 bg-gray-50 rounded-lg border flex items-center justify-center overflow-hidden",
+                },
+                [
+                  props.product.images && props.product.images.length
+                    ? h("img", {
+                        src: props.product.images[0],
+                        alt: props.product.name,
+                        class: "max-w-full max-h-full object-contain p-2",
+                      })
+                    : h(
+                        "span",
+                        {
+                          class: "text-xs text-gray-400",
+                        },
+                        "No Image",
+                      ),
+                ],
+              ),
+
+              /*
+               * PRODUCT DETAILS
+               */
+
+              h(
+                "div",
+                {
+                  class: "flex-1 min-w-0",
+                },
+                [
+                  h(
+                    "h4",
+                    {
+                      class: "font-semibold text-slate-800 line-clamp-2",
+                    },
+                    props.product.name,
+                  ),
+
+                  props.product.blurb
+                    ? h(
+                        "p",
+                        {
+                          class: "text-sm text-gray-500 mt-1 line-clamp-1",
+                        },
+                        props.product.blurb,
+                      )
+                    : null,
+
+                  /*
+                   * MOBILE / DESKTOP DETAILS
+                   */
+
+                  h(
+                    "div",
+                    {
+                      class: "flex flex-wrap items-center gap-4 mt-2",
+                    },
+                    [
+                      h(
+                        "span",
+                        {
+                          class: "font-bold text-blue-600",
+                        },
+                        `$${props.product.price ?? 0}`,
+                      ),
+
+                      props.product.oldPrice
+                        ? h(
+                            "span",
+                            {
+                              class: "text-sm text-gray-400 line-through",
+                            },
+                            `$${props.product.oldPrice}`,
+                          )
+                        : null,
+
+                      h(
+                        "span",
+                        {
+                          class: "text-sm",
+                        },
+                        props.product.stock && props.product.stock > 0
+                          ? `${props.product.stock} in stock`
+                          : "Out of stock",
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              /*
+               * BADGES
+               */
+
+              h(
+                "div",
+                {
+                  class: "flex flex-wrap gap-2",
+                },
+                [
+                  props.product.featured
+                    ? h(
+                        "span",
+                        {
+                          class:
+                            "px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded",
+                        },
+                        "Featured",
+                      )
+                    : null,
+
+                  props.product.refurbished
+                    ? h(
+                        "span",
+                        {
+                          class:
+                            "px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded",
+                        },
+                        "Refurbished",
+                      )
+                    : null,
+
+                  props.product.active
+                    ? h(
+                        "span",
+                        {
+                          class:
+                            "px-2 py-1 text-xs bg-green-100 text-green-700 rounded",
+                        },
+                        "Active",
+                      )
+                    : h(
+                        "span",
+                        {
+                          class:
+                            "px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded",
+                        },
+                        "Inactive",
+                      ),
+                ],
+              ),
+
+              /*
+               * THREE DOT MENU
+               *
+               * z-50 and absolute positioning prevent
+               * it being hidden behind the category content.
+               */
+
+              h(
+                "div",
+                {
+                  class: "relative flex-shrink-0",
+                },
+                [
+                  /*
+                   * THREE DOT BUTTON
+                   */
+
+                  h(
+                    "button",
+                    {
+                      type: "button",
+
+                      class:
+                        "w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600",
+
+                      title: "Product actions",
+
+                      onClick: (event: MouseEvent) => {
+                        event.stopPropagation();
+
+                        menuOpen.value = !menuOpen.value;
+                      },
+                    },
+                    [
+                      h(
+                        "svg",
+                        {
+                          class: "w-6 h-6",
+                          fill: "currentColor",
+                          viewBox: "0 0 20 20",
+                        },
+                        [
+                          h("path", {
+                            d: "M10 3a2 2 0 110-4 2 2 0 010 4zm0 7a2 2 0 110-4 2 2 0 010 4zm0 7a2 2 0 110-4 2 2 0 010 4z",
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  /*
+                   * ACTION MENU
+                   */
+
+                  menuOpen.value
+                    ? h(
+                        "div",
+                        {
+                          class:
+                            "absolute right-0 bottom-full mb-2 w-44 bg-white border border-gray-200 rounded-lg shadow-2xl z-[9999] overflow-hidden",
+                          onClick: (event: MouseEvent) => {
+                            event.stopPropagation();
+                          },
+                        },
+                        [
+                          /*
+                           * VIEW
+                           */
+
+                          h(
+                            "button",
+                            {
+                              type: "button",
+
+                              class:
+                                "w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-100",
+
+                              onClick: () => handleAction("view"),
+                            },
+                            [
+                              h(
+                                "span",
+                                {
+                                  class: "w-5 text-center",
+                                },
+                                "👁",
+                              ),
+
+                              "View",
+                            ],
+                          ),
+
+                          /*
+                           * EDIT
+                           */
+
+                          h(
+                            "button",
+                            {
+                              type: "button",
+
+                              class:
+                                "w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-100",
+
+                              onClick: () => handleAction("edit"),
+                            },
+                            [
+                              h(
+                                "span",
+                                {
+                                  class: "w-5 text-center",
+                                },
+                                "✏️",
+                              ),
+
+                              "Edit",
+                            ],
+                          ),
+
+                          /*
+                           * DELETE
+                           */
+
+                          h(
+                            "button",
+                            {
+                              type: "button",
+
+                              class:
+                                "w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50",
+
+                              onClick: () => handleAction("delete"),
+                            },
+                            [
+                              h(
+                                "span",
+                                {
+                                  class: "w-5 text-center",
+                                },
+                                "🗑",
+                              ),
+
+                              "Delete",
+                            ],
+                          ),
+                        ],
+                      )
+                    : null,
+                ],
+              ),
+            ],
+          );
       },
-
-      template: `
-        <div class="flex items-center gap-4 pr-12">
-
-          <!-- IMAGE -->
-
-          <div
-            class="w-20 h-20 shrink-0 bg-white border rounded-lg flex items-center justify-center overflow-hidden"
-          >
-
-            <img
-              v-if="getFirstImage(product)"
-              :src="getFirstImage(product)"
-              :alt="product.name"
-              class="w-full h-full object-contain p-2"
-            />
-
-            <span
-              v-else
-              class="text-xs text-gray-400"
-            >
-              No Image
-            </span>
-
-          </div>
-
-          <!-- PRODUCT -->
-
-          <div class="flex-1 min-w-0">
-
-            <h3
-              class="font-semibold text-slate-800 truncate"
-            >
-              {{ product.name }}
-            </h3>
-
-            <p
-              v-if="product.blurb"
-              class="text-sm text-gray-500 line-clamp-1 mt-1"
-            >
-              {{ product.blurb }}
-            </p>
-
-            <div
-              class="flex flex-wrap items-center gap-3 mt-2"
-            >
-
-              <span
-                class="font-bold text-blue-600"
-              >
-                ${{ product.price }}
-              </span>
-
-              <span
-                v-if="product.oldPrice"
-                class="text-sm text-gray-400 line-through"
-              >
-                ${{ product.oldPrice }}
-              </span>
-
-              <span
-                v-if="product.stock > 0"
-                class="text-xs font-semibold text-green-600"
-              >
-                {{ product.stock }} in stock
-              </span>
-
-              <span
-                v-else
-                class="text-xs font-semibold text-red-600"
-              >
-                Out of stock
-              </span>
-
-              <span
-                v-if="product.featured"
-                class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded"
-              >
-                Featured
-              </span>
-
-              <span
-                v-if="product.refurbished"
-                class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded"
-              >
-                Refurbished
-              </span>
-
-              <span
-                v-if="Array.isArray(product.images) && product.images.length > 1"
-                class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded"
-              >
-                {{ product.images.length }} images
-              </span>
-
-            </div>
-
-          </div>
-
-        </div>
-      `,
     }),
   },
-};
+});
 </script>
