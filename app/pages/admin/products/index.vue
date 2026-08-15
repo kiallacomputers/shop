@@ -24,7 +24,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- SUCCESS MESSAGE -->
+    <!-- SUCCESS -->
     <!-- ========================================================= -->
 
     <div
@@ -35,7 +35,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- ERROR MESSAGE -->
+    <!-- ERROR -->
     <!-- ========================================================= -->
 
     <div
@@ -46,7 +46,7 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- ANIMATED LOADING -->
+    <!-- LOADING -->
     <!-- ========================================================= -->
 
     <div
@@ -54,7 +54,6 @@
       class="bg-white rounded-xl shadow-sm border border-gray-200 p-12"
     >
       <div class="flex flex-col items-center justify-center">
-        <!-- Spinner -->
         <div
           class="w-14 h-14 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
         ></div>
@@ -67,12 +66,8 @@
           Loading products and categories...
         </p>
 
-        <!-- Animated dots -->
         <div class="flex gap-1 mt-4">
-          <span
-            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
-            style="animation-delay: 0ms"
-          ></span>
+          <span class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
 
           <span
             class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
@@ -140,25 +135,25 @@
       </div>
 
       <!-- ======================================================= -->
-      <!-- CATEGORY GROUPS -->
+      <!-- CATEGORY TREE -->
       <!-- ======================================================= -->
 
       <div v-for="category in categoryTree" :key="category.id" class="mb-8">
         <!-- ===================================================== -->
-        <!-- MAIN CATEGORY HEADER -->
+        <!-- MAIN CATEGORY -->
         <!-- ===================================================== -->
 
         <div
           class="relative bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"
         >
+          <!-- CATEGORY HEADER -->
+
           <button
             type="button"
             @click="toggleCategory(category.id)"
             class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
           >
             <div class="flex items-center gap-3">
-              <!-- Arrow -->
-
               <span
                 class="text-gray-500 transition-transform duration-200"
                 :class="{
@@ -167,8 +162,6 @@
               >
                 ▶
               </span>
-
-              <!-- Category -->
 
               <div class="text-left">
                 <h2 class="text-xl font-bold text-slate-800">
@@ -199,10 +192,10 @@
 
           <div
             v-if="openCategories.has(category.id)"
-            class="border-t border-gray-200"
+            class="border-t border-gray-200 overflow-visible"
           >
             <!-- ================================================= -->
-            <!-- MAIN CATEGORY PRODUCTS -->
+            <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
             <!-- ================================================= -->
 
             <div
@@ -214,13 +207,136 @@
                 :key="product.id"
                 class="relative overflow-visible px-5 py-5 hover:bg-gray-50 transition"
               >
-                <ProductDisplay
-                  :product="product"
-                  :open-menu="openMenu"
-                  @toggle-menu="toggleMenu"
-                  @close-menu="closeMenu"
-                  @delete="confirmDelete"
-                />
+                <!-- PRODUCT -->
+
+                <div class="flex flex-col sm:flex-row gap-5">
+                  <!-- IMAGE -->
+
+                  <div
+                    class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
+                  >
+                    <img
+                      v-if="
+                        Array.isArray(product.images) && product.images.length
+                      "
+                      :src="product.images[0]"
+                      :alt="product.name"
+                      class="w-full h-full object-contain p-2"
+                    />
+
+                    <span v-else class="text-gray-400 text-xs"> No Image </span>
+                  </div>
+
+                  <!-- PRODUCT DETAILS -->
+
+                  <div class="flex-1 min-w-0">
+                    <div
+                      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+                    >
+                      <div class="min-w-0">
+                        <h3 class="font-semibold text-slate-800 break-words">
+                          {{ product.name }}
+                        </h3>
+
+                        <p
+                          v-if="product.blurb"
+                          class="text-sm text-gray-500 mt-1 line-clamp-2"
+                        >
+                          {{ product.blurb }}
+                        </p>
+
+                        <div class="flex flex-wrap items-center gap-3 mt-3">
+                          <span class="font-bold text-blue-600">
+                            ${{ product.price }}
+                          </span>
+
+                          <span
+                            v-if="product.oldPrice"
+                            class="text-sm text-gray-400 line-through"
+                          >
+                            ${{ product.oldPrice }}
+                          </span>
+
+                          <span
+                            class="text-sm"
+                            :class="
+                              product.stock > 0
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            "
+                          >
+                            Stock: {{ product.stock }}
+                          </span>
+
+                          <span
+                            v-if="product.featured"
+                            class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
+                          >
+                            Featured
+                          </span>
+
+                          <span
+                            v-if="product.refurbished"
+                            class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
+                          >
+                            Refurbished
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- ================================================= -->
+                      <!-- THREE DOT MENU -->
+                      <!-- ================================================= -->
+
+                      <div
+                        class="relative flex-shrink-0 self-start"
+                        @click.stop
+                      >
+                        <button
+                          type="button"
+                          @click.stop="toggleMenu(product.id)"
+                          class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                          aria-label="Product actions"
+                        >
+                          <span class="text-xl leading-none tracking-[2px]">
+                            •••
+                          </span>
+                        </button>
+
+                        <!-- MENU -->
+
+                        <div
+                          v-if="openMenu === product.id"
+                          class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
+                        >
+                          <NuxtLink
+                            :to="`/product/${product.slug}`"
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                            @click="closeMenu"
+                          >
+                            View
+                          </NuxtLink>
+
+                          <NuxtLink
+                            :to="`/admin/products/edit/${product.id}`"
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                            @click="closeMenu"
+                          >
+                            Edit
+                          </NuxtLink>
+
+                          <button
+                            type="button"
+                            @click="confirmDelete(product)"
+                            class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -233,7 +349,7 @@
               :key="child.id"
               class="border-t border-gray-200"
             >
-              <!-- Subcategory header -->
+              <!-- SUBCATEGORY HEADER -->
 
               <div class="bg-gray-50 px-5 py-4">
                 <div class="flex items-center justify-between">
@@ -250,7 +366,7 @@
                 </div>
               </div>
 
-              <!-- Subcategory products -->
+              <!-- SUBCATEGORY PRODUCTS -->
 
               <div
                 v-if="child.products.length"
@@ -261,17 +377,138 @@
                   :key="product.id"
                   class="relative overflow-visible px-5 py-5 pl-8 hover:bg-gray-50 transition"
                 >
-                  <ProductDisplay
-                    :product="product"
-                    :open-menu="openMenu"
-                    @toggle-menu="toggleMenu"
-                    @close-menu="closeMenu"
-                    @delete="confirmDelete"
-                  />
+                  <div class="flex flex-col sm:flex-row gap-5">
+                    <!-- IMAGE -->
+
+                    <div
+                      class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
+                    >
+                      <img
+                        v-if="
+                          Array.isArray(product.images) && product.images.length
+                        "
+                        :src="product.images[0]"
+                        :alt="product.name"
+                        class="w-full h-full object-contain p-2"
+                      />
+
+                      <span v-else class="text-gray-400 text-xs">
+                        No Image
+                      </span>
+                    </div>
+
+                    <!-- DETAILS -->
+
+                    <div class="flex-1 min-w-0">
+                      <div
+                        class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+                      >
+                        <div class="min-w-0">
+                          <h3 class="font-semibold text-slate-800 break-words">
+                            {{ product.name }}
+                          </h3>
+
+                          <p
+                            v-if="product.blurb"
+                            class="text-sm text-gray-500 mt-1 line-clamp-2"
+                          >
+                            {{ product.blurb }}
+                          </p>
+
+                          <div class="flex flex-wrap items-center gap-3 mt-3">
+                            <span class="font-bold text-blue-600">
+                              ${{ product.price }}
+                            </span>
+
+                            <span
+                              v-if="product.oldPrice"
+                              class="text-sm text-gray-400 line-through"
+                            >
+                              ${{ product.oldPrice }}
+                            </span>
+
+                            <span
+                              class="text-sm"
+                              :class="
+                                product.stock > 0
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              "
+                            >
+                              Stock: {{ product.stock }}
+                            </span>
+
+                            <span
+                              v-if="product.featured"
+                              class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
+                            >
+                              Featured
+                            </span>
+
+                            <span
+                              v-if="product.refurbished"
+                              class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
+                            >
+                              Refurbished
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- THREE DOTS -->
+
+                        <div
+                          class="relative flex-shrink-0 self-start"
+                          @click.stop
+                        >
+                          <button
+                            type="button"
+                            @click.stop="toggleMenu(product.id)"
+                            class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                            aria-label="Product actions"
+                          >
+                            <span class="text-xl leading-none tracking-[2px]">
+                              •••
+                            </span>
+                          </button>
+
+                          <!-- MENU -->
+
+                          <div
+                            v-if="openMenu === product.id"
+                            class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
+                          >
+                            <NuxtLink
+                              :to="`/product/${product.slug}`"
+                              class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                              @click="closeMenu"
+                            >
+                              View
+                            </NuxtLink>
+
+                            <NuxtLink
+                              :to="`/admin/products/edit/${product.id}`"
+                              class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                              @click="closeMenu"
+                            >
+                              Edit
+                            </NuxtLink>
+
+                            <button
+                              type="button"
+                              @click="confirmDelete(product)"
+                              class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- No products -->
+              <!-- NO PRODUCTS -->
 
               <div v-else class="px-8 py-5 text-sm text-gray-400 italic">
                 No products in this subcategory.
@@ -319,22 +556,124 @@
             </span>
           </button>
 
+          <!-- PRODUCTS -->
+
           <div
             v-if="openCategories.has('uncategorised')"
-            class="border-t border-gray-200 divide-y divide-gray-100"
+            class="border-t border-gray-200 divide-y divide-gray-100 overflow-visible"
           >
             <div
               v-for="product in uncategorisedProducts"
               :key="product.id"
               class="relative overflow-visible px-5 py-5 hover:bg-gray-50"
             >
-              <ProductDisplay
-                :product="product"
-                :open-menu="openMenu"
-                @toggle-menu="toggleMenu"
-                @close-menu="closeMenu"
-                @delete="confirmDelete"
-              />
+              <div class="flex flex-col sm:flex-row gap-5">
+                <!-- IMAGE -->
+
+                <div
+                  class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
+                >
+                  <img
+                    v-if="
+                      Array.isArray(product.images) && product.images.length
+                    "
+                    :src="product.images[0]"
+                    :alt="product.name"
+                    class="w-full h-full object-contain p-2"
+                  />
+
+                  <span v-else class="text-gray-400 text-xs"> No Image </span>
+                </div>
+
+                <!-- DETAILS -->
+
+                <div class="flex-1 min-w-0">
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+                  >
+                    <div class="min-w-0">
+                      <h3 class="font-semibold text-slate-800 break-words">
+                        {{ product.name }}
+                      </h3>
+
+                      <p
+                        v-if="product.blurb"
+                        class="text-sm text-gray-500 mt-1"
+                      >
+                        {{ product.blurb }}
+                      </p>
+
+                      <div class="flex flex-wrap items-center gap-3 mt-3">
+                        <span class="font-bold text-blue-600">
+                          ${{ product.price }}
+                        </span>
+
+                        <span
+                          v-if="product.oldPrice"
+                          class="text-sm text-gray-400 line-through"
+                        >
+                          ${{ product.oldPrice }}
+                        </span>
+
+                        <span
+                          class="text-sm"
+                          :class="
+                            product.stock > 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          "
+                        >
+                          Stock: {{ product.stock }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- MENU -->
+
+                    <div class="relative flex-shrink-0 self-start" @click.stop>
+                      <button
+                        type="button"
+                        @click.stop="toggleMenu(product.id)"
+                        class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                        aria-label="Product actions"
+                      >
+                        <span class="text-xl leading-none tracking-[2px]">
+                          •••
+                        </span>
+                      </button>
+
+                      <div
+                        v-if="openMenu === product.id"
+                        class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
+                      >
+                        <NuxtLink
+                          :to="`/product/${product.slug}`"
+                          class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                          @click="closeMenu"
+                        >
+                          View
+                        </NuxtLink>
+
+                        <NuxtLink
+                          :to="`/admin/products/edit/${product.id}`"
+                          class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                          @click="closeMenu"
+                        >
+                          Edit
+                        </NuxtLink>
+
+                        <button
+                          type="button"
+                          @click="confirmDelete(product)"
+                          class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -342,12 +681,12 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- DELETE CONFIRMATION -->
+    <!-- DELETE MODAL -->
     <!-- ========================================================= -->
 
     <div
       v-if="deleteProduct"
-      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      class="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4"
       @click.self="cancelDelete"
     >
       <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
@@ -514,9 +853,7 @@ const mainCategories = computed(() => {
 ============================================================ */
 
 const categoryTree = computed(() => {
-  const parents = [...mainCategories.value];
-
-  return parents.map((parent) => {
+  return mainCategories.value.map((parent) => {
     const children = categories.value
       .filter((category) => Number(category.parent_id) === Number(parent.id))
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
@@ -547,7 +884,7 @@ const categoryTree = computed(() => {
 });
 
 /* ============================================================
-   UNCATEGORISED PRODUCTS
+   UNCATEGORISED
 ============================================================ */
 
 const uncategorisedProducts = computed(() => {
@@ -583,7 +920,7 @@ const toggleCategory = (id: number | string) => {
 };
 
 /* ============================================================
-   PRODUCT MENU
+   MENU
 ============================================================ */
 
 const toggleMenu = (id: number) => {
@@ -599,7 +936,7 @@ const closeMenu = () => {
 };
 
 /* ============================================================
-   DELETE CONFIRMATION
+   DELETE
 ============================================================ */
 
 const confirmDelete = (product: any) => {
@@ -665,7 +1002,7 @@ const deleteProductNow = async () => {
 };
 
 /* ============================================================
-   CLOSE MENU WHEN CLICKING ELSEWHERE
+   CLOSE MENU ON OUTSIDE CLICK
 ============================================================ */
 
 const handleDocumentClick = () => {
@@ -685,185 +1022,4 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
-</script>
-
-<!-- ============================================================
-     PRODUCT DISPLAY COMPONENT
-============================================================ -->
-
-<script lang="ts">
-export default {
-  components: {
-    ProductDisplay: {
-      props: {
-        product: {
-          type: Object,
-          required: true,
-        },
-
-        openMenu: {
-          default: null,
-        },
-      },
-
-      emits: [
-        "toggle-menu",
-        "close-menu",
-        "delete",
-      ],
-
-      template: `
-        <div class="flex flex-col sm:flex-row gap-5">
-
-          <!-- PRODUCT IMAGE -->
-
-          <div
-            class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
-          >
-            <img
-              v-if="product.images && product.images.length"
-              :src="product.images[0]"
-              :alt="product.name"
-              class="w-full h-full object-contain p-2"
-            />
-
-            <span
-              v-else
-              class="text-gray-400 text-xs"
-            >
-              No Image
-            </span>
-          </div>
-
-          <!-- PRODUCT INFORMATION -->
-
-          <div class="flex-1 min-w-0">
-
-            <div
-              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-            >
-
-              <div class="min-w-0">
-
-                <h3
-                  class="font-semibold text-slate-800 break-words"
-                >
-                  {{ product.name }}
-                </h3>
-
-                <p
-                  v-if="product.blurb"
-                  class="text-sm text-gray-500 mt-1 line-clamp-2"
-                >
-                  {{ product.blurb }}
-                </p>
-
-                <div
-                  class="flex flex-wrap items-center gap-3 mt-3"
-                >
-
-                  <span
-                    class="font-bold text-blue-600"
-                  >
-                    ${{ product.price }}
-                  </span>
-
-                  <span
-                    v-if="product.oldPrice"
-                    class="text-sm text-gray-400 line-through"
-                  >
-                    ${{ product.oldPrice }}
-                  </span>
-
-                  <span
-                    class="text-sm"
-                    :class="
-                      product.stock > 0
-                        ? 'text-green-600'
-                        : 'text-red-600'
-                    "
-                  >
-                    Stock: {{ product.stock }}
-                  </span>
-
-                  <span
-                    v-if="product.featured"
-                    class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
-                  >
-                    Featured
-                  </span>
-
-                  <span
-                    v-if="product.refurbished"
-                    class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
-                  >
-                    Refurbished
-                  </span>
-
-                </div>
-
-              </div>
-
-              <!-- ACTION MENU -->
-
-              <div
-                class="relative flex-shrink-0 self-start"
-                @click.stop
-              >
-
-                <button
-                  type="button"
-                  @click.stop="$emit('toggle-menu', product.id)"
-                  class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                  aria-label="Product actions"
-                >
-                  <span
-                    class="text-xl leading-none tracking-[2px]"
-                  >
-                    •••
-                  </span>
-                </button>
-
-                <div
-                  v-if="openMenu === product.id"
-                  class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
-                >
-
-                  <NuxtLink
-                    :to="'/product/' + product.slug"
-                    class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="$emit('close-menu')"
-                  >
-                    View
-                  </NuxtLink>
-
-                  <NuxtLink
-                    :to="'/admin/products/edit/' + product.id"
-                    class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                    @click="$emit('close-menu')"
-                  >
-                    Edit
-                  </NuxtLink>
-
-                  <button
-                    type="button"
-                    @click="$emit('delete', product)"
-                    class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Delete
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      `,
-    },
-  },
-};
 </script>
