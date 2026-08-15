@@ -1,31 +1,42 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ============================================ -->
+    <!-- ========================================================= -->
     <!-- HEADER -->
-    <!-- ============================================ -->
+    <!-- ========================================================= -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
     >
       <div>
-        <h1 class="text-3xl font-bold text-slate-800">Admin Products</h1>
+        <h1 class="text-3xl font-bold text-slate-800">Products</h1>
 
         <p class="text-gray-500 mt-1">
-          Manage your products, categories, stock and pricing.
+          Manage products, categories, stock and pricing.
         </p>
       </div>
 
       <NuxtLink
         to="/admin/products/new"
-        class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+        class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
       >
         + Add Product
       </NuxtLink>
     </div>
 
-    <!-- ============================================ -->
-    <!-- ERROR -->
-    <!-- ============================================ -->
+    <!-- ========================================================= -->
+    <!-- SUCCESS MESSAGE -->
+    <!-- ========================================================= -->
+
+    <div
+      v-if="successMessage"
+      class="mb-6 bg-green-100 border border-green-300 text-green-700 rounded-lg p-4"
+    >
+      {{ successMessage }}
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ERROR MESSAGE -->
+    <!-- ========================================================= -->
 
     <div
       v-if="errorMessage"
@@ -34,465 +45,402 @@
       {{ errorMessage }}
     </div>
 
-    <!-- ============================================ -->
-    <!-- LOADING -->
-    <!-- ============================================ -->
+    <!-- ========================================================= -->
+    <!-- ANIMATED LOADING -->
+    <!-- ========================================================= -->
 
     <div
       v-if="loading"
-      class="bg-white rounded-xl shadow p-12 flex flex-col items-center justify-center"
+      class="bg-white rounded-xl shadow-sm border border-gray-200 p-12"
     >
-      <div
-        class="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
-      ></div>
+      <div class="flex flex-col items-center justify-center">
+        <!-- Spinner -->
+        <div
+          class="w-14 h-14 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
+        ></div>
 
-      <p class="mt-5 text-gray-600 font-medium">Loading products...</p>
+        <p class="mt-5 text-lg font-semibold text-slate-700">
+          Loading Products
+        </p>
 
-      <p class="text-sm text-gray-400 mt-1">Please wait</p>
-    </div>
+        <p class="mt-1 text-sm text-gray-500">
+          Loading products and categories...
+        </p>
 
-    <!-- ============================================ -->
-    <!-- NO PRODUCTS -->
-    <!-- ============================================ -->
-
-    <div
-      v-else-if="!mainCategories.length"
-      class="bg-white rounded-xl shadow p-12 text-center"
-    >
-      <div class="text-5xl mb-4">📦</div>
-
-      <h2 class="text-xl font-semibold text-gray-700">No products found</h2>
-
-      <p class="text-gray-500 mt-2">
-        There are currently no products to display.
-      </p>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- PRODUCTS -->
-    <!-- ============================================ -->
-
-    <div v-else class="space-y-5">
-      <!-- ========================================== -->
-      <!-- MAIN CATEGORY -->
-      <!-- ========================================== -->
-
-      <section
-        v-for="category in mainCategories"
-        :key="category.id"
-        class="bg-white rounded-xl shadow overflow-visible"
-      >
-        <!-- MAIN CATEGORY HEADER -->
-
-        <button
-          type="button"
-          @click="toggleCategory(category.id)"
-          class="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100 border-b border-gray-200 transition text-left"
-        >
-          <div class="flex items-center gap-3">
-            <!-- Arrow -->
-
-            <svg
-              class="w-5 h-5 text-gray-500 transition-transform duration-200"
-              :class="{
-                'rotate-90': isCategoryOpen(category.id),
-              }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-
-            <div>
-              <h2 class="text-xl font-bold text-slate-800">
-                {{ category.name }}
-              </h2>
-
-              <p class="text-sm text-gray-500">
-                {{ categoryProductCount(category) }}
-                product<span v-if="categoryProductCount(category) !== 1">
-                  s
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <!-- CATEGORY COUNT -->
+        <!-- Animated dots -->
+        <div class="flex gap-1 mt-4">
+          <span
+            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+            style="animation-delay: 0ms"
+          ></span>
 
           <span
-            class="hidden sm:inline-flex px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold"
+            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+            style="animation-delay: 150ms"
+          ></span>
+
+          <span
+            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+            style="animation-delay: 300ms"
+          ></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- CONTENT -->
+    <!-- ========================================================= -->
+
+    <div v-else>
+      <!-- ======================================================= -->
+      <!-- SUMMARY -->
+      <!-- ======================================================= -->
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+          <p class="text-sm text-gray-500">Products</p>
+
+          <p class="text-3xl font-bold text-slate-800 mt-1">
+            {{ products.length }}
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+          <p class="text-sm text-gray-500">Categories</p>
+
+          <p class="text-3xl font-bold text-slate-800 mt-1">
+            {{ categories.length }}
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+          <p class="text-sm text-gray-500">Main Categories</p>
+
+          <p class="text-3xl font-bold text-slate-800 mt-1">
+            {{ mainCategories.length }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- NO PRODUCTS -->
+      <!-- ======================================================= -->
+
+      <div
+        v-if="products.length === 0"
+        class="bg-white rounded-xl border border-gray-200 p-12 text-center"
+      >
+        <div class="text-5xl mb-4">📦</div>
+
+        <h2 class="text-xl font-bold text-slate-800">No Products</h2>
+
+        <p class="text-gray-500 mt-2">
+          There are currently no products to display.
+        </p>
+      </div>
+
+      <!-- ======================================================= -->
+      <!-- CATEGORY GROUPS -->
+      <!-- ======================================================= -->
+
+      <div v-for="category in categoryTree" :key="category.id" class="mb-8">
+        <!-- ===================================================== -->
+        <!-- MAIN CATEGORY HEADER -->
+        <!-- ===================================================== -->
+
+        <div
+          class="relative bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"
+        >
+          <button
+            type="button"
+            @click="toggleCategory(category.id)"
+            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
           >
-            {{ categoryProductCount(category) }}
-          </span>
-        </button>
+            <div class="flex items-center gap-3">
+              <!-- Arrow -->
 
-        <!-- MAIN CATEGORY CONTENT -->
+              <span
+                class="text-gray-500 transition-transform duration-200"
+                :class="{
+                  'rotate-90': openCategories.has(category.id),
+                }"
+              >
+                ▶
+              </span>
 
-        <div v-if="isCategoryOpen(category.id)" class="p-4 space-y-4">
-          <!-- ======================================== -->
-          <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
-          <!-- ======================================== -->
+              <!-- Category -->
 
-          <div
-            v-if="category.products.length"
-            class="border border-gray-200 rounded-lg overflow-visible"
-          >
-            <div
-              class="px-4 py-3 bg-gray-50 border-b border-gray-200 font-semibold text-gray-700"
-            >
-              {{ category.name }}
+              <div class="text-left">
+                <h2 class="text-xl font-bold text-slate-800">
+                  {{ category.name }}
+                </h2>
+
+                <p class="text-sm text-gray-500">
+                  {{ category.products.length }}
+                  product{{ category.products.length === 1 ? "" : "s" }}
+
+                  <span v-if="category.children.length">
+                    · {{ category.children.length }} subcategor{{
+                      category.children.length === 1 ? "y" : "ies"
+                    }}
+                  </span>
+                </p>
+              </div>
             </div>
 
-            <div class="divide-y divide-gray-200">
-              <ProductItem
+            <span class="text-sm text-gray-400">
+              {{ openCategories.has(category.id) ? "Collapse" : "Expand" }}
+            </span>
+          </button>
+
+          <!-- =================================================== -->
+          <!-- CATEGORY CONTENT -->
+          <!-- =================================================== -->
+
+          <div
+            v-if="openCategories.has(category.id)"
+            class="border-t border-gray-200"
+          >
+            <!-- ================================================= -->
+            <!-- MAIN CATEGORY PRODUCTS -->
+            <!-- ================================================= -->
+
+            <div
+              v-if="category.products.length"
+              class="divide-y divide-gray-100"
+            >
+              <div
                 v-for="product in category.products"
                 :key="product.id"
-                :product="product"
-                :categories="categories"
-                :open-menu-id="openMenuId"
-                @toggle-menu="toggleMenu"
-                @delete="deleteProduct"
-              />
+                class="relative overflow-visible px-5 py-5 hover:bg-gray-50 transition"
+              >
+                <ProductDisplay
+                  :product="product"
+                  :open-menu="openMenu"
+                  @toggle-menu="toggleMenu"
+                  @close-menu="closeMenu"
+                  @delete="confirmDelete"
+                />
+              </div>
             </div>
-          </div>
 
-          <!-- ======================================== -->
-          <!-- SUB CATEGORIES -->
-          <!-- ======================================== -->
+            <!-- ================================================= -->
+            <!-- SUB CATEGORIES -->
+            <!-- ================================================= -->
 
-          <div
-            v-for="child in category.children"
-            :key="child.id"
-            class="border border-gray-200 rounded-lg overflow-visible"
-          >
-            <!-- SUB CATEGORY HEADER -->
-
-            <button
-              type="button"
-              @click="toggleCategory(child.id)"
-              class="w-full flex items-center justify-between px-5 py-3 bg-gray-50 hover:bg-gray-100 transition text-left"
+            <div
+              v-for="child in category.children"
+              :key="child.id"
+              class="border-t border-gray-200"
             >
-              <div class="flex items-center gap-3">
-                <svg
-                  class="w-4 h-4 text-gray-500 transition-transform duration-200"
-                  :class="{
-                    'rotate-90': isCategoryOpen(child.id),
-                  }"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
+              <!-- Subcategory header -->
 
-                <div>
-                  <h3 class="font-semibold text-slate-700">
-                    {{ child.name }}
-                  </h3>
+              <div class="bg-gray-50 px-5 py-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-semibold text-slate-700">
+                      {{ child.name }}
+                    </h3>
 
-                  <p class="text-xs text-gray-500">
-                    {{ child.products.length }}
-                    product<span v-if="child.products.length !== 1"> s </span>
-                  </p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      {{ child.products.length }}
+                      product{{ child.products.length === 1 ? "" : "s" }}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <span
-                class="px-2.5 py-1 rounded-full bg-gray-200 text-gray-600 text-xs font-semibold"
-              >
-                {{ child.products.length }}
-              </span>
-            </button>
-
-            <!-- SUB CATEGORY PRODUCTS -->
-
-            <div
-              v-if="isCategoryOpen(child.id)"
-              class="divide-y divide-gray-200"
-            >
-              <ProductItem
-                v-for="product in child.products"
-                :key="product.id"
-                :product="product"
-                :categories="categories"
-                :open-menu-id="openMenuId"
-                @toggle-menu="toggleMenu"
-                @delete="deleteProduct"
-              />
+              <!-- Subcategory products -->
 
               <div
-                v-if="!child.products.length"
-                class="p-6 text-center text-gray-400"
+                v-if="child.products.length"
+                class="divide-y divide-gray-100"
               >
-                No products in this category.
+                <div
+                  v-for="product in child.products"
+                  :key="product.id"
+                  class="relative overflow-visible px-5 py-5 pl-8 hover:bg-gray-50 transition"
+                >
+                  <ProductDisplay
+                    :product="product"
+                    :open-menu="openMenu"
+                    @toggle-menu="toggleMenu"
+                    @close-menu="closeMenu"
+                    @delete="confirmDelete"
+                  />
+                </div>
+              </div>
+
+              <!-- No products -->
+
+              <div v-else class="px-8 py-5 text-sm text-gray-400 italic">
+                No products in this subcategory.
               </div>
             </div>
           </div>
-
-          <!-- NO PRODUCTS -->
-
-          <div
-            v-if="!category.products.length && !category.children.length"
-            class="p-8 text-center text-gray-400 border border-dashed rounded-lg"
-          >
-            No products in this category.
-          </div>
         </div>
-      </section>
-    </div>
+      </div>
 
-    <!-- ============================================ -->
-    <!-- DELETE CONFIRMATION -->
-    <!-- ============================================ -->
+      <!-- ======================================================= -->
+      <!-- UNCATEGORISED -->
+      <!-- ======================================================= -->
 
-    <Teleport to="body">
-      <div
-        v-if="deleteDialog"
-        class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-      >
-        <!-- BACKDROP -->
-
-        <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
-
-        <!-- DIALOG -->
-
+      <div v-if="uncategorisedProducts.length" class="mb-8">
         <div
-          class="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6"
+          class="relative bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"
         >
-          <div
-            class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-2xl mb-4"
+          <button
+            type="button"
+            @click="toggleCategory('uncategorised')"
+            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
           >
-            !
-          </div>
+            <div class="flex items-center gap-3">
+              <span
+                class="text-gray-500 transition-transform duration-200"
+                :class="{
+                  'rotate-90': openCategories.has('uncategorised'),
+                }"
+              >
+                ▶
+              </span>
 
-          <h2 class="text-xl font-bold text-gray-800">Delete Product?</h2>
+              <div class="text-left">
+                <h2 class="text-xl font-bold text-slate-800">Uncategorized</h2>
 
-          <p class="text-gray-600 mt-2">
-            Are you sure you really want to delete
-            <strong>{{ productToDelete?.name }}</strong
-            >?
-          </p>
+                <p class="text-sm text-gray-500">
+                  {{ uncategorisedProducts.length }}
+                  product{{ uncategorisedProducts.length === 1 ? "" : "s" }}
+                </p>
+              </div>
+            </div>
 
-          <p class="text-sm text-red-600 mt-3">This action cannot be undone.</p>
+            <span class="text-sm text-gray-400">
+              {{ openCategories.has("uncategorised") ? "Collapse" : "Expand" }}
+            </span>
+          </button>
 
-          <div class="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              @click="cancelDelete"
-              class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium"
+          <div
+            v-if="openCategories.has('uncategorised')"
+            class="border-t border-gray-200 divide-y divide-gray-100"
+          >
+            <div
+              v-for="product in uncategorisedProducts"
+              :key="product.id"
+              class="relative overflow-visible px-5 py-5 hover:bg-gray-50"
             >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              @click="confirmDelete"
-              :disabled="deleting"
-              class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg font-semibold"
-            >
-              {{ deleting ? "Deleting..." : "Yes, Delete" }}
-            </button>
+              <ProductDisplay
+                :product="product"
+                :open-menu="openMenu"
+                @toggle-menu="toggleMenu"
+                @close-menu="closeMenu"
+                @delete="confirmDelete"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </Teleport>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- DELETE CONFIRMATION -->
+    <!-- ========================================================= -->
+
+    <div
+      v-if="deleteProduct"
+      class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      @click.self="cancelDelete"
+    >
+      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-start gap-4">
+          <div
+            class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-xl"
+          >
+            ⚠️
+          </div>
+
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
+
+            <p class="text-gray-600 mt-2">Are you sure you want to delete:</p>
+
+            <p class="font-semibold text-slate-800 mt-2">
+              {{ deleteProduct.name }}
+            </p>
+
+            <p class="text-sm text-red-600 mt-3">
+              This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button
+            type="button"
+            @click="cancelDelete"
+            :disabled="deleting"
+            class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            @click="deleteProductNow"
+            :disabled="deleting"
+            class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-lg"
+          >
+            {{ deleting ? "Deleting..." : "Yes, Delete" }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+/* ============================================================
+   ADMIN MIDDLEWARE
+============================================================ */
+
 definePageMeta({
   middleware: "admin",
 });
 
-// ==================================================
-// ADMIN FETCH
-// ==================================================
+/* ============================================================
+   ADMIN FETCH
+============================================================ */
 
 const adminFetch = useAdminFetch();
 
-// ==================================================
-// STATE
-// ==================================================
+/* ============================================================
+   STATE
+============================================================ */
 
 const loading = ref(true);
-
-const errorMessage = ref("");
 
 const products = ref<any[]>([]);
 
 const categories = ref<any[]>([]);
 
-const openCategories = ref<number[]>([]);
+const errorMessage = ref("");
 
-const openMenuId = ref<number | null>(null);
+const successMessage = ref("");
 
-const deleteDialog = ref(false);
+const openCategories = ref<Set<number | string>>(new Set());
 
-const productToDelete = ref<any | null>(null);
+const openMenu = ref<number | null>(null);
+
+const deleteProduct = ref<any | null>(null);
 
 const deleting = ref(false);
 
-// ==================================================
-// CATEGORY HIERARCHY
-// ==================================================
-
-const mainCategories = computed(() => {
-  const parents = categories.value
-    .filter((category) => !category.parent_id)
-    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
-
-  return parents.map((parent) => {
-    const children = categories.value
-      .filter((category) => Number(category.parent_id) === Number(parent.id))
-      .sort((a, b) => String(a.name).localeCompare(String(b.name)))
-      .map((child) => {
-        return {
-          ...child,
-
-          products: products.value
-            .filter(
-              (product) => Number(product.category_id) === Number(child.id),
-            )
-            .sort((a, b) => String(a.name).localeCompare(String(b.name))),
-        };
-      });
-
-    return {
-      ...parent,
-
-      products: products.value
-        .filter((product) => Number(product.category_id) === Number(parent.id))
-        .sort((a, b) => String(a.name).localeCompare(String(b.name))),
-
-      children,
-    };
-  });
-});
-
-// ==================================================
-// CATEGORY COUNT
-// ==================================================
-
-const categoryProductCount = (category: any) => {
-  const directProducts = category.products?.length || 0;
-
-  const childProducts =
-    category.children?.reduce(
-      (total: number, child: any) => total + (child.products?.length || 0),
-      0,
-    ) || 0;
-
-  return directProducts + childProducts;
-};
-
-// ==================================================
-// CATEGORY TOGGLE
-// ==================================================
-
-const toggleCategory = (id: number) => {
-  const index = openCategories.value.indexOf(id);
-
-  if (index === -1) {
-    openCategories.value.push(id);
-  } else {
-    openCategories.value.splice(index, 1);
-  }
-};
-
-const isCategoryOpen = (id: number) => {
-  return openCategories.value.includes(id);
-};
-
-// ==================================================
-// PRODUCT MENU
-// ==================================================
-
-const toggleMenu = (id: number) => {
-  if (openMenuId.value === id) {
-    openMenuId.value = null;
-  } else {
-    // Only one menu can be open at a time
-    openMenuId.value = id;
-  }
-};
-
-// ==================================================
-// CLOSE MENU WHEN CLICKING ELSEWHERE
-// ==================================================
-
-const closeMenus = () => {
-  openMenuId.value = null;
-};
-
-// ==================================================
-// DELETE
-// ==================================================
-
-const deleteProduct = (product: any) => {
-  openMenuId.value = null;
-
-  productToDelete.value = product;
-
-  deleteDialog.value = true;
-};
-
-const cancelDelete = () => {
-  deleteDialog.value = false;
-
-  productToDelete.value = null;
-};
-
-const confirmDelete = async () => {
-  if (!productToDelete.value) {
-    return;
-  }
-
-  deleting.value = true;
-
-  errorMessage.value = "";
-
-  try {
-    await adminFetch(`/api/admin/products/${productToDelete.value.id}`, {
-      method: "DELETE",
-    });
-
-    products.value = products.value.filter(
-      (product) => product.id !== productToDelete.value.id,
-    );
-
-    deleteDialog.value = false;
-
-    productToDelete.value = null;
-  } catch (error: any) {
-    console.error("🔥 DELETE PRODUCT ERROR:", error);
-
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to delete product.";
-  } finally {
-    deleting.value = false;
-  }
-};
-
-// ==================================================
-// LOAD PRODUCTS
-// ==================================================
+/* ============================================================
+   LOAD PRODUCTS
+============================================================ */
 
 const loadProducts = async () => {
   try {
-    console.log("🔥 LOAD PRODUCTS STARTED");
+    console.log("🔥 ADMIN PRODUCTS START");
 
     const response = await adminFetch("/api/admin/products");
 
@@ -506,17 +454,20 @@ const loadProducts = async () => {
       products.value = [];
     }
 
-    console.log("🔥 PRODUCTS STORED:", products.value);
+    console.log("🔥 PRODUCTS LOADED:", products.value.length);
   } catch (error: any) {
     console.error("🔥 LOAD PRODUCTS ERROR:", error);
 
-    throw error;
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to load products.";
   }
 };
 
-// ==================================================
-// LOAD CATEGORIES
-// ==================================================
+/* ============================================================
+   LOAD CATEGORIES
+============================================================ */
 
 const loadCategories = async () => {
   try {
@@ -534,20 +485,191 @@ const loadCategories = async () => {
       categories.value = [];
     }
 
-    console.log("🔥 CATEGORIES STORED:", categories.value);
+    console.log("🔥 CATEGORIES LOADED:", categories.value.length);
   } catch (error: any) {
     console.error("🔥 LOAD CATEGORIES ERROR:", error);
 
-    throw error;
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to load categories.";
   }
 };
 
-// ==================================================
-// CLOSE MENU ON DOCUMENT CLICK
-// ==================================================
+/* ============================================================
+   MAIN CATEGORIES
+============================================================ */
+
+const mainCategories = computed(() => {
+  return categories.value
+    .filter(
+      (category) =>
+        category.parent_id === null || category.parent_id === undefined,
+    )
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+});
+
+/* ============================================================
+   CATEGORY TREE
+============================================================ */
+
+const categoryTree = computed(() => {
+  const parents = [...mainCategories.value];
+
+  return parents.map((parent) => {
+    const children = categories.value
+      .filter((category) => Number(category.parent_id) === Number(parent.id))
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+    const parentProducts = products.value
+      .filter((product) => Number(product.category_id) === Number(parent.id))
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+    const childTree = children.map((child) => {
+      const childProducts = products.value
+        .filter((product) => Number(product.category_id) === Number(child.id))
+        .sort((a, b) =>
+          String(a.name || "").localeCompare(String(b.name || "")),
+        );
+
+      return {
+        ...child,
+        products: childProducts,
+      };
+    });
+
+    return {
+      ...parent,
+      products: parentProducts,
+      children: childTree,
+    };
+  });
+});
+
+/* ============================================================
+   UNCATEGORISED PRODUCTS
+============================================================ */
+
+const uncategorisedProducts = computed(() => {
+  const categoryIds = new Set(
+    categories.value.map((category) => Number(category.id)),
+  );
+
+  return products.value
+    .filter((product) => {
+      if (product.category_id === null || product.category_id === undefined) {
+        return true;
+      }
+
+      return !categoryIds.has(Number(product.category_id));
+    })
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+});
+
+/* ============================================================
+   CATEGORY TOGGLE
+============================================================ */
+
+const toggleCategory = (id: number | string) => {
+  const newSet = new Set(openCategories.value);
+
+  if (newSet.has(id)) {
+    newSet.delete(id);
+  } else {
+    newSet.add(id);
+  }
+
+  openCategories.value = newSet;
+};
+
+/* ============================================================
+   PRODUCT MENU
+============================================================ */
+
+const toggleMenu = (id: number) => {
+  if (openMenu.value === id) {
+    openMenu.value = null;
+  } else {
+    openMenu.value = id;
+  }
+};
+
+const closeMenu = () => {
+  openMenu.value = null;
+};
+
+/* ============================================================
+   DELETE CONFIRMATION
+============================================================ */
+
+const confirmDelete = (product: any) => {
+  openMenu.value = null;
+
+  deleteProduct.value = product;
+};
+
+const cancelDelete = () => {
+  if (deleting.value) {
+    return;
+  }
+
+  deleteProduct.value = null;
+};
+
+/* ============================================================
+   DELETE PRODUCT
+============================================================ */
+
+const deleteProductNow = async () => {
+  if (!deleteProduct.value) {
+    return;
+  }
+
+  deleting.value = true;
+
+  errorMessage.value = "";
+
+  successMessage.value = "";
+
+  try {
+    const id = deleteProduct.value.id;
+
+    console.log("🔥 DELETING PRODUCT:", id);
+
+    await adminFetch(`/api/admin/products/${id}`, {
+      method: "DELETE",
+    });
+
+    products.value = products.value.filter(
+      (product) => Number(product.id) !== Number(id),
+    );
+
+    successMessage.value = "Product deleted successfully.";
+
+    deleteProduct.value = null;
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  } catch (error: any) {
+    console.error("🔥 DELETE PRODUCT ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to delete product.";
+  } finally {
+    deleting.value = false;
+  }
+};
+
+/* ============================================================
+   CLOSE MENU WHEN CLICKING ELSEWHERE
+============================================================ */
 
 const handleDocumentClick = () => {
-  closeMenus();
+  openMenu.value = null;
 };
 
 onMounted(async () => {
@@ -555,11 +677,6 @@ onMounted(async () => {
 
   try {
     await Promise.all([loadProducts(), loadCategories()]);
-  } catch (error: any) {
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to load products.";
   } finally {
     loading.value = false;
   }
@@ -570,287 +687,183 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<!-- ================================================== -->
-<!-- PRODUCT ITEM COMPONENT -->
-<!-- ================================================== -->
+<!-- ============================================================
+     PRODUCT DISPLAY COMPONENT
+============================================================ -->
 
 <script lang="ts">
-import { defineComponent, h } from "vue";
-
-export default defineComponent({
+export default {
   components: {
-    ProductItem: defineComponent({
-      name: "ProductItem",
-
+    ProductDisplay: {
       props: {
         product: {
           type: Object,
           required: true,
         },
 
-        categories: {
-          type: Array,
-          default: () => [],
-        },
-
-        openMenuId: {
-          type: [Number, null],
+        openMenu: {
           default: null,
         },
       },
 
-      emits: ["toggle-menu", "delete"],
+      emits: [
+        "toggle-menu",
+        "close-menu",
+        "delete",
+      ],
 
-      setup(props, { emit }) {
-        const getCategory = () => {
-          return (props.categories as any[]).find(
-            (category: any) =>
-              Number(category.id) === Number(props.product.category_id),
-          );
-        };
+      template: `
+        <div class="flex flex-col sm:flex-row gap-5">
 
-        const image = computed(() => {
-          if (
-            Array.isArray(props.product.images) &&
-            props.product.images.length
-          ) {
-            return props.product.images[0];
-          }
+          <!-- PRODUCT IMAGE -->
 
-          if (
-            typeof props.product.images === "string" &&
-            props.product.images
-          ) {
-            return props.product.images;
-          }
+          <div
+            class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
+          >
+            <img
+              v-if="product.images && product.images.length"
+              :src="product.images[0]"
+              :alt="product.name"
+              class="w-full h-full object-contain p-2"
+            />
 
-          return "";
-        });
+            <span
+              v-else
+              class="text-gray-400 text-xs"
+            >
+              No Image
+            </span>
+          </div>
 
-        const isOpen = computed(() => {
-          return props.openMenuId === props.product.id;
-        });
+          <!-- PRODUCT INFORMATION -->
 
-        return () => {
-          const category = getCategory();
+          <div class="flex-1 min-w-0">
 
-          return h(
-            "div",
-            {
-              class:
-                "relative flex flex-col md:flex-row md:items-center gap-4 p-4 hover:bg-gray-50 transition",
-            },
-            [
-              // IMAGE
-              h(
-                "div",
-                {
-                  class:
-                    "w-20 h-20 shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center",
-                },
-                [
-                  image.value
-                    ? h("img", {
-                        src: image.value,
-                        alt: props.product.name || "Product",
-                        class: "w-full h-full object-contain p-2",
-                      })
-                    : h(
-                        "span",
-                        {
-                          class: "text-xs text-gray-400",
-                        },
-                        "No Image",
-                      ),
-                ],
-              ),
+            <div
+              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
+            >
 
-              // PRODUCT DETAILS
-              h(
-                "div",
-                {
-                  class: "flex-1 min-w-0",
-                },
-                [
-                  h(
-                    "div",
-                    {
-                      class: "flex flex-wrap items-center gap-2",
-                    },
-                    [
-                      h(
-                        "h3",
-                        {
-                          class: "font-semibold text-slate-800",
-                        },
-                        props.product.name,
-                      ),
+              <div class="min-w-0">
 
-                      props.product.featured
-                        ? h(
-                            "span",
-                            {
-                              class:
-                                "px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-semibold",
-                            },
-                            "Featured",
-                          )
-                        : null,
+                <h3
+                  class="font-semibold text-slate-800 break-words"
+                >
+                  {{ product.name }}
+                </h3>
 
-                      props.product.refurbished
-                        ? h(
-                            "span",
-                            {
-                              class:
-                                "px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-semibold",
-                            },
-                            "Refurbished",
-                          )
-                        : null,
-                    ],
-                  ),
+                <p
+                  v-if="product.blurb"
+                  class="text-sm text-gray-500 mt-1 line-clamp-2"
+                >
+                  {{ product.blurb }}
+                </p>
 
-                  h(
-                    "p",
-                    {
-                      class: "text-sm text-gray-500 mt-1",
-                    },
-                    category?.name || "Uncategorised",
-                  ),
+                <div
+                  class="flex flex-wrap items-center gap-3 mt-3"
+                >
 
-                  h(
-                    "div",
-                    {
-                      class: "flex flex-wrap items-center gap-4 mt-2",
-                    },
-                    [
-                      h(
-                        "span",
-                        {
-                          class: "font-bold text-blue-600",
-                        },
-                        `$${props.product.price}`,
-                      ),
+                  <span
+                    class="font-bold text-blue-600"
+                  >
+                    ${{ product.price }}
+                  </span>
 
-                      props.product.oldPrice
-                        ? h(
-                            "span",
-                            {
-                              class: "text-sm text-gray-400 line-through",
-                            },
-                            `$${props.product.oldPrice}`,
-                          )
-                        : null,
+                  <span
+                    v-if="product.oldPrice"
+                    class="text-sm text-gray-400 line-through"
+                  >
+                    ${{ product.oldPrice }}
+                  </span>
 
-                      h(
-                        "span",
-                        {
-                          class:
-                            props.product.stock > 0
-                              ? "text-sm text-green-600 font-medium"
-                              : "text-sm text-red-600 font-medium",
-                        },
-                        props.product.stock > 0
-                          ? `${props.product.stock} in stock`
-                          : "Out of stock",
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                  <span
+                    class="text-sm"
+                    :class="
+                      product.stock > 0
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    "
+                  >
+                    Stock: {{ product.stock }}
+                  </span>
 
-              // ACTION MENU
-              h(
-                "div",
-                {
-                  class: "relative shrink-0 self-start md:self-center",
-                  onClick: (event: MouseEvent) => {
-                    event.stopPropagation();
-                  },
-                },
-                [
-                  // THREE HORIZONTAL DOTS
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      class:
-                        "w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-600 transition",
-                      title: "Product actions",
-                      onClick: () => emit("toggle-menu", props.product.id),
-                    },
-                    [
-                      h(
-                        "svg",
-                        {
-                          class: "w-5 h-5",
-                          fill: "currentColor",
-                          viewBox: "0 0 20 20",
-                        },
-                        [
-                          h("path", {
-                            "fill-rule": "evenodd",
-                            d: "M4 10a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0zm4 0a2 2 0 114 0 2 2 0 01-4 0z",
-                            "clip-rule": "evenodd",
-                          }),
-                        ],
-                      ),
-                    ],
-                  ),
+                  <span
+                    v-if="product.featured"
+                    class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
+                  >
+                    Featured
+                  </span>
 
-                  // POPUP MENU
-                  isOpen.value
-                    ? h(
-                        "div",
-                        {
-                          class:
-                            "absolute right-0 top-11 z-[9999] w-40 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden",
-                        },
-                        [
-                          h(
-                            NuxtLink,
-                            {
-                              to: `/product/${props.product.slug}`,
-                              class:
-                                "flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100",
-                              onClick: () =>
-                                emit("toggle-menu", props.product.id),
-                            },
-                            [h("span", "👁️"), h("span", "View")],
-                          ),
+                  <span
+                    v-if="product.refurbished"
+                    class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
+                  >
+                    Refurbished
+                  </span>
 
-                          h(
-                            NuxtLink,
-                            {
-                              to: `/admin/products/edit/${props.product.id}`,
-                              class:
-                                "flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-100",
-                              onClick: () =>
-                                emit("toggle-menu", props.product.id),
-                            },
-                            [h("span", "✏️"), h("span", "Edit")],
-                          ),
+                </div>
 
-                          h(
-                            "button",
-                            {
-                              type: "button",
-                              class:
-                                "w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 text-left",
-                              onClick: () => emit("delete", props.product),
-                            },
-                            [h("span", "🗑️"), h("span", "Delete")],
-                          ),
-                        ],
-                      )
-                    : null,
-                ],
-              ),
-            ],
-          );
-        };
-      },
-    }),
+              </div>
+
+              <!-- ACTION MENU -->
+
+              <div
+                class="relative flex-shrink-0 self-start"
+                @click.stop
+              >
+
+                <button
+                  type="button"
+                  @click.stop="$emit('toggle-menu', product.id)"
+                  class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+                  aria-label="Product actions"
+                >
+                  <span
+                    class="text-xl leading-none tracking-[2px]"
+                  >
+                    •••
+                  </span>
+                </button>
+
+                <div
+                  v-if="openMenu === product.id"
+                  class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
+                >
+
+                  <NuxtLink
+                    :to="'/product/' + product.slug"
+                    class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="$emit('close-menu')"
+                  >
+                    View
+                  </NuxtLink>
+
+                  <NuxtLink
+                    :to="'/admin/products/edit/' + product.id"
+                    class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                    @click="$emit('close-menu')"
+                  >
+                    Edit
+                  </NuxtLink>
+
+                  <button
+                    type="button"
+                    @click="$emit('delete', product)"
+                    class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      `,
+    },
   },
-});
+};
 </script>
