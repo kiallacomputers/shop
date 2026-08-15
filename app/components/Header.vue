@@ -1,272 +1,523 @@
 <template>
-  <header class="bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="flex items-center justify-between h-20">
-        <!-- Logo -->
-        <NuxtLink to="/" class="flex items-center flex-shrink-0">
-          <img
-            src="/assests/images/logos/kc_logo.png"
-            alt="Kialla Computers"
-            class="h-14 w-auto"
-          />
-        </NuxtLink>
+  <header class="bg-white relative z-50">
+    <!-- ===================================================== -->
+    <!-- HEADER -->
+    <!-- ===================================================== -->
 
-        <!-- Desktop Navigation + Cart -->
-        <div class="hidden md:flex items-center ml-auto">
-          <!-- Navigation -->
-          <nav class="flex items-center gap-8 mr-8">
-            <NuxtLink
-              to="/"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              Home
-            </NuxtLink>
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <!-- ================================================= -->
+      <!-- LOGO -->
+      <!-- ================================================= -->
 
-            <!-- <NuxtLink
-              to="/contact"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              Contact
-            </NuxtLink> -->
-
-            <!-- Account -->
-            <NuxtLink
-              v-if="user"
-              to="/account"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              Account
-            </NuxtLink>
-
-            <NuxtLink
-              v-else
-              to="/signin"
-              class="text-gray-700 hover:text-sky-600 font-medium transition"
-            >
-              Sign In
-            </NuxtLink>
-
-            <!-- Admin -->
-            <NuxtLink
-              v-if="isAdmin"
-              to="/admin"
-              class="text-red-600 hover:text-red-700 font-semibold transition"
-            >
-              Admin
-            </NuxtLink>
-          </nav>
-
-          <!-- Shopping Cart -->
-          <NuxtLink
-            to="/cart"
-            class="relative flex items-center justify-center text-gray-700 hover:text-sky-600 transition"
-            aria-label="Shopping Cart"
-          >
-            <!-- Cart Icon -->
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.8"
-              stroke="currentColor"
-              class="w-7 h-7"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437m0 0
-                   L6.75 15.75A2.25 2.25 0 0 0 8.93 17.5h8.14a2.25
-                   2.25 0 0 0 2.18-1.75l1.44-5.75H5.106m0 0L4.5
-                   6.75h15.75M9 20.25h.008v.008H9v-.008Zm7.5
-                   0h.008v.008h-.008v-.008Z"
-              />
-            </svg>
-
-            <!-- Cart Count -->
-            <span
-              v-if="cart.count > 0"
-              class="absolute -top-2 -right-2 bg-sky-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
-            >
-              {{ cart.count }}
-            </span>
-          </NuxtLink>
-        </div>
-
-        <!-- Mobile Controls -->
-        <div class="md:hidden flex items-center gap-4">
-          <!-- Mobile Cart -->
-          <NuxtLink
-            to="/cart"
-            class="relative text-gray-700 hover:text-sky-600 transition"
-            aria-label="Shopping Cart"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.8"
-              stroke="currentColor"
-              class="w-7 h-7"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437m0 0
-                   L6.75 15.75A2.25 2.25 0 0 0 8.93 17.5h8.14a2.25
-                   2.25 0 0 0 2.18-1.75l1.44-5.75H5.106m0 0L4.5
-                   6.75h15.75M9 20.25h.008v.008H9v-.008Zm7.5
-                   0h.008v.008h-.008v-.008Z"
-              />
-            </svg>
-
-            <span
-              v-if="cart.count > 0"
-              class="absolute -top-2 -right-2 bg-sky-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
-            >
-              {{ cart.count }}
-            </span>
-          </NuxtLink>
-
-          <!-- Mobile Menu Button -->
-          <button
-            type="button"
-            @click="mobileMenuOpen = !mobileMenuOpen"
-            class="text-gray-700 hover:text-sky-600 focus:outline-none"
-            aria-label="Toggle menu"
-          >
-            <svg
-              v-if="!mobileMenuOpen"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="currentColor"
-              class="w-7 h-7"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-              />
-            </svg>
-
-            <svg
-              v-else
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="currentColor"
-              class="w-7 h-7"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mobile Navigation -->
-      <div
-        v-if="mobileMenuOpen"
-        class="md:hidden border-t border-gray-200 py-4"
+      <NuxtLink
+        to="/"
+        class="flex items-center shrink-0"
+        @click="closeMobileMenu"
       >
-        <nav class="flex flex-col space-y-3">
+        <img
+          :src="logo"
+          alt="Kialla Computers"
+          class="w-20 h-auto object-contain"
+        />
+      </NuxtLink>
+
+      <!-- ================================================= -->
+      <!-- RIGHT SIDE -->
+      <!-- MENU + CART + MOBILE BUTTON -->
+      <!-- ================================================= -->
+
+      <div class="ml-auto flex items-center gap-6">
+        <!-- =============================================== -->
+        <!-- DESKTOP MENU -->
+        <!-- =============================================== -->
+
+        <nav class="hidden md:flex items-center justify-end gap-6">
+          <!-- ============================================= -->
+          <!-- SIGNUP / LOGIN -->
+          <!-- ============================================= -->
+
           <NuxtLink
-            to="/"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
+            v-if="!user"
+            to="/auth/signin"
+            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
           >
-            Home
+            Signup/Login
           </NuxtLink>
 
-          <!-- <NuxtLink
-            to="/contact"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
-          >
-            Contact
-          </NuxtLink>
- -->
+          <!-- ============================================= -->
+          <!-- WELCOME -->
+          <!-- ============================================= -->
+
+          <p v-if="user" class="text-[#566C9D] font-bold whitespace-nowrap">
+            Welcome {{ firstName }}
+          </p>
+
+          <!-- ============================================= -->
+          <!-- MY ACCOUNT -->
+          <!-- ============================================= -->
+
           <NuxtLink
             v-if="user"
-            to="/account"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
+            to="/account/"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition whitespace-nowrap"
           >
-            Account
+            My Account
           </NuxtLink>
 
-          <NuxtLink
-            v-else
-            to="/signin"
-            @click="mobileMenuOpen = false"
-            class="text-gray-700 hover:text-sky-600 font-medium py-2"
-          >
-            Sign In
-          </NuxtLink>
+          <!-- ============================================= -->
+          <!-- ADMIN -->
+          <!-- ============================================= -->
 
           <NuxtLink
-            v-if="isAdmin"
+            v-if="user && isAdmin"
             to="/admin"
-            @click="mobileMenuOpen = false"
-            class="text-red-600 hover:text-red-700 font-semibold py-2"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
           >
             Admin
           </NuxtLink>
+
+          <!-- ============================================= -->
+          <!-- SIGN OUT -->
+          <!-- ============================================= -->
+
+          <button
+            v-if="user"
+            type="button"
+            @click="logout"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition whitespace-nowrap"
+            title="Sign Out"
+          >
+            <!-- Sign out icon -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+              />
+            </svg>
+
+            <span>Sign Out</span>
+          </button>
         </nav>
+
+        <!-- =============================================== -->
+        <!-- SHOPPING CART -->
+        <!-- =============================================== -->
+
+        <NuxtLink
+          to="/shoppingcart"
+          class="relative p-1 shrink-0"
+          aria-label="Shopping Cart"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-7 h-7 text-slate-700 hover:text-[#2CB6D5] transition"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7h13"
+            />
+          </svg>
+
+          <!-- Cart Count -->
+
+          <span
+            v-if="cart.count > 0"
+            class="absolute -top-2 -right-2 bg-red-800 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center"
+          >
+            {{ cart.count }}
+          </span>
+        </NuxtLink>
+
+        <!-- =============================================== -->
+        <!-- MOBILE MENU BUTTON -->
+        <!-- =============================================== -->
+
+        <button
+          type="button"
+          class="md:hidden p-2 text-slate-700 hover:text-[#2CB6D5] transition"
+          :aria-expanded="mobileMenuOpen"
+          aria-label="Toggle navigation menu"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+        >
+          <!-- Hamburger -->
+
+          <svg
+            v-if="!mobileMenuOpen"
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-7 h-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+
+          <!-- Close -->
+
+          <svg
+            v-else
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-7 h-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
       </div>
     </div>
+
+    <!-- ===================================================== -->
+    <!-- MOBILE MENU -->
+    <!-- ===================================================== -->
+
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-2"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-2"
+    >
+      <div
+        v-if="mobileMenuOpen"
+        class="md:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-xl"
+      >
+        <nav class="max-w-7xl mx-auto px-4 py-3">
+          <!-- ============================================= -->
+          <!-- SIGNUP / LOGIN -->
+          <!-- ============================================= -->
+
+          <NuxtLink
+            v-if="!user"
+            to="/auth/signin"
+            class="mobile-menu-item"
+            @click="closeMobileMenu"
+          >
+            <span>Signup / Login</span>
+
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"
+              />
+            </svg>
+          </NuxtLink>
+
+          <!-- ============================================= -->
+          <!-- WELCOME -->
+          <!-- ============================================= -->
+
+          <div v-if="user" class="px-4 py-4 border-b border-gray-200">
+            <p class="text-[#566C9D] font-bold">Welcome {{ firstName }}</p>
+          </div>
+
+          <!-- ============================================= -->
+          <!-- MY ACCOUNT -->
+          <!-- ============================================= -->
+
+          <NuxtLink
+            v-if="user"
+            to="/account/"
+            class="mobile-menu-item"
+            @click="closeMobileMenu"
+          >
+            <span>My Account</span>
+
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003a6.375 6.375 0 00-12.75 0v.003m15.75-6.376a4.125 4.125 0 01-8.25 0 4.125 4.125 0 018.25 0z"
+              />
+            </svg>
+          </NuxtLink>
+
+          <!-- ============================================= -->
+          <!-- ADMIN -->
+          <!-- ============================================= -->
+
+          <NuxtLink
+            v-if="user && isAdmin"
+            to="/admin"
+            class="mobile-menu-item"
+            @click="closeMobileMenu"
+          >
+            <span>Admin</span>
+
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.5 6h3m-6 12h9m-10.5-6h12M6.75 3h10.5A2.25 2.25 0 0119.5 5.25v13.5A2.25 2.25 0 0117.25 21H6.75a2.25 2.25 0 01-2.25-2.25V5.25A2.25 2.25 0 016.75 3z"
+              />
+            </svg>
+          </NuxtLink>
+
+          <!-- ============================================= -->
+          <!-- LOGOUT -->
+          <!-- ============================================= -->
+
+          <button
+            v-if="user"
+            type="button"
+            class="mobile-menu-item w-full text-left text-red-600 hover:text-red-700"
+            @click="logout"
+          >
+            <span>Sign Out</span>
+
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </Transition>
   </header>
+
+  <!-- ===================================================== -->
+  <!-- CART NOTIFICATION -->
+  <!-- ===================================================== -->
+
+  <Transition name="toast">
+    <div
+      v-if="cart.notification"
+      class="fixed top-20 right-5 z-[9999] bg-green-600 text-white px-5 py-4 rounded-lg shadow-lg flex items-center gap-3"
+    >
+      <span class="text-xl">✓</span>
+
+      <span>{{ cart.notification }}</span>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { useSupabaseUser } from "#imports";
-import { useCartStore } from "~/stores/cart";
+// ==========================================================
+// LOGO
+// Nuxt 4 asset location:
+// app/assets/images/logos/kc_logo.png
+// ==========================================================
+
+import logo from "~/assets/images/logos/kc_logo.png";
+
+// ==========================================================
+// SUPABASE
+// ==========================================================
 
 const user = useSupabaseUser();
+
+const supabase = useSupabaseClient();
+
+// ==========================================================
+// CART
+// ==========================================================
+
 const cart = useCartStore();
+
+// ==========================================================
+// MOBILE MENU
+// ==========================================================
 
 const mobileMenuOpen = ref(false);
 
+const closeMobileMenu = () => {
+  mobileMenuOpen.value = false;
+};
+
+// ==========================================================
+// FIRST NAME
+// ==========================================================
+
+const firstName = computed(() => {
+  const displayName = user.value?.user_metadata?.display_name;
+
+  if (!displayName) {
+    return "";
+  }
+
+  return displayName.trim().split(/\s+/)[0] ?? "";
+});
+
+// ==========================================================
+// ADMIN STATUS
+// ==========================================================
+
 const isAdmin = ref(false);
-const checkingAdmin = ref(false);
+
+// ==========================================================
+// CHECK ADMIN
+// ==========================================================
 
 const checkAdmin = async () => {
+  // Always reset first
+  isAdmin.value = false;
+
+  // No logged-in user
   if (!user.value) {
-    isAdmin.value = false;
+    console.log("NO LOGGED IN USER");
     return;
   }
 
-  checkingAdmin.value = true;
-
   try {
-    const result = await $fetch("/api/admin/check");
+    // Get current Supabase session
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    isAdmin.value = result?.isAdmin === true;
+    if (!session) {
+      console.log("NO SUPABASE SESSION");
+      return;
+    }
+
+    console.log("CHECKING ADMIN:", user.value.email);
+
+    // Ask server whether this user is an admin
+    const result = await $fetch("/api/admin/check", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    console.log("ADMIN CHECK RESULT:", result);
+
+    // Only set true if the server explicitly confirms it
+    if (result?.isAdmin === true) {
+      isAdmin.value = true;
+
+      console.log("ADMIN USER:", user.value.email);
+    } else {
+      isAdmin.value = false;
+
+      console.log("USER IS NOT ADMIN");
+    }
   } catch (error) {
-    console.error("ADMIN CHECK ERROR:", error);
     isAdmin.value = false;
-  } finally {
-    checkingAdmin.value = false;
+
+    console.log("ADMIN CHECK ERROR:", error);
   }
 };
 
+// ==========================================================
+// WATCH USER
+// ==========================================================
+
 watch(
-  () => user.value,
-  async (newUser) => {
-    if (newUser) {
-      await checkAdmin();
-    } else {
-      isAdmin.value = false;
-    }
+  user,
+  async () => {
+    await checkAdmin();
   },
   {
     immediate: true,
   },
 );
+
+// ==========================================================
+// LOGOUT
+// ==========================================================
+
+const logout = async () => {
+  closeMobileMenu();
+
+  await supabase.auth.signOut();
+
+  isAdmin.value = false;
+
+  await navigateTo("/");
+};
 </script>
+
+<style scoped>
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #404e71;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-item:hover {
+  background-color: #f8fafc;
+  color: #2cb6d5;
+}
+
+.mobile-menu-item:last-child {
+  border-bottom: none;
+}
+
+/* ==========================================================
+   TOAST
+   ========================================================== */
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
