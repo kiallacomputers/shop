@@ -1,18 +1,21 @@
 <template>
   <div class="max-w-5xl mx-auto px-4 py-8">
     <!-- Back -->
-    <div class="mb-6">
-      <NuxtLink
-        to="/account"
-        class="text-blue-600 hover:text-blue-800 font-medium"
-      >
-        ← Back to My Account
-      </NuxtLink>
-    </div>
+    <NuxtLink
+      to="/account"
+      class="inline-block mb-6 text-blue-600 hover:text-blue-800 font-medium"
+    >
+      ← Back to My Account
+    </NuxtLink>
 
     <!-- Loading -->
-    <div v-if="loading" class="py-12 text-center">
-      <p class="text-gray-500">Loading order...</p>
+    <div
+      v-if="loading"
+      class="bg-white border border-gray-200 rounded-lg p-8 text-center"
+    >
+      <div class="text-xl font-semibold">Loading order...</div>
+
+      <p class="text-gray-500 mt-2">Please wait.</p>
     </div>
 
     <!-- Error -->
@@ -20,50 +23,58 @@
       v-else-if="errorMessage"
       class="bg-red-50 border border-red-200 rounded-lg p-6"
     >
-      <h1 class="text-xl font-bold text-red-700 mb-2">Unable to load order</h1>
+      <h1 class="text-2xl font-bold text-red-700 mb-4">Unable to load order</h1>
 
-      <p class="text-red-600">
+      <p class="text-red-600 mb-4">
         {{ errorMessage }}
       </p>
 
+      <div class="bg-white border rounded p-4 text-sm">
+        <p>
+          <strong>URL Order ID:</strong>
+          {{ route.params.id }}
+        </p>
+
+        <p class="mt-2">
+          <strong>User ID:</strong>
+          {{ user?.id }}
+        </p>
+      </div>
+
       <NuxtLink
         to="/account"
-        class="inline-block mt-5 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700"
+        class="inline-block mt-6 bg-blue-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-blue-700"
       >
         Back to My Account
       </NuxtLink>
     </div>
 
-    <!-- ORDER -->
+    <!-- Order -->
     <div v-else-if="order">
-      <!-- ================================= -->
-      <!-- HEADER -->
-      <!-- ================================= -->
-
+      <!-- Header -->
       <div
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
       >
         <div>
-          <h1 class="text-3xl font-bold">Order #{{ order.id }}</h1>
+          <p class="text-sm text-gray-500">Order</p>
 
-          <p class="text-gray-500 mt-2">
-            Placed on {{ formatDate(order.created_at) }}
+          <h1 class="text-3xl font-bold">#{{ order.id }}</h1>
+
+          <p v-if="order.created_at" class="text-gray-500 mt-2">
+            {{ formatDate(order.created_at) }}
           </p>
         </div>
 
         <span
-          class="px-4 py-2 rounded-full font-semibold w-fit"
+          class="inline-block px-4 py-2 rounded-full font-semibold w-fit"
           :class="statusClass(order.status)"
         >
-          {{ order.status }}
+          {{ order.status || "Pending" }}
         </span>
       </div>
 
-      <!-- ================================= -->
-      <!-- CUSTOMER -->
-      <!-- ================================= -->
-
-      <section class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <!-- Customer -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <h2 class="text-xl font-bold mb-5">Customer Information</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -83,52 +94,59 @@
             </p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- ================================= -->
-      <!-- ORDER ITEMS -->
-      <!-- ================================= -->
+      <!-- Stripe -->
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+        <p class="text-sm text-gray-500">Stripe Session</p>
 
-      <section
+        <p class="font-mono text-sm break-all mt-1">
+          {{ order.stripe_session_id }}
+        </p>
+      </div>
+
+      <!-- Items -->
+      <div
         class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6"
       >
-        <div class="bg-gray-50 px-6 py-4 border-b">
-          <h2 class="text-xl font-bold">Items Ordered</h2>
+        <div class="px-6 py-4 bg-gray-50 border-b">
+          <h2 class="text-xl font-bold">Order Items</h2>
         </div>
 
-        <div v-if="orderItems.length" class="divide-y">
+        <div v-if="orderItems.length > 0" class="divide-y">
           <div v-for="item in orderItems" :key="item.id" class="p-6">
             <div class="flex flex-col md:flex-row md:items-center gap-4">
-              <!-- Product -->
+              <!-- Name -->
               <div class="flex-1">
                 <h3 class="font-semibold text-lg">
                   {{ item.product_name }}
                 </h3>
 
                 <p class="text-sm text-gray-500 mt-1">
-                  Product ID: {{ item.product_id }}
+                  Product ID:
+                  {{ item.product_id }}
                 </p>
               </div>
 
               <!-- Quantity -->
-              <div>
+              <div class="text-sm">
                 <span class="text-gray-500"> Quantity: </span>
 
-                <span class="font-semibold">
+                <span class="font-semibold ml-1">
                   {{ item.quantity }}
                 </span>
               </div>
 
               <!-- Price -->
-              <div>
+              <div class="text-sm">
                 <span class="text-gray-500"> Price: </span>
 
-                <span class="font-semibold">
+                <span class="font-semibold ml-1">
                   ${{ Number(item.price).toFixed(2) }}
                 </span>
               </div>
 
-              <!-- Total -->
+              <!-- Line Total -->
               <div class="font-bold text-lg md:w-28 md:text-right">
                 ${{ (Number(item.price) * Number(item.quantity)).toFixed(2) }}
               </div>
@@ -136,99 +154,118 @@
           </div>
         </div>
 
-        <div v-else class="p-6 text-gray-500">
-          No items found for this order.
-        </div>
-      </section>
+        <div v-else class="p-6 text-gray-500">No order items were found.</div>
+      </div>
 
-      <!-- ================================= -->
-      <!-- TOTAL -->
-      <!-- ================================= -->
-
-      <section class="bg-white border border-gray-200 rounded-lg p-6">
+      <!-- Total -->
+      <div class="bg-white border border-gray-200 rounded-lg p-6">
         <div class="flex justify-between items-center">
-          <span class="text-xl font-semibold"> Order Total </span>
+          <span class="text-xl font-semibold"> Total </span>
 
           <span class="text-3xl font-bold">
-            ${{ Number(order.total).toFixed(2) }}
+            ${{ Number(order.total || 0).toFixed(2) }}
           </span>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// ========================================
-// ONLY REQUIRE LOGIN
-// ========================================
+// =====================================================
+// AUTH ONLY
+// =====================================================
 
 definePageMeta({
   middleware: "auth",
 });
 
-// ========================================
+// =====================================================
 // SUPABASE
-// ========================================
+// =====================================================
 
 const supabase = useSupabaseClient();
 
 const route = useRoute();
 
-// ========================================
+// =====================================================
 // STATE
-// ========================================
+// =====================================================
 
 const loading = ref(true);
 
 const errorMessage = ref("");
 
+const user = ref<any>(null);
+
 const order = ref<any>(null);
 
 const orderItems = ref<any[]>([]);
 
-// ========================================
+// =====================================================
 // LOAD ORDER
-// ========================================
+// =====================================================
 
 async function loadOrder() {
   loading.value = true;
 
   errorMessage.value = "";
 
+  order.value = null;
+
+  orderItems.value = [];
+
   try {
-    // ------------------------------------
-    // CURRENT USER
-    // ------------------------------------
+    console.log("=================================");
+
+    console.log("🔎 LOADING ORDER DETAIL");
+
+    console.log("=================================");
+
+    // =================================================
+    // USER
+    // =================================================
 
     const {
-      data: { user },
+      data: { user: currentUser },
       error: userError,
     } = await supabase.auth.getUser();
 
     if (userError) {
+      console.error("USER ERROR:", userError);
+
       throw userError;
     }
 
-    if (!user) {
+    if (!currentUser) {
+      console.log("NO USER - REDIRECTING TO LOGIN");
+
       await navigateTo("/login");
 
       return;
     }
 
-    console.log("ORDER DETAIL USER:", user.id);
+    user.value = currentUser;
 
-    // ------------------------------------
-    // ORDER ID
-    // ------------------------------------
+    console.log("USER ID:", currentUser.id);
+
+    // =================================================
+    // URL ORDER ID
+    // =================================================
 
     const orderId = String(route.params.id);
 
-    console.log("ORDER DETAIL ID:", orderId);
+    console.log("URL ORDER ID:", orderId);
 
-    // ------------------------------------
+    if (!orderId || orderId === "undefined" || orderId === "null") {
+      throw new Error("No order ID was supplied in the URL.");
+    }
+
+    // =================================================
     // GET ORDER
-    // ------------------------------------
+    // =================================================
+
+    console.log("QUERYING ORDERS TABLE...");
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
@@ -245,26 +282,30 @@ async function loadOrder() {
       `,
       )
       .eq("id", orderId)
-      .eq("user_id", user.id)
+      .eq("user_id", currentUser.id)
       .maybeSingle();
 
-    console.log("ORDER DATA:", orderData);
+    console.log("ORDER RESULT:", orderData);
 
-    console.log("ORDER ERROR:", orderError);
+    console.log("ORDER QUERY ERROR:", orderError);
 
     if (orderError) {
       throw orderError;
     }
 
     if (!orderData) {
-      throw new Error("Order not found.");
+      throw new Error("The order could not be found for this customer.");
     }
 
     order.value = orderData;
 
-    // ------------------------------------
-    // ORDER ITEMS
-    // ------------------------------------
+    console.log("✅ ORDER FOUND:", orderData);
+
+    // =================================================
+    // GET ORDER ITEMS
+    // =================================================
+
+    console.log("QUERYING ORDER ITEMS...");
 
     const { data: itemsData, error: itemsError } = await supabase
       .from("order_items")
@@ -283,7 +324,7 @@ async function loadOrder() {
         ascending: true,
       });
 
-    console.log("ORDER ITEMS:", itemsData);
+    console.log("ORDER ITEMS RESULT:", itemsData);
 
     console.log("ORDER ITEMS ERROR:", itemsError);
 
@@ -292,8 +333,22 @@ async function loadOrder() {
     }
 
     orderItems.value = itemsData || [];
+
+    console.log("✅ ORDER ITEMS FOUND:", orderItems.value.length);
+
+    console.log("=================================");
+
+    console.log("🎉 ORDER DETAIL LOADED");
+
+    console.log("=================================");
   } catch (error: any) {
-    console.error("ORDER DETAIL ERROR:", error);
+    console.error("=================================");
+
+    console.error("❌ ORDER DETAIL ERROR");
+
+    console.error(error);
+
+    console.error("=================================");
 
     errorMessage.value = error?.message || "Unable to load order.";
   } finally {
@@ -301,9 +356,9 @@ async function loadOrder() {
   }
 }
 
-// ========================================
+// =====================================================
 // DATE
-// ========================================
+// =====================================================
 
 function formatDate(date: string) {
   if (!date) {
@@ -317,9 +372,9 @@ function formatDate(date: string) {
   });
 }
 
-// ========================================
+// =====================================================
 // STATUS
-// ========================================
+// =====================================================
 
 function statusClass(status: string) {
   switch (String(status).toLowerCase()) {
@@ -346,9 +401,9 @@ function statusClass(status: string) {
   }
 }
 
-// ========================================
-// LOAD
-// ========================================
+// =====================================================
+// INITIAL LOAD
+// =====================================================
 
 await loadOrder();
 </script>
