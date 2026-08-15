@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
     <!-- HEADER -->
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
@@ -23,17 +23,17 @@
       </NuxtLink>
     </div>
 
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
     <!-- LOADING -->
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
 
     <div v-if="loading" class="bg-white rounded-lg shadow p-10 text-center">
       <p class="text-gray-500">Loading product...</p>
     </div>
 
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
     <!-- ERROR -->
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
 
     <div
       v-else-if="errorMessage"
@@ -42,14 +42,14 @@
       {{ errorMessage }}
     </div>
 
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
     <!-- FORM -->
-    <!-- ============================================ -->
+    <!-- ===================================================== -->
 
     <form v-else @submit.prevent="saveProduct" class="space-y-8">
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- PRODUCT INFORMATION -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">
@@ -57,7 +57,7 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- NAME -->
+          <!-- PRODUCT NAME -->
 
           <div class="md:col-span-2">
             <label class="block font-semibold mb-2"> Product Name </label>
@@ -94,9 +94,13 @@
               <option :value="null">Select Category</option>
 
               <template v-for="category in sortedCategories" :key="category.id">
-                <option :value="category.id">
+                <!-- MAIN CATEGORY -->
+
+                <option :value="category.id" class="font-bold">
                   {{ category.name }}
                 </option>
+
+                <!-- SUB CATEGORIES -->
 
                 <option
                   v-for="child in category.children"
@@ -123,14 +127,16 @@
         </div>
       </div>
 
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- PRICE / STOCK -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">Price & Stock</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- PRICE -->
+
           <div>
             <label class="block font-semibold mb-2"> Price </label>
 
@@ -143,6 +149,8 @@
             />
           </div>
 
+          <!-- OLD PRICE -->
+
           <div>
             <label class="block font-semibold mb-2"> Old Price </label>
 
@@ -154,6 +162,8 @@
               class="w-full border rounded-lg px-4 py-3"
             />
           </div>
+
+          <!-- STOCK -->
 
           <div>
             <label class="block font-semibold mb-2"> Stock </label>
@@ -168,9 +178,9 @@
         </div>
       </div>
 
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- IMAGES -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <div
@@ -180,11 +190,11 @@
             <h2 class="text-xl font-bold text-slate-800">Product Images</h2>
 
             <p class="text-sm text-gray-500 mt-1">
-              Upload product images or edit the existing image paths.
+              Product images are stored as an array.
             </p>
           </div>
 
-          <!-- UPLOAD BUTTON -->
+          <!-- UPLOAD -->
 
           <label
             class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
@@ -209,7 +219,7 @@
 
         <div
           v-if="uploadMessage"
-          class="mb-4 p-3 rounded-lg"
+          class="mb-5 p-3 rounded-lg"
           :class="
             uploadError
               ? 'bg-red-100 text-red-700'
@@ -219,7 +229,7 @@
           {{ uploadMessage }}
         </div>
 
-        <!-- IMAGE LIST -->
+        <!-- IMAGE ARRAY -->
 
         <div v-if="form.images.length" class="space-y-4">
           <div
@@ -227,11 +237,11 @@
             :key="index"
             class="border rounded-lg p-4"
           >
-            <div class="flex flex-col md:flex-row gap-4">
-              <!-- IMAGE PREVIEW -->
+            <div class="flex flex-col md:flex-row gap-5">
+              <!-- PREVIEW -->
 
               <div
-                class="w-full md:w-40 h-32 border rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden"
+                class="w-full md:w-40 h-32 border rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0"
               >
                 <img
                   v-if="image"
@@ -243,7 +253,7 @@
                 <span v-else class="text-gray-400 text-sm"> No Image </span>
               </div>
 
-              <!-- IMAGE URL -->
+              <!-- IMAGE DATA -->
 
               <div class="flex-1">
                 <label class="block text-sm font-semibold mb-2">
@@ -254,6 +264,7 @@
                   v-model="form.images[index]"
                   type="text"
                   class="w-full border rounded-lg px-4 py-3"
+                  placeholder="/images/products/example.png"
                 />
 
                 <p class="text-xs text-gray-500 mt-2 break-all">
@@ -263,7 +274,7 @@
 
               <!-- REMOVE -->
 
-              <div>
+              <div class="flex items-start">
                 <button
                   type="button"
                   @click="removeImage(index)"
@@ -297,9 +308,9 @@
         </div>
       </div>
 
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- PRODUCT OPTIONS -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">Product Options</h2>
@@ -325,9 +336,9 @@
         </div>
       </div>
 
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- DESCRIPTION -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <div
@@ -352,25 +363,35 @@
           </button>
         </div>
 
+        <!-- DESCRIPTION SECTIONS -->
+
         <div v-if="form.description.length" class="space-y-6">
           <div
             v-for="(block, index) in form.description"
             :key="index"
             class="border rounded-lg p-5 bg-gray-50"
           >
-            <div class="flex justify-between mb-4">
-              <h3 class="font-semibold">Section {{ index + 1 }}</h3>
+            <!-- SECTION HEADER -->
+
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-semibold text-slate-700">
+                Section {{ index + 1 }}
+              </h3>
 
               <button
                 type="button"
                 @click="removeDescriptionBlock(index)"
-                class="text-red-600"
+                class="text-red-600 hover:text-red-800"
               >
                 Remove
               </button>
             </div>
 
             <!-- TYPE -->
+
+            <label class="block text-sm font-semibold mb-2">
+              Section Type
+            </label>
 
             <select
               v-model="block.type"
@@ -389,31 +410,46 @@
               <option value="table">Table</option>
             </select>
 
-            <!-- TEXT -->
+            <!-- ================================================= -->
+            <!-- TEXT BLOCK -->
+            <!-- ================================================= -->
 
-            <textarea
+            <div
               v-if="
                 block.type === 'heading' ||
                 block.type === 'paragraph' ||
                 block.type === 'quote' ||
                 block.type === 'warning'
               "
-              v-model="block.text"
-              rows="5"
-              class="w-full border rounded-lg px-4 py-3"
-            ></textarea>
+            >
+              <label class="block text-sm font-semibold mb-2"> Text </label>
 
+              <textarea
+                v-model="block.text"
+                rows="5"
+                class="w-full border rounded-lg px-4 py-3"
+              ></textarea>
+            </div>
+
+            <!-- ================================================= -->
             <!-- LIST -->
+            <!-- ================================================= -->
 
             <div v-if="block.type === 'list'">
+              <label class="block text-sm font-semibold mb-2">
+                List Style
+              </label>
+
               <select
                 v-model="block.style"
-                class="w-full border rounded-lg px-4 py-3 mb-4"
+                class="w-full border rounded-lg px-4 py-3 mb-4 bg-white"
               >
                 <option value="check">Check</option>
 
                 <option value="bullet">Bullet</option>
               </select>
+
+              <label class="block text-sm font-semibold mb-2"> Items </label>
 
               <div
                 v-for="(item, itemIndex) in block.items"
@@ -424,11 +460,12 @@
                   v-model="block.items[itemIndex]"
                   type="text"
                   class="flex-1 border rounded-lg px-4 py-2"
+                  placeholder="List item"
                 />
 
                 <button
                   type="button"
-                  @click="block.items.splice(itemIndex, 1)"
+                  @click="removeListItem(block, itemIndex)"
                   class="text-red-600 px-3"
                 >
                   ×
@@ -438,25 +475,38 @@
               <button
                 type="button"
                 @click="addListItem(block)"
-                class="text-blue-600 text-sm"
+                class="text-blue-600 hover:text-blue-800 text-sm"
               >
                 + Add Item
               </button>
             </div>
 
+            <!-- ================================================= -->
             <!-- TABLE -->
+            <!-- ================================================= -->
 
             <div v-if="block.type === 'table'">
-              <div class="grid grid-cols-2 gap-2 mb-4">
-                <input
+              <label class="block text-sm font-semibold mb-2">
+                Table Headers
+              </label>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-5">
+                <div
                   v-for="(header, headerIndex) in block.headers"
                   :key="headerIndex"
-                  v-model="block.headers[headerIndex]"
-                  type="text"
-                  class="border rounded-lg px-4 py-2"
-                  placeholder="Header"
-                />
+                >
+                  <input
+                    v-model="block.headers[headerIndex]"
+                    type="text"
+                    class="w-full border rounded-lg px-4 py-2"
+                    placeholder="Header"
+                  />
+                </div>
               </div>
+
+              <label class="block text-sm font-semibold mb-2">
+                Table Rows
+              </label>
 
               <div
                 v-for="(row, rowIndex) in block.rows"
@@ -469,6 +519,7 @@
                   v-model="row[cellIndex]"
                   type="text"
                   class="flex-1 border rounded-lg px-4 py-2"
+                  :placeholder="`Column ${cellIndex + 1}`"
                 />
 
                 <button
@@ -483,7 +534,7 @@
               <button
                 type="button"
                 @click="addTableRow(block)"
-                class="text-blue-600 text-sm"
+                class="text-blue-600 hover:text-blue-800 text-sm"
               >
                 + Add Row
               </button>
@@ -491,14 +542,24 @@
           </div>
         </div>
 
+        <!-- NO DESCRIPTION -->
+
         <div v-else class="border border-dashed rounded-lg p-8 text-center">
           <p class="text-gray-400">No description sections.</p>
+
+          <button
+            type="button"
+            @click="addDescriptionBlock"
+            class="mt-3 text-blue-600 hover:text-blue-800"
+          >
+            Add first section
+          </button>
         </div>
       </div>
 
-      <!-- ========================================== -->
+      <!-- =================================================== -->
       <!-- SAVE -->
-      <!-- ========================================== -->
+      <!-- =================================================== -->
 
       <div class="flex justify-end gap-4">
         <NuxtLink
@@ -517,7 +578,9 @@
         </button>
       </div>
 
+      <!-- =================================================== -->
       <!-- SUCCESS -->
+      <!-- =================================================== -->
 
       <div
         v-if="successMessage"
@@ -530,25 +593,27 @@
 </template>
 
 <script setup lang="ts">
-// ==================================================
+// ============================================================
 // ADMIN MIDDLEWARE
-// ==================================================
+// ============================================================
 
 definePageMeta({
   middleware: "admin",
 });
 
-// ==================================================
+// ============================================================
 // ADMIN FETCH
-// ==================================================
+// IMPORTANT:
+// useAdminFetch() RETURNS THE FUNCTION DIRECTLY
+// ============================================================
 
-const { adminFetch } = useAdminFetch();
+const adminFetch = useAdminFetch();
 
 const route = useRoute();
 
-// ==================================================
+// ============================================================
 // STATE
-// ==================================================
+// ============================================================
 
 const loading = ref(true);
 
@@ -568,9 +633,9 @@ const imageInput = ref<HTMLInputElement | null>(null);
 
 const categories = ref<any[]>([]);
 
-// ==================================================
+// ============================================================
 // FORM
-// ==================================================
+// ============================================================
 
 const form = reactive<any>({
   id: null,
@@ -600,19 +665,29 @@ const form = reactive<any>({
   description: [],
 });
 
-// ==================================================
-// CATEGORY SORTING
-// ==================================================
+// ============================================================
+// PRODUCT ID
+// ============================================================
+
+const productId = computed(() => {
+  return route.params.id;
+});
+
+// ============================================================
+// CATEGORY HIERARCHY
+// ============================================================
 
 const sortedCategories = computed(() => {
+  // Main categories
   const parents = categories.value
     .filter((category) => !category.parent_id)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
+  // Add children
   return parents.map((parent) => {
     const children = categories.value
-      .filter((category) => category.parent_id === parent.id)
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .filter((category) => Number(category.parent_id) === Number(parent.id))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
     return {
       ...parent,
@@ -621,33 +696,108 @@ const sortedCategories = computed(() => {
   });
 });
 
-// ==================================================
-// PRODUCT ID
-// ==================================================
+// ============================================================
+// NORMALISE IMAGES
+// ============================================================
 
-const productId = computed(() => route.params.id);
+const normaliseImages = (images: any): string[] => {
+  if (!images) {
+    return [];
+  }
 
-// ==================================================
+  // Already an array
+  if (Array.isArray(images)) {
+    return images
+      .filter((image) => typeof image === "string")
+      .map((image) => image.trim())
+      .filter(Boolean);
+  }
+
+  // JSON string
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((image) => typeof image === "string")
+          .map((image) => image.trim())
+          .filter(Boolean);
+      }
+    } catch {
+      // Not JSON
+    }
+
+    // Single image path
+    if (images.trim()) {
+      return [images.trim()];
+    }
+  }
+
+  return [];
+};
+
+// ============================================================
+// NORMALISE DESCRIPTION
+// ============================================================
+
+const normaliseDescription = (description: any): any[] => {
+  if (!description) {
+    return [];
+  }
+
+  if (Array.isArray(description)) {
+    return JSON.parse(JSON.stringify(description));
+  }
+
+  if (typeof description === "string") {
+    try {
+      const parsed = JSON.parse(description);
+
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      console.warn("Description was not valid JSON.");
+    }
+  }
+
+  return [];
+};
+
+// ============================================================
 // LOAD PRODUCT
-// ==================================================
+// ============================================================
 
 const loadProduct = async () => {
+  loading.value = true;
+
+  errorMessage.value = "";
+
   try {
+    console.log("🔥 LOADING PRODUCT:", productId.value);
+
     const response = await adminFetch(`/api/admin/products/${productId.value}`);
+
+    console.log("🔥 PRODUCT RESPONSE:", response);
 
     if (!response) {
       throw new Error("Product was not returned.");
     }
 
-    form.id = response.id;
+    // ========================================================
+    // BASIC PRODUCT DATA
+    // ========================================================
 
-    form.name = response.name || "";
+    form.id = response.id ?? null;
 
-    form.slug = response.slug || "";
+    form.name = response.name ?? "";
 
-    form.category_id = response.category_id ?? null;
+    form.slug = response.slug ?? "";
 
-    form.blurb = response.blurb || "";
+    form.category_id = response.category_id ?? response.category ?? null;
+
+    form.blurb = response.blurb ?? "";
 
     form.price = Number(response.price) || 0;
 
@@ -664,25 +814,21 @@ const loadProduct = async () => {
 
     form.active = response.active !== false;
 
-    // ==============================================
+    // ========================================================
     // IMAGES
-    // ==============================================
+    // ========================================================
 
-    if (Array.isArray(response.images)) {
-      form.images = JSON.parse(JSON.stringify(response.images));
-    } else {
-      form.images = [];
-    }
+    form.images = normaliseImages(response.images);
 
-    // ==============================================
+    console.log("🔥 PRODUCT IMAGES:", form.images);
+
+    // ========================================================
     // DESCRIPTION
-    // ==============================================
+    // ========================================================
 
-    if (Array.isArray(response.description)) {
-      form.description = JSON.parse(JSON.stringify(response.description));
-    } else {
-      form.description = [];
-    }
+    form.description = normaliseDescription(response.description);
+
+    console.log("🔥 PRODUCT DESCRIPTION:", form.description);
   } catch (error: any) {
     console.error("🔥 LOAD PRODUCT ERROR:", error);
 
@@ -693,23 +839,27 @@ const loadProduct = async () => {
   }
 };
 
-// ==================================================
+// ============================================================
 // LOAD CATEGORIES
-// ==================================================
+// ============================================================
 
 const loadCategories = async () => {
   try {
+    console.log("🔥 LOADING CATEGORIES");
+
     const response = await adminFetch("/api/admin/categories");
 
+    console.log("🔥 CATEGORIES:", response);
+
     categories.value = Array.isArray(response) ? response : [];
-  } catch (error) {
+  } catch (error: any) {
     console.error("🔥 CATEGORY ERROR:", error);
   }
 };
 
-// ==================================================
+// ============================================================
 // UPLOAD IMAGE
-// ==================================================
+// ============================================================
 
 const uploadImage = async (event: Event) => {
   const target = event.target as HTMLInputElement;
@@ -729,17 +879,17 @@ const uploadImage = async (event: Event) => {
   try {
     console.log("🔥 SELECTED IMAGE:", file.name);
 
-    // ==============================================
-    // CHECK SIZE
-    // ==============================================
+    // ========================================================
+    // SIZE
+    // ========================================================
 
     if (file.size > 5 * 1024 * 1024) {
       throw new Error("Image must be smaller than 5MB.");
     }
 
-    // ==============================================
-    // CHECK TYPE
-    // ==============================================
+    // ========================================================
+    // TYPE
+    // ========================================================
 
     const allowedTypes = [
       "image/jpeg",
@@ -753,17 +903,17 @@ const uploadImage = async (event: Event) => {
       throw new Error("Only JPG, PNG, WEBP and GIF images are allowed.");
     }
 
-    // ==============================================
+    // ========================================================
     // FORM DATA
-    // ==============================================
+    // ========================================================
 
     const formData = new FormData();
 
     formData.append("file", file);
 
-    // ==============================================
-    // GET SUPABASE SESSION
-    // ==============================================
+    // ========================================================
+    // GET SESSION
+    // ========================================================
 
     const supabase = useSupabaseClient();
 
@@ -775,9 +925,9 @@ const uploadImage = async (event: Event) => {
       throw new Error("Authentication required.");
     }
 
-    // ==============================================
+    // ========================================================
     // UPLOAD
-    // ==============================================
+    // ========================================================
 
     const response = await $fetch("/api/admin/products/upload-image", {
       method: "POST",
@@ -791,9 +941,9 @@ const uploadImage = async (event: Event) => {
 
     console.log("🔥 UPLOAD RESPONSE:", response);
 
-    // ==============================================
-    // ADD URL TO ARRAY
-    // ==============================================
+    // ========================================================
+    // ADD IMAGE TO ARRAY
+    // ========================================================
 
     if (response && response.url) {
       form.images.push(response.url);
@@ -812,24 +962,21 @@ const uploadImage = async (event: Event) => {
   } finally {
     uploading.value = false;
 
-    // Reset file input so the same file
-    // can be selected again if necessary.
-
     target.value = "";
   }
 };
 
-// ==================================================
+// ============================================================
 // REMOVE IMAGE
-// ==================================================
+// ============================================================
 
 const removeImage = (index: number) => {
   form.images.splice(index, 1);
 };
 
-// ==================================================
-// DESCRIPTION
-// ==================================================
+// ============================================================
+// ADD DESCRIPTION BLOCK
+// ============================================================
 
 const addDescriptionBlock = () => {
   form.description.push({
@@ -838,13 +985,17 @@ const addDescriptionBlock = () => {
   });
 };
 
+// ============================================================
+// REMOVE DESCRIPTION BLOCK
+// ============================================================
+
 const removeDescriptionBlock = (index: number) => {
   form.description.splice(index, 1);
 };
 
-// ==================================================
-// LIST
-// ==================================================
+// ============================================================
+// ADD LIST ITEM
+// ============================================================
 
 const addListItem = (block: any) => {
   if (!Array.isArray(block.items)) {
@@ -854,22 +1005,37 @@ const addListItem = (block: any) => {
   block.items.push("");
 };
 
-// ==================================================
-// TABLE
-// ==================================================
+// ============================================================
+// REMOVE LIST ITEM
+// ============================================================
+
+const removeListItem = (block: any, index: number) => {
+  if (Array.isArray(block.items)) {
+    block.items.splice(index, 1);
+  }
+};
+
+// ============================================================
+// ADD TABLE ROW
+// ============================================================
 
 const addTableRow = (block: any) => {
+  if (!Array.isArray(block.headers)) {
+    block.headers = ["", ""];
+  }
+
   if (!Array.isArray(block.rows)) {
     block.rows = [];
   }
 
-  const columns =
-    Array.isArray(block.headers) && block.headers.length
-      ? block.headers.length
-      : 2;
+  const columns = block.headers.length || 2;
 
   block.rows.push(Array(columns).fill(""));
 };
+
+// ============================================================
+// REMOVE TABLE ROW
+// ============================================================
 
 const removeTableRow = (block: any, index: number) => {
   if (Array.isArray(block.rows)) {
@@ -877,9 +1043,17 @@ const removeTableRow = (block: any, index: number) => {
   }
 };
 
-// ==================================================
+// ============================================================
+// PREPARE DESCRIPTION
+// ============================================================
+
+const prepareDescription = () => {
+  return JSON.parse(JSON.stringify(form.description));
+};
+
+// ============================================================
 // SAVE PRODUCT
-// ==================================================
+// ============================================================
 
 const saveProduct = async () => {
   saving.value = true;
@@ -889,6 +1063,22 @@ const saveProduct = async () => {
   successMessage.value = "";
 
   try {
+    // ========================================================
+    // CLEAN IMAGE ARRAY
+    // ========================================================
+
+    const images = normaliseImages(form.images);
+
+    // ========================================================
+    // CLEAN DESCRIPTION
+    // ========================================================
+
+    const description = prepareDescription();
+
+    // ========================================================
+    // PAYLOAD
+    // ========================================================
+
     const payload = {
       name: form.name,
 
@@ -910,31 +1100,44 @@ const saveProduct = async () => {
 
       active: form.active,
 
-      // IMPORTANT:
-      // Keep images as an array.
-      images: form.images,
+      // IMPORTANT
+      // images remains an ARRAY
+      images,
 
-      // IMPORTANT:
-      // Keep description as an array.
-      description: form.description,
+      // IMPORTANT
+      // description remains an ARRAY
+      description,
     };
 
     console.log("🔥 SAVING PRODUCT:", payload);
 
-    await adminFetch(`/api/admin/products/${productId.value}`, {
-      method: "PUT",
+    // ========================================================
+    // UPDATE
+    // ========================================================
 
-      body: payload,
-    });
+    const response = await adminFetch(
+      `/api/admin/products/${productId.value}`,
+      {
+        method: "PUT",
+
+        body: payload,
+      },
+    );
+
+    console.log("🔥 SAVE RESPONSE:", response);
 
     successMessage.value = "Product updated successfully.";
 
-    // Scroll to success message
+    // ========================================================
+    // SCROLL TO TOP
+    // ========================================================
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    if (import.meta.client) {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   } catch (error: any) {
     console.error("🔥 SAVE PRODUCT ERROR:", error);
 
@@ -945,11 +1148,11 @@ const saveProduct = async () => {
   }
 };
 
-// ==================================================
-// LOAD
-// ==================================================
+// ============================================================
+// LOAD PAGE
+// ============================================================
 
 onMounted(async () => {
-  await Promise.all([loadProduct(), loadCategories()]);
+  await Promise.all([loadCategories(), loadProduct()]);
 });
 </script>
