@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6 MD:flex gap-6">
-
     <!-- Side Menu -->
     <aside class="w-full md:w-64 shrink-0 mb-6 md:mb-0">
       <SideMenu />
@@ -8,7 +7,6 @@
 
     <!-- Cart items -->
     <main class="flex-1 min-w-0">
-
       <div
         v-for="item in cart.items"
         :key="item.id"
@@ -28,9 +26,7 @@
           </div>
 
           <div class="w-[30%] text-right shrink-0">
-            <p class="font-semibold">
-              ${{ item.price }}
-            </p>
+            <p class="font-semibold">${{ item.price }}</p>
           </div>
         </div>
 
@@ -66,12 +62,15 @@
           {{ loading ? "Processing..." : "Checkout" }}
         </button>
       </div>
-
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+definePageMeta({
+  middleware: "auth",
+});
+
 const cart = useCartStore();
 
 const loading = ref(false);
