@@ -7,25 +7,36 @@
 
     <!-- Cart Items -->
     <main class="flex-1 min-w-0">
-      <!-- Products -->
+      <!-- Cart Products -->
       <div
         v-for="item in cart.items"
         :key="item.id"
         class="flex items-center gap-4 border-b py-4"
       >
         <!-- Product Image -->
-        <img
-          :src="getProductImage(item.image)"
-          :alt="item.name"
-          class="w-20 h-20 object-contain"
-          @error="imageError(item)"
-        />
+        <div class="w-20 h-20 shrink-0 flex items-center justify-center">
+          <img
+            v-if="getProductImage(item.image)"
+            :src="getProductImage(item.image)"
+            :alt="item.name"
+            class="w-20 h-20 object-contain"
+            @error="imageError(item)"
+          />
+
+          <!-- Image Placeholder -->
+          <div
+            v-else
+            class="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs"
+          >
+            No Image
+          </div>
+        </div>
 
         <!-- Product Information -->
-        <div class="flex w-full h-10 items-center gap-4">
+        <div class="flex w-full h-10 items-center gap-4 min-w-0">
           <!-- Product Name -->
           <div class="w-[70%] min-w-0">
-            <h3 class="truncate">
+            <h3 class="truncate font-medium">
               {{ item.name }}
             </h3>
           </div>
@@ -39,20 +50,20 @@
         <!-- Decrease Quantity -->
         <button
           @click="cart.decrease(item.id)"
-          class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300"
+          class="w-8 h-8 shrink-0 rounded bg-gray-200 hover:bg-gray-300"
         >
           −
         </button>
 
         <!-- Quantity -->
-        <span class="w-6 text-center">
+        <span class="w-6 text-center shrink-0">
           {{ item.quantity }}
         </span>
 
         <!-- Increase Quantity -->
         <button
           @click="cart.increase(item.id)"
-          class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300"
+          class="w-8 h-8 shrink-0 rounded bg-gray-200 hover:bg-gray-300"
         >
           +
         </button>
@@ -68,7 +79,7 @@
         <button
           @click="checkout"
           :disabled="loading || !cart.items.length"
-          class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+          class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ loading ? "Processing..." : "Checkout" }}
         </button>
@@ -78,45 +89,91 @@
 </template>
 
 <script setup lang="ts">
-// ----------------------------------------
+// ========================================
 // PAGE MIDDLEWARE
-// ----------------------------------------
+// ========================================
 
 definePageMeta({
   middleware: ["auth", "cart"],
 });
 
-// ----------------------------------------
-// CART
-// ----------------------------------------
+// ========================================
+// CART STORE
+// ========================================
 
 const cart = useCartStore();
 
-// ----------------------------------------
+// ========================================
 // SUPABASE
-// ----------------------------------------
+// ========================================
 
 const supabase = useSupabaseClient();
 
 const BUCKET_NAME = "products";
 
-// ----------------------------------------
+// ========================================
 // LOADING
-// ----------------------------------------
+// ========================================
 
 const loading = ref(false);
 
-// ----------------------------------------
+// ========================================
 // GET PRODUCT IMAGE
-// ----------------------------------------
+// ========================================
 
-function getProductImage(image: string) {
+function getProductImage(image: any): string {
+  // --------------------------------------
+  // NO IMAGE
+  // --------------------------------------
+
   if (!image) {
     return "";
   }
 
   // --------------------------------------
-  // IMAGE IS ALREADY A URL
+  // IMAGE IS AN ARRAY
+  // --------------------------------------
+
+  if (Array.isArray(image)) {
+    if (image.length === 0) {
+      return "";
+    }
+
+    // Use the first image
+    image = image[0];
+  }
+
+  // --------------------------------------
+  // IMAGE IS AN OBJECT
+  // --------------------------------------
+
+  if (typeof image === "object") {
+    image =
+      image.url || image.path || image.name || image.src || image.image || "";
+  }
+
+  // --------------------------------------
+  // MAKE SURE IMAGE IS A STRING
+  // --------------------------------------
+
+  if (typeof image !== "string") {
+    console.error("❌ INVALID PRODUCT IMAGE:", image);
+
+    return "";
+  }
+
+  // --------------------------------------
+  // REMOVE WHITESPACE
+  // --------------------------------------
+
+  image = image.trim();
+
+  if (!image) {
+    return "";
+  }
+
+  // --------------------------------------
+  // IMAGE IS ALREADY A FULL URL
   // --------------------------------------
 
   if (image.startsWith("http://") || image.startsWith("https://")) {
@@ -124,13 +181,13 @@ function getProductImage(image: string) {
   }
 
   // --------------------------------------
-  // REMOVE LEADING SLASH
+  // REMOVE LEADING SLASHES
   // --------------------------------------
 
   const imagePath = image.replace(/^\/+/, "");
 
   // --------------------------------------
-  // GET SUPABASE PUBLIC URL
+  // SUPABASE STORAGE PUBLIC URL
   // --------------------------------------
 
   const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(imagePath);
@@ -138,42 +195,50 @@ function getProductImage(image: string) {
   return data.publicUrl;
 }
 
-// ----------------------------------------
+// ========================================
 // IMAGE ERROR
-// ----------------------------------------
+// ========================================
 
 function imageError(item: any) {
+  console.error("=================================");
+
   console.error("❌ PRODUCT IMAGE FAILED");
 
   console.error("Product:", item.name);
 
   console.error("Stored image:", item.image);
 
+  console.error("Image type:", typeof item.image);
+
   console.error("Generated URL:", getProductImage(item.image));
+
+  console.error("=================================");
 }
 
-// ----------------------------------------
+// ========================================
 // DEBUG CART
-// ----------------------------------------
+// ========================================
 
 console.log("=================================");
 
-console.log("🛒 CART:", cart.items);
+console.log("🛒 CART ITEMS:", cart.items);
 
-console.log(
-  "🖼️ CART IMAGES:",
-  cart.items.map((item: any) => ({
+console.log("🖼️ CART IMAGES:");
+
+cart.items.forEach((item: any) => {
+  console.log({
     name: item.name,
     image: item.image,
-    url: getProductImage(item.image),
-  })),
-);
+    imageType: typeof item.image,
+    imageUrl: getProductImage(item.image),
+  });
+});
 
 console.log("=================================");
 
-// ----------------------------------------
+// ========================================
 // CHECKOUT
-// ----------------------------------------
+// ========================================
 
 async function checkout() {
   // --------------------------------------
@@ -226,11 +291,11 @@ async function checkout() {
     }
 
     // ------------------------------------
-    // NO STRIPE URL
+    // NO URL RETURNED
     // ------------------------------------
 
-    console.error("❌ STRIPE DID NOT RETURN A URL");
-  } catch (error) {
+    console.error("❌ STRIPE DID NOT RETURN A CHECKOUT URL");
+  } catch (error: any) {
     console.error("=================================");
 
     console.error("❌ CHECKOUT ERROR");
