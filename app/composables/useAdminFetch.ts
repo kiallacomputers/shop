@@ -73,16 +73,18 @@ export function useAdminFetch() {
 
       return result;
     } catch (error: any) {
+      console.error("=================================");
       console.error("ADMIN FETCH ERROR:", url);
       console.error(error);
+      console.error("=================================");
 
-      // If authentication has expired
+      // If the server says the user is not authenticated
       if (error?.statusCode === 401) {
         isAdmin.value = false;
         adminChecked.value = true;
       }
 
-      // If user is authenticated but not an admin
+      // If the server says the user is authenticated but not admin
       if (error?.statusCode === 403) {
         isAdmin.value = false;
         adminChecked.value = true;
@@ -92,11 +94,15 @@ export function useAdminFetch() {
     }
   };
 
+  // ============================================================
+  // RETURN
+  // ============================================================
+
   return {
+    adminFetch,
     isAdmin,
     adminChecked,
     checkingAdmin,
     checkAdmin,
-    adminFetch,
   };
 }
