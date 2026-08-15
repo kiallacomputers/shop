@@ -1,15 +1,17 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ============================= -->
+    <!-- ============================================ -->
     <!-- HEADER -->
-    <!-- ============================= -->
+    <!-- ============================================ -->
 
-    <div class="flex items-center justify-between mb-8">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
+    >
       <div>
         <h1 class="text-3xl font-bold text-slate-800">Edit Product</h1>
 
         <p class="text-gray-500 mt-1">
-          Update product details, pricing, stock, images and description.
+          Update product information, stock, images and description.
         </p>
       </div>
 
@@ -21,17 +23,17 @@
       </NuxtLink>
     </div>
 
-    <!-- ============================= -->
+    <!-- ============================================ -->
     <!-- LOADING -->
-    <!-- ============================= -->
+    <!-- ============================================ -->
 
     <div v-if="loading" class="bg-white rounded-lg shadow p-10 text-center">
-      <div class="text-gray-500">Loading product...</div>
+      <p class="text-gray-500">Loading product...</p>
     </div>
 
-    <!-- ============================= -->
+    <!-- ============================================ -->
     <!-- ERROR -->
-    <!-- ============================= -->
+    <!-- ============================================ -->
 
     <div
       v-else-if="errorMessage"
@@ -40,14 +42,14 @@
       {{ errorMessage }}
     </div>
 
-    <!-- ============================= -->
+    <!-- ============================================ -->
     <!-- FORM -->
-    <!-- ============================= -->
+    <!-- ============================================ -->
 
     <form v-else @submit.prevent="saveProduct" class="space-y-8">
-      <!-- ============================= -->
-      <!-- BASIC INFORMATION -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
+      <!-- PRODUCT INFORMATION -->
+      <!-- ========================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">
@@ -63,8 +65,8 @@
             <input
               v-model="form.name"
               type="text"
-              class="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              class="w-full border rounded-lg px-4 py-3"
             />
           </div>
 
@@ -92,12 +94,10 @@
               <option :value="null">Select Category</option>
 
               <template v-for="category in sortedCategories" :key="category.id">
-                <!-- Main Category -->
-                <option :value="category.id" class="font-bold">
+                <option :value="category.id">
                   {{ category.name }}
                 </option>
 
-                <!-- Sub Categories -->
                 <option
                   v-for="child in category.children"
                   :key="child.id"
@@ -123,16 +123,14 @@
         </div>
       </div>
 
-      <!-- ============================= -->
+      <!-- ========================================== -->
       <!-- PRICE / STOCK -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">Price & Stock</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- PRICE -->
-
           <div>
             <label class="block font-semibold mb-2"> Price </label>
 
@@ -145,8 +143,6 @@
             />
           </div>
 
-          <!-- OLD PRICE -->
-
           <div>
             <label class="block font-semibold mb-2"> Old Price </label>
 
@@ -158,8 +154,6 @@
               class="w-full border rounded-lg px-4 py-3"
             />
           </div>
-
-          <!-- STOCK -->
 
           <div>
             <label class="block font-semibold mb-2"> Stock </label>
@@ -174,39 +168,67 @@
         </div>
       </div>
 
-      <!-- ============================= -->
+      <!-- ========================================== -->
       <!-- IMAGES -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div
+          class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
+        >
           <div>
             <h2 class="text-xl font-bold text-slate-800">Product Images</h2>
 
             <p class="text-sm text-gray-500 mt-1">
-              Images are stored as a JSON array.
+              Upload product images or edit the existing image paths.
             </p>
           </div>
 
-          <button
-            type="button"
-            @click="addImage"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          <!-- UPLOAD BUTTON -->
+
+          <label
+            class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
+            :class="{
+              'opacity-50 cursor-not-allowed': uploading,
+            }"
           >
-            + Add Image
-          </button>
+            {{ uploading ? "Uploading..." : "+ Upload Image" }}
+
+            <input
+              ref="imageInput"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              class="hidden"
+              :disabled="uploading"
+              @change="uploadImage"
+            />
+          </label>
+        </div>
+
+        <!-- UPLOAD MESSAGE -->
+
+        <div
+          v-if="uploadMessage"
+          class="mb-4 p-3 rounded-lg"
+          :class="
+            uploadError
+              ? 'bg-red-100 text-red-700'
+              : 'bg-green-100 text-green-700'
+          "
+        >
+          {{ uploadMessage }}
         </div>
 
         <!-- IMAGE LIST -->
 
-        <div v-if="form.images.length > 0" class="space-y-4">
+        <div v-if="form.images.length" class="space-y-4">
           <div
             v-for="(image, index) in form.images"
             :key="index"
             class="border rounded-lg p-4"
           >
             <div class="flex flex-col md:flex-row gap-4">
-              <!-- PREVIEW -->
+              <!-- IMAGE PREVIEW -->
 
               <div
                 class="w-full md:w-40 h-32 border rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden"
@@ -221,7 +243,7 @@
                 <span v-else class="text-gray-400 text-sm"> No Image </span>
               </div>
 
-              <!-- URL -->
+              <!-- IMAGE URL -->
 
               <div class="flex-1">
                 <label class="block text-sm font-semibold mb-2">
@@ -231,18 +253,17 @@
                 <input
                   v-model="form.images[index]"
                   type="text"
-                  placeholder="/images/products/example.png"
                   class="w-full border rounded-lg px-4 py-3"
                 />
 
-                <p class="text-xs text-gray-500 mt-2">
-                  Example: /images/products/Intel_Ultra5.png
+                <p class="text-xs text-gray-500 mt-2 break-all">
+                  {{ image }}
                 </p>
               </div>
 
               <!-- REMOVE -->
 
-              <div class="flex items-start">
+              <div>
                 <button
                   type="button"
                   @click="removeImage(index)"
@@ -258,21 +279,27 @@
         <!-- NO IMAGES -->
 
         <div v-else class="border border-dashed rounded-lg p-8 text-center">
-          <p class="text-gray-400 mb-3">No images have been added.</p>
+          <p class="text-gray-400">No product images.</p>
 
-          <button
-            type="button"
-            @click="addImage"
-            class="text-blue-600 hover:text-blue-800"
+          <label
+            class="inline-block mt-3 text-blue-600 hover:text-blue-800 cursor-pointer"
           >
-            + Add Image
-          </button>
+            Upload an image
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              class="hidden"
+              :disabled="uploading"
+              @change="uploadImage"
+            />
+          </label>
         </div>
       </div>
 
-      <!-- ============================= -->
+      <!-- ========================================== -->
       <!-- PRODUCT OPTIONS -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold text-slate-800 mb-6">Product Options</h2>
@@ -281,35 +308,37 @@
           <label class="flex items-center gap-3">
             <input v-model="form.active" type="checkbox" class="w-5 h-5" />
 
-            <span> Active </span>
+            Active
           </label>
 
           <label class="flex items-center gap-3">
             <input v-model="form.featured" type="checkbox" class="w-5 h-5" />
 
-            <span> Featured </span>
+            Featured
           </label>
 
           <label class="flex items-center gap-3">
             <input v-model="form.refurbished" type="checkbox" class="w-5 h-5" />
 
-            <span> Refurbished </span>
+            Refurbished
           </label>
         </div>
       </div>
 
-      <!-- ============================= -->
+      <!-- ========================================== -->
       <!-- DESCRIPTION -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
 
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-6">
+        <div
+          class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
+        >
           <div>
             <h2 class="text-xl font-bold text-slate-800">
               Product Description
             </h2>
 
-            <p class="text-sm text-gray-500 mt-1">
+            <p class="text-sm text-gray-500">
               Description is stored as a JSON array.
             </p>
           </div>
@@ -323,25 +352,19 @@
           </button>
         </div>
 
-        <!-- DESCRIPTION BLOCKS -->
-
-        <div v-if="form.description.length > 0" class="space-y-6">
+        <div v-if="form.description.length" class="space-y-6">
           <div
             v-for="(block, index) in form.description"
             :key="index"
             class="border rounded-lg p-5 bg-gray-50"
           >
-            <!-- BLOCK HEADER -->
-
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-slate-700">
-                Section {{ index + 1 }}
-              </h3>
+            <div class="flex justify-between mb-4">
+              <h3 class="font-semibold">Section {{ index + 1 }}</h3>
 
               <button
                 type="button"
                 @click="removeDescriptionBlock(index)"
-                class="text-red-600 hover:text-red-800"
+                class="text-red-600"
               >
                 Remove
               </button>
@@ -349,77 +372,64 @@
 
             <!-- TYPE -->
 
-            <div class="mb-4">
-              <label class="block font-semibold mb-2"> Type </label>
+            <select
+              v-model="block.type"
+              class="w-full border rounded-lg px-4 py-3 bg-white mb-4"
+            >
+              <option value="heading">Heading</option>
 
-              <select
-                v-model="block.type"
-                class="w-full border rounded-lg px-4 py-3 bg-white"
-              >
-                <option value="heading">Heading</option>
+              <option value="paragraph">Paragraph</option>
 
-                <option value="paragraph">Paragraph</option>
+              <option value="quote">Quote</option>
 
-                <option value="quote">Quote</option>
+              <option value="warning">Warning</option>
 
-                <option value="warning">Warning</option>
+              <option value="list">List</option>
 
-                <option value="list">List</option>
-
-                <option value="table">Table</option>
-              </select>
-            </div>
+              <option value="table">Table</option>
+            </select>
 
             <!-- TEXT -->
 
-            <div
+            <textarea
               v-if="
                 block.type === 'heading' ||
                 block.type === 'paragraph' ||
                 block.type === 'quote' ||
                 block.type === 'warning'
               "
-            >
-              <label class="block font-semibold mb-2"> Text </label>
-
-              <textarea
-                v-model="block.text"
-                rows="5"
-                class="w-full border rounded-lg px-4 py-3 bg-white"
-              ></textarea>
-            </div>
+              v-model="block.text"
+              rows="5"
+              class="w-full border rounded-lg px-4 py-3"
+            ></textarea>
 
             <!-- LIST -->
 
-            <div v-if="block.type === 'list'" class="mt-4">
-              <label class="block font-semibold mb-2"> List Style </label>
-
+            <div v-if="block.type === 'list'">
               <select
                 v-model="block.style"
-                class="w-full border rounded-lg px-4 py-3 mb-4 bg-white"
+                class="w-full border rounded-lg px-4 py-3 mb-4"
               >
                 <option value="check">Check</option>
 
                 <option value="bullet">Bullet</option>
               </select>
 
-              <label class="block font-semibold mb-2"> Items </label>
-
               <div
-                v-for="(item, itemIndex) in block.items || []"
+                v-for="(item, itemIndex) in block.items"
                 :key="itemIndex"
                 class="flex gap-2 mb-2"
               >
                 <input
                   v-model="block.items[itemIndex]"
                   type="text"
-                  class="flex-1 border rounded-lg px-4 py-2 bg-white"
+                  class="flex-1 border rounded-lg px-4 py-2"
                 />
 
                 <button
                   type="button"
                   @click="block.items.splice(itemIndex, 1)"
-                  class="px-3 text-red-600"
+                  class="text-red-600 px-3"
                 >
                   ×
                 </button>
@@ -428,7 +438,7 @@
               <button
                 type="button"
                 @click="addListItem(block)"
-                class="text-blue-600 hover:text-blue-800 text-sm"
+                class="text-blue-600 text-sm"
               >
                 + Add Item
               </button>
@@ -436,23 +446,20 @@
 
             <!-- TABLE -->
 
-            <div v-if="block.type === 'table'" class="mt-4">
-              <label class="block font-semibold mb-2"> Table Headers </label>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+            <div v-if="block.type === 'table'">
+              <div class="grid grid-cols-2 gap-2 mb-4">
                 <input
-                  v-for="(header, headerIndex) in block.headers || []"
+                  v-for="(header, headerIndex) in block.headers"
                   :key="headerIndex"
                   v-model="block.headers[headerIndex]"
                   type="text"
-                  class="border rounded-lg px-4 py-2 bg-white"
+                  class="border rounded-lg px-4 py-2"
+                  placeholder="Header"
                 />
               </div>
 
-              <label class="block font-semibold mb-2"> Table Rows </label>
-
               <div
-                v-for="(row, rowIndex) in block.rows || []"
+                v-for="(row, rowIndex) in block.rows"
                 :key="rowIndex"
                 class="flex gap-2 mb-2"
               >
@@ -461,13 +468,13 @@
                   :key="cellIndex"
                   v-model="row[cellIndex]"
                   type="text"
-                  class="flex-1 border rounded-lg px-4 py-2 bg-white"
+                  class="flex-1 border rounded-lg px-4 py-2"
                 />
 
                 <button
                   type="button"
                   @click="removeTableRow(block, rowIndex)"
-                  class="px-3 text-red-600"
+                  class="text-red-600 px-3"
                 >
                   ×
                 </button>
@@ -476,7 +483,7 @@
               <button
                 type="button"
                 @click="addTableRow(block)"
-                class="text-blue-600 hover:text-blue-800 text-sm"
+                class="text-blue-600 text-sm"
               >
                 + Add Row
               </button>
@@ -484,24 +491,14 @@
           </div>
         </div>
 
-        <!-- NO DESCRIPTION -->
-
         <div v-else class="border border-dashed rounded-lg p-8 text-center">
-          <p class="text-gray-400 mb-3">No description sections.</p>
-
-          <button
-            type="button"
-            @click="addDescriptionBlock"
-            class="text-blue-600 hover:text-blue-800"
-          >
-            + Add Section
-          </button>
+          <p class="text-gray-400">No description sections.</p>
         </div>
       </div>
 
-      <!-- ============================= -->
+      <!-- ========================================== -->
       <!-- SAVE -->
-      <!-- ============================= -->
+      <!-- ========================================== -->
 
       <div class="flex justify-end gap-4">
         <NuxtLink
@@ -520,9 +517,7 @@
         </button>
       </div>
 
-      <!-- ============================= -->
       <!-- SUCCESS -->
-      <!-- ============================= -->
 
       <div
         v-if="successMessage"
@@ -536,7 +531,7 @@
 
 <script setup lang="ts">
 // ==================================================
-// ADMIN AUTHENTICATION
+// ADMIN MIDDLEWARE
 // ==================================================
 
 definePageMeta({
@@ -559,28 +554,19 @@ const loading = ref(true);
 
 const saving = ref(false);
 
+const uploading = ref(false);
+
 const errorMessage = ref("");
 
 const successMessage = ref("");
 
+const uploadMessage = ref("");
+
+const uploadError = ref(false);
+
+const imageInput = ref<HTMLInputElement | null>(null);
+
 const categories = ref<any[]>([]);
-
-const sortedCategories = computed(() => {
-  const parents = categories.value
-    .filter((category) => !category.parent_id)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  return parents.map((parent) => {
-    const children = categories.value
-      .filter((category) => category.parent_id === parent.id)
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    return {
-      ...parent,
-      children,
-    };
-  });
-});
 
 // ==================================================
 // FORM
@@ -615,32 +601,43 @@ const form = reactive<any>({
 });
 
 // ==================================================
+// CATEGORY SORTING
+// ==================================================
+
+const sortedCategories = computed(() => {
+  const parents = categories.value
+    .filter((category) => !category.parent_id)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return parents.map((parent) => {
+    const children = categories.value
+      .filter((category) => category.parent_id === parent.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      ...parent,
+      children,
+    };
+  });
+});
+
+// ==================================================
 // PRODUCT ID
 // ==================================================
 
-const productId = computed(() => {
-  return route.params.id;
-});
+const productId = computed(() => route.params.id);
 
 // ==================================================
 // LOAD PRODUCT
 // ==================================================
 
 const loadProduct = async () => {
-  console.log("🔥 EDIT PRODUCT ID:", productId.value);
-
   try {
     const response = await adminFetch(`/api/admin/products/${productId.value}`);
 
-    console.log("🔥 EDIT PRODUCT RESPONSE:", response);
-
     if (!response) {
-      throw new Error("Product was not returned by the server.");
+      throw new Error("Product was not returned.");
     }
-
-    // ==================================================
-    // BASIC DATA
-    // ==================================================
 
     form.id = response.id;
 
@@ -667,11 +664,9 @@ const loadProduct = async () => {
 
     form.active = response.active !== false;
 
-    // ==================================================
+    // ==============================================
     // IMAGES
-    // ==================================================
-
-    console.log("🔥 DATABASE IMAGES:", response.images);
+    // ==============================================
 
     if (Array.isArray(response.images)) {
       form.images = JSON.parse(JSON.stringify(response.images));
@@ -679,21 +674,15 @@ const loadProduct = async () => {
       form.images = [];
     }
 
-    console.log("🔥 FORM IMAGES:", form.images);
-
-    // ==================================================
+    // ==============================================
     // DESCRIPTION
-    // ==================================================
-
-    console.log("🔥 DATABASE DESCRIPTION:", response.description);
+    // ==============================================
 
     if (Array.isArray(response.description)) {
       form.description = JSON.parse(JSON.stringify(response.description));
     } else {
       form.description = [];
     }
-
-    console.log("🔥 FORM DESCRIPTION:", form.description);
   } catch (error: any) {
     console.error("🔥 LOAD PRODUCT ERROR:", error);
 
@@ -709,39 +698,142 @@ const loadProduct = async () => {
 // ==================================================
 
 const loadCategories = async () => {
-  console.log("🔥 LOADING CATEGORIES");
-
   try {
     const response = await adminFetch("/api/admin/categories");
 
-    console.log("🔥 CATEGORIES RESPONSE:", response);
-
     categories.value = Array.isArray(response) ? response : [];
-  } catch (error: any) {
+  } catch (error) {
     console.error("🔥 CATEGORY ERROR:", error);
   }
 };
 
 // ==================================================
-// IMAGE FUNCTIONS
+// UPLOAD IMAGE
 // ==================================================
 
-const addImage = () => {
-  form.images.push("");
+const uploadImage = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+
+  const file = target.files?.[0];
+
+  if (!file) {
+    return;
+  }
+
+  uploadMessage.value = "";
+
+  uploadError.value = false;
+
+  uploading.value = true;
+
+  try {
+    console.log("🔥 SELECTED IMAGE:", file.name);
+
+    // ==============================================
+    // CHECK SIZE
+    // ==============================================
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("Image must be smaller than 5MB.");
+    }
+
+    // ==============================================
+    // CHECK TYPE
+    // ==============================================
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error("Only JPG, PNG, WEBP and GIF images are allowed.");
+    }
+
+    // ==============================================
+    // FORM DATA
+    // ==============================================
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    // ==============================================
+    // GET SUPABASE SESSION
+    // ==============================================
+
+    const supabase = useSupabaseClient();
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      throw new Error("Authentication required.");
+    }
+
+    // ==============================================
+    // UPLOAD
+    // ==============================================
+
+    const response = await $fetch("/api/admin/products/upload-image", {
+      method: "POST",
+
+      body: formData,
+
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    console.log("🔥 UPLOAD RESPONSE:", response);
+
+    // ==============================================
+    // ADD URL TO ARRAY
+    // ==============================================
+
+    if (response && response.url) {
+      form.images.push(response.url);
+
+      uploadMessage.value = `Image "${file.name}" uploaded successfully.`;
+    } else {
+      throw new Error("Upload succeeded but no image URL was returned.");
+    }
+  } catch (error: any) {
+    console.error("🔥 IMAGE UPLOAD ERROR:", error);
+
+    uploadError.value = true;
+
+    uploadMessage.value =
+      error?.data?.statusMessage || error?.message || "Unable to upload image.";
+  } finally {
+    uploading.value = false;
+
+    // Reset file input so the same file
+    // can be selected again if necessary.
+
+    target.value = "";
+  }
 };
+
+// ==================================================
+// REMOVE IMAGE
+// ==================================================
 
 const removeImage = (index: number) => {
   form.images.splice(index, 1);
 };
 
 // ==================================================
-// DESCRIPTION FUNCTIONS
+// DESCRIPTION
 // ==================================================
 
 const addDescriptionBlock = () => {
   form.description.push({
     type: "paragraph",
-
     text: "",
   });
 };
@@ -771,12 +863,12 @@ const addTableRow = (block: any) => {
     block.rows = [];
   }
 
-  const numberOfColumns =
-    Array.isArray(block.headers) && block.headers.length > 0
+  const columns =
+    Array.isArray(block.headers) && block.headers.length
       ? block.headers.length
       : 2;
 
-  block.rows.push(Array(numberOfColumns).fill(""));
+  block.rows.push(Array(columns).fill(""));
 };
 
 const removeTableRow = (block: any, index: number) => {
@@ -790,8 +882,6 @@ const removeTableRow = (block: any, index: number) => {
 // ==================================================
 
 const saveProduct = async () => {
-  console.log("🔥 SAVING PRODUCT:", productId.value);
-
   saving.value = true;
 
   errorMessage.value = "";
@@ -820,27 +910,31 @@ const saveProduct = async () => {
 
       active: form.active,
 
-      // Keep images as JSON array
+      // IMPORTANT:
+      // Keep images as an array.
       images: form.images,
 
-      // Keep description as JSON array
+      // IMPORTANT:
+      // Keep description as an array.
       description: form.description,
     };
 
-    console.log("🔥 UPDATE PAYLOAD:", payload);
+    console.log("🔥 SAVING PRODUCT:", payload);
 
-    const response = await adminFetch(
-      `/api/admin/products/${productId.value}`,
-      {
-        method: "PUT",
+    await adminFetch(`/api/admin/products/${productId.value}`, {
+      method: "PUT",
 
-        body: payload,
-      },
-    );
-
-    console.log("🔥 UPDATE RESPONSE:", response);
+      body: payload,
+    });
 
     successMessage.value = "Product updated successfully.";
+
+    // Scroll to success message
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   } catch (error: any) {
     console.error("🔥 SAVE PRODUCT ERROR:", error);
 
@@ -852,12 +946,10 @@ const saveProduct = async () => {
 };
 
 // ==================================================
-// LOAD EVERYTHING
+// LOAD
 // ==================================================
 
 onMounted(async () => {
-  console.log("🔥🔥 EDIT PRODUCT PAGE LOADED");
-
   await Promise.all([loadProduct(), loadCategories()]);
 });
 </script>

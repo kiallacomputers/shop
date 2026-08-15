@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
     featured: body.featured,
     refurbished: body.refurbished,
 
-    images: images,
+    images: body.images,
     description: description,
 
     active: body.active,
