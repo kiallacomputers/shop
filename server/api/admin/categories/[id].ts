@@ -3,9 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
   try {
-    // ============================================
+    // ============================================================
     // GET AUTHENTICATED USER
-    // ============================================
+    // ============================================================
 
     const supabase = await serverSupabaseClient(event);
 
@@ -27,68 +27,18 @@ export default defineEventHandler(async (event) => {
     console.log("AUTH EMAIL:", user.email);
     console.log("========================================");
 
-    // ============================================
-    // SUPABASE SERVER CONFIGURATION
-    // ============================================
-
-    const config = useRuntimeConfig();
-
-    const supabaseUrl =
-      config.public.supabaseUrl || config.supabaseUrl;
-
-    const serviceKey =
-      config.supabaseSecretKey ||
-      config.supabaseServiceKey;
-
-    if (!supabaseUrl || !serviceKey) {
-      console.error(
-        "🔥 SUPABASE SERVER CONFIGURATION MISSING",
-      );
-
-      throw createError({
-        statusCode: 500,
-        statusMessage:
-          "Supabase server configuration is missing",
-      });
-    }
-
-    // ============================================
-    // SERVICE ROLE CLIENT
-    // ============================================
+    // ============================================================
+    // CHECK ADMIN
+    // ============================================================
     //
-    // This client bypasses RLS.
-    //
-    // Your admin_users table uses:
-    //
-    // admin_users.id
-    //
-    // as the authenticated user's UUID.
+    // admin_users.id contains the Supabase Auth UUID.
     //
     // Therefore:
+    // .eq("id", user.id)
     //
-    // admin_users.id === auth.users.id
-    //
-    // ============================================
+    // ============================================================
 
-    const adminSupabase = createClient(
-      supabaseUrl,
-      serviceKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
-
-    // ============================================
-    // CHECK ADMIN
-    // ============================================
-
-    const {
-      data: adminUser,
-      error: adminError,
-    } = await adminSupabase
+    const { data: adminUser, error: adminError } = await supabase
       .from("admin_users")
       .select("id")
       .eq("id", user.id)
@@ -98,110 +48,107 @@ export default defineEventHandler(async (event) => {
     console.log("ADMIN ERROR:", adminError);
 
     if (adminError) {
-      console.error(
-        "🔥 ADMIN CHECK ERROR:",
-        adminError,
-      );
+      console.error("ADMIN CHECK ERROR:", adminError);
 
       throw createError({
         statusCode: 500,
-        statusMessage:
-          "Unable to verify administrator access",
+        statusMessage: "Unable to verify administrator access",
       });
     }
 
     if (!adminUser) {
-      console.error(
-        "🔥 USER IS NOT AN ADMIN:",
-        user.id,
-      );
+      console.error("USER IS NOT AN ADMIN:", user.id);
 
       throw createError({
         statusCode: 403,
-        statusMessage:
-          "Administrator access required",
+        statusMessage: "Administrator access required",
       });
     }
 
-    console.log("✅ ADMIN VERIFIED");
+    console.log("ADMIN VERIFIED");
 
-    // ============================================
+    // ============================================================
     // GET CATEGORY ID
-    // ============================================
+    // ============================================================
 
-    const categoryId = getRouterParam(
-      event,
-      "id",
-    );
+    const categoryId = getRouterParam(event, "id");
 
     if (!categoryId) {
       throw createError({
         statusCode: 400,
-        statusMessage:
-          "Category ID is required",
+        statusMessage: "Category ID is required",
       });
     }
 
-    console.log(
-      "CATEGORY ID:",
-      categoryId,
-    );
+    console.log("CATEGORY ID:", categoryId);
 
-    // ============================================
-    // REQUEST METHOD
-    // ============================================
+    // ============================================================
+    // SERVICE ROLE SUPABASE CLIENT
+    // ============================================================
+
+    const config = useRuntimeConfig();
+
+    const supabaseUrl = config.public.supabaseUrl || config.supabaseUrl;
+
+    const serviceKey =
+      config.supabaseSecretKey ||
+      config.supabaseServiceKey ||
+      process.env.SUPABASE_SECRET_KEY ||
+      process.env.SUPABASE_SERVICE_KEY;
+
+    if (!supabaseUrl || !serviceKey) {
+      console.error("SUPABASE SERVER CONFIGURATION MISSING");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server configuration is missing",
+      });
+    }
+
+    const adminSupabase = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // ============================================================
+    // GET REQUEST METHOD
+    // ============================================================
 
     const method = event.method;
 
-    // ============================================
+    // ============================================================
     // PUT - UPDATE CATEGORY
-    // ============================================
+    // ============================================================
 
     if (method === "PUT") {
       const body = await readBody(event);
 
-      console.log(
-        "UPDATE CATEGORY BODY:",
-        body,
-      );
+      console.log("UPDATE CATEGORY BODY:", body);
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // NAME
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const name = String(
-        body?.name || "",
-      ).trim();
+      const name = String(body?.name || "").trim();
 
       if (!name) {
         throw createError({
           statusCode: 400,
-          statusMessage:
-            "Category name is required",
+          statusMessage: "Category name is required",
         });
       }
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // SLUG
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const slug =
-        String(
-          body?.slug || "",
-        ).trim() ||
-        generateSlug(name);
+      const slug = String(body?.slug || "").trim() || generateSlug(name);
 
-      if (!slug) {
-        throw createError({
-          statusCode: 400,
-          statusMessage:
-            "Unable to generate category slug",
-        });
-      }
-
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // PARENT CATEGORY
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
       const parentId =
         body?.parent_id === null ||
@@ -210,72 +157,55 @@ export default defineEventHandler(async (event) => {
           ? null
           : body.parent_id;
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // ACTIVE
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const active =
-        body?.active !== false;
+      const active = body?.active !== false;
 
-      // ------------------------------------------
-      // PREVENT SELF-PARENT
-      // ------------------------------------------
+      // ----------------------------------------------------------
+      // PREVENT CATEGORY BEING ITS OWN PARENT
+      // ----------------------------------------------------------
 
-      if (
-        parentId !== null &&
-        String(parentId) ===
-          String(categoryId)
-      ) {
+      if (parentId !== null && String(parentId) === String(categoryId)) {
         throw createError({
           statusCode: 400,
-          statusMessage:
-            "A category cannot be its own parent.",
+          statusMessage: "A category cannot be its own parent.",
         });
       }
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // CHECK CATEGORY EXISTS
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const {
-        data: existingCategory,
-        error: existingError,
-      } = await adminSupabase
-        .from("categories")
-        .select("id")
-        .eq("id", categoryId)
-        .maybeSingle();
+      const { data: existingCategory, error: existingError } =
+        await adminSupabase
+          .from("categories")
+          .select("id")
+          .eq("id", categoryId)
+          .maybeSingle();
 
       if (existingError) {
-        console.error(
-          "🔥 CATEGORY LOOKUP ERROR:",
-          existingError,
-        );
+        console.error("CATEGORY LOOKUP ERROR:", existingError);
 
         throw createError({
           statusCode: 500,
-          statusMessage:
-            existingError.message ||
-            "Unable to find category",
+          statusMessage: existingError.message || "Unable to find category",
         });
       }
 
       if (!existingCategory) {
         throw createError({
           statusCode: 404,
-          statusMessage:
-            "Category not found",
+          statusMessage: "Category not found",
         });
       }
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // CHECK SLUG IS UNIQUE
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const {
-        data: slugCategory,
-        error: slugError,
-      } = await adminSupabase
+      const { data: slugCategory, error: slugError } = await adminSupabase
         .from("categories")
         .select("id")
         .eq("slug", slug)
@@ -283,72 +213,26 @@ export default defineEventHandler(async (event) => {
         .maybeSingle();
 
       if (slugError) {
-        console.error(
-          "🔥 SLUG CHECK ERROR:",
-          slugError,
-        );
+        console.error("SLUG CHECK ERROR:", slugError);
 
         throw createError({
           statusCode: 500,
-          statusMessage:
-            slugError.message ||
-            "Unable to check category slug",
+          statusMessage: slugError.message || "Unable to check category slug",
         });
       }
 
       if (slugCategory) {
         throw createError({
           statusCode: 409,
-          statusMessage:
-            "A category with this name already exists.",
+          statusMessage: "A category with this name already exists.",
         });
       }
 
-      // ------------------------------------------
-      // VERIFY PARENT CATEGORY
-      // ------------------------------------------
-
-      if (parentId !== null) {
-        const {
-          data: parentCategory,
-          error: parentError,
-        } = await adminSupabase
-          .from("categories")
-          .select("id")
-          .eq("id", parentId)
-          .maybeSingle();
-
-        if (parentError) {
-          console.error(
-            "🔥 PARENT CATEGORY ERROR:",
-            parentError,
-          );
-
-          throw createError({
-            statusCode: 500,
-            statusMessage:
-              parentError.message ||
-              "Unable to verify parent category",
-          });
-        }
-
-        if (!parentCategory) {
-          throw createError({
-            statusCode: 400,
-            statusMessage:
-              "Selected parent category does not exist.",
-          });
-        }
-      }
-
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // UPDATE CATEGORY
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const {
-        data: updatedCategory,
-        error: updateError,
-      } = await adminSupabase
+      const { data: updatedCategory, error: updateError } = await adminSupabase
         .from("categories")
         .update({
           name,
@@ -361,67 +245,46 @@ export default defineEventHandler(async (event) => {
         .single();
 
       if (updateError) {
-        console.error(
-          "🔥 CATEGORY UPDATE ERROR:",
-          updateError,
-        );
+        console.error("CATEGORY UPDATE ERROR:", updateError);
 
         throw createError({
           statusCode: 500,
-          statusMessage:
-            updateError.message ||
-            "Unable to update category",
+          statusMessage: updateError.message || "Unable to update category",
         });
       }
 
-      console.log(
-        "✅ CATEGORY UPDATED:",
-        updatedCategory,
-      );
+      console.log("CATEGORY UPDATED:", updatedCategory);
 
       return updatedCategory;
     }
 
-    // ============================================
+    // ============================================================
     // DELETE CATEGORY
-    // ============================================
+    // ============================================================
 
     if (method === "DELETE") {
-      console.log(
-        "🗑️ DELETE CATEGORY:",
-        categoryId,
-      );
+      console.log("DELETE CATEGORY:", categoryId);
 
-      // ------------------------------------------
-      // CHECK FOR CHILDREN
-      // ------------------------------------------
+      // ----------------------------------------------------------
+      // CHECK FOR CHILD CATEGORIES
+      // ----------------------------------------------------------
 
-      const {
-        data: children,
-        error: childrenError,
-      } = await adminSupabase
+      const { data: children, error: childrenError } = await adminSupabase
         .from("categories")
         .select("id")
         .eq("parent_id", categoryId);
 
       if (childrenError) {
-        console.error(
-          "🔥 CHILD CATEGORY ERROR:",
-          childrenError,
-        );
+        console.error("CHILD CATEGORY ERROR:", childrenError);
 
         throw createError({
           statusCode: 500,
           statusMessage:
-            childrenError.message ||
-            "Unable to check subcategories",
+            childrenError.message || "Unable to check subcategories",
         });
       }
 
-      if (
-        children &&
-        children.length > 0
-      ) {
+      if (children && children.length > 0) {
         throw createError({
           statusCode: 409,
           statusMessage:
@@ -429,37 +292,26 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // CHECK PRODUCTS
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const {
-        data: products,
-        error: productsError,
-      } = await adminSupabase
+      const { data: products, error: productsError } = await adminSupabase
         .from("products")
         .select("id")
         .eq("category_id", categoryId)
         .limit(1);
 
       if (productsError) {
-        console.error(
-          "🔥 PRODUCT CATEGORY CHECK ERROR:",
-          productsError,
-        );
+        console.error("PRODUCT CATEGORY CHECK ERROR:", productsError);
 
         throw createError({
           statusCode: 500,
-          statusMessage:
-            productsError.message ||
-            "Unable to check products",
+          statusMessage: productsError.message || "Unable to check products",
         });
       }
 
-      if (
-        products &&
-        products.length > 0
-      ) {
+      if (products && products.length > 0) {
         throw createError({
           statusCode: 409,
           statusMessage:
@@ -467,34 +319,25 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ------------------------------------------
+      // ----------------------------------------------------------
       // DELETE CATEGORY
-      // ------------------------------------------
+      // ----------------------------------------------------------
 
-      const {
-        error: deleteError,
-      } = await adminSupabase
+      const { error: deleteError } = await adminSupabase
         .from("categories")
         .delete()
         .eq("id", categoryId);
 
       if (deleteError) {
-        console.error(
-          "🔥 CATEGORY DELETE ERROR:",
-          deleteError,
-        );
+        console.error("CATEGORY DELETE ERROR:", deleteError);
 
         throw createError({
           statusCode: 500,
-          statusMessage:
-            deleteError.message ||
-            "Unable to delete category",
+          statusMessage: deleteError.message || "Unable to delete category",
         });
       }
 
-      console.log(
-        "✅ CATEGORY DELETED",
-      );
+      console.log("CATEGORY DELETED:", categoryId);
 
       return {
         success: true,
@@ -502,20 +345,16 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // ============================================
+    // ============================================================
     // METHOD NOT ALLOWED
-    // ============================================
+    // ============================================================
 
     throw createError({
       statusCode: 405,
-      statusMessage:
-        "Method not allowed",
+      statusMessage: "Method not allowed",
     });
   } catch (error: any) {
-    console.error(
-      "🔥 CATEGORY API ERROR:",
-      error,
-    );
+    console.error("CATEGORY API ERROR:", error);
 
     if (error?.statusCode) {
       throw error;
@@ -523,37 +362,22 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage:
-        error?.message ||
-        "Unable to process category request",
+      statusMessage: error?.message || "Unable to process category request",
     });
   }
 });
 
-// ============================================
+// ============================================================
 // SLUG GENERATOR
-// ============================================
+// ============================================================
 
 function generateSlug(name: string) {
   return name
     .toLowerCase()
     .trim()
     .replace(/&/g, "and")
-    .replace(
-      /[^a-z0-9\s-]/g,
-      "",
-    )
-    .replace(
-      /\s+/g,
-      "-",
-    )
-    .replace(
-      /-+/g,
-      "-",
-    )
-    .replace(
-      /^-|-$/g,
-      "",
-    );
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
-```;
