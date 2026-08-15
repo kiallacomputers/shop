@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 export default defineEventHandler(async (event) => {
   try {
     // ============================================
-    // AUTHORIZATION
+    // GET AUTHORIZATION HEADER
     // ============================================
 
     const authorization = getHeader(event, "authorization");
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ============================================
-    // SUPABASE CONFIG
+    // SUPABASE CONFIGURATION
     // ============================================
 
     const config = useRuntimeConfig();
@@ -36,15 +36,29 @@ export default defineEventHandler(async (event) => {
 
     const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
 
-    if (!supabaseUrl || !anonKey || !serviceKey) {
+    if (!supabaseUrl) {
       throw createError({
         statusCode: 500,
-        statusMessage: "Supabase server configuration is missing",
+        statusMessage: "Supabase URL is not configured",
+      });
+    }
+
+    if (!anonKey) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase anon key is not configured",
+      });
+    }
+
+    if (!serviceKey) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server key is not configured",
       });
     }
 
     // ============================================
-    // USER CLIENT
+    // USER SUPABASE CLIENT
     // ============================================
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -72,7 +86,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ AUTHENTICATED USER:", user.id);
+    console.log("============================================");
+    console.log("✅ AUTHENTICATED USER");
+    console.log("User ID:", user.id);
+    console.log("Email:", user.email);
+    console.log("============================================");
 
     // ============================================
     // SERVICE CLIENT
@@ -97,8 +115,11 @@ export default defineEventHandler(async (event) => {
       .eq("id", user.id)
       .maybeSingle();
 
+    console.log("👤 ADMIN RECORD:", adminUser);
+    console.log("⚠️ ADMIN CHECK ERROR:", adminError);
+
     if (adminError) {
-      console.error("❌ ADMIN CHECK ERROR:", adminError);
+      console.error("❌ ADMIN DATABASE ERROR:", adminError);
 
       throw createError({
         statusCode: 500,
@@ -108,6 +129,8 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!adminUser) {
+      console.error("❌ ADMIN ACCESS DENIED:", user.id);
+
       throw createError({
         statusCode: 403,
         statusMessage: "Administrator access required",
@@ -121,6 +144,8 @@ export default defineEventHandler(async (event) => {
     // ============================================
 
     const method = getMethod(event);
+
+    console.log("📡 CATEGORY API METHOD:", method);
 
     // ============================================
     // GET CATEGORIES
@@ -143,6 +168,8 @@ export default defineEventHandler(async (event) => {
         });
       }
 
+      console.log("✅ CATEGORIES LOADED:", categories?.length || 0);
+
       return categories || [];
     }
 
@@ -153,8 +180,10 @@ export default defineEventHandler(async (event) => {
     if (method === "POST") {
       const body = await readBody(event);
 
+      console.log("📦 CREATE CATEGORY BODY:", body);
+
       // ==========================================
-      // NAME
+      // CATEGORY NAME
       // ==========================================
 
       const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -167,7 +196,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // ==========================================
-      // CREATE SLUG
+      // GENERATE SLUG
       // ==========================================
 
       const slug = name
@@ -187,19 +216,26 @@ export default defineEventHandler(async (event) => {
       }
 
       // ==========================================
-      // PARENT
+      // PARENT CATEGORY
       // ==========================================
 
       const parentId = body?.parent_id || null;
+
+      // ==========================================
+      // ACTIVE STATE
+      // ==========================================
+
+      const active = body?.active !== false;
 
       console.log("➕ CREATING CATEGORY:", {
         name,
         slug,
         parentId,
+        active,
       });
 
       // ==========================================
-      // CHECK FOR EXISTING SLUG
+      // CHECK EXISTING SLUG
       // ==========================================
 
       const { data: existingCategory, error: existingError } =
@@ -227,7 +263,7 @@ export default defineEventHandler(async (event) => {
       }
 
       // ==========================================
-      // INSERT
+      // INSERT CATEGORY
       // ==========================================
 
       const { data: category, error: insertError } = await adminSupabase
@@ -236,6 +272,7 @@ export default defineEventHandler(async (event) => {
           name,
           slug,
           parent_id: parentId,
+          active,
         })
         .select()
         .single();
