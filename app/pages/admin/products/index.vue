@@ -617,7 +617,7 @@ definePageMeta({
 // ADMIN FETCH
 // ============================================================
 
-const adminFetch = useAdminFetch();
+const { adminFetch } = useAdminFetch();
 
 // ============================================================
 // ROUTER

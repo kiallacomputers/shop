@@ -3,6 +3,10 @@ export function useAdminFetch() {
   const adminChecked = useState<boolean>("adminChecked", () => false);
   const checkingAdmin = useState<boolean>("checkingAdmin", () => false);
 
+  // ============================================================
+  // CHECK ADMIN STATUS
+  // ============================================================
+
   const checkAdmin = async () => {
     if (checkingAdmin.value) {
       return isAdmin.value;
@@ -14,8 +18,16 @@ export function useAdminFetch() {
       console.log("=================================");
       console.log("CHECKING ADMIN STATUS...");
 
-      const result = await $fetch("/api/admin/check", {
+      const result = await $fetch<{
+        authenticated: boolean;
+        isAdmin: boolean;
+        user?: {
+          id: string;
+          email: string;
+        };
+      }>("/api/admin/check", {
         method: "GET",
+        credentials: "include",
       });
 
       console.log("ADMIN CHECK RESULT:", result);
@@ -39,10 +51,52 @@ export function useAdminFetch() {
     }
   };
 
+  // ============================================================
+  // ADMIN FETCH
+  // ============================================================
+
+  const adminFetch = async <T = any>(
+    url: string,
+    options: any = {},
+  ): Promise<T> => {
+    try {
+      console.log("=================================");
+      console.log("ADMIN FETCH:", url);
+
+      const result = await $fetch<T>(url, {
+        ...options,
+        credentials: "include",
+      });
+
+      console.log("ADMIN FETCH SUCCESS:", url);
+      console.log("=================================");
+
+      return result;
+    } catch (error: any) {
+      console.error("ADMIN FETCH ERROR:", url);
+      console.error(error);
+
+      // If authentication has expired
+      if (error?.statusCode === 401) {
+        isAdmin.value = false;
+        adminChecked.value = true;
+      }
+
+      // If user is authenticated but not an admin
+      if (error?.statusCode === 403) {
+        isAdmin.value = false;
+        adminChecked.value = true;
+      }
+
+      throw error;
+    }
+  };
+
   return {
     isAdmin,
     adminChecked,
     checkingAdmin,
     checkAdmin,
+    adminFetch,
   };
 }
