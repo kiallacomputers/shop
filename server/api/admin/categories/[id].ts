@@ -28,17 +28,79 @@ export default defineEventHandler(async (event) => {
     console.log("========================================");
 
     // ============================================================
-    // CHECK ADMIN
+    // GET SERVER SUPABASE CONFIGURATION
+    // ============================================================
+
+    const config = useRuntimeConfig();
+
+    const supabaseUrl =
+      config.public.supabaseUrl ||
+      config.supabaseUrl ||
+      process.env.SUPABASE_URL;
+
+    const serviceKey =
+      config.supabaseSecretKey ||
+      config.supabaseServiceKey ||
+      process.env.SUPABASE_SECRET_KEY;
+
+    if (!supabaseUrl) {
+      console.error("🔥 SUPABASE URL IS MISSING");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase URL is not configured",
+      });
+    }
+
+    if (!serviceKey) {
+      console.error("🔥 SUPABASE SECRET KEY IS MISSING");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server secret key is not configured",
+      });
+    }
+
+    // ============================================================
+    // CREATE SERVICE ROLE CLIENT
     // ============================================================
     //
-    // admin_users.id contains the Supabase Auth UUID.
+    // This client bypasses Supabase RLS.
     //
-    // Therefore:
-    // .eq("id", user.id)
+    // IMPORTANT:
+    // The secret/service key must NEVER be exposed to the browser.
     //
     // ============================================================
 
-    const { data: adminUser, error: adminError } = await supabase
+    const adminSupabase = createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // ============================================================
+    // CHECK ADMIN
+    // ============================================================
+    //
+    // IMPORTANT:
+    //
+    // Your admin_users table uses:
+    //
+    // admin_users.id = Supabase Auth user UUID
+    //
+    // Therefore:
+    //
+    // .eq("id", user.id)
+    //
+    // is correct.
+    //
+    // We use adminSupabase here instead of the normal authenticated
+    // client so RLS cannot hide the administrator record.
+    //
+    // ============================================================
+
+    const { data: adminUser, error: adminError } = await adminSupabase
       .from("admin_users")
       .select("id")
       .eq("id", user.id)
@@ -48,7 +110,7 @@ export default defineEventHandler(async (event) => {
     console.log("ADMIN ERROR:", adminError);
 
     if (adminError) {
-      console.error("ADMIN CHECK ERROR:", adminError);
+      console.error("🔥 ADMIN CHECK ERROR:", adminError);
 
       throw createError({
         statusCode: 500,
@@ -57,7 +119,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!adminUser) {
-      console.error("USER IS NOT AN ADMIN:", user.id);
+      console.error("🔥 USER IS NOT AN ADMIN:", user.id);
 
       throw createError({
         statusCode: 403,
@@ -65,7 +127,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("ADMIN VERIFIED");
+    console.log("✅ ADMIN VERIFIED");
 
     // ============================================================
     // GET CATEGORY ID
@@ -83,36 +145,6 @@ export default defineEventHandler(async (event) => {
     console.log("CATEGORY ID:", categoryId);
 
     // ============================================================
-    // SERVICE ROLE SUPABASE CLIENT
-    // ============================================================
-
-    const config = useRuntimeConfig();
-
-    const supabaseUrl = config.public.supabaseUrl || config.supabaseUrl;
-
-    const serviceKey =
-      config.supabaseSecretKey ||
-      config.supabaseServiceKey ||
-      process.env.SUPABASE_SECRET_KEY ||
-      process.env.SUPABASE_SERVICE_KEY;
-
-    if (!supabaseUrl || !serviceKey) {
-      console.error("SUPABASE SERVER CONFIGURATION MISSING");
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Supabase server configuration is missing",
-      });
-    }
-
-    const adminSupabase = createClient(supabaseUrl, serviceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    // ============================================================
     // GET REQUEST METHOD
     // ============================================================
 
@@ -128,7 +160,7 @@ export default defineEventHandler(async (event) => {
       console.log("UPDATE CATEGORY BODY:", body);
 
       // ----------------------------------------------------------
-      // NAME
+      // CATEGORY NAME
       // ----------------------------------------------------------
 
       const name = String(body?.name || "").trim();
@@ -174,9 +206,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ----------------------------------------------------------
+      // ==========================================================
       // CHECK CATEGORY EXISTS
-      // ----------------------------------------------------------
+      // ==========================================================
 
       const { data: existingCategory, error: existingError } =
         await adminSupabase
@@ -186,7 +218,7 @@ export default defineEventHandler(async (event) => {
           .maybeSingle();
 
       if (existingError) {
-        console.error("CATEGORY LOOKUP ERROR:", existingError);
+        console.error("🔥 CATEGORY LOOKUP ERROR:", existingError);
 
         throw createError({
           statusCode: 500,
@@ -201,9 +233,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ----------------------------------------------------------
+      // ==========================================================
       // CHECK SLUG IS UNIQUE
-      // ----------------------------------------------------------
+      // ==========================================================
 
       const { data: slugCategory, error: slugError } = await adminSupabase
         .from("categories")
@@ -213,7 +245,7 @@ export default defineEventHandler(async (event) => {
         .maybeSingle();
 
       if (slugError) {
-        console.error("SLUG CHECK ERROR:", slugError);
+        console.error("🔥 SLUG CHECK ERROR:", slugError);
 
         throw createError({
           statusCode: 500,
@@ -228,9 +260,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ----------------------------------------------------------
+      // ==========================================================
       // UPDATE CATEGORY
-      // ----------------------------------------------------------
+      // ==========================================================
 
       const { data: updatedCategory, error: updateError } = await adminSupabase
         .from("categories")
@@ -245,7 +277,7 @@ export default defineEventHandler(async (event) => {
         .single();
 
       if (updateError) {
-        console.error("CATEGORY UPDATE ERROR:", updateError);
+        console.error("🔥 CATEGORY UPDATE ERROR:", updateError);
 
         throw createError({
           statusCode: 500,
@@ -253,7 +285,7 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      console.log("CATEGORY UPDATED:", updatedCategory);
+      console.log("✅ CATEGORY UPDATED:", updatedCategory);
 
       return updatedCategory;
     }
@@ -263,11 +295,11 @@ export default defineEventHandler(async (event) => {
     // ============================================================
 
     if (method === "DELETE") {
-      console.log("DELETE CATEGORY:", categoryId);
+      console.log("🗑️ DELETE CATEGORY:", categoryId);
 
-      // ----------------------------------------------------------
+      // ==========================================================
       // CHECK FOR CHILD CATEGORIES
-      // ----------------------------------------------------------
+      // ==========================================================
 
       const { data: children, error: childrenError } = await adminSupabase
         .from("categories")
@@ -275,7 +307,7 @@ export default defineEventHandler(async (event) => {
         .eq("parent_id", categoryId);
 
       if (childrenError) {
-        console.error("CHILD CATEGORY ERROR:", childrenError);
+        console.error("🔥 CHILD CATEGORY ERROR:", childrenError);
 
         throw createError({
           statusCode: 500,
@@ -292,9 +324,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ----------------------------------------------------------
-      // CHECK PRODUCTS
-      // ----------------------------------------------------------
+      // ==========================================================
+      // CHECK PRODUCTS USING CATEGORY
+      // ==========================================================
 
       const { data: products, error: productsError } = await adminSupabase
         .from("products")
@@ -303,7 +335,7 @@ export default defineEventHandler(async (event) => {
         .limit(1);
 
       if (productsError) {
-        console.error("PRODUCT CATEGORY CHECK ERROR:", productsError);
+        console.error("🔥 PRODUCT CATEGORY CHECK ERROR:", productsError);
 
         throw createError({
           statusCode: 500,
@@ -319,9 +351,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      // ----------------------------------------------------------
+      // ==========================================================
       // DELETE CATEGORY
-      // ----------------------------------------------------------
+      // ==========================================================
 
       const { error: deleteError } = await adminSupabase
         .from("categories")
@@ -329,7 +361,7 @@ export default defineEventHandler(async (event) => {
         .eq("id", categoryId);
 
       if (deleteError) {
-        console.error("CATEGORY DELETE ERROR:", deleteError);
+        console.error("🔥 CATEGORY DELETE ERROR:", deleteError);
 
         throw createError({
           statusCode: 500,
@@ -337,7 +369,7 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      console.log("CATEGORY DELETED:", categoryId);
+      console.log("✅ CATEGORY DELETED");
 
       return {
         success: true,
@@ -354,7 +386,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Method not allowed",
     });
   } catch (error: any) {
-    console.error("CATEGORY API ERROR:", error);
+    console.error("🔥 CATEGORY API ERROR:", error);
 
     if (error?.statusCode) {
       throw error;
@@ -367,9 +399,9 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-// ============================================================
+// ================================================================
 // SLUG GENERATOR
-// ============================================================
+// ================================================================
 
 function generateSlug(name: string) {
   return name
