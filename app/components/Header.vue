@@ -5,7 +5,7 @@
         <!-- Logo -->
         <NuxtLink to="/" class="flex items-center flex-shrink-0">
           <img
-            src="/images/logos/kc_logo.png"
+            src="/assests/images/logos/kc_logo.png"
             alt="Kialla Computers"
             class="h-14 w-auto"
           />
