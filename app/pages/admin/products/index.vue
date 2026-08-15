@@ -269,11 +269,10 @@
 
                   <div
                     v-if="openMenu === product.id"
-                    class="absolute right-0 top-0 z-[9999] w-44 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
+                    class="absolute right-0 bottom-full mb-2 z-[9999] w-44 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
                     @click.stop
                   >
                     <!-- VIEW -->
-
                     <button
                       type="button"
                       @click="viewProduct(product)"
@@ -281,11 +280,10 @@
                     >
                       <span class="w-5 text-center text-blue-600"> 👁 </span>
 
-                      <span> View </span>
+                      <span>View</span>
                     </button>
 
                     <!-- EDIT -->
-
                     <button
                       type="button"
                       @click="editProduct(product)"
@@ -293,11 +291,10 @@
                     >
                       <span class="w-5 text-center text-green-600"> ✎ </span>
 
-                      <span> Edit </span>
+                      <span>Edit</span>
                     </button>
 
                     <!-- DELETE -->
-
                     <button
                       type="button"
                       @click="confirmDelete(product)"
@@ -305,7 +302,7 @@
                     >
                       <span class="w-5 text-center"> 🗑 </span>
 
-                      <span> Delete </span>
+                      <span>Delete</span>
                     </button>
                   </div>
                 </div>
