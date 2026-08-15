@@ -1,209 +1,124 @@
 <template>
   <div
-    class="group relative bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden"
+    class="bg-white rounded-xl transition-all duration-300 overflow-hidden group"
   >
     <!-- Product Image -->
-    <div class="relative w-full h-56 bg-gray-50 overflow-hidden">
-      <NuxtLink :to="`/product/${product.slug}`">
-        <img
-          v-if="currentImage"
-          :src="currentImage"
-          :alt="product.name"
-          class="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-105"
-        />
-
-        <div
-          v-else
-          class="w-full h-full flex items-center justify-center text-gray-400"
+    <NuxtLink :to="`/product/${product.slug}`">
+      <div class="relative overflow-hidden bg-gray-100">
+        <!-- Featured Badge -->
+        <span
+          v-if="product.featured"
+          class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
         >
-          No Image
-        </div>
-      </NuxtLink>
-
-      <!-- Previous Button -->
-      <button
-        v-if="images.length > 1"
-        type="button"
-        @click.prevent.stop="previousImage"
-        class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 rounded-full w-9 h-9 flex items-center justify-center shadow transition"
-        aria-label="Previous image"
-      >
-        ‹
-      </button>
-
-      <!-- Next Button -->
-      <button
-        v-if="images.length > 1"
-        type="button"
-        @click.prevent.stop="nextImage"
-        class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-700 rounded-full w-9 h-9 flex items-center justify-center shadow transition"
-        aria-label="Next image"
-      >
-        ›
-      </button>
-
-      <!-- Image Dots -->
-      <div
-        v-if="images.length > 1"
-        class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5"
-      >
-        <button
-          v-for="(image, index) in images"
-          :key="index"
-          type="button"
-          @click.prevent.stop="goToImage(index)"
-          class="w-2.5 h-2.5 rounded-full transition"
-          :class="
-            index === currentImageIndex
-              ? 'bg-blue-600'
-              : 'bg-gray-300 hover:bg-gray-400'
-          "
-          :aria-label="`View image ${index + 1}`"
+          Featured
+        </span>
+        <!-- Refurbished Badge -->
+        <span
+          v-if="product.refurbished"
+          class="absolute top-4 -right-8 rotate-45 bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-10"
+        >
+          Refurbished
+        </span>
+        <img
+          :src="product.images"
+          :alt="product.name"
+          class="w-full h-56 object-contain p-6 group-hover:scale-105 transition-transform duration-300"
         />
       </div>
+    </NuxtLink>
 
-      <!-- Featured Badge -->
-      <span
-        v-if="product.featured"
-        class="absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
-      >
-        Featured
-      </span>
-
-      <!-- Refurbished Badge -->
-      <span
-        v-if="product.refurbished"
-        class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
-      >
-        Refurbished
-      </span>
-    </div>
-
-    <!-- Product Information -->
-    <div class="p-4">
-      <NuxtLink :to="`/product/${product.slug}`">
+    <!-- Product Details -->
+    <div class="p-5">
+      <p class="text-xs text-[#2CB6D5] font-medium">
+        {{ product.categories.name }}
+      </p>
+      <NuxtLink :to="`/product/${product.slug}`" class="block mt-1">
         <h3
-          class="font-semibold text-gray-800 line-clamp-2 hover:text-blue-600 transition"
+          class="text-base font-semibold text-[#566C9D] line-clamp-2 hover:text-[#2CB6D5]"
         >
           {{ product.name }}
         </h3>
       </NuxtLink>
 
-      <p v-if="product.blurb" class="text-sm text-gray-500 mt-2 line-clamp-2">
+      <p class="text-[#566C9D] text-sm mt-2 line-clamp-3">
         {{ product.blurb }}
       </p>
 
-      <!-- Price -->
-      <div class="mt-4 flex items-center gap-2">
-        <span class="text-xl font-bold text-gray-900">
-          ${{ Number(product.price).toFixed(2) }}
-        </span>
-
-        <span
-          v-if="product.oldPrice"
-          class="text-sm text-gray-400 line-through"
-        >
-          ${{ Number(product.oldPrice).toFixed(2) }}
-        </span>
-      </div>
-
-      <!-- Stock -->
-      <div class="mt-2">
+      <!-- Quautity -->
+      <div class="flex items-center mt-3">
+        <span class="font-semibold text-[#566C9D]">Availablity : </span>
         <span
           v-if="product.stock > 0"
-          class="text-sm text-green-600 font-medium"
+          class="ml-2 font-semibold text-sm text-[#00C409]"
         >
-          In Stock
+          {{ product.stock }} in stock.
         </span>
-
-        <span v-else class="text-sm text-red-600 font-medium">
-          Out of Stock
+        <span v-else class="ml-2 text-sm font-semibold text-red-800">
+          Backorder please call.
         </span>
       </div>
 
-      <!-- View Product -->
-      <NuxtLink
-        :to="`/product/${product.slug}`"
-        class="block mt-4 w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
-      >
-        View Product
-      </NuxtLink>
+      <!-- Rating --><!--
+      <div class="flex items-center mt-3">
+        <span class="text-[#FFDC16]">★★★★★</span>
+        <span class="ml-2 text-sm text-[#566C9D]">
+          ({{ product.reviews }})
+        </span>
+      </div>-->
+
+      <!-- Price -->
+      <div class="flex items-center justify-between mt-5">
+        <div>
+          <p class="text-2xl font-bold text-[#2CB6D5]">${{ product.price }}</p>
+
+          <p
+            v-if="product.oldPrice"
+            class="text-[#566C9D] line-through text-sm"
+          >
+            ${{ product.oldPrice }}
+          </p>
+        </div>
+
+        <button
+          v-if="product.stock > 0"
+          @click="cart.addToCart(product)"
+          class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
+        >
+          Add to Cart
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   product: {
     type: Object,
     required: true,
   },
 });
 
-const currentImageIndex = ref(0);
+const user = useSupabaseUser();
+const supabase = useSupabaseClient();
 
-/*
- * Make sure images is always an array.
- *
- * Your Supabase images column contains:
- *
- * [
- *   "/images/products/image1.png",
- *   "/images/products/image2.png"
- * ]
- */
-const images = computed(() => {
-  if (!props.product?.images) {
-    return [];
-  }
+//   // Get the category
+// const { data: category } = await useAsyncData(`category-${product.category}`, async () => {
+//   const { data, error } = await supabase
+//     .from("categories")
+//     .select("*")
+//     .eq("id", product.category)
+//     .single();
 
-  // Already an array
-  if (Array.isArray(props.product.images)) {
-    return props.product.images.filter(Boolean);
-  }
+//   if (error) throw error;
 
-  // In case Supabase returns JSON as a string
-  if (typeof props.product.images === "string") {
-    try {
-      const parsed = JSON.parse(props.product.images);
+//   // console.log("Data Category :>", category);
+//   return data;
+// });
 
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean);
-      }
-    } catch (error) {
-      console.error("Unable to parse product images:", error);
-    }
-  }
+const cart = useCartStore();
 
-  return [];
-});
-
-const currentImage = computed(() => {
-  return images.value[currentImageIndex.value] || "";
-});
-
-const nextImage = () => {
-  if (images.value.length <= 1) return;
-
-  currentImageIndex.value = (currentImageIndex.value + 1) % images.value.length;
-};
-
-const previousImage = () => {
-  if (images.value.length <= 1) return;
-
-  currentImageIndex.value =
-    (currentImageIndex.value - 1 + images.value.length) % images.value.length;
-};
-
-const goToImage = (index) => {
-  currentImageIndex.value = index;
-};
-
-// Reset image when product changes
-watch(
-  () => props.product?.id,
-  () => {
-    currentImageIndex.value = 0;
-  },
-);
+function addToCart() {
+  cart.addToCart(product);
+}
 </script>
