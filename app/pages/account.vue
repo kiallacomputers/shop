@@ -1,19 +1,28 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- Page Header -->
+    <!-- ===================================== -->
+    <!-- ACCOUNT HEADER -->
+    <!-- ===================================== -->
+
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">My Account</h1>
 
       <p class="text-gray-500 mt-2">Welcome back, {{ customerName }}</p>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div class="text-gray-500">Loading your account...</div>
+    <!-- ===================================== -->
+    <!-- LOADING -->
+    <!-- ===================================== -->
+
+    <div v-if="loading" class="py-12 text-center text-gray-500">
+      Loading your account...
     </div>
 
     <div v-else>
-      <!-- Account Information -->
+      <!-- ===================================== -->
+      <!-- ACCOUNT INFORMATION -->
+      <!-- ===================================== -->
+
       <section class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl font-bold">Account Information</h2>
@@ -31,7 +40,7 @@
           <div>
             <p class="text-sm text-gray-500 mb-1">Name</p>
 
-            <p class="font-medium text-gray-900">
+            <p class="font-medium">
               {{ customerName || "Not provided" }}
             </p>
           </div>
@@ -40,33 +49,47 @@
           <div>
             <p class="text-sm text-gray-500 mb-1">Email</p>
 
-            <p class="font-medium text-gray-900">
-              {{ user?.email }}
+            <p class="font-medium">
+              {{ user?.email || "Not available" }}
             </p>
           </div>
         </div>
       </section>
 
-      <!-- Orders -->
+      <!-- ===================================== -->
+      <!-- ORDERS -->
+      <!-- ===================================== -->
+
       <section>
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <h2 class="text-2xl font-bold">My Orders</h2>
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold">My Orders</h2>
 
-            <p class="text-gray-500 mt-1">
-              View your previous orders and purchases.
-            </p>
-          </div>
-
-          <div class="text-sm text-gray-500">
-            {{ orders.length }}
-            {{ orders.length === 1 ? "order" : "orders" }}
-          </div>
+          <p class="text-gray-500 mt-1">
+            View your previous orders and purchases.
+          </p>
         </div>
 
-        <!-- No Orders -->
+        <!-- ================================= -->
+        <!-- ORDER ERROR -->
+        <!-- ================================= -->
+
         <div
-          v-if="orders.length === 0"
+          v-if="ordersError"
+          class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6"
+        >
+          <h3 class="font-semibold text-red-700 mb-2">Unable to load orders</h3>
+
+          <p class="text-sm text-red-600">
+            {{ ordersError }}
+          </p>
+        </div>
+
+        <!-- ================================= -->
+        <!-- NO ORDERS -->
+        <!-- ================================= -->
+
+        <div
+          v-else-if="orders.length === 0"
           class="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center"
         >
           <div class="text-4xl mb-4">🛒</div>
@@ -83,28 +106,34 @@
           </NuxtLink>
         </div>
 
-        <!-- Orders -->
+        <!-- ================================= -->
+        <!-- ORDERS LIST -->
+        <!-- ================================= -->
+
         <div v-else class="space-y-4">
           <div
             v-for="order in orders"
             :key="order.id"
             class="bg-white border border-gray-200 rounded-lg overflow-hidden"
           >
-            <!-- Order Header -->
+            <!-- ============================= -->
+            <!-- ORDER HEADER -->
+            <!-- ============================= -->
+
             <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
               <div
-                class="flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
               >
+                <!-- Order Number -->
                 <div>
-                  <p class="font-semibold text-gray-900">
-                    Order #{{ order.id }}
-                  </p>
+                  <p class="font-semibold text-lg">Order #{{ order.id }}</p>
 
                   <p class="text-sm text-gray-500">
                     {{ formatDate(order.created_at) }}
                   </p>
                 </div>
 
+                <!-- Status / Total -->
                 <div class="flex items-center gap-4">
                   <span
                     class="px-3 py-1 rounded-full text-sm font-medium"
@@ -120,13 +149,17 @@
               </div>
             </div>
 
-            <!-- Order Items -->
-            <div class="px-6 py-4">
-              <div v-if="order.order_items?.length" class="divide-y">
+            <!-- ============================= -->
+            <!-- ORDER CONTENT -->
+            <!-- ============================= -->
+
+            <div class="px-6 py-5">
+              <!-- Products -->
+              <div v-if="order.order_items?.length" class="space-y-3">
                 <div
                   v-for="item in order.order_items"
                   :key="item.id"
-                  class="py-4 flex items-center justify-between gap-4"
+                  class="flex items-center justify-between gap-4"
                 >
                   <!-- Product -->
                   <div class="min-w-0">
@@ -135,29 +168,37 @@
                     </p>
 
                     <p class="text-sm text-gray-500">
-                      Quantity:
-                      {{ item.quantity }}
+                      Quantity: {{ item.quantity }}
                     </p>
                   </div>
 
-                  <!-- Price -->
-                  <div class="text-right shrink-0">
-                    <p class="font-medium">
-                      ${{
-                        (Number(item.price) * Number(item.quantity)).toFixed(2)
-                      }}
-                    </p>
-
-                    <p class="text-xs text-gray-500">
-                      ${{ Number(item.price).toFixed(2) }}
-                      each
-                    </p>
-                  </div>
+                  <!-- Item Total -->
+                  <p class="font-medium shrink-0">
+                    ${{
+                      (Number(item.price) * Number(item.quantity)).toFixed(2)
+                    }}
+                  </p>
                 </div>
               </div>
 
+              <!-- No Items -->
               <div v-else class="text-sm text-gray-500">
                 No order items found.
+              </div>
+
+              <!-- =========================== -->
+              <!-- VIEW ORDER -->
+              <!-- =========================== -->
+
+              <div class="mt-5 pt-4 border-t border-gray-200 flex justify-end">
+                <NuxtLink
+                  :to="`/account/orders/${order.id}`"
+                  class="inline-flex items-center bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition"
+                >
+                  View Order
+
+                  <span class="ml-2"> → </span>
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -169,7 +210,7 @@
 
 <script setup lang="ts">
 // ========================================
-// PAGE
+// PAGE MIDDLEWARE
 // ========================================
 
 definePageMeta({
@@ -192,6 +233,8 @@ const loading = ref(true);
 
 const orders = ref<any[]>([]);
 
+const ordersError = ref("");
+
 const customerName = ref("");
 
 // ========================================
@@ -201,19 +244,37 @@ const customerName = ref("");
 async function loadAccount() {
   loading.value = true;
 
+  ordersError.value = "";
+
   try {
-    // ------------------------------------
-    // GET USER
-    // ------------------------------------
+    // ====================================
+    // GET AUTHENTICATED USER
+    // ====================================
 
     const {
       data: { user: currentUser },
       error: userError,
     } = await supabase.auth.getUser();
 
+    console.log("=================================");
+
+    console.log("ACCOUNT USER:", currentUser);
+
+    console.log("=================================");
+
+    // ====================================
+    // USER ERROR
+    // ====================================
+
     if (userError) {
+      console.error("USER ERROR:", userError);
+
       throw userError;
     }
+
+    // ====================================
+    // NO USER
+    // ====================================
 
     if (!currentUser) {
       await navigateTo("/login");
@@ -221,9 +282,9 @@ async function loadAccount() {
       return;
     }
 
-    // ------------------------------------
+    // ====================================
     // CUSTOMER NAME
-    // ------------------------------------
+    // ====================================
 
     customerName.value =
       currentUser.user_metadata?.full_name ||
@@ -231,9 +292,17 @@ async function loadAccount() {
       currentUser.email ||
       "";
 
-    // ------------------------------------
-    // GET ORDERS
-    // ------------------------------------
+    // ====================================
+    // USER ID
+    // ====================================
+
+    console.log("ACCOUNT USER ID:", currentUser.id);
+
+    // ====================================
+    // LOAD ORDERS
+    // ====================================
+
+    console.log("LOADING ORDERS...");
 
     const { data, error } = await supabase
       .from("orders")
@@ -247,6 +316,7 @@ async function loadAccount() {
         total,
         status,
         created_at,
+
         order_items (
           id,
           product_id,
@@ -261,17 +331,35 @@ async function loadAccount() {
         ascending: false,
       });
 
-    if (error) {
-      console.error("Orders error:", error);
+    // ====================================
+    // DATABASE ERROR
+    // ====================================
 
-      throw error;
+    if (error) {
+      console.error("❌ ORDERS QUERY ERROR:", error);
+
+      ordersError.value = error.message;
+
+      return;
     }
 
-    orders.value = data || [];
+    // ====================================
+    // ORDERS FOUND
+    // ====================================
 
-    console.log("ACCOUNT ORDERS:", orders.value);
-  } catch (error) {
-    console.error("Account loading error:", error);
+    console.log("=================================");
+
+    console.log("✅ ORDERS FOUND:", data);
+
+    console.log("ORDER COUNT:", data?.length || 0);
+
+    console.log("=================================");
+
+    orders.value = data || [];
+  } catch (error: any) {
+    console.error("ACCOUNT ERROR:", error);
+
+    ordersError.value = error?.message || "Unable to load orders.";
   } finally {
     loading.value = false;
   }
@@ -294,7 +382,7 @@ function formatDate(date: string) {
 }
 
 // ========================================
-// ORDER STATUS CLASS
+// ORDER STATUS
 // ========================================
 
 function statusClass(status: string) {
@@ -327,17 +415,13 @@ function statusClass(status: string) {
 // ========================================
 
 async function logout() {
-  try {
-    await supabase.auth.signOut();
+  await supabase.auth.signOut();
 
-    await navigateTo("/");
-  } catch (error) {
-    console.error("Logout error:", error);
-  }
+  await navigateTo("/");
 }
 
 // ========================================
-// LOAD
+// LOAD ACCOUNT
 // ========================================
 
 await loadAccount();
