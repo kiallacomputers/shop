@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-6 MD:flex gap-6">
+  <div class="max-w-7xl mx-auto px-4 py-6 md:flex gap-6">
     <!-- Side Menu -->
     <aside class="w-full md:w-64 shrink-0 mb-6 md:mb-0">
       <SideMenu />
@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: "auth",
+  middleware: ["auth", "cart"],
 });
 
 const cart = useCartStore();
