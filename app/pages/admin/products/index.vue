@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
     <!-- HEADER -->
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
@@ -11,88 +11,70 @@
         <h1 class="text-3xl font-bold text-slate-800">Products</h1>
 
         <p class="text-gray-500 mt-1">
-          Manage products, categories, stock and pricing.
+          Manage your products, stock, images and descriptions.
         </p>
       </div>
 
       <NuxtLink
         to="/admin/products/new"
-        class="inline-flex items-center justify-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+        class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-semibold transition"
       >
-        + Add Product
+        <span class="text-xl">+</span>
+        Add Product
       </NuxtLink>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- SUCCESS -->
-    <!-- ========================================================= -->
-
-    <div
-      v-if="successMessage"
-      class="mb-6 bg-green-100 border border-green-300 text-green-700 rounded-lg p-4"
-    >
-      {{ successMessage }}
-    </div>
-
-    <!-- ========================================================= -->
-    <!-- ERROR -->
-    <!-- ========================================================= -->
-
-    <div
-      v-if="errorMessage"
-      class="mb-6 bg-red-100 border border-red-300 text-red-700 rounded-lg p-4"
-    >
-      {{ errorMessage }}
-    </div>
-
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
     <!-- LOADING -->
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
 
     <div
       v-if="loading"
-      class="bg-white rounded-xl shadow-sm border border-gray-200 p-12"
+      class="bg-white rounded-xl shadow p-12 flex flex-col items-center justify-center"
     >
-      <div class="flex flex-col items-center justify-center">
-        <div
-          class="w-14 h-14 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
-        ></div>
+      <div
+        class="w-14 h-14 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
+      ></div>
 
-        <p class="mt-5 text-lg font-semibold text-slate-700">
-          Loading Products
-        </p>
+      <p class="mt-5 text-gray-600 font-medium">Loading products...</p>
 
-        <p class="mt-1 text-sm text-gray-500">
-          Loading products and categories...
-        </p>
-
-        <div class="flex gap-1 mt-4">
-          <span class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></span>
-
-          <span
-            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
-            style="animation-delay: 150ms"
-          ></span>
-
-          <span
-            class="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
-            style="animation-delay: 300ms"
-          ></span>
-        </div>
-      </div>
+      <p class="text-sm text-gray-400 mt-1">Please wait</p>
     </div>
 
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
+    <!-- ERROR -->
+    <!-- ================================================= -->
+
+    <div
+      v-else-if="errorMessage"
+      class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"
+    >
+      <div class="font-semibold mb-1">Unable to load products</div>
+
+      <div class="text-sm">
+        {{ errorMessage }}
+      </div>
+
+      <button
+        type="button"
+        @click="loadData"
+        class="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
+      >
+        Try Again
+      </button>
+    </div>
+
+    <!-- ================================================= -->
     <!-- CONTENT -->
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
 
     <div v-else>
-      <!-- ======================================================= -->
+      <!-- ================================================= -->
       <!-- SUMMARY -->
-      <!-- ======================================================= -->
+      <!-- ================================================= -->
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-5">
           <p class="text-sm text-gray-500">Products</p>
 
           <p class="text-3xl font-bold text-slate-800 mt-1">
@@ -100,7 +82,7 @@
           </p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="bg-white rounded-xl shadow p-5">
           <p class="text-sm text-gray-500">Categories</p>
 
           <p class="text-3xl font-bold text-slate-800 mt-1">
@@ -108,7 +90,7 @@
           </p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border p-5">
+        <div class="bg-white rounded-xl shadow p-5">
           <p class="text-sm text-gray-500">Main Categories</p>
 
           <p class="text-3xl font-bold text-slate-800 mt-1">
@@ -117,600 +99,209 @@
         </div>
       </div>
 
-      <!-- ======================================================= -->
+      <!-- ================================================= -->
       <!-- NO PRODUCTS -->
-      <!-- ======================================================= -->
+      <!-- ================================================= -->
 
       <div
         v-if="products.length === 0"
-        class="bg-white rounded-xl border border-gray-200 p-12 text-center"
+        class="bg-white rounded-xl shadow p-12 text-center"
       >
         <div class="text-5xl mb-4">📦</div>
 
-        <h2 class="text-xl font-bold text-slate-800">No Products</h2>
+        <h2 class="text-xl font-bold text-slate-800">No products found</h2>
 
         <p class="text-gray-500 mt-2">
           There are currently no products to display.
         </p>
+
+        <NuxtLink
+          to="/admin/products/new"
+          class="inline-block mt-5 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg"
+        >
+          Add Product
+        </NuxtLink>
       </div>
 
-      <!-- ======================================================= -->
-      <!-- CATEGORY TREE -->
-      <!-- ======================================================= -->
+      <!-- ================================================= -->
+      <!-- CATEGORY GROUPS -->
+      <!-- ================================================= -->
 
-      <div v-for="category in categoryTree" :key="category.id" class="mb-8">
-        <!-- ===================================================== -->
-        <!-- MAIN CATEGORY -->
-        <!-- ===================================================== -->
-
-        <div
-          class="relative bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"
+      <div v-else class="space-y-6">
+        <section
+          v-for="category in categoryGroups"
+          :key="category.id"
+          class="bg-white rounded-xl shadow overflow-visible"
         >
-          <!-- CATEGORY HEADER -->
+          <!-- ================================================= -->
+          <!-- MAIN CATEGORY HEADER -->
+          <!-- ================================================= -->
 
           <button
             type="button"
             @click="toggleCategory(category.id)"
-            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
+            class="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition text-left"
           >
             <div class="flex items-center gap-3">
+              <!-- Arrow -->
+
               <span
-                class="text-gray-500 transition-transform duration-200"
+                class="w-6 h-6 flex items-center justify-center text-gray-500 transition-transform duration-200"
                 :class="{
-                  'rotate-90': openCategories.has(category.id),
+                  'rotate-90': !collapsedCategories.has(category.id),
                 }"
               >
                 ▶
               </span>
 
-              <div class="text-left">
+              <div>
                 <h2 class="text-xl font-bold text-slate-800">
                   {{ category.name }}
                 </h2>
 
                 <p class="text-sm text-gray-500">
-                  {{ category.products.length }}
-                  product{{ category.products.length === 1 ? "" : "s" }}
-
-                  <span v-if="category.children.length">
-                    · {{ category.children.length }} subcategor{{
-                      category.children.length === 1 ? "y" : "ies"
-                    }}
-                  </span>
+                  {{ category.totalProducts }}
+                  {{ category.totalProducts === 1 ? "product" : "products" }}
                 </p>
               </div>
             </div>
 
             <span class="text-sm text-gray-400">
-              {{ openCategories.has(category.id) ? "Collapse" : "Expand" }}
+              {{ category.children.length }}
+              {{
+                category.children.length === 1 ? "subcategory" : "subcategories"
+              }}
             </span>
           </button>
 
-          <!-- =================================================== -->
-          <!-- CATEGORY CONTENT -->
-          <!-- =================================================== -->
+          <!-- ================================================= -->
+          <!-- MAIN CATEGORY CONTENT -->
+          <!-- ================================================= -->
 
           <div
-            v-if="openCategories.has(category.id)"
-            class="border-t border-gray-200 overflow-visible"
+            v-show="!collapsedCategories.has(category.id)"
+            class="border-t border-gray-200"
           >
             <!-- ================================================= -->
             <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
             <!-- ================================================= -->
 
-            <div
-              v-if="category.products.length"
-              class="divide-y divide-gray-100"
-            >
+            <div v-if="category.products.length" class="p-4">
               <div
-                v-for="product in category.products"
-                :key="product.id"
-                class="relative overflow-visible px-5 py-5 hover:bg-gray-50 transition"
+                class="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2 mb-3"
               >
-                <!-- PRODUCT -->
+                {{ category.name }}
+              </div>
 
-                <div class="flex flex-col sm:flex-row gap-5">
-                  <!-- IMAGE -->
-
-                  <div
-                    class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
-                  >
-                    <img
-                      v-if="
-                        Array.isArray(product.images) && product.images.length
-                      "
-                      :src="product.images[0]"
-                      :alt="product.name"
-                      class="w-full h-full object-contain p-2"
-                    />
-
-                    <span v-else class="text-gray-400 text-xs"> No Image </span>
-                  </div>
-
-                  <!-- PRODUCT DETAILS -->
-
-                  <div class="flex-1 min-w-0">
-                    <div
-                      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-                    >
-                      <div class="min-w-0">
-                        <h3 class="font-semibold text-slate-800 break-words">
-                          {{ product.name }}
-                        </h3>
-
-                        <p
-                          v-if="product.blurb"
-                          class="text-sm text-gray-500 mt-1 line-clamp-2"
-                        >
-                          {{ product.blurb }}
-                        </p>
-
-                        <div class="flex flex-wrap items-center gap-3 mt-3">
-                          <span class="font-bold text-blue-600">
-                            ${{ product.price }}
-                          </span>
-
-                          <span
-                            v-if="product.oldPrice"
-                            class="text-sm text-gray-400 line-through"
-                          >
-                            ${{ product.oldPrice }}
-                          </span>
-
-                          <span
-                            class="text-sm"
-                            :class="
-                              product.stock > 0
-                                ? 'text-green-600'
-                                : 'text-red-600'
-                            "
-                          >
-                            Stock: {{ product.stock }}
-                          </span>
-
-                          <span
-                            v-if="product.featured"
-                            class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
-                          >
-                            Featured
-                          </span>
-
-                          <span
-                            v-if="product.refurbished"
-                            class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
-                          >
-                            Refurbished
-                          </span>
-                        </div>
-                      </div>
-
-                      <!-- ================================================= -->
-                      <!-- THREE DOT MENU -->
-                      <!-- ================================================= -->
-
-                      <div
-                        class="relative flex-shrink-0 self-start"
-                        @click.stop
-                      >
-                        <button
-                          type="button"
-                          @click.stop="toggleMenu(product.id)"
-                          class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                          aria-label="Product actions"
-                        >
-                          <span class="text-xl leading-none tracking-[2px]">
-                            •••
-                          </span>
-                        </button>
-
-                        <!-- MENU -->
-
-                        <div
-                          v-if="openMenu === product.id"
-                          class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
-                        >
-                          <NuxtLink
-                            :to="`/product/${product.slug}`"
-                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                            @click="closeMenu"
-                          >
-                            View
-                          </NuxtLink>
-
-                          <NuxtLink
-                            :to="`/admin/products/edit/${product.id}`"
-                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                            @click="closeMenu"
-                          >
-                            Edit
-                          </NuxtLink>
-
-                          <button
-                            type="button"
-                            @click="confirmDelete(product)"
-                            class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="space-y-2">
+                <ProductItem
+                  v-for="product in category.products"
+                  :key="product.id"
+                  :product="product"
+                  :open-menu-id="openMenuId"
+                  @toggle-menu="toggleMenu"
+                  @delete="deleteProduct"
+                />
               </div>
             </div>
 
             <!-- ================================================= -->
-            <!-- SUB CATEGORIES -->
+            <!-- SUBCATEGORIES -->
             <!-- ================================================= -->
 
             <div
-              v-for="child in category.children"
-              :key="child.id"
-              class="border-t border-gray-200"
+              v-for="subcategory in category.children"
+              :key="subcategory.id"
+              class="border-t border-gray-100"
             >
-              <!-- SUBCATEGORY HEADER -->
+              <!-- Subcategory heading -->
 
-              <div class="bg-gray-50 px-5 py-4">
+              <div class="px-6 py-4 bg-gray-50">
                 <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="font-semibold text-slate-700">
-                      {{ child.name }}
-                    </h3>
+                  <h3 class="font-semibold text-slate-700">
+                    <span class="text-gray-400 mr-2"> └─ </span>
 
-                    <p class="text-xs text-gray-500 mt-1">
-                      {{ child.products.length }}
-                      product{{ child.products.length === 1 ? "" : "s" }}
-                    </p>
-                  </div>
+                    {{ subcategory.name }}
+                  </h3>
+
+                  <span class="text-sm text-gray-400">
+                    {{ subcategory.products.length }}
+                    {{
+                      subcategory.products.length === 1 ? "product" : "products"
+                    }}
+                  </span>
                 </div>
               </div>
 
-              <!-- SUBCATEGORY PRODUCTS -->
+              <!-- Subcategory products -->
 
-              <div
-                v-if="child.products.length"
-                class="divide-y divide-gray-100"
-              >
-                <div
-                  v-for="product in child.products"
-                  :key="product.id"
-                  class="relative overflow-visible px-5 py-5 pl-8 hover:bg-gray-50 transition"
-                >
-                  <div class="flex flex-col sm:flex-row gap-5">
-                    <!-- IMAGE -->
-
-                    <div
-                      class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
-                    >
-                      <img
-                        v-if="
-                          Array.isArray(product.images) && product.images.length
-                        "
-                        :src="product.images[0]"
-                        :alt="product.name"
-                        class="w-full h-full object-contain p-2"
-                      />
-
-                      <span v-else class="text-gray-400 text-xs">
-                        No Image
-                      </span>
-                    </div>
-
-                    <!-- DETAILS -->
-
-                    <div class="flex-1 min-w-0">
-                      <div
-                        class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-                      >
-                        <div class="min-w-0">
-                          <h3 class="font-semibold text-slate-800 break-words">
-                            {{ product.name }}
-                          </h3>
-
-                          <p
-                            v-if="product.blurb"
-                            class="text-sm text-gray-500 mt-1 line-clamp-2"
-                          >
-                            {{ product.blurb }}
-                          </p>
-
-                          <div class="flex flex-wrap items-center gap-3 mt-3">
-                            <span class="font-bold text-blue-600">
-                              ${{ product.price }}
-                            </span>
-
-                            <span
-                              v-if="product.oldPrice"
-                              class="text-sm text-gray-400 line-through"
-                            >
-                              ${{ product.oldPrice }}
-                            </span>
-
-                            <span
-                              class="text-sm"
-                              :class="
-                                product.stock > 0
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              "
-                            >
-                              Stock: {{ product.stock }}
-                            </span>
-
-                            <span
-                              v-if="product.featured"
-                              class="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded"
-                            >
-                              Featured
-                            </span>
-
-                            <span
-                              v-if="product.refurbished"
-                              class="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
-                            >
-                              Refurbished
-                            </span>
-                          </div>
-                        </div>
-
-                        <!-- THREE DOTS -->
-
-                        <div
-                          class="relative flex-shrink-0 self-start"
-                          @click.stop
-                        >
-                          <button
-                            type="button"
-                            @click.stop="toggleMenu(product.id)"
-                            class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                            aria-label="Product actions"
-                          >
-                            <span class="text-xl leading-none tracking-[2px]">
-                              •••
-                            </span>
-                          </button>
-
-                          <!-- MENU -->
-
-                          <div
-                            v-if="openMenu === product.id"
-                            class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
-                          >
-                            <NuxtLink
-                              :to="`/product/${product.slug}`"
-                              class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                              @click="closeMenu"
-                            >
-                              View
-                            </NuxtLink>
-
-                            <NuxtLink
-                              :to="`/admin/products/edit/${product.id}`"
-                              class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                              @click="closeMenu"
-                            >
-                              Edit
-                            </NuxtLink>
-
-                            <button
-                              type="button"
-                              @click="confirmDelete(product)"
-                              class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div v-if="subcategory.products.length" class="p-4">
+                <div class="space-y-2">
+                  <ProductItem
+                    v-for="product in subcategory.products"
+                    :key="product.id"
+                    :product="product"
+                    :open-menu-id="openMenuId"
+                    @toggle-menu="toggleMenu"
+                    @delete="deleteProduct"
+                  />
                 </div>
               </div>
 
-              <!-- NO PRODUCTS -->
-
-              <div v-else class="px-8 py-5 text-sm text-gray-400 italic">
+              <div v-else class="px-6 py-4 text-sm text-gray-400">
                 No products in this subcategory.
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ======================================================= -->
-      <!-- UNCATEGORISED -->
-      <!-- ======================================================= -->
+            <!-- ================================================= -->
+            <!-- EMPTY CATEGORY -->
+            <!-- ================================================= -->
 
-      <div v-if="uncategorisedProducts.length" class="mb-8">
-        <div
-          class="relative bg-white border border-gray-200 rounded-xl shadow-sm overflow-visible"
-        >
-          <button
-            type="button"
-            @click="toggleCategory('uncategorised')"
-            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
-          >
-            <div class="flex items-center gap-3">
-              <span
-                class="text-gray-500 transition-transform duration-200"
-                :class="{
-                  'rotate-90': openCategories.has('uncategorised'),
-                }"
-              >
-                ▶
-              </span>
-
-              <div class="text-left">
-                <h2 class="text-xl font-bold text-slate-800">Uncategorized</h2>
-
-                <p class="text-sm text-gray-500">
-                  {{ uncategorisedProducts.length }}
-                  product{{ uncategorisedProducts.length === 1 ? "" : "s" }}
-                </p>
-              </div>
-            </div>
-
-            <span class="text-sm text-gray-400">
-              {{ openCategories.has("uncategorised") ? "Collapse" : "Expand" }}
-            </span>
-          </button>
-
-          <!-- PRODUCTS -->
-
-          <div
-            v-if="openCategories.has('uncategorised')"
-            class="border-t border-gray-200 divide-y divide-gray-100 overflow-visible"
-          >
             <div
-              v-for="product in uncategorisedProducts"
-              :key="product.id"
-              class="relative overflow-visible px-5 py-5 hover:bg-gray-50"
+              v-if="
+                category.products.length === 0 && category.children.length === 0
+              "
+              class="p-8 text-center text-gray-400"
             >
-              <div class="flex flex-col sm:flex-row gap-5">
-                <!-- IMAGE -->
-
-                <div
-                  class="w-full sm:w-28 h-28 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
-                >
-                  <img
-                    v-if="
-                      Array.isArray(product.images) && product.images.length
-                    "
-                    :src="product.images[0]"
-                    :alt="product.name"
-                    class="w-full h-full object-contain p-2"
-                  />
-
-                  <span v-else class="text-gray-400 text-xs"> No Image </span>
-                </div>
-
-                <!-- DETAILS -->
-
-                <div class="flex-1 min-w-0">
-                  <div
-                    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
-                  >
-                    <div class="min-w-0">
-                      <h3 class="font-semibold text-slate-800 break-words">
-                        {{ product.name }}
-                      </h3>
-
-                      <p
-                        v-if="product.blurb"
-                        class="text-sm text-gray-500 mt-1"
-                      >
-                        {{ product.blurb }}
-                      </p>
-
-                      <div class="flex flex-wrap items-center gap-3 mt-3">
-                        <span class="font-bold text-blue-600">
-                          ${{ product.price }}
-                        </span>
-
-                        <span
-                          v-if="product.oldPrice"
-                          class="text-sm text-gray-400 line-through"
-                        >
-                          ${{ product.oldPrice }}
-                        </span>
-
-                        <span
-                          class="text-sm"
-                          :class="
-                            product.stock > 0
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          "
-                        >
-                          Stock: {{ product.stock }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- MENU -->
-
-                    <div class="relative flex-shrink-0 self-start" @click.stop>
-                      <button
-                        type="button"
-                        @click.stop="toggleMenu(product.id)"
-                        class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-                        aria-label="Product actions"
-                      >
-                        <span class="text-xl leading-none tracking-[2px]">
-                          •••
-                        </span>
-                      </button>
-
-                      <div
-                        v-if="openMenu === product.id"
-                        class="absolute right-0 top-full mt-2 w-36 bg-white border border-gray-200 rounded-lg shadow-xl z-[80] overflow-hidden"
-                      >
-                        <NuxtLink
-                          :to="`/product/${product.slug}`"
-                          class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                          @click="closeMenu"
-                        >
-                          View
-                        </NuxtLink>
-
-                        <NuxtLink
-                          :to="`/admin/products/edit/${product.id}`"
-                          class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
-                          @click="closeMenu"
-                        >
-                          Edit
-                        </NuxtLink>
-
-                        <button
-                          type="button"
-                          @click="confirmDelete(product)"
-                          class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              No products in this category.
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- DELETE MODAL -->
-    <!-- ========================================================= -->
+    <!-- ================================================= -->
+    <!-- DELETE CONFIRMATION -->
+    <!-- ================================================= -->
 
     <div
-      v-if="deleteProduct"
-      class="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4"
-      @click.self="cancelDelete"
+      v-if="deleteDialog"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
     >
-      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div class="flex items-start gap-4">
-          <div
-            class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-xl"
-          >
-            ⚠️
-          </div>
+      <!-- Background -->
 
-          <div>
-            <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
+      <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
 
-            <p class="text-gray-600 mt-2">Are you sure you want to delete:</p>
+      <!-- Dialog -->
 
-            <p class="font-semibold text-slate-800 mt-2">
-              {{ deleteProduct.name }}
-            </p>
-
-            <p class="text-sm text-red-600 mt-3">
-              This action cannot be undone.
-            </p>
-          </div>
+      <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div
+          class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl mb-4"
+        >
+          🗑
         </div>
+
+        <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
+
+        <p class="text-gray-600 mt-2">
+          Are you sure you really want to delete this product?
+        </p>
+
+        <p v-if="productToDelete" class="font-semibold text-slate-800 mt-3">
+          {{ productToDelete.name }}
+        </p>
+
+        <p class="text-sm text-red-600 mt-3">This action cannot be undone.</p>
 
         <div class="flex justify-end gap-3 mt-6">
           <button
@@ -724,36 +315,47 @@
 
           <button
             type="button"
-            @click="deleteProductNow"
+            @click="confirmDelete"
             :disabled="deleting"
-            class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-lg"
+            class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg"
           >
             {{ deleting ? "Deleting..." : "Yes, Delete" }}
           </button>
         </div>
       </div>
     </div>
+
+    <!-- ================================================= -->
+    <!-- DELETE ERROR -->
+    <!-- ================================================= -->
+
+    <div
+      v-if="deleteError"
+      class="fixed bottom-6 right-6 z-[110] bg-red-600 text-white px-5 py-4 rounded-lg shadow-xl max-w-sm"
+    >
+      <div class="font-semibold">Delete failed</div>
+
+      <div class="text-sm mt-1">
+        {{ deleteError }}
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-/* ============================================================
-   ADMIN MIDDLEWARE
-============================================================ */
-
 definePageMeta({
   middleware: "admin",
 });
 
-/* ============================================================
-   ADMIN FETCH
-============================================================ */
+// ======================================================
+// ADMIN FETCH
+// ======================================================
 
 const adminFetch = useAdminFetch();
 
-/* ============================================================
-   STATE
-============================================================ */
+// ======================================================
+// STATE
+// ======================================================
 
 const loading = ref(true);
 
@@ -763,213 +365,239 @@ const categories = ref<any[]>([]);
 
 const errorMessage = ref("");
 
-const successMessage = ref("");
+const openMenuId = ref<number | null>(null);
 
-const openCategories = ref<Set<number | string>>(new Set());
+const collapsedCategories = ref<Set<number>>(new Set());
 
-const openMenu = ref<number | null>(null);
+const deleteDialog = ref(false);
 
-const deleteProduct = ref<any | null>(null);
+const productToDelete = ref<any | null>(null);
 
 const deleting = ref(false);
 
-/* ============================================================
-   LOAD PRODUCTS
-============================================================ */
+const deleteError = ref("");
 
-const loadProducts = async () => {
-  try {
-    console.log("🔥 ADMIN PRODUCTS START");
-
-    const response = await adminFetch("/api/admin/products");
-
-    console.log("🔥 ADMIN PRODUCTS RESPONSE:", response);
-
-    if (Array.isArray(response)) {
-      products.value = response;
-    } else if (Array.isArray(response?.products)) {
-      products.value = response.products;
-    } else {
-      products.value = [];
-    }
-
-    console.log("🔥 PRODUCTS LOADED:", products.value.length);
-  } catch (error: any) {
-    console.error("🔥 LOAD PRODUCTS ERROR:", error);
-
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to load products.";
-  }
-};
-
-/* ============================================================
-   LOAD CATEGORIES
-============================================================ */
-
-const loadCategories = async () => {
-  try {
-    console.log("🔥 LOADING CATEGORIES");
-
-    const response = await adminFetch("/api/admin/categories");
-
-    console.log("🔥 CATEGORIES RESPONSE:", response);
-
-    if (Array.isArray(response)) {
-      categories.value = response;
-    } else if (Array.isArray(response?.categories)) {
-      categories.value = response.categories;
-    } else {
-      categories.value = [];
-    }
-
-    console.log("🔥 CATEGORIES LOADED:", categories.value.length);
-  } catch (error: any) {
-    console.error("🔥 LOAD CATEGORIES ERROR:", error);
-
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to load categories.";
-  }
-};
-
-/* ============================================================
-   MAIN CATEGORIES
-============================================================ */
+// ======================================================
+// MAIN CATEGORIES
+// ======================================================
 
 const mainCategories = computed(() => {
   return categories.value
-    .filter(
-      (category) =>
-        category.parent_id === null || category.parent_id === undefined,
-    )
+    .filter((category) => !category.parent_id)
     .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 });
 
-/* ============================================================
-   CATEGORY TREE
-============================================================ */
+// ======================================================
+// CATEGORY GROUPS
+// ======================================================
 
-const categoryTree = computed(() => {
-  return mainCategories.value.map((parent) => {
+const categoryGroups = computed(() => {
+  const parents = mainCategories.value;
+
+  return parents.map((parent) => {
     const children = categories.value
       .filter((category) => Number(category.parent_id) === Number(parent.id))
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+      .map((child) => {
+        const childProducts = products.value
+          .filter((product) => Number(product.category_id) === Number(child.id))
+          .sort((a, b) =>
+            String(a.name || "").localeCompare(String(b.name || "")),
+          );
+
+        return {
+          ...child,
+          products: childProducts,
+        };
+      });
 
     const parentProducts = products.value
       .filter((product) => Number(product.category_id) === Number(parent.id))
       .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 
-    const childTree = children.map((child) => {
-      const childProducts = products.value
-        .filter((product) => Number(product.category_id) === Number(child.id))
-        .sort((a, b) =>
-          String(a.name || "").localeCompare(String(b.name || "")),
-        );
-
-      return {
-        ...child,
-        products: childProducts,
-      };
-    });
+    const totalProducts =
+      parentProducts.length +
+      children.reduce((total, child) => total + child.products.length, 0);
 
     return {
       ...parent,
       products: parentProducts,
-      children: childTree,
+      children,
+      totalProducts,
     };
   });
 });
 
-/* ============================================================
-   UNCATEGORISED
-============================================================ */
+// ======================================================
+// LOAD DATA
+// ======================================================
 
-const uncategorisedProducts = computed(() => {
-  const categoryIds = new Set(
-    categories.value.map((category) => Number(category.id)),
-  );
+const loadData = async () => {
+  loading.value = true;
 
-  return products.value
-    .filter((product) => {
-      if (product.category_id === null || product.category_id === undefined) {
-        return true;
-      }
+  errorMessage.value = "";
 
-      return !categoryIds.has(Number(product.category_id));
-    })
-    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-});
+  openMenuId.value = null;
 
-/* ============================================================
-   CATEGORY TOGGLE
-============================================================ */
+  try {
+    console.log("🔥 ADMIN PRODUCTS: Loading...");
 
-const toggleCategory = (id: number | string) => {
-  const newSet = new Set(openCategories.value);
+    const [productResponse, categoryResponse] = await Promise.all([
+      adminFetch("/api/admin/products"),
+      adminFetch("/api/admin/categories"),
+    ]);
 
-  if (newSet.has(id)) {
-    newSet.delete(id);
-  } else {
-    newSet.add(id);
+    console.log("🔥 PRODUCTS RESPONSE:", productResponse);
+
+    console.log("🔥 CATEGORIES RESPONSE:", categoryResponse);
+
+    // ----------------------------------------------
+    // PRODUCTS
+    // ----------------------------------------------
+
+    if (Array.isArray(productResponse)) {
+      products.value = productResponse;
+    } else if (productResponse && Array.isArray(productResponse.products)) {
+      products.value = productResponse.products;
+    } else if (productResponse && Array.isArray(productResponse.data)) {
+      products.value = productResponse.data;
+    } else {
+      products.value = [];
+    }
+
+    // ----------------------------------------------
+    // CATEGORIES
+    // ----------------------------------------------
+
+    if (Array.isArray(categoryResponse)) {
+      categories.value = categoryResponse;
+    } else if (categoryResponse && Array.isArray(categoryResponse.categories)) {
+      categories.value = categoryResponse.categories;
+    } else if (categoryResponse && Array.isArray(categoryResponse.data)) {
+      categories.value = categoryResponse.data;
+    } else {
+      categories.value = [];
+    }
+
+    console.log(`🔥 ${products.value.length} products loaded`);
+
+    console.log(`🔥 ${categories.value.length} categories loaded`);
+
+    console.log(`🔥 ${mainCategories.value.length} main categories loaded`);
+
+    // Start all categories collapsed.
+
+    collapsedCategories.value = new Set(
+      mainCategories.value.map((category) => Number(category.id)),
+    );
+  } catch (error: any) {
+    console.error("🔥 ADMIN PRODUCTS LOAD ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to load products.";
+  } finally {
+    loading.value = false;
   }
-
-  openCategories.value = newSet;
 };
 
-/* ============================================================
-   MENU
-============================================================ */
+// ======================================================
+// CATEGORY TOGGLE
+// ======================================================
+
+const toggleCategory = (id: number) => {
+  const next = new Set(collapsedCategories.value);
+
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+
+  collapsedCategories.value = next;
+};
+
+// ======================================================
+// PRODUCT MENU
+// ======================================================
 
 const toggleMenu = (id: number) => {
-  if (openMenu.value === id) {
-    openMenu.value = null;
+  if (openMenuId.value === id) {
+    openMenuId.value = null;
   } else {
-    openMenu.value = id;
+    // This automatically closes any other open menu.
+    openMenuId.value = id;
   }
 };
 
-const closeMenu = () => {
-  openMenu.value = null;
+// ======================================================
+// VIEW
+// ======================================================
+
+const viewProduct = (product: any) => {
+  openMenuId.value = null;
+
+  if (product?.slug) {
+    navigateTo(`/product/${product.slug}`);
+  } else {
+    navigateTo(`/product/${product.id}`);
+  }
 };
 
-/* ============================================================
-   DELETE
-============================================================ */
+// ======================================================
+// EDIT
+// ======================================================
 
-const confirmDelete = (product: any) => {
-  openMenu.value = null;
+const editProduct = (product: any) => {
+  openMenuId.value = null;
 
-  deleteProduct.value = product;
+  navigateTo(`/admin/products/edit/${product.id}`);
 };
+
+// ======================================================
+// DELETE
+// ======================================================
+
+const deleteProduct = (product: any) => {
+  openMenuId.value = null;
+
+  productToDelete.value = product;
+
+  deleteDialog.value = true;
+
+  deleteError.value = "";
+};
+
+// ======================================================
+// CANCEL DELETE
+// ======================================================
 
 const cancelDelete = () => {
   if (deleting.value) {
     return;
   }
 
-  deleteProduct.value = null;
+  deleteDialog.value = false;
+
+  productToDelete.value = null;
 };
 
-/* ============================================================
-   DELETE PRODUCT
-============================================================ */
+// ======================================================
+// CONFIRM DELETE
+// ======================================================
 
-const deleteProductNow = async () => {
-  if (!deleteProduct.value) {
+const confirmDelete = async () => {
+  if (!productToDelete.value) {
     return;
   }
 
   deleting.value = true;
 
-  errorMessage.value = "";
-
-  successMessage.value = "";
+  deleteError.value = "";
 
   try {
-    const id = deleteProduct.value.id;
+    const id = productToDelete.value.id;
 
     console.log("🔥 DELETING PRODUCT:", id);
 
@@ -977,22 +605,21 @@ const deleteProductNow = async () => {
       method: "DELETE",
     });
 
+    // Remove from local list immediately.
+
     products.value = products.value.filter(
       (product) => Number(product.id) !== Number(id),
     );
 
-    successMessage.value = "Product deleted successfully.";
+    deleteDialog.value = false;
 
-    deleteProduct.value = null;
+    productToDelete.value = null;
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    console.log("🔥 PRODUCT DELETED:", id);
   } catch (error: any) {
     console.error("🔥 DELETE PRODUCT ERROR:", error);
 
-    errorMessage.value =
+    deleteError.value =
       error?.data?.statusMessage ||
       error?.message ||
       "Unable to delete product.";
@@ -1001,25 +628,271 @@ const deleteProductNow = async () => {
   }
 };
 
-/* ============================================================
-   CLOSE MENU ON OUTSIDE CLICK
-============================================================ */
+// ======================================================
+// CLOSE MENU WHEN CLICKING OUTSIDE
+// ======================================================
 
 const handleDocumentClick = () => {
-  openMenu.value = null;
+  openMenuId.value = null;
 };
 
 onMounted(async () => {
   document.addEventListener("click", handleDocumentClick);
 
-  try {
-    await Promise.all([loadProducts(), loadCategories()]);
-  } finally {
-    loading.value = false;
-  }
+  await loadData();
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
 });
+</script>
+
+<!-- ================================================== -->
+<!-- PRODUCT ITEM COMPONENT -->
+<!-- ================================================== -->
+
+<script lang="ts">
+export default {
+  components: {
+    ProductItem: {
+      props: {
+        product: {
+          type: Object,
+          required: true,
+        },
+
+        openMenuId: {
+          type: [Number, null],
+          default: null,
+        },
+      },
+
+      emits: [
+        "toggle-menu",
+        "delete",
+      ],
+
+      template: `
+        <div
+          class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
+          @click.stop
+        >
+          <!-- IMAGE -->
+
+          <div
+            class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
+          >
+            <img
+              v-if="
+                product.images &&
+                Array.isArray(product.images) &&
+                product.images.length
+              "
+              :src="product.images[0]"
+              :alt="product.name"
+              class="w-full h-full object-contain p-1"
+            />
+
+            <span
+              v-else
+              class="text-gray-400 text-xs"
+            >
+              No image
+            </span>
+          </div>
+
+          <!-- PRODUCT DETAILS -->
+
+          <div class="flex-1 min-w-0">
+            <div
+              class="font-semibold text-slate-800 truncate"
+            >
+              {{ product.name }}
+            </div>
+
+            <div
+              class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
+            >
+              <span
+                class="font-bold text-blue-600"
+              >
+                ${{ product.price }}
+              </span>
+
+              <span
+                v-if="product.stock > 0"
+                class="text-green-600"
+              >
+                {{ product.stock }} in stock
+              </span>
+
+              <span
+                v-else
+                class="text-red-600"
+              >
+                Out of stock
+              </span>
+
+              <span
+                v-if="product.featured"
+                class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
+              >
+                Featured
+              </span>
+
+              <span
+                v-if="product.refurbished"
+                class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
+              >
+                Refurbished
+              </span>
+
+              <span
+                v-if="product.active === false"
+                class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
+              >
+                Inactive
+              </span>
+            </div>
+          </div>
+
+          <!-- ================================================= -->
+          <!-- THREE DOTS -->
+          <!-- ================================================= -->
+
+          <div
+            class="relative shrink-0"
+          >
+            <button
+              type="button"
+              class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
+              title="Product actions"
+              @click.stop="$emit('toggle-menu', product.id)"
+            >
+              <span
+                class="text-xl font-bold leading-none tracking-[3px]"
+              >
+                •••
+              </span>
+            </button>
+
+            <!-- ================================================= -->
+            <!-- ACTION MENU -->
+            <!-- ================================================= -->
+
+            <div
+              v-if="openMenuId === product.id"
+              class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[80] overflow-hidden"
+              @click.stop
+            >
+              <!-- VIEW -->
+
+              <button
+                type="button"
+                class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                @click="
+                  $emit('toggle-menu', null);
+                  $router.push(
+                    product.slug
+                      ? '/product/' + product.slug
+                      : '/product/' + product.id
+                  );
+                "
+              >
+                <svg
+                  class="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+
+                <span>View</span>
+              </button>
+
+              <!-- EDIT -->
+
+              <button
+                type="button"
+                class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
+                @click="
+                  $emit('toggle-menu', null);
+                  $router.push(
+                    '/admin/products/edit/' + product.id
+                  );
+                "
+              >
+                <svg
+                  class="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+
+                <span>Edit</span>
+              </button>
+
+              <!-- DIVIDER -->
+
+              <div
+                class="border-t border-gray-100"
+              ></div>
+
+              <!-- DELETE -->
+
+              <button
+                type="button"
+                class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
+                @click="
+                  $emit('delete', product)
+                "
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
+                  />
+                </svg>
+
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `,
+    },
+  },
+};
 </script>
