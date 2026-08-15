@@ -141,7 +141,32 @@
                   :to="`/account/orders/${order.id}`"
                   class="inline-block bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition"
                 >
-                  View Order
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.8"
+                    stroke="currentColor"
+                    class="w-5 h-5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M19.5 14.25v-8.625a1.125 1.125 0 0 0-1.125-1.125H5.625A1.125 1.125 0 0 0 4.5 5.625v12.75a1.125 1.125 0 0 0 1.125 1.125h9.75"
+                    />
+
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M8.25 8.25h7.5M8.25 11.25h7.5M8.25 14.25h3"
+                    />
+
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M17.25 17.25h4.5m-2.25-2.25v4.5"
+                    />
+                  </svg>
                 </NuxtLink>
               </div>
             </div>
