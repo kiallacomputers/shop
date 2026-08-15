@@ -228,7 +228,7 @@ const loadCategories = async () => {
   try {
     console.log("🔥 LOADING CATEGORIES");
 
-    const response = await $fetch("/api/admin/categories");
+    const response = await adminFetch("/api/admin/categories");
 
     categories.value = Array.isArray(response)
       ? response
@@ -404,7 +404,7 @@ const deleteProduct = async (product) => {
   }
 
   try {
-    await $fetch(`/api/admin/products/${product.id}`, {
+    await adminFetch(`/api/admin/products/${product.id}`, {
       method: "DELETE",
     });
 
