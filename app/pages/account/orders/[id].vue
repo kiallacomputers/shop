@@ -11,7 +11,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12">
+    <div v-if="loading" class="py-12 text-center">
       <p class="text-gray-500">Loading order...</p>
     </div>
 
@@ -26,14 +26,12 @@
         {{ errorMessage }}
       </p>
 
-      <div class="mt-5">
-        <NuxtLink
-          to="/account"
-          class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700"
-        >
-          Back to My Account
-        </NuxtLink>
-      </div>
+      <NuxtLink
+        to="/account"
+        class="inline-block mt-5 bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700"
+      >
+        Back to My Account
+      </NuxtLink>
     </div>
 
     <!-- Order -->
@@ -46,12 +44,10 @@
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
       >
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">
-            Order #{{ order.id }}
-          </h1>
+          <h1 class="text-3xl font-bold">Order #{{ order.id }}</h1>
 
           <p class="text-gray-500 mt-2">
-            {{ formatDate(order.created_at) }}
+            Placed on {{ formatDate(order.created_at) }}
           </p>
         </div>
 
@@ -64,15 +60,15 @@
       </div>
 
       <!-- ================================= -->
-      <!-- CUSTOMER -->
+      <!-- CUSTOMER INFORMATION -->
       <!-- ================================= -->
 
-      <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <section class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <h2 class="text-xl font-bold mb-5">Customer Information</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p class="text-sm text-gray-500">Customer</p>
+            <p class="text-sm text-gray-500">Name</p>
 
             <p class="font-semibold mt-1">
               {{ order.customer_name || "Not provided" }}
@@ -87,13 +83,13 @@
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- ================================= -->
       <!-- ORDER ITEMS -->
       <!-- ================================= -->
 
-      <div
+      <section
         class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6"
       >
         <div class="bg-gray-50 px-6 py-4 border-b">
@@ -144,13 +140,13 @@
         <div v-else class="p-6 text-gray-500">
           No items found for this order.
         </div>
-      </div>
+      </section>
 
       <!-- ================================= -->
       <!-- TOTAL -->
       <!-- ================================= -->
 
-      <div class="bg-white border border-gray-200 rounded-lg p-6">
+      <section class="bg-white border border-gray-200 rounded-lg p-6">
         <div class="flex justify-between items-center">
           <span class="text-xl font-semibold"> Order Total </span>
 
@@ -158,26 +154,26 @@
             ${{ Number(order.total).toFixed(2) }}
           </span>
         </div>
-      </div>
+      </section>
 
       <!-- ================================= -->
-      <!-- STRIPE -->
+      <!-- PAYMENT -->
       <!-- ================================= -->
 
-      <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <p class="text-sm text-gray-500">Stripe Session</p>
+      <section class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <p class="text-sm text-gray-500">Payment Status</p>
 
-        <p class="text-sm font-mono mt-1 break-all">
-          {{ order.stripe_session_id }}
+        <p class="font-semibold mt-1 capitalize">
+          {{ order.status }}
         </p>
-      </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // ========================================
-// AUTH
+// AUTH ONLY
 // ========================================
 
 definePageMeta({
@@ -189,10 +185,6 @@ definePageMeta({
 // ========================================
 
 const supabase = useSupabaseClient();
-
-// ========================================
-// ROUTE
-// ========================================
 
 const route = useRoute();
 
@@ -218,20 +210,24 @@ async function loadOrder() {
   errorMessage.value = "";
 
   try {
-    // ------------------------------------
-    // GET USER
-    // ------------------------------------
+    // ====================================
+    // GET LOGGED-IN USER
+    // ====================================
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    console.log("================================");
-    console.log("ORDER DETAILS");
+    console.log("=================================");
+
+    console.log("ORDER DETAIL PAGE");
+
     console.log("USER:", user);
-    console.log("ROUTE:", route.params.id);
-    console.log("================================");
+
+    console.log("ORDER ID:", route.params.id);
+
+    console.log("=================================");
 
     if (userError) {
       console.error("USER ERROR:", userError);
@@ -239,33 +235,50 @@ async function loadOrder() {
       throw userError;
     }
 
+    // ====================================
+    // USER MUST BE LOGGED IN
+    // ====================================
+
     if (!user) {
       await navigateTo("/login");
 
       return;
     }
 
-    // ------------------------------------
-    // GET ORDER ID
-    // ------------------------------------
+    // ====================================
+    // ORDER ID
+    // ====================================
 
-    const orderId = route.params.id;
-
-    console.log("ORDER ID:", orderId);
+    const orderId = String(route.params.id);
 
     if (!orderId) {
       throw new Error("Order ID was not supplied.");
     }
 
-    // ------------------------------------
-    // GET ORDER
-    // ------------------------------------
+    console.log("LOADING ORDER:", orderId);
 
-    console.log("QUERYING ORDERS TABLE...");
+    // ====================================
+    // LOAD ORDER
+    //
+    // IMPORTANT:
+    // user_id makes sure the customer
+    // can only see their own order.
+    // ====================================
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
-      .select("*")
+      .select(
+        `
+        id,
+        user_id,
+        stripe_session_id,
+        customer_email,
+        customer_name,
+        total,
+        status,
+        created_at
+      `,
+      )
       .eq("id", orderId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -279,24 +292,33 @@ async function loadOrder() {
     }
 
     if (!orderData) {
-      throw new Error("Order not found.");
+      throw new Error(
+        "Order not found or you do not have permission to view it.",
+      );
     }
 
-    // ------------------------------------
-    // SAVE ORDER
-    // ------------------------------------
+    // ====================================
+    // STORE ORDER
+    // ====================================
 
     order.value = orderData;
 
-    // ------------------------------------
-    // GET ORDER ITEMS
-    // ------------------------------------
-
-    console.log("QUERYING ORDER ITEMS...");
+    // ====================================
+    // LOAD ORDER ITEMS
+    // ====================================
 
     const { data: itemsData, error: itemsError } = await supabase
       .from("order_items")
-      .select("*")
+      .select(
+        `
+        id,
+        order_id,
+        product_id,
+        product_name,
+        quantity,
+        price
+      `,
+      )
       .eq("order_id", orderData.id)
       .order("id", {
         ascending: true,
@@ -312,21 +334,13 @@ async function loadOrder() {
 
     orderItems.value = itemsData || [];
 
-    console.log("================================");
+    console.log("=================================");
 
-    console.log("ORDER LOADED SUCCESSFULLY");
+    console.log("✅ ORDER LOADED");
 
-    console.log("ORDER:", order.value);
-
-    console.log("ITEMS:", orderItems.value);
-
-    console.log("================================");
+    console.log("=================================");
   } catch (error: any) {
-    console.error("================================");
-
-    console.error("ORDER ERROR:", error);
-
-    console.error("================================");
+    console.error("ORDER LOAD ERROR:", error);
 
     errorMessage.value = error?.message || "Unable to load order.";
   } finally {
