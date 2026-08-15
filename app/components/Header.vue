@@ -1,126 +1,105 @@
 <template>
-  <header class="bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4">
-      <!-- ================================================= -->
-      <!-- DESKTOP HEADER -->
-      <!-- ================================================= -->
-
-      <div class="h-20 flex items-center justify-between">
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
         <!-- LOGO -->
         <NuxtLink to="/" class="flex items-center shrink-0">
           <img src="/kc_logo.png" alt="Kialla Computers" class="h-14 w-auto" />
         </NuxtLink>
 
-        <!-- ================================================= -->
-        <!-- DESKTOP NAVIGATION -->
-        <!-- ================================================= -->
-
-        <nav class="hidden md:flex items-center gap-8 ml-auto">
-          <NuxtLink
-            to="/"
-            class="text-gray-700 hover:text-blue-600 font-medium transition"
-          >
+        <!-- DESKTOP NAV -->
+        <nav class="hidden md:flex items-center gap-8">
+          <NuxtLink to="/" class="text-gray-700 hover:text-sky-600 font-medium">
             Home
           </NuxtLink>
 
           <NuxtLink
             to="/products"
-            class="text-gray-700 hover:text-blue-600 font-medium transition"
+            class="text-gray-700 hover:text-sky-600 font-medium"
           >
             Products
+          </NuxtLink>
+
+          <NuxtLink
+            to="/about"
+            class="text-gray-700 hover:text-sky-600 font-medium"
+          >
+            About
+          </NuxtLink>
+
+          <!-- ADMIN -->
+          <NuxtLink
+            v-if="showAdmin"
+            to="/admin"
+            class="text-red-600 hover:text-red-700 font-semibold"
+          >
+            Admin
           </NuxtLink>
 
           <!-- ACCOUNT -->
           <NuxtLink
             v-if="user"
             to="/account"
-            class="text-gray-700 hover:text-blue-600 font-medium transition"
+            class="text-gray-700 hover:text-sky-600 font-medium"
           >
             Account
           </NuxtLink>
 
-          <!-- ADMIN -->
+          <!-- SIGN IN -->
           <NuxtLink
-            v-if="user && isAdmin"
-            to="/admin"
-            class="text-gray-700 hover:text-blue-600 font-medium transition"
-          >
-            Admin
-          </NuxtLink>
-
-          <!-- LOGIN -->
-          <NuxtLink
-            v-if="!user"
-            to="/login"
-            class="text-gray-700 hover:text-blue-600 font-medium transition"
+            v-else
+            to="/signin"
+            class="text-gray-700 hover:text-sky-600 font-medium"
           >
             Sign In
           </NuxtLink>
-
-          <!-- LOGOUT -->
-          <button
-            v-if="user"
-            @click="logout"
-            class="text-gray-700 hover:text-red-600 font-medium transition"
-          >
-            Sign Out
-          </button>
         </nav>
 
-        <!-- ================================================= -->
         <!-- RIGHT SIDE -->
-        <!-- ================================================= -->
-
-        <div class="flex items-center gap-4 ml-6">
-          <!-- CART -->
+        <div class="flex items-center gap-4">
+          <!-- SHOPPING CART -->
           <NuxtLink
             to="/cart"
-            class="relative flex items-center justify-center"
+            class="relative text-gray-700 hover:text-sky-600"
             aria-label="Shopping Cart"
           >
-            <!-- Cart Icon -->
             <svg
               xmlns="http://www.w3.org/2000/svg"
+              class="w-7 h-7"
               fill="none"
               viewBox="0 0 24 24"
-              stroke-width="1.8"
               stroke="currentColor"
-              class="w-7 h-7 text-gray-700 hover:text-blue-600 transition"
+              stroke-width="2"
             >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
-                d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25h10.125c.51 0 .96-.344 1.09-.836l1.38-5.52a1.125 1.125 0 0 0-1.09-1.394H5.106m2.394 7.75L5.106 6.75M7.5 14.25l-1.125 2.25a1.125 1.125 0 0 0 1.006 1.625h10.244M9 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm9.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 2h12m-9 4a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"
               />
             </svg>
 
-            <!-- CART COUNT -->
             <span
               v-if="cart.count > 0"
-              class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
+              class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
             >
               {{ cart.count }}
             </span>
           </NuxtLink>
 
-          <!-- ================================================= -->
-          <!-- MOBILE MENU BUTTON -->
-          <!-- ================================================= -->
-
+          <!-- MOBILE MENU -->
           <button
+            type="button"
+            class="md:hidden text-gray-700"
             @click="mobileMenuOpen = !mobileMenuOpen"
-            class="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100"
-            aria-label="Open Menu"
+            aria-label="Open menu"
           >
-            <!-- Hamburger -->
             <svg
-              v-if="!mobileMenuOpen"
               xmlns="http://www.w3.org/2000/svg"
+              class="w-7 h-7"
               fill="none"
               viewBox="0 0 24 24"
-              stroke-width="2"
               stroke="currentColor"
-              class="w-7 h-7"
+              stroke-width="2"
             >
               <path
                 stroke-linecap="round"
@@ -128,90 +107,67 @@
                 d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
-
-            <!-- Close -->
-            <svg
-              v-else
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="2"
-              stroke="currentColor"
-              class="w-7 h-7"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
           </button>
         </div>
       </div>
 
-      <!-- ================================================= -->
       <!-- MOBILE MENU -->
-      <!-- ================================================= -->
-
       <div
         v-if="mobileMenuOpen"
         class="md:hidden border-t border-gray-200 py-4"
       >
-        <nav class="flex flex-col gap-1">
+        <nav class="flex flex-col gap-3">
           <NuxtLink
             to="/"
+            class="px-2 py-2 text-gray-700 hover:text-sky-600"
             @click="mobileMenuOpen = false"
-            class="px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
           >
             Home
           </NuxtLink>
 
           <NuxtLink
             to="/products"
+            class="px-2 py-2 text-gray-700 hover:text-sky-600"
             @click="mobileMenuOpen = false"
-            class="px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
           >
             Products
           </NuxtLink>
 
-          <!-- ACCOUNT -->
           <NuxtLink
-            v-if="user"
-            to="/account"
+            to="/about"
+            class="px-2 py-2 text-gray-700 hover:text-sky-600"
             @click="mobileMenuOpen = false"
-            class="px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
           >
-            Account
+            About
           </NuxtLink>
 
-          <!-- ADMIN -->
+          <!-- MOBILE ADMIN -->
           <NuxtLink
-            v-if="user && isAdmin"
+            v-if="showAdmin"
             to="/admin"
+            class="px-2 py-2 text-red-600 font-semibold"
             @click="mobileMenuOpen = false"
-            class="px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
           >
             Admin
           </NuxtLink>
 
-          <!-- LOGIN -->
           <NuxtLink
-            v-if="!user"
-            to="/login"
+            v-if="user"
+            to="/account"
+            class="px-2 py-2 text-gray-700 hover:text-sky-600"
             @click="mobileMenuOpen = false"
-            class="px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
+          >
+            Account
+          </NuxtLink>
+
+          <NuxtLink
+            v-else
+            to="/signin"
+            class="px-2 py-2 text-gray-700 hover:text-sky-600"
+            @click="mobileMenuOpen = false"
           >
             Sign In
           </NuxtLink>
-
-          <!-- LOGOUT -->
-          <button
-            v-if="user"
-            @click="logout"
-            class="text-left px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
-          >
-            Sign Out
-          </button>
         </nav>
       </div>
     </div>
@@ -219,109 +175,41 @@
 </template>
 
 <script setup lang="ts">
-// =====================================================
-// SUPABASE
-// =====================================================
-
 const supabase = useSupabaseClient();
 
 const user = useSupabaseUser();
 
-// =====================================================
-// CART
-// =====================================================
-
 const cart = useCartStore();
-
-// =====================================================
-// MOBILE MENU
-// =====================================================
 
 const mobileMenuOpen = ref(false);
 
-// =====================================================
-// ADMIN STATUS
-// =====================================================
+const { isAdmin, adminChecked, checkAdmin } = useAdminFetch();
 
-const isAdmin = ref(false);
+const showAdmin = computed(() => {
+  return !!user.value && adminChecked.value && isAdmin.value;
+});
 
-const checkingAdmin = ref(false);
-
-// =====================================================
-// CHECK ADMIN
-// =====================================================
-
-async function checkAdmin() {
-  // Always start as NOT admin
-  isAdmin.value = false;
-
-  if (!user.value) {
-    return;
-  }
-
-  checkingAdmin.value = true;
-
-  console.log("Checking admin status for:", user.value.email);
-
-  try {
-    const response = await $fetch<{
-      isAdmin: boolean;
-    }>("/api/admin/check");
-
-    // Only true is allowed to display Admin
-    isAdmin.value = response?.isAdmin === true;
-
-    if (isAdmin.value) {
-      console.log("ADMIN USER:", user.value.email);
-    } else {
-      console.log("USER IS NOT ADMIN");
-    }
-  } catch (error: any) {
-    // A 403 means the user isn't an admin.
-    // This is NOT a reason to show the Admin menu.
-
-    isAdmin.value = false;
-
-    if (error?.statusCode === 403) {
-      console.log("USER IS NOT ADMIN");
-    } else {
-      console.error("ADMIN CHECK ERROR:", error);
-    }
-  } finally {
-    checkingAdmin.value = false;
-  }
-}
-
-// =====================================================
-// WATCH LOGIN STATE
-// =====================================================
-
+/*
+ * Check administrator status whenever
+ * the authenticated user changes.
+ */
 watch(
   user,
-  async (newUser) => {
-    // Reset admin status immediately
-    isAdmin.value = false;
-
-    if (newUser) {
-      await checkAdmin();
+  async (currentUser) => {
+    if (!currentUser) {
+      isAdmin.value = false;
+      adminChecked.value = true;
+      return;
     }
+
+    adminChecked.value = false;
+
+    await nextTick();
+
+    await checkAdmin();
   },
   {
     immediate: true,
   },
 );
-
-// =====================================================
-// LOGOUT
-// =====================================================
-
-async function logout() {
-  isAdmin.value = false;
-
-  mobileMenuOpen.value = false;
-
-  await supabase.auth.signOut();
-
-  await navigateTo("/");
-}
 </script>

@@ -1,34 +1,25 @@
-import { createClient } from "@supabase/supabase-js";
-import { requireAdmin } from "~~/server/utils/adminAuth";
+import { requireAdmin, getAdminSupabase } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
 
-  const config = useRuntimeConfig();
+  const supabase = getAdminSupabase();
 
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.supabaseSecretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-
-  const { data, error } = await supabase.from("products").select("*");
-
-  console.log("🔥🔥🔥 SERVER PRODUCTS 🔥🔥🔥", JSON.stringify(data, null, 2));
-
-  console.log("🔥🔥🔥 SERVER ERROR 🔥🔥🔥", error);
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .order("name", {
+      ascending: true,
+    });
 
   if (error) {
+    console.error("ADMIN PRODUCTS ERROR:", error);
+
     throw createError({
       statusCode: 500,
       statusMessage: error.message,
     });
   }
 
-  return data || [];
+  return data;
 });

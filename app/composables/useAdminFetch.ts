@@ -1,26 +1,48 @@
-export const useAdminFetch = () => {
-  const supabase = useSupabaseClient();
+export function useAdminFetch() {
+  const isAdmin = useState<boolean>("isAdmin", () => false);
+  const adminChecked = useState<boolean>("adminChecked", () => false);
+  const checkingAdmin = useState<boolean>("checkingAdmin", () => false);
 
-  const adminFetch = async (url: string, options: any = {}) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      throw new Error("Authentication required");
+  const checkAdmin = async () => {
+    if (checkingAdmin.value) {
+      return isAdmin.value;
     }
 
-    return await $fetch(url, {
-      ...options,
+    checkingAdmin.value = true;
 
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    try {
+      console.log("=================================");
+      console.log("CHECKING ADMIN STATUS...");
+
+      const result = await $fetch("/api/admin/check", {
+        method: "GET",
+      });
+
+      console.log("ADMIN CHECK RESULT:", result);
+
+      isAdmin.value = !!result.isAdmin;
+      adminChecked.value = true;
+
+      console.log("IS ADMIN:", isAdmin.value);
+      console.log("=================================");
+
+      return isAdmin.value;
+    } catch (error: any) {
+      console.error("ADMIN CHECK ERROR:", error);
+
+      isAdmin.value = false;
+      adminChecked.value = true;
+
+      return false;
+    } finally {
+      checkingAdmin.value = false;
+    }
   };
 
-  return adminFetch;
-};
-
-export default useAdminFetch;
+  return {
+    isAdmin,
+    adminChecked,
+    checkingAdmin,
+    checkAdmin,
+  };
+}
