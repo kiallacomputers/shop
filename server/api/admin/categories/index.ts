@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const token = authorization.replace(/^Bearer\s+/i, "");
+    const token = authorization.replace(/^Bearer\s+/i, "").trim();
 
     if (!token) {
       throw createError({
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ============================================
-    // SUPABASE CONFIG
+    // SUPABASE CONFIGURATION
     // ============================================
 
     const config = useRuntimeConfig();
@@ -36,17 +36,35 @@ export default defineEventHandler(async (event) => {
 
     const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
 
-    if (!supabaseUrl || !anonKey || !serviceKey) {
-      console.error("❌ Missing Supabase configuration");
+    if (!supabaseUrl) {
+      console.error("❌ Supabase URL is missing");
 
       throw createError({
         statusCode: 500,
-        statusMessage: "Supabase server configuration is missing",
+        statusMessage: "Supabase URL is not configured",
+      });
+    }
+
+    if (!anonKey) {
+      console.error("❌ Supabase anon key is missing");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase anon key is not configured",
+      });
+    }
+
+    if (!serviceKey) {
+      console.error("❌ Supabase service/secret key is missing");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server key is not configured",
       });
     }
 
     // ============================================
-    // USER CLIENT
+    // USER SUPABASE CLIENT
     // ============================================
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -57,7 +75,7 @@ export default defineEventHandler(async (event) => {
     });
 
     // ============================================
-    // VERIFY USER
+    // VERIFY SUPABASE USER
     // ============================================
 
     const {
@@ -65,8 +83,17 @@ export default defineEventHandler(async (event) => {
       error: userError,
     } = await supabase.auth.getUser(token);
 
-    if (userError || !user) {
-      console.error("❌ USER AUTH ERROR:", userError);
+    if (userError) {
+      console.error("❌ SUPABASE USER ERROR:", userError);
+
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unable to authenticate user",
+      });
+    }
+
+    if (!user) {
+      console.error("❌ NO SUPABASE USER");
 
       throw createError({
         statusCode: 401,
@@ -74,11 +101,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ AUTHENTICATED USER:", user.id);
-    console.log("📧 USER EMAIL:", user.email);
+    console.log("============================================");
+    console.log("✅ AUTHENTICATED USER");
+    console.log("User ID:", user.id);
+    console.log("Email:", user.email);
+    console.log("============================================");
 
     // ============================================
-    // SERVICE CLIENT
+    // SUPABASE ADMIN/SERVICE CLIENT
     // ============================================
 
     const adminSupabase = createClient(supabaseUrl, serviceKey, {
@@ -89,17 +119,27 @@ export default defineEventHandler(async (event) => {
     });
 
     // ============================================
-    // CHECK ADMIN
+    // CHECK ADMIN USER
+    //
+    // Your admin_users table uses:
+    //
+    // admin_users.id
+    //
+    // for the Supabase Auth UUID.
     // ============================================
 
     const { data: adminUser, error: adminError } = await adminSupabase
       .from("admin_users")
-      .select("id, user_id")
-      .eq("user_id", user.id)
+      .select("id")
+      .eq("id", user.id)
       .maybeSingle();
 
-    console.log("👤 ADMIN USER:", adminUser);
+    console.log("👤 ADMIN RECORD:", adminUser);
     console.log("⚠️ ADMIN CHECK ERROR:", adminError);
+
+    // ============================================
+    // ADMIN DATABASE ERROR
+    // ============================================
 
     if (adminError) {
       console.error("❌ ADMIN DATABASE ERROR:", adminError);
@@ -111,8 +151,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // ============================================
+    // USER IS NOT ADMIN
+    // ============================================
+
     if (!adminUser) {
-      console.error("❌ USER IS NOT IN admin_users:", user.id);
+      console.error("❌ ADMIN ACCESS DENIED");
+
+      console.error("User UUID:", user.id);
 
       throw createError({
         statusCode: 403,
@@ -128,12 +174,14 @@ export default defineEventHandler(async (event) => {
 
     const method = getMethod(event);
 
+    console.log("📡 CATEGORY METHOD:", method);
+
     // ============================================
     // GET CATEGORIES
     // ============================================
 
     if (method === "GET") {
-      const { data: categories, error } = await adminSupabase
+      const { data: categories, error: categoryError } = await adminSupabase
         .from("categories")
         .select("*")
         .order("sort_order", {
@@ -143,14 +191,16 @@ export default defineEventHandler(async (event) => {
           ascending: true,
         });
 
-      if (error) {
-        console.error("❌ LOAD CATEGORIES ERROR:", error);
+      if (categoryError) {
+        console.error("❌ LOAD CATEGORIES ERROR:", categoryError);
 
         throw createError({
           statusCode: 500,
-          statusMessage: error.message || "Unable to load categories",
+          statusMessage: categoryError.message || "Unable to load categories",
         });
       }
+
+      console.log("✅ CATEGORIES LOADED:", categories?.length || 0);
 
       return categories || [];
     }
@@ -162,7 +212,13 @@ export default defineEventHandler(async (event) => {
     if (method === "POST") {
       const body = await readBody(event);
 
-      const name = body?.name?.trim();
+      console.log("📦 CREATE CATEGORY BODY:", body);
+
+      // ==========================================
+      // CATEGORY NAME
+      // ==========================================
+
+      const name = typeof body?.name === "string" ? body.name.trim() : "";
 
       if (!name) {
         throw createError({
@@ -171,9 +227,33 @@ export default defineEventHandler(async (event) => {
         });
       }
 
+      // ==========================================
+      // PARENT CATEGORY
+      // ==========================================
+
       const parentId = body?.parent_id || null;
 
-      const sortOrder = Number(body?.sort_order) || 0;
+      // ==========================================
+      // SORT ORDER
+      // ==========================================
+
+      const sortOrder =
+        body?.sort_order !== undefined &&
+        body?.sort_order !== null &&
+        body?.sort_order !== ""
+          ? Number(body.sort_order)
+          : 0;
+
+      // ==========================================
+      // VALIDATE SORT ORDER
+      // ==========================================
+
+      if (Number.isNaN(sortOrder)) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: "Sort order must be a number",
+        });
+      }
 
       console.log("➕ CREATING CATEGORY:", {
         name,
@@ -181,7 +261,11 @@ export default defineEventHandler(async (event) => {
         sortOrder,
       });
 
-      const { data: category, error } = await adminSupabase
+      // ==========================================
+      // INSERT CATEGORY
+      // ==========================================
+
+      const { data: category, error: insertError } = await adminSupabase
         .from("categories")
         .insert({
           name,
@@ -191,12 +275,12 @@ export default defineEventHandler(async (event) => {
         .select()
         .single();
 
-      if (error) {
-        console.error("❌ CREATE CATEGORY ERROR:", error);
+      if (insertError) {
+        console.error("❌ CREATE CATEGORY ERROR:", insertError);
 
         throw createError({
           statusCode: 500,
-          statusMessage: error.message || "Unable to create category",
+          statusMessage: insertError.message || "Unable to create category",
         });
       }
 
@@ -209,7 +293,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ============================================
-    // UNSUPPORTED METHOD
+    // UNSUPPORTED HTTP METHOD
     // ============================================
 
     throw createError({
@@ -219,6 +303,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error("🔥 CATEGORY API ERROR:", error);
 
+    // Preserve Nuxt createError responses
     if (error?.statusCode) {
       throw error;
     }
