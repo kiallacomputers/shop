@@ -23,7 +23,7 @@
             <!-- Featured Badge -->
             <span
               v-if="product.featured"
-              class="absolute top-4 -left-8 rotate-[-45deg] bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-20"
+              class="absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
             >
               Featured
             </span>
@@ -31,7 +31,7 @@
             <!-- Refurbished Badge -->
             <span
               v-if="product.refurbished"
-              class="absolute top-4 -right-8 rotate-45 bg-red-600 text-white text-xs font-bold text-center w-32 py-1 shadow-lg z-20"
+              class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full"
             >
               Refurbished
             </span>
