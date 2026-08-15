@@ -1,4 +1,4 @@
-export default function useAdminFetch() {
+export const useAdminFetch = () => {
   const supabase = useSupabaseClient();
 
   const adminFetch = async (url: string, options: any = {}) => {
@@ -21,4 +21,6 @@ export default function useAdminFetch() {
   };
 
   return adminFetch;
-}
+};
+
+export default useAdminFetch;

@@ -43,9 +43,6 @@
 </template>
 
 <script setup>
-// const { isLoggedIn } = defineProps({
-//   isLoggedIn: Boolean,
-// });
 const supabase = useSupabaseClient();
 
 const { data: featuredProducts, error } = await useAsyncData(
