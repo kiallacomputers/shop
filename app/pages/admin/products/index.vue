@@ -6,7 +6,8 @@
     >
       <div>
         <h1 class="text-3xl font-bold text-[#566C9D]">Products</h1>
-        <p class="text-gray-500 mt-1">Manage your products by category</p>
+
+        <p class="text-gray-500 mt-1">Manage products by category</p>
       </div>
 
       <NuxtLink
@@ -20,7 +21,7 @@
     <!-- Loading -->
     <div
       v-if="loading"
-      class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"
+      class="bg-white rounded-xl border border-gray-200 p-8 text-center"
     >
       <p class="text-gray-500">Loading products...</p>
     </div>
@@ -33,22 +34,41 @@
       {{ errorMessage }}
     </div>
 
-    <!-- No Products -->
+    <!-- No products -->
     <div
       v-else-if="mainCategories.length === 0"
-      class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center"
+      class="bg-white rounded-xl border border-gray-200 p-8"
     >
-      <p class="text-gray-500">No products found.</p>
+      <p class="text-gray-500 text-center">No products found.</p>
+
+      <!-- Debug information -->
+      <div class="mt-6 p-4 bg-gray-100 rounded-lg text-xs text-gray-600">
+        <p>
+          Products loaded:
+          <strong>{{ products.length }}</strong>
+        </p>
+
+        <p>
+          Categories loaded:
+          <strong>{{ categories.length }}</strong>
+        </p>
+
+        <p>
+          Main categories:
+          <strong>{{ mainCategories.length }}</strong>
+        </p>
+      </div>
     </div>
 
     <!-- Categories -->
     <div v-else class="space-y-4">
+      <!-- MAIN CATEGORY -->
       <div
         v-for="category in mainCategories"
         :key="category.id"
         class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
       >
-        <!-- Main Category Header -->
+        <!-- Main category header -->
         <button
           type="button"
           @click="toggleCategory(category.id)"
@@ -58,7 +78,9 @@
             <!-- Arrow -->
             <svg
               class="w-5 h-5 text-gray-500 transition-transform duration-200"
-              :class="{ 'rotate-90': isCategoryOpen(category.id) }"
+              :class="{
+                'rotate-90': isCategoryOpen(category.id),
+              }"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -89,27 +111,25 @@
           </span>
         </button>
 
-        <!-- Main Category Content -->
+        <!-- Main category content -->
         <div
           v-if="isCategoryOpen(category.id)"
           class="border-t border-gray-200"
         >
-          <!-- Direct products belonging to main category -->
-          <div v-if="category.products.length" class="p-4">
-            <div class="mb-3">
-              <h3 class="font-semibold text-gray-700">Products</h3>
-            </div>
+          <!-- Products directly assigned to main category -->
+          <div v-if="category.products.length > 0" class="p-4">
+            <h3 class="font-semibold text-gray-700 mb-3">Products</h3>
 
-            <ProductTable :products="category.products" />
+            <AdminProductTable :products="category.products" />
           </div>
 
-          <!-- Sub Categories -->
+          <!-- SUB CATEGORIES -->
           <div
             v-for="subcategory in category.children"
             :key="subcategory.id"
             class="border-t border-gray-200"
           >
-            <!-- Sub Category Header -->
+            <!-- Sub category header -->
             <button
               type="button"
               @click="toggleCategory(subcategory.id)"
@@ -151,10 +171,10 @@
               </span>
             </button>
 
-            <!-- Sub Category Products -->
+            <!-- Subcategory products -->
             <div v-if="isCategoryOpen(subcategory.id)" class="p-4">
-              <ProductTable
-                v-if="subcategory.products.length"
+              <AdminProductTable
+                v-if="subcategory.products.length > 0"
                 :products="subcategory.products"
               />
 
@@ -174,15 +194,67 @@ definePageMeta({
   middleware: "admin",
 });
 
+/*
+|--------------------------------------------------------------------------
+| Admin Fetch
+|--------------------------------------------------------------------------
+*/
+
 const { useAdminFetch } = await import("~/composables/useAdminFetch");
 
+/*
+|--------------------------------------------------------------------------
+| State
+|--------------------------------------------------------------------------
+*/
+
 const loading = ref(true);
+
 const errorMessage = ref("");
 
 const products = ref([]);
+
 const categories = ref([]);
 
 const openCategories = ref(new Set());
+
+/*
+|--------------------------------------------------------------------------
+| Extract Array
+|--------------------------------------------------------------------------
+|
+| Handles all of these possible responses:
+|
+| []
+|
+| { data: [] }
+|
+| { products: [] }
+|
+| { categories: [] }
+|
+|--------------------------------------------------------------------------
+*/
+
+const extractArray = (response, property = null) => {
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (!response) {
+    return [];
+  }
+
+  if (property && Array.isArray(response[property])) {
+    return response[property];
+  }
+
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  return [];
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -191,17 +263,22 @@ const openCategories = ref(new Set());
 */
 
 const loadProducts = async () => {
-  try {
-    loading.value = true;
-    errorMessage.value = "";
+  console.log("🔥 ADMIN PRODUCTS - LOADING");
 
+  try {
     const response = await useAdminFetch("/api/admin/products");
 
-    products.value = Array.isArray(response) ? response : response?.data || [];
+    console.log("🔥 ADMIN PRODUCTS RAW RESPONSE:", response);
 
-    console.log("ADMIN PRODUCTS:", products.value);
+    const result = extractArray(response, "products");
+
+    console.log("🔥 ADMIN PRODUCTS ARRAY:", result);
+
+    products.value = result;
+
+    console.log("🔥 PRODUCTS COUNT:", products.value.length);
   } catch (error) {
-    console.error("ADMIN PRODUCTS LOAD ERROR:", error);
+    console.error("🔥 ADMIN PRODUCTS ERROR:", error);
 
     errorMessage.value =
       error?.data?.message || error?.message || "Unable to load products.";
@@ -215,16 +292,28 @@ const loadProducts = async () => {
 */
 
 const loadCategories = async () => {
+  console.log("🔥 ADMIN CATEGORIES - LOADING");
+
   try {
+    /*
+     * IMPORTANT:
+     *
+     * This is the endpoint we have been using for
+     * the admin categories.
+     */
     const response = await useAdminFetch("/api/admin/categories");
 
-    categories.value = Array.isArray(response)
-      ? response
-      : response?.data || [];
+    console.log("🔥 ADMIN CATEGORIES RAW RESPONSE:", response);
 
-    console.log("ADMIN CATEGORIES:", categories.value);
+    const result = extractArray(response, "categories");
+
+    console.log("🔥 ADMIN CATEGORIES ARRAY:", result);
+
+    categories.value = result;
+
+    console.log("🔥 CATEGORIES COUNT:", categories.value.length);
   } catch (error) {
-    console.error("ADMIN CATEGORIES LOAD ERROR:", error);
+    console.error("🔥 ADMIN CATEGORIES ERROR:", error);
 
     errorMessage.value =
       error?.data?.message || error?.message || "Unable to load categories.";
@@ -233,26 +322,41 @@ const loadCategories = async () => {
 
 /*
 |--------------------------------------------------------------------------
-| Build Category Hierarchy
+| Category Hierarchy
 |--------------------------------------------------------------------------
 */
 
 const mainCategories = computed(() => {
-  const categoryMap = new Map();
+  console.log("🔥 BUILDING CATEGORY HIERARCHY");
+
+  console.log("PRODUCTS:", products.value);
+
+  console.log("CATEGORIES:", categories.value);
+
+  if (!products.value.length || !categories.value.length) {
+    return [];
+  }
 
   /*
-   * Create category objects
+   * Map categories by ID
    */
+  const categoryMap = new Map();
+
   categories.value.forEach((category) => {
-    categoryMap.set(category.id, {
+    categoryMap.set(Number(category.id), {
       ...category,
+      id: Number(category.id),
+      parent_id:
+        category.parent_id === null || category.parent_id === undefined
+          ? null
+          : Number(category.parent_id),
       children: [],
       products: [],
     });
   });
 
   /*
-   * Put products into their category
+   * Put products into categories
    */
   products.value.forEach((product) => {
     const categoryId = Number(product.category_id);
@@ -261,26 +365,36 @@ const mainCategories = computed(() => {
 
     if (category) {
       category.products.push(product);
+    } else {
+      console.warn(
+        "⚠️ PRODUCT CATEGORY NOT FOUND:",
+        product.name,
+        product.category_id,
+      );
     }
   });
 
   /*
-   * Build parent / child hierarchy
+   * Build parent / child relationship
    */
   categories.value.forEach((category) => {
-    if (category.parent_id !== null) {
+    const current = categoryMap.get(Number(category.id));
+
+    if (!current) {
+      return;
+    }
+
+    if (category.parent_id !== null && category.parent_id !== undefined) {
       const parent = categoryMap.get(Number(category.parent_id));
 
-      const child = categoryMap.get(category.id);
-
-      if (parent && child) {
-        parent.children.push(child);
+      if (parent) {
+        parent.children.push(current);
       }
     }
   });
 
   /*
-   * Only return main categories
+   * Main categories
    */
   const main = [];
 
@@ -293,33 +407,35 @@ const mainCategories = computed(() => {
   /*
    * Sort main categories
    */
-  main.sort((a, b) => a.name.localeCompare(b.name));
+  main.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 
   /*
-   * Sort subcategories
+   * Sort children and products
    */
   main.forEach((category) => {
-    category.children.sort((a, b) => a.name.localeCompare(b.name));
+    category.children.sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || "")),
+    );
 
-    /*
-     * Sort products directly inside main category
-     */
-    category.products.sort((a, b) => a.name.localeCompare(b.name));
+    category.products.sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || "")),
+    );
 
-    /*
-     * Sort products inside subcategories
-     */
-    category.children.forEach((child) => {
-      child.products.sort((a, b) => a.name.localeCompare(b.name));
+    category.children.forEach((subcategory) => {
+      subcategory.products.sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || "")),
+      );
     });
   });
+
+  console.log("🔥 FINAL CATEGORY HIERARCHY:", main);
 
   return main;
 });
 
 /*
 |--------------------------------------------------------------------------
-| Category Product Count
+| Product Count
 |--------------------------------------------------------------------------
 */
 
@@ -335,7 +451,7 @@ const categoryProductCount = (category) => {
 
 /*
 |--------------------------------------------------------------------------
-| Collapse / Expand
+| Toggle Category
 |--------------------------------------------------------------------------
 */
 
@@ -351,17 +467,27 @@ const toggleCategory = (id) => {
   openCategories.value = newSet;
 };
 
+/*
+|--------------------------------------------------------------------------
+| Is Category Open
+|--------------------------------------------------------------------------
+*/
+
 const isCategoryOpen = (id) => {
   return openCategories.value.has(id);
 };
 
 /*
 |--------------------------------------------------------------------------
-| Load Page
+| Load Everything
 |--------------------------------------------------------------------------
 */
 
 const load = async () => {
+  loading.value = true;
+
+  errorMessage.value = "";
+
   try {
     await Promise.all([loadProducts(), loadCategories()]);
   } finally {
