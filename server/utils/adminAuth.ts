@@ -1,58 +1,36 @@
 import { createClient } from "@supabase/supabase-js";
+import type { H3Event } from "h3";
 
-export async function requireAdmin(event: any) {
+export async function requireAdmin(event: H3Event) {
   const config = useRuntimeConfig();
 
-  // ----------------------------------------
-  // GET AUTHORIZATION HEADER
-  // ----------------------------------------
-
-  const authorization = getHeader(event, "authorization");
-
-  if (!authorization) {
-    console.log("ADMIN AUTH: NO AUTHORIZATION HEADER");
-
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Not authenticated",
-    });
-  }
-
-  // ----------------------------------------
-  // GET ACCESS TOKEN
-  // ----------------------------------------
-
-  const accessToken = authorization.replace(/^Bearer\s+/i, "");
-
-  if (!accessToken) {
-    console.log("ADMIN AUTH: NO ACCESS TOKEN");
-
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Not authenticated",
-    });
-  }
-
-  // ----------------------------------------
-  // SUPABASE AUTH CLIENT
-  // ----------------------------------------
-
+  // Create Supabase admin client using the server-only secret key
   const supabase = createClient(
     config.public.supabaseUrl,
-    config.public.supabaseAnonKey,
+    config.supabaseSecretKey,
   );
 
-  // ----------------------------------------
-  // GET USER
-  // ----------------------------------------
+  // Get Authorization header
+  const authHeader = getHeader(event, "authorization");
 
+  if (!authHeader) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Not authenticated",
+    });
+  }
+
+  // Remove "Bearer " from token
+  const token = authHeader.replace("Bearer ", "");
+
+  // Get logged-in Supabase user
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser(accessToken);
+  } = await supabase.auth.getUser(token);
 
   if (userError || !user) {
-    console.log("ADMIN AUTH: INVALID USER", userError?.message);
+    console.error("AUTH ERROR:", userError);
 
     throw createError({
       statusCode: 401,
@@ -60,28 +38,11 @@ export async function requireAdmin(event: any) {
     });
   }
 
-  console.log("Authenticated user:", user.email);
+  console.log("ADMIN CHECK USER:", user.email);
+  console.log("ADMIN CHECK USER ID:", user.id);
 
-  // ----------------------------------------
-  // SERVER SUPABASE CLIENT
-  // ----------------------------------------
-
-  const adminSupabase = createClient(
-    config.public.supabaseUrl,
-    config.supabaseSecretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-
-  // ----------------------------------------
-  // CHECK ADMIN TABLE
-  // ----------------------------------------
-
-  const { data: adminUser, error: adminError } = await adminSupabase
+  // Check admin_users table
+  const { data: adminUser, error: adminError } = await supabase
     .from("admin_users")
     .select("*")
     .eq("user_id", user.id)
@@ -92,28 +53,21 @@ export async function requireAdmin(event: any) {
 
     throw createError({
       statusCode: 500,
-      statusMessage: "Unable to check administrator status",
+      statusMessage: "Unable to check admin status",
     });
   }
 
-  // ----------------------------------------
-  // NOT ADMIN
-  // ----------------------------------------
-
+  // User is authenticated but isn't in admin_users
   if (!adminUser) {
-    console.log("NOT AN ADMIN:", user.email);
+    console.log("USER IS NOT ADMIN:", user.email);
 
     throw createError({
       statusCode: 403,
-      statusMessage: "Administrator access required",
+      statusMessage: "User is not an administrator",
     });
   }
 
-  // ----------------------------------------
-  // ADMIN
-  // ----------------------------------------
-
-  console.log("✅ ADMIN VERIFIED:", user.email);
+  console.log("ADMIN USER:", user.email);
 
   return {
     user,
