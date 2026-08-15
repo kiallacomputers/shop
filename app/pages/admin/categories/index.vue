@@ -500,7 +500,7 @@
 
           <!-- SORT ORDER -->
 
-          <div>
+          <!-- <div>
             <label class="block font-semibold mb-2"> Sort Order </label>
 
             <input
@@ -513,7 +513,7 @@
             <p class="text-xs text-gray-500 mt-2">
               Lower numbers appear first.
             </p>
-          </div>
+          </div> -->
 
           <!-- ERROR -->
 
