@@ -25,8 +25,9 @@
         </div>
 
         <button
+          type="submit"
           :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3"
+          class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg py-3"
         >
           {{ loading ? "Signing In..." : "Sign In" }}
         </button>
@@ -34,23 +35,26 @@
         <p v-if="errorMessage" class="text-red-600 text-sm">
           {{ errorMessage }}
         </p>
+
         <p>
-          Do not have an account ?
-          <NuxtLink to="/auth/signup">Sign Up</NuxtLink>
+          Do not have an account?
+          <NuxtLink to="/auth/signup" class="text-blue-600 hover:text-blue-800">
+            Sign Up
+          </NuxtLink>
         </p>
       </form>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 definePageMeta({
   layout: "auth",
 });
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
-
+const route = useRoute();
 const router = useRouter();
 
 const email = ref("");
@@ -58,28 +62,67 @@ const password = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
 
-watchEffect(() => {
-  if (user.value) {
-    router.push("/");
+// ============================================
+// WHERE TO GO AFTER LOGIN
+// ============================================
+//
+// If the user was redirected here from a protected
+// page, use that page as the destination.
+//
+// Example:
+// /signin?redirect=/shoppingcart
+//
+// Otherwise go to the home page.
+//
+
+const redirectTo = computed(() => {
+  const redirect = route.query.redirect;
+
+  if (typeof redirect === "string" && redirect.startsWith("/")) {
+    return redirect;
   }
+
+  return "/";
 });
+
+// ============================================
+// LOGIN
+// ============================================
 
 const login = async () => {
   loading.value = true;
   errorMessage.value = "";
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value,
-    password: password.value,
-  });
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value,
+    });
 
-  loading.value = false;
+    if (error) {
+      errorMessage.value = error.message;
+      return;
+    }
 
-  if (error) {
-    errorMessage.value = error.message;
-    return;
+    // ==========================================
+    // WAIT FOR SUPABASE USER STATE
+    // ==========================================
+
+    await nextTick();
+
+    // ==========================================
+    // REDIRECT
+    // ==========================================
+
+    await router.push(redirectTo.value);
+  } catch (error: any) {
+    console.error("LOGIN ERROR:", error);
+
+    errorMessage.value =
+      error?.message ||
+      "Unable to sign in. Please check your email and password.";
+  } finally {
+    loading.value = false;
   }
-
-  router.push("/");
 };
 </script>
