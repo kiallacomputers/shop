@@ -81,20 +81,20 @@ export default defineEventHandler(async (event) => {
     const { data: adminUser, error: adminError } = await adminSupabase
       .from("admin_users")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("id", user.id)
       .maybeSingle();
 
     if (adminError) {
-      console.error("❌ ADMIN CHECK ERROR:", adminError);
+      console.error("❌ ADMIN DATABASE ERROR:", adminError);
 
       throw createError({
         statusCode: 500,
-        statusMessage: "Unable to verify administrator access",
+        statusMessage: `Unable to verify administrator access: ${adminError.message}`,
       });
     }
 
     if (!adminUser) {
-      console.error("❌ USER IS NOT AN ADMIN:", user.id);
+      console.error("❌ ADMIN RECORD NOT FOUND FOR USER:", user.id);
 
       throw createError({
         statusCode: 403,
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ ADMIN VERIFIED:", user.email);
+    console.log("✅ ADMIN VERIFIED:", adminUser.id);
 
     // ==================================================
     // GET REQUEST BODY
