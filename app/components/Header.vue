@@ -21,7 +21,7 @@
       <!-- DESKTOP MENU -->
       <!-- ======================================= -->
 
-      <nav class="hidden md:flex items-center gap-8">
+      <nav class="hidden md:flex items-right gap-8">
         <!-- Signup / Login -->
         <NuxtLink
           v-if="!user"
