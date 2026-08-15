@@ -34,10 +34,10 @@
       </NuxtLink>
     </div>
 
-    <!-- Order -->
+    <!-- ORDER -->
     <div v-else-if="order">
       <!-- ================================= -->
-      <!-- ORDER HEADER -->
+      <!-- HEADER -->
       <!-- ================================= -->
 
       <div
@@ -60,7 +60,7 @@
       </div>
 
       <!-- ================================= -->
-      <!-- CUSTOMER INFORMATION -->
+      <!-- CUSTOMER -->
       <!-- ================================= -->
 
       <section class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
@@ -136,7 +136,6 @@
           </div>
         </div>
 
-        <!-- No Items -->
         <div v-else class="p-6 text-gray-500">
           No items found for this order.
         </div>
@@ -155,25 +154,13 @@
           </span>
         </div>
       </section>
-
-      <!-- ================================= -->
-      <!-- PAYMENT -->
-      <!-- ================================= -->
-
-      <section class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <p class="text-sm text-gray-500">Payment Status</p>
-
-        <p class="font-semibold mt-1 capitalize">
-          {{ order.status }}
-        </p>
-      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // ========================================
-// AUTH ONLY
+// ONLY REQUIRE LOGIN
 // ========================================
 
 definePageMeta({
@@ -210,34 +197,18 @@ async function loadOrder() {
   errorMessage.value = "";
 
   try {
-    // ====================================
-    // GET LOGGED-IN USER
-    // ====================================
+    // ------------------------------------
+    // CURRENT USER
+    // ------------------------------------
 
     const {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
 
-    console.log("=================================");
-
-    console.log("ORDER DETAIL PAGE");
-
-    console.log("USER:", user);
-
-    console.log("ORDER ID:", route.params.id);
-
-    console.log("=================================");
-
     if (userError) {
-      console.error("USER ERROR:", userError);
-
       throw userError;
     }
-
-    // ====================================
-    // USER MUST BE LOGGED IN
-    // ====================================
 
     if (!user) {
       await navigateTo("/login");
@@ -245,25 +216,19 @@ async function loadOrder() {
       return;
     }
 
-    // ====================================
+    console.log("ORDER DETAIL USER:", user.id);
+
+    // ------------------------------------
     // ORDER ID
-    // ====================================
+    // ------------------------------------
 
     const orderId = String(route.params.id);
 
-    if (!orderId) {
-      throw new Error("Order ID was not supplied.");
-    }
+    console.log("ORDER DETAIL ID:", orderId);
 
-    console.log("LOADING ORDER:", orderId);
-
-    // ====================================
-    // LOAD ORDER
-    //
-    // IMPORTANT:
-    // user_id makes sure the customer
-    // can only see their own order.
-    // ====================================
+    // ------------------------------------
+    // GET ORDER
+    // ------------------------------------
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")
@@ -292,20 +257,14 @@ async function loadOrder() {
     }
 
     if (!orderData) {
-      throw new Error(
-        "Order not found or you do not have permission to view it.",
-      );
+      throw new Error("Order not found.");
     }
-
-    // ====================================
-    // STORE ORDER
-    // ====================================
 
     order.value = orderData;
 
-    // ====================================
-    // LOAD ORDER ITEMS
-    // ====================================
+    // ------------------------------------
+    // ORDER ITEMS
+    // ------------------------------------
 
     const { data: itemsData, error: itemsError } = await supabase
       .from("order_items")
@@ -333,14 +292,8 @@ async function loadOrder() {
     }
 
     orderItems.value = itemsData || [];
-
-    console.log("=================================");
-
-    console.log("✅ ORDER LOADED");
-
-    console.log("=================================");
   } catch (error: any) {
-    console.error("ORDER LOAD ERROR:", error);
+    console.error("ORDER DETAIL ERROR:", error);
 
     errorMessage.value = error?.message || "Unable to load order.";
   } finally {

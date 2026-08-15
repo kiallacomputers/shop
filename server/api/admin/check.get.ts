@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
-  console.log("🔐 ADMIN CHECK");
+  console.log("🔐 ADMIN STATUS CHECK");
   console.log("=================================");
 
   const config = useRuntimeConfig();
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const authorization = getHeader(event, "authorization");
 
   if (!authorization) {
-    console.log("NO AUTHORIZATION HEADER");
+    console.log("ADMIN CHECK: NO AUTHORIZATION HEADER");
 
     return {
       isAdmin: false,
@@ -24,13 +24,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // GET ACCESS TOKEN
+  // ACCESS TOKEN
   // ----------------------------------------
 
   const accessToken = authorization.replace(/^Bearer\s+/i, "");
 
   if (!accessToken) {
-    console.log("NO ACCESS TOKEN");
+    console.log("ADMIN CHECK: NO ACCESS TOKEN");
 
     return {
       isAdmin: false,
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // SUPABASE CLIENT
+  // SUPABASE AUTH CLIENT
   // ----------------------------------------
 
   const supabase = createClient(
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // ----------------------------------------
-  // GET LOGGED-IN USER
+  // GET USER
   // ----------------------------------------
 
   const {
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
   } = await supabase.auth.getUser(accessToken);
 
   if (userError || !user) {
-    console.log("NO AUTHENTICATED USER");
+    console.log("ADMIN CHECK: USER NOT AUTHENTICATED");
 
     return {
       isAdmin: false,
@@ -67,9 +67,9 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  console.log("AUTHENTICATED USER:", user.email);
+  console.log("ADMIN CHECK USER:", user.email);
 
-  console.log("USER ID:", user.id);
+  console.log("ADMIN CHECK USER ID:", user.id);
 
   // ----------------------------------------
   // SERVER SUPABASE CLIENT
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // ----------------------------------------
-  // CHECK admin_users
+  // CHECK ADMIN USERS
   // ----------------------------------------
 
   const { data: adminUser, error: adminError } = await adminSupabase
@@ -101,11 +101,11 @@ export default defineEventHandler(async (event) => {
   // ----------------------------------------
 
   if (adminError) {
-    console.error("ADMIN DATABASE CHECK ERROR:", adminError);
+    console.error("ADMIN CHECK ERROR:", adminError);
 
-    // IMPORTANT:
-    // Don't return 403 here.
-    // This endpoint is only checking status.
+    // Don't return 403.
+    // This endpoint only checks status.
+
     return {
       isAdmin: false,
       user: {
