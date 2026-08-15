@@ -1,49 +1,51 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
     <!-- HEADER -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
 
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
     >
       <div>
-        <h1 class="text-3xl font-bold text-slate-800">Products</h1>
+        <h1 class="text-3xl font-bold text-slate-800">Product Management</h1>
 
         <p class="text-gray-500 mt-1">
-          Manage your products, stock, images and descriptions.
+          Manage products, stock, images and descriptions.
         </p>
       </div>
 
       <NuxtLink
         to="/admin/products/new"
-        class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg font-semibold transition"
+        class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg transition"
       >
         <span class="text-xl">+</span>
         Add Product
       </NuxtLink>
     </div>
 
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
     <!-- LOADING -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
 
     <div
       v-if="loading"
-      class="bg-white rounded-xl shadow p-12 flex flex-col items-center justify-center"
+      class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 flex flex-col items-center justify-center"
     >
       <div
-        class="w-14 h-14 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
+        class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"
       ></div>
 
       <p class="mt-5 text-gray-600 font-medium">Loading products...</p>
 
-      <p class="text-sm text-gray-400 mt-1">Please wait</p>
+      <p class="text-sm text-gray-400 mt-1">
+        Please wait while we load your catalogue.
+      </p>
     </div>
 
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
     <!-- ERROR -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
 
     <div
       v-else-if="errorMessage"
@@ -64,17 +66,14 @@
       </button>
     </div>
 
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
     <!-- CONTENT -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
 
     <div v-else>
-      <!-- ============================================== -->
       <!-- SUMMARY -->
-      <!-- ============================================== -->
-
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <p class="text-sm text-gray-500">Products</p>
 
           <p class="text-3xl font-bold text-slate-800 mt-1">
@@ -82,30 +81,30 @@
           </p>
         </div>
 
-        <div class="bg-white rounded-xl shadow p-5">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <p class="text-sm text-gray-500">Categories</p>
-
-          <p class="text-3xl font-bold text-slate-800 mt-1">
-            {{ categories.length }}
-          </p>
-        </div>
-
-        <div class="bg-white rounded-xl shadow p-5">
-          <p class="text-sm text-gray-500">Main Categories</p>
 
           <p class="text-3xl font-bold text-slate-800 mt-1">
             {{ mainCategories.length }}
           </p>
         </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <p class="text-sm text-gray-500">In Stock</p>
+
+          <p class="text-3xl font-bold text-green-600 mt-1">
+            {{ inStockCount }}
+          </p>
+        </div>
       </div>
 
-      <!-- ============================================== -->
+      <!-- ======================================================= -->
       <!-- NO PRODUCTS -->
-      <!-- ============================================== -->
+      <!-- ======================================================= -->
 
       <div
         v-if="products.length === 0"
-        class="bg-white rounded-xl shadow p-12 text-center"
+        class="bg-white rounded-xl border border-gray-200 p-12 text-center"
       >
         <div class="text-5xl mb-4">📦</div>
 
@@ -114,568 +113,257 @@
         <p class="text-gray-500 mt-2">
           There are currently no products to display.
         </p>
-
-        <NuxtLink
-          to="/admin/products/new"
-          class="inline-block mt-5 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg"
-        >
-          Add Product
-        </NuxtLink>
       </div>
 
-      <!-- ============================================== -->
-      <!-- CATEGORY GROUPS -->
-      <!-- ============================================== -->
+      <!-- ======================================================= -->
+      <!-- CATEGORY HIERARCHY -->
+      <!-- ======================================================= -->
 
       <div v-else class="space-y-6">
-        <!-- ============================================ -->
-        <!-- MAIN CATEGORY -->
-        <!-- ============================================ -->
-
-        <section
-          v-for="category in categoryGroups"
-          :key="category.id"
-          class="bg-white rounded-xl shadow overflow-visible"
+        <div
+          v-for="mainCategory in sortedCategoryTree"
+          :key="mainCategory.id"
+          class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-visible"
         >
-          <!-- ========================================== -->
-          <!-- CATEGORY HEADER -->
-          <!-- ========================================== -->
+          <!-- =================================================== -->
+          <!-- MAIN CATEGORY HEADER -->
+          <!-- =================================================== -->
 
           <button
             type="button"
-            @click="toggleCategory(category.id)"
-            class="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50 transition text-left rounded-t-xl"
+            @click="toggleCategory(mainCategory.id)"
+            class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
           >
             <div class="flex items-center gap-3">
-              <span
-                class="w-6 h-6 flex items-center justify-center text-gray-500 transition-transform duration-200"
+              <!-- Chevron -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 text-gray-500 transition-transform duration-200"
                 :class="{
-                  'rotate-90': !collapsedCategories.has(category.id),
+                  'rotate-90': isCategoryOpen(mainCategory.id),
                 }"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
               >
-                ▶
-              </span>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
 
-              <div>
-                <h2 class="text-xl font-bold text-slate-800">
-                  {{ category.name }}
+              <!-- Folder -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6 text-blue-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
+                />
+              </svg>
+
+              <div class="text-left">
+                <h2 class="font-bold text-lg text-slate-800">
+                  {{ mainCategory.name }}
                 </h2>
 
-                <p class="text-sm text-gray-500">
-                  {{ category.totalProducts }}
-                  {{ category.totalProducts === 1 ? "product" : "products" }}
+                <p class="text-xs text-gray-500">
+                  {{ mainCategory.totalProducts }}
+                  {{
+                    mainCategory.totalProducts === 1 ? "product" : "products"
+                  }}
                 </p>
               </div>
             </div>
 
-            <span class="text-sm text-gray-400">
-              {{ category.children.length }}
-              {{
-                category.children.length === 1 ? "subcategory" : "subcategories"
-              }}
+            <span
+              class="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full"
+            >
+              {{ mainCategory.totalProducts }}
             </span>
           </button>
 
-          <!-- ========================================== -->
-          <!-- CATEGORY CONTENT -->
-          <!-- ========================================== -->
+          <!-- =================================================== -->
+          <!-- MAIN CATEGORY CONTENT -->
+          <!-- =================================================== -->
 
           <div
-            v-show="!collapsedCategories.has(category.id)"
-            class="border-t border-gray-200"
+            v-if="isCategoryOpen(mainCategory.id)"
+            class="px-4 pb-5 overflow-visible"
           >
-            <!-- ======================================== -->
-            <!-- PRODUCTS IN MAIN CATEGORY -->
-            <!-- ======================================== -->
+            <!-- =============================================== -->
+            <!-- DIRECT PRODUCTS -->
+            <!-- =============================================== -->
 
-            <div v-if="category.products.length" class="p-4">
+            <div v-if="mainCategory.products.length" class="mb-5">
               <div
-                class="text-sm font-semibold text-gray-500 uppercase tracking-wide px-2 mb-3"
+                class="text-sm font-semibold text-gray-500 px-3 py-2 border-b border-gray-200"
               >
-                {{ category.name }}
+                {{ mainCategory.name }}
               </div>
 
-              <div class="space-y-2">
-                <!-- PRODUCT -->
-
-                <div
-                  v-for="product in category.products"
+              <div class="space-y-2 mt-2">
+                <ProductItem
+                  v-for="product in mainCategory.products"
                   :key="product.id"
-                  class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
-                  @click.stop
-                >
-                  <!-- IMAGE -->
-
-                  <div
-                    class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
-                  >
-                    <img
-                      v-if="
-                        Array.isArray(product.images) && product.images.length
-                      "
-                      :src="product.images[0]"
-                      :alt="product.name"
-                      class="w-full h-full object-contain p-1"
-                    />
-
-                    <span v-else class="text-gray-400 text-xs"> No image </span>
-                  </div>
-
-                  <!-- PRODUCT INFORMATION -->
-
-                  <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-slate-800 truncate">
-                      {{ product.name }}
-                    </div>
-
-                    <div
-                      class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
-                    >
-                      <span class="font-bold text-blue-600">
-                        ${{ product.price }}
-                      </span>
-
-                      <span v-if="product.stock > 0" class="text-green-600">
-                        {{ product.stock }} in stock
-                      </span>
-
-                      <span v-else class="text-red-600"> Out of stock </span>
-
-                      <span
-                        v-if="product.featured"
-                        class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
-                      >
-                        Featured
-                      </span>
-
-                      <span
-                        v-if="product.refurbished"
-                        class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
-                      >
-                        Refurbished
-                      </span>
-
-                      <span
-                        v-if="product.active === false"
-                        class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
-                      >
-                        Inactive
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- ================================== -->
-                  <!-- ACTION MENU -->
-                  <!-- ================================== -->
-
-                  <div class="relative shrink-0">
-                    <!-- THREE DOTS -->
-
-                    <button
-                      type="button"
-                      title="Product actions"
-                      class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
-                      @click.stop="toggleMenu(product.id)"
-                    >
-                      <span
-                        class="text-xl font-bold leading-none tracking-[3px]"
-                      >
-                        •••
-                      </span>
-                    </button>
-
-                    <!-- MENU -->
-
-                    <div
-                      v-if="openMenuId === product.id"
-                      class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[90] overflow-hidden"
-                      @click.stop
-                    >
-                      <!-- VIEW -->
-
-                      <button
-                        type="button"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                        @click="viewProduct(product)"
-                      >
-                        <svg
-                          class="w-5 h-5 text-blue-600 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-
-                        <span> View </span>
-                      </button>
-
-                      <!-- EDIT -->
-
-                      <button
-                        type="button"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                        @click="editProduct(product)"
-                      >
-                        <svg
-                          class="w-5 h-5 text-blue-600 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
-                          />
-
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1-4 1 1-4 9.5-9.5z"
-                          />
-                        </svg>
-
-                        <span> Edit </span>
-                      </button>
-
-                      <!-- DIVIDER -->
-
-                      <div class="border-t border-gray-100"></div>
-
-                      <!-- DELETE -->
-
-                      <button
-                        type="button"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
-                        @click="deleteProduct(product)"
-                      >
-                        <svg
-                          class="w-5 h-5 shrink-0"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
-                          />
-                        </svg>
-
-                        <span> Delete </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  :product="product"
+                  :open-menu="openMenu"
+                  @toggle-menu="toggleMenu"
+                  @close-menu="closeMenu"
+                  @delete="confirmDelete"
+                />
               </div>
             </div>
 
-            <!-- ======================================== -->
-            <!-- SUBCATEGORIES -->
-            <!-- ======================================== -->
+            <!-- =============================================== -->
+            <!-- SUB CATEGORIES -->
+            <!-- =============================================== -->
 
             <div
-              v-for="subcategory in category.children"
-              :key="subcategory.id"
-              class="border-t border-gray-100"
+              v-for="subCategory in mainCategory.children"
+              :key="subCategory.id"
+              class="mb-4 overflow-visible"
             >
-              <!-- SUBCATEGORY HEADER -->
+              <!-- Subcategory heading -->
+              <div
+                class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-5 h-5 text-gray-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M9 13h6m-3-3v6m-7 5h14a2 2 0 002-2V8.828a2 2 0 00-.586-1.414l-4.828-4.828A2 2 0 0014.172 2H5a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
+                </svg>
 
-              <div class="px-6 py-4 bg-gray-50">
-                <div class="flex items-center justify-between">
+                <div>
                   <h3 class="font-semibold text-slate-700">
-                    <span class="text-gray-400 mr-2"> └─ </span>
-
-                    {{ subcategory.name }}
+                    {{ subCategory.name }}
                   </h3>
 
-                  <span class="text-sm text-gray-400">
-                    {{ subcategory.products.length }}
+                  <p class="text-xs text-gray-500">
+                    {{ subCategory.products.length }}
                     {{
-                      subcategory.products.length === 1 ? "product" : "products"
+                      subCategory.products.length === 1 ? "product" : "products"
                     }}
-                  </span>
+                  </p>
                 </div>
               </div>
 
-              <!-- SUBCATEGORY PRODUCTS -->
-
-              <div v-if="subcategory.products.length" class="p-4">
-                <div class="space-y-2">
-                  <!-- PRODUCT -->
-
-                  <div
-                    v-for="product in subcategory.products"
-                    :key="product.id"
-                    class="relative flex items-center gap-4 border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 transition"
-                    @click.stop
-                  >
-                    <!-- IMAGE -->
-
-                    <div
-                      class="w-16 h-16 shrink-0 rounded-lg bg-gray-100 border overflow-hidden flex items-center justify-center"
-                    >
-                      <img
-                        v-if="
-                          Array.isArray(product.images) && product.images.length
-                        "
-                        :src="product.images[0]"
-                        :alt="product.name"
-                        class="w-full h-full object-contain p-1"
-                      />
-
-                      <span v-else class="text-gray-400 text-xs">
-                        No image
-                      </span>
-                    </div>
-
-                    <!-- PRODUCT INFORMATION -->
-
-                    <div class="flex-1 min-w-0">
-                      <div class="font-semibold text-slate-800 truncate">
-                        {{ product.name }}
-                      </div>
-
-                      <div
-                        class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm"
-                      >
-                        <span class="font-bold text-blue-600">
-                          ${{ product.price }}
-                        </span>
-
-                        <span v-if="product.stock > 0" class="text-green-600">
-                          {{ product.stock }} in stock
-                        </span>
-
-                        <span v-else class="text-red-600"> Out of stock </span>
-
-                        <span
-                          v-if="product.featured"
-                          class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded"
-                        >
-                          Featured
-                        </span>
-
-                        <span
-                          v-if="product.refurbished"
-                          class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
-                        >
-                          Refurbished
-                        </span>
-
-                        <span
-                          v-if="product.active === false"
-                          class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded"
-                        >
-                          Inactive
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- ACTION MENU -->
-                    <div class="relative shrink-0">
-                      <!-- Three dots -->
-                      <button
-                        type="button"
-                        @click.stop="toggleMenu(product.id)"
-                        class="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
-                        title="Product actions"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            d="M6 12h.01M12 12h.01M18 12h.01"
-                          />
-                        </svg>
-                      </button>
-
-                      <!-- Popup -->
-                      <div
-                        v-if="openMenu === product.id"
-                        class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl z-[9999] overflow-hidden"
-                        @click.stop
-                      >
-                        <!-- View -->
-                        <NuxtLink
-                          :to="`/product/${product.slug}`"
-                          @click="closeMenu"
-                          class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5 text-blue-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-
-                          <span>View</span>
-                        </NuxtLink>
-
-                        <!-- Edit -->
-                        <NuxtLink
-                          :to="`/admin/products/edit/${product.id}`"
-                          @click="closeMenu"
-                          class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5 text-green-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
-                            />
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
-                            />
-                          </svg>
-
-                          <span>Edit</span>
-                        </NuxtLink>
-
-                        <!-- Delete -->
-                        <button
-                          type="button"
-                          @click="confirmDelete(product)"
-                          class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition text-left"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
-                            />
-                          </svg>
-
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- Subcategory products -->
+              <div
+                v-if="subCategory.products.length"
+                class="space-y-2 mt-2 ml-3 overflow-visible"
+              >
+                <ProductItem
+                  v-for="product in subCategory.products"
+                  :key="product.id"
+                  :product="product"
+                  :open-menu="openMenu"
+                  @toggle-menu="toggleMenu"
+                  @close-menu="closeMenu"
+                  @delete="confirmDelete"
+                />
               </div>
 
-              <!-- NO PRODUCTS -->
-
-              <div v-else class="px-6 py-4 text-sm text-gray-400">
-                No products in this subcategory.
+              <div v-else class="ml-3 px-4 py-3 text-sm text-gray-400">
+                No products in this sub-category.
               </div>
             </div>
 
-            <!-- EMPTY CATEGORY -->
-
+            <!-- No products anywhere -->
             <div
               v-if="
-                category.products.length === 0 && category.children.length === 0
+                mainCategory.products.length === 0 &&
+                mainCategory.children.every(
+                  (child) => child.products.length === 0,
+                )
               "
-              class="p-8 text-center text-gray-400"
+              class="text-sm text-gray-400 px-3 py-4"
             >
               No products in this category.
             </div>
           </div>
-        </section>
+        </div>
       </div>
     </div>
 
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
     <!-- DELETE CONFIRMATION -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
 
     <div
-      v-if="deleteDialog"
-      class="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      v-if="deleteProductTarget"
+      class="fixed inset-0 z-[100000] bg-black/50 flex items-center justify-center px-4"
+      @click.self="cancelDelete"
     >
-      <!-- BACKDROP -->
+      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-start gap-4">
+          <div
+            class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-6 h-6 text-red-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v4m0 4h.01M10.29 3.86l-7.1 12.27A2 2 0 004.92 19h14.16a2 2 0 001.73-2.87l-7.1-12.27a2 2 0 00-3.42 0z"
+              />
+            </svg>
+          </div>
 
-      <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
 
-      <!-- DIALOG -->
+            <p class="text-gray-600 mt-2">
+              Are you sure you really want to delete:
+            </p>
 
-      <div class="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-        <div
-          class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-2xl mb-4"
-        >
-          🗑
+            <p class="font-semibold text-slate-800 mt-2">
+              {{ deleteProductTarget.name }}
+            </p>
+
+            <p class="text-sm text-red-600 mt-3">
+              This action cannot be undone.
+            </p>
+          </div>
         </div>
 
-        <h2 class="text-xl font-bold text-slate-800">Delete Product?</h2>
-
-        <p class="text-gray-600 mt-2">
-          Are you sure you really want to delete this product?
-        </p>
-
-        <p v-if="productToDelete" class="font-semibold text-slate-800 mt-3">
-          {{ productToDelete.name }}
-        </p>
-
-        <p class="text-sm text-red-600 mt-3">This action cannot be undone.</p>
-
-        <div class="flex justify-end gap-3 mt-6">
+        <div class="flex justify-end gap-3 mt-7">
           <button
             type="button"
             @click="cancelDelete"
-            :disabled="deleting"
-            class="px-5 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg"
+            class="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 transition"
           >
             Cancel
           </button>
 
           <button
             type="button"
-            @click="confirmDelete"
+            @click="deleteProduct"
             :disabled="deleting"
-            class="px-5 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg"
+            class="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white transition"
           >
             {{ deleting ? "Deleting..." : "Yes, Delete" }}
           </button>
@@ -683,180 +371,73 @@
       </div>
     </div>
 
-    <!-- ================================================ -->
-    <!-- DELETE ERROR -->
-    <!-- ================================================ -->
+    <!-- ========================================================= -->
+    <!-- MESSAGE -->
+    <!-- ========================================================= -->
 
     <div
-      v-if="deleteError"
-      class="fixed bottom-6 right-6 z-[110] bg-red-600 text-white px-5 py-4 rounded-lg shadow-xl max-w-sm"
+      v-if="successMessage"
+      class="fixed bottom-6 right-6 z-[100001] bg-green-600 text-white px-5 py-3 rounded-lg shadow-xl"
     >
-      <div class="font-semibold">Delete failed</div>
-
-      <div class="text-sm mt-1">
-        {{ deleteError }}
-      </div>
+      {{ successMessage }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// ======================================================
-// ADMIN MIDDLEWARE
-// ======================================================
-
 definePageMeta({
   middleware: "admin",
 });
 
-// ======================================================
-// ADMIN FETCH
-// ======================================================
+import ProductItem from "~/components/admin/ProductItem.vue";
 
 const adminFetch = useAdminFetch();
 
-// ======================================================
-// ROUTER
-// ======================================================
-
-const router = useRouter();
-
-// ======================================================
-// STATE
-// ======================================================
-
-const loading = ref(true);
-
 const products = ref<any[]>([]);
-
 const categories = ref<any[]>([]);
 
+const loading = ref(true);
 const errorMessage = ref("");
+const successMessage = ref("");
 
-const openMenuId = ref<number | null>(null);
+const openCategories = ref<number[]>([]);
 
-const collapsedCategories = ref<Set<number>>(new Set());
+const openMenu = ref<number | null>(null);
 
-const deleteDialog = ref(false);
-
-const productToDelete = ref<any | null>(null);
+const deleteProductTarget = ref<any | null>(null);
 
 const deleting = ref(false);
 
-const deleteError = ref("");
-
-// ======================================================
-// MAIN CATEGORIES
-// ======================================================
-
-const mainCategories = computed(() => {
-  return categories.value
-    .filter((category) => !category.parent_id)
-    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-});
-
-// ======================================================
-// CATEGORY GROUPS
-// ======================================================
-
-const categoryGroups = computed(() => {
-  return mainCategories.value.map((parent) => {
-    const children = categories.value
-      .filter((category) => Number(category.parent_id) === Number(parent.id))
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
-      .map((child) => {
-        const childProducts = products.value
-          .filter((product) => Number(product.category_id) === Number(child.id))
-          .sort((a, b) =>
-            String(a.name || "").localeCompare(String(b.name || "")),
-          );
-
-        return {
-          ...child,
-          products: childProducts,
-        };
-      });
-
-    const parentProducts = products.value
-      .filter((product) => Number(product.category_id) === Number(parent.id))
-      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-
-    const totalProducts =
-      parentProducts.length +
-      children.reduce((total, child) => total + child.products.length, 0);
-
-    return {
-      ...parent,
-      products: parentProducts,
-      children,
-      totalProducts,
-    };
-  });
-});
-
-// ======================================================
-// LOAD DATA
-// ======================================================
+/* ================================================================
+   LOAD DATA
+================================================================ */
 
 const loadData = async () => {
   loading.value = true;
-
   errorMessage.value = "";
 
-  openMenuId.value = null;
-
   try {
-    console.log("🔥 ADMIN PRODUCTS: Loading...");
+    console.log("🔥 ADMIN PRODUCTS: Loading products");
 
     const [productResponse, categoryResponse] = await Promise.all([
       adminFetch("/api/admin/products"),
-
       adminFetch("/api/admin/categories"),
     ]);
 
     console.log("🔥 PRODUCTS RESPONSE:", productResponse);
-
     console.log("🔥 CATEGORIES RESPONSE:", categoryResponse);
 
-    // ================================================
-    // PRODUCTS
-    // ================================================
+    products.value = Array.isArray(productResponse)
+      ? productResponse
+      : productResponse?.products || [];
 
-    if (Array.isArray(productResponse)) {
-      products.value = productResponse;
-    } else if (productResponse && Array.isArray(productResponse.products)) {
-      products.value = productResponse.products;
-    } else if (productResponse && Array.isArray(productResponse.data)) {
-      products.value = productResponse.data;
-    } else {
-      products.value = [];
-    }
+    categories.value = Array.isArray(categoryResponse)
+      ? categoryResponse
+      : categoryResponse?.categories || [];
 
-    // ================================================
-    // CATEGORIES
-    // ================================================
+    console.log("🔥 PRODUCTS LOADED:", products.value.length);
 
-    if (Array.isArray(categoryResponse)) {
-      categories.value = categoryResponse;
-    } else if (categoryResponse && Array.isArray(categoryResponse.categories)) {
-      categories.value = categoryResponse.categories;
-    } else if (categoryResponse && Array.isArray(categoryResponse.data)) {
-      categories.value = categoryResponse.data;
-    } else {
-      categories.value = [];
-    }
-
-    console.log(`🔥 ${products.value.length} products loaded`);
-
-    console.log(`🔥 ${categories.value.length} categories loaded`);
-
-    // ================================================
-    // START COLLAPSED
-    // ================================================
-
-    collapsedCategories.value = new Set(
-      mainCategories.value.map((category) => Number(category.id)),
-    );
+    console.log("🔥 CATEGORIES LOADED:", categories.value.length);
   } catch (error: any) {
     console.error("🔥 ADMIN PRODUCTS LOAD ERROR:", error);
 
@@ -869,152 +450,178 @@ const loadData = async () => {
   }
 };
 
-// ======================================================
-// CATEGORY TOGGLE
-// ======================================================
+/* ================================================================
+   CATEGORY TREE
+================================================================ */
+
+const sortedCategoryTree = computed(() => {
+  const parents = categories.value
+    .filter((category) => !category.parent_id)
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+  return parents.map((parent) => {
+    const children = categories.value
+      .filter((category) => category.parent_id === parent.id)
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+    const directProducts = products.value
+      .filter((product) => product.category_id === parent.id)
+      .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+    const childCategories = children.map((child) => {
+      const childProducts = products.value
+        .filter((product) => product.category_id === child.id)
+        .sort((a, b) =>
+          String(a.name || "").localeCompare(String(b.name || "")),
+        );
+
+      return {
+        ...child,
+        products: childProducts,
+      };
+    });
+
+    const totalProducts =
+      directProducts.length +
+      childCategories.reduce(
+        (total, child) => total + child.products.length,
+        0,
+      );
+
+    return {
+      ...parent,
+      products: directProducts,
+      children: childCategories,
+      totalProducts,
+    };
+  });
+});
+
+/* ================================================================
+   MAIN CATEGORIES
+================================================================ */
+
+const mainCategories = computed(() => {
+  return sortedCategoryTree.value;
+});
+
+/* ================================================================
+   STOCK COUNT
+================================================================ */
+
+const inStockCount = computed(() => {
+  return products.value.filter((product) => Number(product.stock || 0) > 0)
+    .length;
+});
+
+/* ================================================================
+   CATEGORY COLLAPSE
+================================================================ */
 
 const toggleCategory = (id: number) => {
-  const next = new Set(collapsedCategories.value);
+  const index = openCategories.value.indexOf(id);
 
-  if (next.has(id)) {
-    next.delete(id);
+  if (index === -1) {
+    openCategories.value.push(id);
   } else {
-    next.add(id);
+    openCategories.value.splice(index, 1);
   }
-
-  collapsedCategories.value = next;
 };
 
-// ======================================================
-// PRODUCT MENU
-// ======================================================
+const isCategoryOpen = (id: number) => {
+  return openCategories.value.includes(id);
+};
 
-const openMenu = ref<number | null>(null);
+/* ================================================================
+   MENU
+================================================================ */
 
 const toggleMenu = (id: number) => {
-  openMenuId.value = openMenu.value === id ? null : id;
+  if (openMenu.value === id) {
+    openMenu.value = null;
+  } else {
+    openMenu.value = id;
+  }
 };
 
 const closeMenu = () => {
   openMenu.value = null;
 };
 
-// ======================================================
-// VIEW PRODUCT
-// ======================================================
+/* ================================================================
+   DELETE
+================================================================ */
 
-const viewProduct = (product: any) => {
-  openMenuId.value = null;
+const confirmDelete = (product: any) => {
+  closeMenu();
 
-  if (product?.slug) {
-    router.push(`/product/${product.slug}`);
-  } else {
-    router.push(`/product/${product.id}`);
-  }
+  deleteProductTarget.value = product;
 };
-
-// ======================================================
-// EDIT PRODUCT
-// ======================================================
-
-const editProduct = (product: any) => {
-  openMenuId.value = null;
-
-  router.push(`/admin/products/edit/${product.id}`);
-};
-
-// ======================================================
-// DELETE PRODUCT
-// ======================================================
-
-const deleteProduct = (product: any) => {
-  openMenuId.value = null;
-
-  productToDelete.value = product;
-
-  deleteDialog.value = true;
-
-  deleteError.value = "";
-};
-
-// ======================================================
-// CANCEL DELETE
-// ======================================================
 
 const cancelDelete = () => {
   if (deleting.value) {
     return;
   }
 
-  deleteDialog.value = false;
-
-  productToDelete.value = null;
+  deleteProductTarget.value = null;
 };
 
-// ======================================================
-// CONFIRM DELETE
-// ======================================================
-
-const confirmDelete = async () => {
-  if (!productToDelete.value) {
+const deleteProduct = async () => {
+  if (!deleteProductTarget.value) {
     return;
   }
 
   deleting.value = true;
 
-  deleteError.value = "";
-
   try {
-    const id = productToDelete.value.id;
+    const product = deleteProductTarget.value;
 
-    console.log("🔥 DELETING PRODUCT:", id);
+    console.log("🔥 DELETING PRODUCT:", product.id);
 
-    await adminFetch(`/api/admin/products/${id}`, {
+    await adminFetch(`/api/admin/products/${product.id}`, {
       method: "DELETE",
     });
 
-    products.value = products.value.filter(
-      (product) => Number(product.id) !== Number(id),
-    );
+    products.value = products.value.filter((item) => item.id !== product.id);
 
-    deleteDialog.value = false;
+    successMessage.value = "Product deleted successfully.";
 
-    productToDelete.value = null;
+    deleteProductTarget.value = null;
 
-    console.log("🔥 PRODUCT DELETED:", id);
+    setTimeout(() => {
+      successMessage.value = "";
+    }, 3000);
   } catch (error: any) {
     console.error("🔥 DELETE PRODUCT ERROR:", error);
 
-    deleteError.value =
+    errorMessage.value =
       error?.data?.statusMessage ||
       error?.message ||
       "Unable to delete product.";
+
+    deleteProductTarget.value = null;
   } finally {
     deleting.value = false;
   }
 };
 
-// ======================================================
-// CLOSE MENU WHEN CLICKING OUTSIDE
-// ======================================================
+/* ================================================================
+   CLOSE MENU WHEN CLICKING OUTSIDE
+================================================================ */
 
 const handleDocumentClick = () => {
-  openMenuId.value = null;
+  closeMenu();
 };
 
-// ======================================================
-// MOUNT
-// ======================================================
+/* ================================================================
+   LOAD
+================================================================ */
 
 onMounted(async () => {
   document.addEventListener("click", handleDocumentClick);
 
   await loadData();
 });
-
-// ======================================================
-// UNMOUNT
-// ======================================================
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleDocumentClick);
