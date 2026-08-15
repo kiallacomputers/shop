@@ -16,7 +16,7 @@
       </div>
 
       <div class="flex flex-wrap gap-3">
-        <!-- BACK TO ADMIN -->
+        <!-- ADMIN MENU -->
 
         <NuxtLink
           to="/admin"
@@ -66,7 +66,7 @@
     <!-- CATEGORY LIST -->
     <!-- ============================================ -->
 
-    <div v-else class="bg-white rounded-lg shadow overflow-hidden">
+    <div v-else class="bg-white rounded-lg shadow overflow-visible">
       <!-- EMPTY -->
 
       <div v-if="mainCategories.length === 0" class="p-12 text-center">
@@ -85,23 +85,32 @@
         </button>
       </div>
 
-      <!-- CATEGORIES -->
+      <!-- ========================================== -->
+      <!-- CATEGORY LIST -->
+      <!-- ========================================== -->
 
       <div v-else class="divide-y">
-        <div v-for="category in mainCategories" :key="category.id" class="p-5">
-          <!-- MAIN CATEGORY -->
+        <!-- MAIN CATEGORY -->
 
-          <div
-            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-          >
-            <div class="flex items-center gap-3">
-              <!-- COLLAPSE -->
+        <div
+          v-for="category in mainCategories"
+          :key="category.id"
+          class="relative p-5"
+        >
+          <div class="flex items-center justify-between gap-4">
+            <!-- LEFT -->
+
+            <div class="flex items-center gap-3 min-w-0">
+              <!-- EXPAND BUTTON -->
 
               <button
                 v-if="getChildren(category.id).length"
                 type="button"
                 @click="toggleCategory(category.id)"
-                class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+                class="w-8 h-8 shrink-0 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+                :title="
+                  expandedCategories.has(category.id) ? 'Collapse' : 'Expand'
+                "
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -122,28 +131,133 @@
                 </svg>
               </button>
 
-              <div v-else class="w-8"></div>
+              <div v-else class="w-8 shrink-0"></div>
 
               <!-- FOLDER -->
 
-              <span class="text-2xl"> 📁 </span>
+              <span class="text-2xl shrink-0"> 📁 </span>
 
-              <div>
-                <h2 class="font-bold text-lg text-slate-800">
+              <!-- NAME -->
+
+              <div class="min-w-0">
+                <h2 class="font-bold text-lg text-slate-800 truncate">
                   {{ category.name }}
                 </h2>
 
                 <p class="text-sm text-gray-500">
                   {{ getChildren(category.id).length }}
-                  subcategor{{
-                    getChildren(category.id).length === 1 ? "y" : "ies"
+                  {{
+                    getChildren(category.id).length === 1
+                      ? "subcategory"
+                      : "subcategories"
                   }}
                 </p>
               </div>
             </div>
 
-            <!-- STATUS -->
+            <!-- RIGHT -->
 
+            <div class="flex items-center gap-3 shrink-0">
+              <!-- STATUS -->
+
+              <span
+                class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                :class="
+                  category.active
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-600'
+                "
+              >
+                {{ category.active ? "Active" : "Inactive" }}
+              </span>
+
+              <!-- ================================== -->
+              <!-- THREE DOT MENU -->
+              <!-- ================================== -->
+
+              <div class="relative">
+                <button
+                  type="button"
+                  @click.stop="toggleMenu(category.id)"
+                  class="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center"
+                  title="Actions"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="w-6 h-6 text-slate-600"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle cx="5" cy="12" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="19" cy="12" r="2" />
+                  </svg>
+                </button>
+
+                <!-- ACTION MENU -->
+
+                <div
+                  v-if="openMenuId === category.id"
+                  class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-[100]"
+                  @click.stop
+                >
+                  <!-- EDIT -->
+
+                  <button
+                    type="button"
+                    @click="editCategory(category)"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-700 hover:bg-gray-50"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-5 h-5 text-blue-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 8.5-8.5z"
+                      />
+                    </svg>
+
+                    <span> Edit </span>
+                  </button>
+
+                  <!-- DELETE -->
+
+                  <button
+                    type="button"
+                    @click="deleteCategory(category)"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 border-t"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14"
+                      />
+                    </svg>
+
+                    <span> Delete </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MOBILE STATUS -->
+
+          <div class="sm:hidden mt-3 ml-11">
             <span
               class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
               :class="
@@ -156,7 +270,9 @@
             </span>
           </div>
 
+          <!-- ======================================== -->
           <!-- SUBCATEGORIES -->
+          <!-- ======================================== -->
 
           <div
             v-if="
@@ -168,34 +284,124 @@
             <div
               v-for="child in getChildren(category.id)"
               :key="child.id"
-              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3 border"
+              class="relative flex items-center justify-between gap-4 bg-gray-50 rounded-lg px-4 py-3 border"
             >
-              <div class="flex items-center gap-3">
-                <span class="text-gray-400"> └─ </span>
+              <!-- CHILD LEFT -->
 
-                <span class="text-xl"> 📂 </span>
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="text-gray-400 shrink-0"> └─ </span>
 
-                <div>
-                  <p class="font-semibold text-slate-700">
+                <span class="text-xl shrink-0"> 📂 </span>
+
+                <div class="min-w-0">
+                  <p class="font-semibold text-slate-700 truncate">
                     {{ child.name }}
                   </p>
 
-                  <p class="text-xs text-gray-400">
+                  <p class="text-xs text-gray-400 truncate">
                     {{ child.slug }}
                   </p>
                 </div>
               </div>
 
-              <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                :class="
-                  child.active
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-600'
-                "
-              >
-                {{ child.active ? "Active" : "Inactive" }}
-              </span>
+              <!-- CHILD RIGHT -->
+
+              <div class="flex items-center gap-3 shrink-0">
+                <!-- STATUS -->
+
+                <span
+                  class="hidden sm:inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="
+                    child.active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-600'
+                  "
+                >
+                  {{ child.active ? "Active" : "Inactive" }}
+                </span>
+
+                <!-- THREE DOT MENU -->
+
+                <div class="relative">
+                  <button
+                    type="button"
+                    @click.stop="toggleMenu(child.id)"
+                    class="w-9 h-9 rounded-lg hover:bg-gray-200 flex items-center justify-center"
+                    title="Actions"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-6 h-6 text-slate-600"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle cx="5" cy="12" r="2" />
+
+                      <circle cx="12" cy="12" r="2" />
+
+                      <circle cx="19" cy="12" r="2" />
+                    </svg>
+                  </button>
+
+                  <!-- CHILD MENU -->
+
+                  <div
+                    v-if="openMenuId === child.id"
+                    class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-[100]"
+                    @click.stop
+                  >
+                    <!-- EDIT -->
+
+                    <button
+                      type="button"
+                      @click="editCategory(child)"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-700 hover:bg-gray-50"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5 text-blue-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 8.5-8.5z"
+                        />
+                      </svg>
+
+                      Edit
+                    </button>
+
+                    <!-- DELETE -->
+
+                    <button
+                      type="button"
+                      @click="deleteCategory(child)"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 border-t"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14"
+                        />
+                      </svg>
+
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -203,7 +409,7 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- ADD CATEGORY MODAL -->
+    <!-- EDIT / ADD MODAL -->
     <!-- ============================================ -->
 
     <Transition name="fade">
@@ -223,7 +429,9 @@
           <!-- HEADER -->
 
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-slate-800">Add Category</h2>
+            <h2 class="text-2xl font-bold text-slate-800">
+              {{ editingCategory ? "Edit Category" : "Add Category" }}
+            </h2>
 
             <button
               type="button"
@@ -245,8 +453,8 @@
 
           <!-- FORM -->
 
-          <form @submit.prevent="addCategory" class="space-y-5">
-            <!-- CATEGORY NAME -->
+          <form @submit.prevent="saveCategory" class="space-y-5">
+            <!-- NAME -->
 
             <div>
               <label class="block font-semibold text-slate-700 mb-2">
@@ -263,7 +471,7 @@
               />
             </div>
 
-            <!-- PARENT CATEGORY -->
+            <!-- PARENT -->
 
             <div>
               <label class="block font-semibold text-slate-700 mb-2">
@@ -277,7 +485,7 @@
                 <option :value="null">Main Category</option>
 
                 <option
-                  v-for="category in mainCategories"
+                  v-for="category in availableParentCategories"
                   :key="category.id"
                   :value="category.id"
                 >
@@ -286,7 +494,7 @@
               </select>
 
               <p class="text-xs text-gray-500 mt-2">
-                Select a parent to create a subcategory.
+                Select a parent to make this a subcategory.
               </p>
             </div>
 
@@ -324,7 +532,13 @@
                 :disabled="saving"
                 class="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg"
               >
-                {{ saving ? "Adding..." : "Add Category" }}
+                {{
+                  saving
+                    ? "Saving..."
+                    : editingCategory
+                      ? "Save Changes"
+                      : "Add Category"
+                }}
               </button>
             </div>
           </form>
@@ -365,15 +579,23 @@ const showModal = ref(false);
 
 const categories = ref<any[]>([]);
 
+const openMenuId = ref<string | number | null>(null);
+
+const editingCategory = ref<any | null>(null);
+
 const expandedCategories = ref<Set<string | number>>(new Set());
 
 // ============================================
-// NEW CATEGORY
+// FORM
 // ============================================
 
 const newCategory = reactive({
+  id: null as string | number | null,
+
   name: "",
+
   parent_id: null as string | number | null,
+
   active: true,
 });
 
@@ -385,6 +607,20 @@ const mainCategories = computed(() => {
   return categories.value
     .filter((category) => !category.parent_id)
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+});
+
+// ============================================
+// AVAILABLE PARENT CATEGORIES
+// ============================================
+//
+// When editing a category, don't allow it to
+// select itself as its own parent.
+//
+
+const availableParentCategories = computed(() => {
+  return mainCategories.value.filter(
+    (category) => category.id !== editingCategory.value?.id,
+  );
 });
 
 // ============================================
@@ -414,6 +650,34 @@ const toggleCategory = (categoryId: string | number) => {
 };
 
 // ============================================
+// TOGGLE THREE DOT MENU
+// ============================================
+
+const toggleMenu = (categoryId: string | number) => {
+  if (openMenuId.value === categoryId) {
+    openMenuId.value = null;
+  } else {
+    openMenuId.value = categoryId;
+  }
+};
+
+// ============================================
+// CLOSE MENU WHEN CLICKING OUTSIDE
+// ============================================
+
+const closeMenu = () => {
+  openMenuId.value = null;
+};
+
+onMounted(() => {
+  document.addEventListener("click", closeMenu);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", closeMenu);
+});
+
+// ============================================
 // LOAD CATEGORIES
 // ============================================
 
@@ -441,10 +705,14 @@ const loadCategories = async () => {
 };
 
 // ============================================
-// OPEN MODAL
+// OPEN ADD CATEGORY
 // ============================================
 
 const openAddCategory = () => {
+  editingCategory.value = null;
+
+  newCategory.id = null;
+
   newCategory.name = "";
 
   newCategory.parent_id = null;
@@ -452,6 +720,30 @@ const openAddCategory = () => {
   newCategory.active = true;
 
   formError.value = "";
+
+  openMenuId.value = null;
+
+  showModal.value = true;
+};
+
+// ============================================
+// EDIT CATEGORY
+// ============================================
+
+const editCategory = (category: any) => {
+  editingCategory.value = category;
+
+  newCategory.id = category.id;
+
+  newCategory.name = category.name || "";
+
+  newCategory.parent_id = category.parent_id ?? null;
+
+  newCategory.active = category.active !== false;
+
+  formError.value = "";
+
+  openMenuId.value = null;
 
   showModal.value = true;
 };
@@ -467,14 +759,39 @@ const closeModal = () => {
 
   showModal.value = false;
 
+  editingCategory.value = null;
+
   formError.value = "";
+
+  newCategory.id = null;
+
+  newCategory.name = "";
+
+  newCategory.parent_id = null;
+
+  newCategory.active = true;
 };
 
 // ============================================
-// ADD CATEGORY
+// GENERATE SLUG
 // ============================================
 
-const addCategory = async () => {
+const generateSlug = (name: string) => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
+
+// ============================================
+// SAVE CATEGORY
+// ============================================
+
+const saveCategory = async () => {
   if (!newCategory.name.trim()) {
     formError.value = "Please enter a category name.";
 
@@ -486,38 +803,112 @@ const addCategory = async () => {
   formError.value = "";
 
   try {
-    const response = await adminFetch("/api/admin/categories", {
-      method: "POST",
+    // ==========================================
+    // EDIT
+    // ==========================================
 
-      body: {
-        name: newCategory.name.trim(),
+    if (editingCategory.value) {
+      const slug = generateSlug(newCategory.name);
 
-        parent_id: newCategory.parent_id,
+      const response = await adminFetch(
+        `/api/admin/categories/${newCategory.id}`,
+        {
+          method: "PUT",
 
-        active: newCategory.active,
-      },
-    });
+          body: {
+            name: newCategory.name.trim(),
 
-    console.log("✅ CATEGORY CREATED:", response);
+            slug,
 
-    showModal.value = false;
+            parent_id: newCategory.parent_id,
 
-    newCategory.name = "";
+            active: newCategory.active,
+          },
+        },
+      );
 
-    newCategory.parent_id = null;
+      console.log("✅ CATEGORY UPDATED:", response);
+    } else {
+      // ========================================
+      // ADD
+      // ========================================
 
-    newCategory.active = true;
+      const response = await adminFetch("/api/admin/categories", {
+        method: "POST",
+
+        body: {
+          name: newCategory.name.trim(),
+
+          parent_id: newCategory.parent_id,
+
+          active: newCategory.active,
+        },
+      });
+
+      console.log("✅ CATEGORY CREATED:", response);
+    }
+
+    // ==========================================
+    // CLOSE
+    // ==========================================
+
+    closeModal();
+
+    // ==========================================
+    // RELOAD
+    // ==========================================
 
     await loadCategories();
   } catch (error: any) {
-    console.error("🔥 CREATE CATEGORY ERROR:", error);
+    console.error("🔥 SAVE CATEGORY ERROR:", error);
 
     formError.value =
       error?.data?.statusMessage ||
       error?.message ||
-      "Unable to create category.";
+      "Unable to save category.";
   } finally {
     saving.value = false;
+  }
+};
+
+// ============================================
+// DELETE CATEGORY
+// ============================================
+
+const deleteCategory = async (category: any) => {
+  openMenuId.value = null;
+
+  const children = getChildren(category.id);
+
+  let message = `Are you sure you want to delete "${category.name}"?`;
+
+  if (children.length > 0) {
+    message += `\n\nThis category has ${children.length} subcategor${
+      children.length === 1 ? "y" : "ies"
+    }.`;
+  }
+
+  message += "\n\nThis action cannot be undone.";
+
+  const confirmed = window.confirm(message);
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await adminFetch(`/api/admin/categories/${category.id}`, {
+      method: "DELETE",
+    });
+
+    await loadCategories();
+  } catch (error: any) {
+    console.error("🔥 DELETE CATEGORY ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to delete category.";
   }
 };
 
