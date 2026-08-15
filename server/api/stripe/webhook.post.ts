@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
   // ----------------------------------------
 
   const body = await readRawBody(event);
+
   const signature = getHeader(event, "stripe-signature");
 
   if (!body || !signature) {
@@ -72,6 +73,7 @@ export default defineEventHandler(async (event) => {
   const session = stripeEvent.data.object as Stripe.Checkout.Session;
 
   console.log("SESSION ID:", session.id);
+
   console.log("PAYMENT STATUS:", session.payment_status);
 
   // ----------------------------------------
@@ -79,7 +81,7 @@ export default defineEventHandler(async (event) => {
   // ----------------------------------------
 
   if (session.payment_status !== "paid") {
-    console.log("⚠️ PAYMENT NOT PAID");
+    console.log("❌ PAYMENT NOT PAID");
 
     return {
       received: true,
@@ -89,7 +91,24 @@ export default defineEventHandler(async (event) => {
   console.log("✅ PAYMENT IS PAID");
 
   // ----------------------------------------
-  // SUPABASE
+  // GET USER ID FROM STRIPE METADATA
+  // ----------------------------------------
+
+  const userId = session.metadata?.user_id || null;
+
+  console.log("SUPABASE USER ID:", userId);
+
+  if (!userId) {
+    console.error("❌ NO USER ID FOUND IN STRIPE METADATA");
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: "No user ID found in Stripe session metadata",
+    });
+  }
+
+  // ----------------------------------------
+  // SUPABASE SERVICE CLIENT
   // ----------------------------------------
 
   const supabase = createClient(
@@ -135,7 +154,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // CUSTOMER INFORMATION
+  // CUSTOMER
   // ----------------------------------------
 
   const customerEmail =
@@ -143,32 +162,11 @@ export default defineEventHandler(async (event) => {
 
   const customerName = session.customer_details?.name || null;
 
-  // ----------------------------------------
-  // USER ID
-  // ----------------------------------------
-
-  const userId = session.metadata?.user_id || null;
-
-  console.log("USER ID:", userId);
-  console.log("CUSTOMER NAME:", customerName);
-  console.log("CUSTOMER EMAIL:", customerEmail);
-
-  // ----------------------------------------
-  // SHIPPING ADDRESS
-  // ----------------------------------------
-
-  const shippingAddress =
-    session.shipping_details?.address ||
-    session.customer_details?.address ||
-    null;
-
-  console.log("SHIPPING ADDRESS:", JSON.stringify(shippingAddress, null, 2));
-
-  // ----------------------------------------
-  // TOTAL
-  // ----------------------------------------
-
   const total = (session.amount_total || 0) / 100;
+
+  console.log("CUSTOMER:", customerName);
+
+  console.log("EMAIL:", customerEmail);
 
   console.log("TOTAL:", total);
 
@@ -193,23 +191,21 @@ export default defineEventHandler(async (event) => {
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
-      stripe_session_id: session.id,
+      // ----------------------------------
+      // IMPORTANT
+      // ----------------------------------
 
-      // Logged-in Supabase user
       user_id: userId,
 
-      // Customer information
+      stripe_session_id: session.id,
+
       customer_email: customerEmail,
+
       customer_name: customerName,
 
-      // Order total
       total: total,
 
-      // Payment status
       status: "paid",
-
-      // Shipping address
-      shipping_address: shippingAddress,
     })
     .select()
     .single();
@@ -224,8 +220,11 @@ export default defineEventHandler(async (event) => {
   }
 
   console.log("=================================");
-  console.log("✅ ORDER CREATED");
-  console.log("ORDER ID:", order.id);
+
+  console.log("✅ ORDER CREATED:", order.id);
+
+  console.log("USER ID:", userId);
+
   console.log("=================================");
 
   // ----------------------------------------
@@ -234,18 +233,19 @@ export default defineEventHandler(async (event) => {
 
   for (const lineItem of lineItems.data) {
     console.log("---------------------------------");
+
     console.log("PROCESSING ITEM");
+
+    // --------------------------------------
+    // STRIPE PRODUCT
+    // --------------------------------------
 
     const product = lineItem.price?.product;
 
     console.log("STRIPE PRODUCT:", product);
 
-    // --------------------------------------
-    // MAKE SURE PRODUCT EXISTS
-    // --------------------------------------
-
     if (!product || typeof product === "string") {
-      console.error("❌ STRIPE PRODUCT NOT FOUND");
+      console.log("❌ PRODUCT NOT FOUND");
 
       continue;
     }
@@ -276,7 +276,7 @@ export default defineEventHandler(async (event) => {
     // PRODUCT NAME
     // --------------------------------------
 
-    const productName = product.name || "Unknown Product";
+    const productName = product.name;
 
     console.log("PRODUCT NAME:", productName);
 
@@ -298,9 +298,13 @@ export default defineEventHandler(async (event) => {
       .from("order_items")
       .insert({
         order_id: order.id,
+
         product_id: Number(productId),
+
         product_name: productName,
+
         quantity: quantity,
+
         price: price,
       })
       .select()
@@ -330,6 +334,7 @@ export default defineEventHandler(async (event) => {
       .single();
 
     console.log("SUPABASE PRODUCT:", productData);
+
     console.log("SUPABASE ERROR:", productError);
 
     if (productError || !productData) {
@@ -342,10 +347,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // --------------------------------------
-    // CALCULATE STOCK
+    // CURRENT STOCK
     // --------------------------------------
 
-    const currentStock = Number(productData.stock) || 0;
+    const currentStock = Number(productData.stock);
+
+    // --------------------------------------
+    // NEW STOCK
+    // --------------------------------------
 
     const newStock = Math.max(0, currentStock - quantity);
 
@@ -355,7 +364,7 @@ export default defineEventHandler(async (event) => {
     // UPDATE STOCK
     // --------------------------------------
 
-    console.log("UPDATING STOCK");
+    console.log("UPDATING STOCK...");
 
     const { data: updateData, error: updateError } = await supabase
       .from("products")
@@ -366,6 +375,7 @@ export default defineEventHandler(async (event) => {
       .select("id, name, stock");
 
     console.log("UPDATE RESULT:", updateData);
+
     console.log("UPDATE ERROR:", updateError);
 
     if (updateError) {
@@ -392,7 +402,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ DATABASE UPDATED");
+    console.log("✅ DATABASE STOCK UPDATED");
 
     console.log("PRODUCT:", updateData[0].name);
 
@@ -404,11 +414,15 @@ export default defineEventHandler(async (event) => {
   // ----------------------------------------
 
   console.log("=================================");
+
   console.log("🎉 WEBHOOK COMPLETE");
+
   console.log("ORDER ID:", order.id);
+
+  console.log("USER ID:", userId);
+
   console.log("STRIPE SESSION:", session.id);
-  console.log("CUSTOMER:", customerEmail);
-  console.log("TOTAL:", total);
+
   console.log("=================================");
 
   return {
