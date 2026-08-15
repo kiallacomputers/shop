@@ -11,14 +11,12 @@
         <!-- Product Image -->
         <div class="w-20 h-20 shrink-0 flex items-center justify-center">
           <img
-            v-if="getProductImage(item.image)"
-            :src="getProductImage(item.image)"
+            v-if="item.image"
+            :src="Array.isArray(item.image) ? item.image[0] : item.image"
             :alt="item.name"
             class="w-20 h-20 object-contain"
-            @error="imageError(item)"
           />
 
-          <!-- Image Placeholder -->
           <div
             v-else
             class="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs"
@@ -103,6 +101,7 @@ const cart = useCartStore();
 // ========================================
 
 const supabase = useSupabaseClient();
+const user = useSupabaseUser();
 
 const BUCKET_NAME = "products";
 
@@ -192,34 +191,92 @@ console.log("CART ITEMS:", cart.items);
 async function checkout() {
   if (!cart.items.length) {
     console.log("Cart is empty");
-
     return;
   }
 
   loading.value = true;
 
   try {
-    console.log("Sending cart to Stripe:", cart.items);
+    // ----------------------------------------
+    // GET CURRENT USER
+    // ----------------------------------------
 
-    const response = await $fetch("/api/stripe/create-checkout", {
-      method: "POST",
+    const {
+      data: { user: currentUser },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      body: {
-        items: cart.items,
-      },
-    });
+    console.log("CURRENT USER:", currentUser);
+    console.log("USER ERROR:", userError);
 
-    console.log("Stripe Response:", response);
+    if (userError) {
+      throw new Error(userError.message);
+    }
 
-    if (response?.url) {
-      window.location.href = response.url;
+    if (!currentUser) {
+      console.error("❌ NO AUTHENTICATED USER");
+
+      await navigateTo("/login");
 
       return;
     }
 
-    console.error("❌ Stripe did not return a checkout URL");
-  } catch (error) {
-    console.error("❌ Checkout error:", error);
+    // ----------------------------------------
+    // CHECKOUT DEBUG
+    // ----------------------------------------
+
+    console.log("=================================");
+    console.log("🛒 STARTING CHECKOUT");
+    console.log("USER ID:", currentUser.id);
+    console.log("EMAIL:", currentUser.email);
+    console.log("CART ITEMS:", cart.items);
+    console.log("=================================");
+
+    // ----------------------------------------
+    // SEND TO SERVER
+    // ----------------------------------------
+
+    const response = await $fetch<{
+      url: string;
+      sessionId: string;
+    }>("/api/stripe/create-checkout", {
+      method: "POST",
+
+      body: {
+        items: cart.items,
+        userId: currentUser.id,
+      },
+    });
+
+    // ----------------------------------------
+    // STRIPE RESPONSE
+    // ----------------------------------------
+
+    console.log("=================================");
+    console.log("✅ STRIPE RESPONSE");
+    console.log(response);
+    console.log("=================================");
+
+    if (!response?.url) {
+      throw new Error("Stripe did not return a checkout URL");
+    }
+
+    // ----------------------------------------
+    // REDIRECT TO STRIPE
+    // ----------------------------------------
+
+    window.location.href = response.url;
+  } catch (error: any) {
+    console.error("=================================");
+    console.error("❌ CHECKOUT ERROR");
+    console.error(error);
+    console.error("=================================");
+
+    alert(
+      error?.data?.statusMessage ||
+        error?.message ||
+        "Unable to start checkout",
+    );
   } finally {
     loading.value = false;
   }
