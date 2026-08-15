@@ -889,12 +889,14 @@ const toggleCategory = (id: number) => {
 // PRODUCT MENU
 // ======================================================
 
+const openMenu = ref<number | null>(null);
+
 const toggleMenu = (id: number) => {
-  if (openMenuId.value === id) {
-    openMenuId.value = null;
-  } else {
-    openMenuId.value = id;
-  }
+  openMenuId.value = openMenu.value === id ? null : id;
+};
+
+const closeMenu = () => {
+  openMenu.value = null;
 };
 
 // ======================================================
