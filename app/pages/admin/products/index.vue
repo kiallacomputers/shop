@@ -178,6 +178,8 @@ definePageMeta({
   middleware: "admin",
 });
 
+const adminFetch = useAdminFetch();
+
 const loading = ref(true);
 const errorMessage = ref("");
 
@@ -197,7 +199,7 @@ const loadProducts = async () => {
   try {
     console.log("🔥 ADMIN PRODUCTS LOADING");
 
-    const response = await $fetch("/api/admin/products");
+    const response = await adminFetch("/api/admin/products");
 
     products.value = Array.isArray(response)
       ? response
