@@ -488,119 +488,117 @@
                       </div>
                     </div>
 
-                    <!-- ACTIONS -->
-
+                    <!-- ACTION MENU -->
                     <div class="relative shrink-0">
-                      <!-- THREE DOTS -->
-
+                      <!-- Three dots -->
                       <button
                         type="button"
-                        title="Product actions"
-                        class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition"
                         @click.stop="toggleMenu(product.id)"
+                        class="flex items-center justify-center w-10 h-10 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
+                        title="Product actions"
                       >
-                        <span
-                          class="text-xl font-bold leading-none tracking-[3px]"
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="w-6 h-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
                         >
-                          •••
-                        </span>
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M6 12h.01M12 12h.01M18 12h.01"
+                          />
+                        </svg>
                       </button>
 
-                      <!-- MENU -->
-
+                      <!-- Popup -->
                       <div
-                        v-if="openMenuId === product.id"
-                        class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-2xl z-[90] overflow-hidden"
+                        v-if="openMenu === product.id"
+                        class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-xl shadow-xl z-[9999] overflow-hidden"
                         @click.stop
                       >
-                        <!-- VIEW -->
-
-                        <button
-                          type="button"
-                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                          @click="viewProduct(product)"
+                        <!-- View -->
+                        <NuxtLink
+                          :to="`/product/${product.slug}`"
+                          @click="closeMenu"
+                          class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition"
                         >
                           <svg
-                            class="w-5 h-5 text-blue-600 shrink-0"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5 text-blue-600"
                             fill="none"
-                            stroke="currentColor"
                             viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
                           >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
                               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                             />
-
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
                           </svg>
 
-                          <span> View </span>
-                        </button>
+                          <span>View</span>
+                        </NuxtLink>
 
-                        <!-- EDIT -->
-
-                        <button
-                          type="button"
-                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition"
-                          @click="editProduct(product)"
+                        <!-- Edit -->
+                        <NuxtLink
+                          :to="`/admin/products/edit/${product.id}`"
+                          @click="closeMenu"
+                          class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition"
                         >
                           <svg
-                            class="w-5 h-5 text-blue-600 shrink-0"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5 text-green-600"
                             fill="none"
-                            stroke="currentColor"
                             viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
                           >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              stroke-width="2"
                               d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5"
                             />
-
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1-4 1 1-4 9.5-9.5z"
+                              d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
                             />
                           </svg>
 
-                          <span> Edit </span>
-                        </button>
+                          <span>Edit</span>
+                        </NuxtLink>
 
-                        <!-- DIVIDER -->
-
-                        <div class="border-t border-gray-100"></div>
-
-                        <!-- DELETE -->
-
+                        <!-- Delete -->
                         <button
                           type="button"
-                          class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 transition"
-                          @click="deleteProduct(product)"
+                          @click="confirmDelete(product)"
+                          class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition text-left"
                         >
                           <svg
-                            class="w-5 h-5 shrink-0"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-5 h-5"
                             fill="none"
-                            stroke="currentColor"
                             viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            stroke-width="2"
                           >
                             <path
                               stroke-linecap="round"
                               stroke-linejoin="round"
-                              stroke-width="2"
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0h10"
                             />
                           </svg>
 
-                          <span> Delete </span>
+                          <span>Delete</span>
                         </button>
                       </div>
                     </div>
