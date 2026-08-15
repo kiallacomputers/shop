@@ -37,8 +37,6 @@ export default defineEventHandler(async (event) => {
     const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
 
     if (!supabaseUrl) {
-      console.error("❌ Supabase URL is missing");
-
       throw createError({
         statusCode: 500,
         statusMessage: "Supabase URL is not configured",
@@ -46,8 +44,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!anonKey) {
-      console.error("❌ Supabase anon key is missing");
-
       throw createError({
         statusCode: 500,
         statusMessage: "Supabase anon key is not configured",
@@ -55,8 +51,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!serviceKey) {
-      console.error("❌ Supabase service/secret key is missing");
-
       throw createError({
         statusCode: 500,
         statusMessage: "Supabase server key is not configured",
@@ -83,17 +77,8 @@ export default defineEventHandler(async (event) => {
       error: userError,
     } = await supabase.auth.getUser(token);
 
-    if (userError) {
-      console.error("❌ SUPABASE USER ERROR:", userError);
-
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Unable to authenticate user",
-      });
-    }
-
-    if (!user) {
-      console.error("❌ NO SUPABASE USER");
+    if (userError || !user) {
+      console.error("❌ USER AUTH ERROR:", userError);
 
       throw createError({
         statusCode: 401,
@@ -108,7 +93,7 @@ export default defineEventHandler(async (event) => {
     console.log("============================================");
 
     // ============================================
-    // SUPABASE ADMIN/SERVICE CLIENT
+    // SERVICE CLIENT
     // ============================================
 
     const adminSupabase = createClient(supabaseUrl, serviceKey, {
@@ -119,13 +104,9 @@ export default defineEventHandler(async (event) => {
     });
 
     // ============================================
-    // CHECK ADMIN USER
+    // CHECK ADMIN
     //
-    // Your admin_users table uses:
-    //
-    // admin_users.id
-    //
-    // for the Supabase Auth UUID.
+    // admin_users.id = Supabase Auth UUID
     // ============================================
 
     const { data: adminUser, error: adminError } = await adminSupabase
@@ -137,10 +118,6 @@ export default defineEventHandler(async (event) => {
     console.log("👤 ADMIN RECORD:", adminUser);
     console.log("⚠️ ADMIN CHECK ERROR:", adminError);
 
-    // ============================================
-    // ADMIN DATABASE ERROR
-    // ============================================
-
     if (adminError) {
       console.error("❌ ADMIN DATABASE ERROR:", adminError);
 
@@ -151,14 +128,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ============================================
-    // USER IS NOT ADMIN
-    // ============================================
-
     if (!adminUser) {
-      console.error("❌ ADMIN ACCESS DENIED");
-
-      console.error("User UUID:", user.id);
+      console.error("❌ ADMIN ACCESS DENIED:", user.id);
 
       throw createError({
         statusCode: 403,
@@ -169,12 +140,12 @@ export default defineEventHandler(async (event) => {
     console.log("✅ ADMIN ACCESS CONFIRMED");
 
     // ============================================
-    // GET REQUEST METHOD
+    // HTTP METHOD
     // ============================================
 
     const method = getMethod(event);
 
-    console.log("📡 CATEGORY METHOD:", method);
+    console.log("📡 CATEGORY API METHOD:", method);
 
     // ============================================
     // GET CATEGORIES
@@ -184,9 +155,6 @@ export default defineEventHandler(async (event) => {
       const { data: categories, error: categoryError } = await adminSupabase
         .from("categories")
         .select("*")
-        .order("sort_order", {
-          ascending: true,
-        })
         .order("name", {
           ascending: true,
         });
@@ -233,32 +201,9 @@ export default defineEventHandler(async (event) => {
 
       const parentId = body?.parent_id || null;
 
-      // ==========================================
-      // SORT ORDER
-      // ==========================================
-
-      const sortOrder =
-        body?.sort_order !== undefined &&
-        body?.sort_order !== null &&
-        body?.sort_order !== ""
-          ? Number(body.sort_order)
-          : 0;
-
-      // ==========================================
-      // VALIDATE SORT ORDER
-      // ==========================================
-
-      if (Number.isNaN(sortOrder)) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: "Sort order must be a number",
-        });
-      }
-
       console.log("➕ CREATING CATEGORY:", {
         name,
         parentId,
-        sortOrder,
       });
 
       // ==========================================
@@ -270,7 +215,6 @@ export default defineEventHandler(async (event) => {
         .insert({
           name,
           parent_id: parentId,
-          sort_order: sortOrder,
         })
         .select()
         .single();
@@ -293,7 +237,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ============================================
-    // UNSUPPORTED HTTP METHOD
+    // UNSUPPORTED METHOD
     // ============================================
 
     throw createError({
@@ -303,7 +247,6 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error("🔥 CATEGORY API ERROR:", error);
 
-    // Preserve Nuxt createError responses
     if (error?.statusCode) {
       throw error;
     }
