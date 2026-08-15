@@ -112,8 +112,6 @@
               @click="closeMenu"
               class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
             >
-              <!-- Eye -->
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-5 h-5 text-gray-500"
@@ -145,8 +143,6 @@
               @click="closeMenu"
               class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
             >
-              <!-- Pencil -->
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-5 h-5 text-blue-600"
@@ -173,12 +169,10 @@
 
             <button
               type="button"
-              @click="handleDelete"
+              @click="openDeleteConfirmation"
               :disabled="deletingId === product.id"
               class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition disabled:opacity-50"
             >
-              <!-- Trash -->
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="w-5 h-5"
@@ -202,6 +196,108 @@
         </Transition>
       </div>
     </div>
+
+    <!-- ================================================= -->
+    <!-- DELETE CONFIRMATION MODAL -->
+    <!-- ================================================= -->
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="showDeleteConfirmation"
+          class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        >
+          <!-- BACKDROP -->
+
+          <div class="absolute inset-0 bg-black/50" @click="cancelDelete"></div>
+
+          <!-- MODAL -->
+
+          <div
+            class="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6"
+          >
+            <!-- WARNING ICON -->
+
+            <div
+              class="mx-auto w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-7 h-7 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v4m0 4h.01M10.29 3.86l-8.02 14A2 2 0 004 21h16a2 2 0 001.73-3l-8.02-14a2 2 0 00-3.42 0z"
+                />
+              </svg>
+            </div>
+
+            <!-- TITLE -->
+
+            <h2 class="text-xl font-bold text-slate-800 text-center">
+              Delete Product?
+            </h2>
+
+            <!-- MESSAGE -->
+
+            <p class="text-gray-600 text-center mt-3">
+              Are you sure you really want to delete this product?
+            </p>
+
+            <!-- PRODUCT NAME -->
+
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg border text-center">
+              <p class="font-semibold text-slate-800">
+                {{ product.name }}
+              </p>
+
+              <p class="text-sm text-gray-500 mt-1">
+                Product ID: {{ product.id }}
+              </p>
+            </div>
+
+            <!-- WARNING -->
+
+            <p class="text-sm text-red-600 text-center mt-4">
+              ⚠ This action cannot be undone.
+            </p>
+
+            <!-- BUTTONS -->
+
+            <div class="flex gap-3 mt-6">
+              <!-- CANCEL -->
+
+              <button
+                type="button"
+                @click="cancelDelete"
+                :disabled="deletingId === product.id"
+                class="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition"
+              >
+                Cancel
+              </button>
+
+              <!-- DELETE -->
+
+              <button
+                type="button"
+                @click="confirmDelete"
+                :disabled="deletingId === product.id"
+                class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition"
+              >
+                {{
+                  deletingId === product.id ? "Deleting..." : "Delete Product"
+                }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -238,11 +334,31 @@ const closeMenu = () => {
 };
 
 // =====================================================
-// DELETE
+// DELETE CONFIRMATION
 // =====================================================
 
-const handleDelete = () => {
+const showDeleteConfirmation = ref(false);
+
+const openDeleteConfirmation = () => {
   menuOpen.value = false;
+
+  showDeleteConfirmation.value = true;
+};
+
+const cancelDelete = () => {
+  if (props.deletingId === props.product.id) {
+    return;
+  }
+
+  showDeleteConfirmation.value = false;
+};
+
+const confirmDelete = () => {
+  if (props.deletingId === props.product.id) {
+    return;
+  }
+
+  showDeleteConfirmation.value = false;
 
   emit("delete", props.product);
 };
@@ -294,5 +410,15 @@ onBeforeUnmount(() => {
 .menu-leave-to {
   opacity: 0;
   transform: translateY(-5px);
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
 </style>
