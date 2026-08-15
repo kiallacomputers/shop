@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 export default defineEventHandler(async (event) => {
   try {
     // ============================================
-    // GET AUTHORIZATION HEADER
+    // AUTHORIZATION
     // ============================================
 
     const authorization = getHeader(event, "authorization");
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ============================================
-    // SUPABASE CONFIGURATION
+    // SUPABASE CONFIG
     // ============================================
 
     const config = useRuntimeConfig();
@@ -36,29 +36,15 @@ export default defineEventHandler(async (event) => {
 
     const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
 
-    if (!supabaseUrl) {
+    if (!supabaseUrl || !anonKey || !serviceKey) {
       throw createError({
         statusCode: 500,
-        statusMessage: "Supabase URL is not configured",
-      });
-    }
-
-    if (!anonKey) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Supabase anon key is not configured",
-      });
-    }
-
-    if (!serviceKey) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Supabase server key is not configured",
+        statusMessage: "Supabase server configuration is missing",
       });
     }
 
     // ============================================
-    // USER SUPABASE CLIENT
+    // USER CLIENT
     // ============================================
 
     const supabase = createClient(supabaseUrl, anonKey, {
@@ -69,7 +55,7 @@ export default defineEventHandler(async (event) => {
     });
 
     // ============================================
-    // VERIFY SUPABASE USER
+    // VERIFY USER
     // ============================================
 
     const {
@@ -86,11 +72,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("============================================");
-    console.log("✅ AUTHENTICATED USER");
-    console.log("User ID:", user.id);
-    console.log("Email:", user.email);
-    console.log("============================================");
+    console.log("✅ AUTHENTICATED USER:", user.id);
 
     // ============================================
     // SERVICE CLIENT
@@ -115,11 +97,8 @@ export default defineEventHandler(async (event) => {
       .eq("id", user.id)
       .maybeSingle();
 
-    console.log("👤 ADMIN RECORD:", adminUser);
-    console.log("⚠️ ADMIN CHECK ERROR:", adminError);
-
     if (adminError) {
-      console.error("❌ ADMIN DATABASE ERROR:", adminError);
+      console.error("❌ ADMIN CHECK ERROR:", adminError);
 
       throw createError({
         statusCode: 500,
@@ -129,8 +108,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!adminUser) {
-      console.error("❌ ADMIN ACCESS DENIED:", user.id);
-
       throw createError({
         statusCode: 403,
         statusMessage: "Administrator access required",
@@ -144,8 +121,6 @@ export default defineEventHandler(async (event) => {
     // ============================================
 
     const method = getMethod(event);
-
-    console.log("📡 CATEGORY API METHOD:", method);
 
     // ============================================
     // GET CATEGORIES
@@ -168,8 +143,6 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      console.log("✅ CATEGORIES LOADED:", categories?.length || 0);
-
       return categories || [];
     }
 
@@ -180,10 +153,8 @@ export default defineEventHandler(async (event) => {
     if (method === "POST") {
       const body = await readBody(event);
 
-      console.log("📦 CREATE CATEGORY BODY:", body);
-
       // ==========================================
-      // CATEGORY NAME
+      // NAME
       // ==========================================
 
       const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -196,24 +167,74 @@ export default defineEventHandler(async (event) => {
       }
 
       // ==========================================
-      // PARENT CATEGORY
+      // CREATE SLUG
+      // ==========================================
+
+      const slug = name
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      if (!slug) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: "Unable to generate a valid category slug",
+        });
+      }
+
+      // ==========================================
+      // PARENT
       // ==========================================
 
       const parentId = body?.parent_id || null;
 
       console.log("➕ CREATING CATEGORY:", {
         name,
+        slug,
         parentId,
       });
 
       // ==========================================
-      // INSERT CATEGORY
+      // CHECK FOR EXISTING SLUG
+      // ==========================================
+
+      const { data: existingCategory, error: existingError } =
+        await adminSupabase
+          .from("categories")
+          .select("id, name, slug")
+          .eq("slug", slug)
+          .maybeSingle();
+
+      if (existingError) {
+        console.error("❌ SLUG CHECK ERROR:", existingError);
+
+        throw createError({
+          statusCode: 500,
+          statusMessage:
+            existingError.message || "Unable to check category slug",
+        });
+      }
+
+      if (existingCategory) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: "A category with this name already exists",
+        });
+      }
+
+      // ==========================================
+      // INSERT
       // ==========================================
 
       const { data: category, error: insertError } = await adminSupabase
         .from("categories")
         .insert({
           name,
+          slug,
           parent_id: parentId,
         })
         .select()
