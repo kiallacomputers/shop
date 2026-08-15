@@ -3,9 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 
 export default defineEventHandler(async (event) => {
   try {
-    // ----------------------------------------
-    // GET USER SESSION
-    // ----------------------------------------
+    // ========================================
+    // GET AUTHENTICATED USER
+    // ========================================
 
     const supabase = await serverSupabaseClient(event);
 
@@ -21,9 +21,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ----------------------------------------
+    console.log("✅ AUTHENTICATED USER:", user.email);
+
+    // ========================================
     // CHECK ADMIN
-    // ----------------------------------------
+    // ========================================
 
     const { data: adminUser, error: adminError } = await supabase
       .from("admin_users")
@@ -31,16 +33,27 @@ export default defineEventHandler(async (event) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (adminError || !adminUser) {
+    if (adminError) {
+      console.error("🔥 ADMIN CHECK ERROR:", adminError);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Unable to verify administrator access",
+      });
+    }
+
+    if (!adminUser) {
       throw createError({
         statusCode: 403,
         statusMessage: "Administrator access required",
       });
     }
 
-    // ----------------------------------------
-    // GET IMAGE
-    // ----------------------------------------
+    console.log("✅ ADMIN USER CONFIRMED");
+
+    // ========================================
+    // GET REQUEST BODY
+    // ========================================
 
     const body = await readBody(event);
 
@@ -53,9 +66,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ----------------------------------------
+    console.log("🔥 IMAGE TO DELETE:", imageUrl);
+
+    // ========================================
     // SUPABASE CONFIG
-    // ----------------------------------------
+    // ========================================
 
     const config = useRuntimeConfig();
 
@@ -63,16 +78,27 @@ export default defineEventHandler(async (event) => {
 
     const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl) {
+      console.error("🔥 SUPABASE URL IS MISSING");
+
       throw createError({
         statusCode: 500,
-        statusMessage: "Supabase server configuration is missing",
+        statusMessage: "Supabase URL is not configured",
       });
     }
 
-    // ----------------------------------------
-    // SERVICE CLIENT
-    // ----------------------------------------
+    if (!serviceKey) {
+      console.error("🔥 SUPABASE SERVICE KEY IS MISSING");
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server secret key is not configured",
+      });
+    }
+
+    // ========================================
+    // CREATE SERVICE CLIENT
+    // ========================================
 
     const adminSupabase = createClient(supabaseUrl, serviceKey, {
       auth: {
@@ -81,9 +107,9 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // ----------------------------------------
-    // EXTRACT STORAGE PATH
-    // ----------------------------------------
+    // ========================================
+    // EXTRACT STORAGE LOCATION
+    // ========================================
 
     const marker = "/storage/v1/object/public/";
 
@@ -103,7 +129,7 @@ export default defineEventHandler(async (event) => {
     if (firstSlash === -1) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Invalid storage path",
+        statusMessage: "Invalid Supabase Storage path",
       });
     }
 
@@ -111,17 +137,18 @@ export default defineEventHandler(async (event) => {
 
     const filePath = storageLocation.substring(firstSlash + 1);
 
+    console.log("========================================");
     console.log("🔥 DELETE IMAGE");
     console.log("Bucket:", bucket);
     console.log("Path:", filePath);
+    console.log("========================================");
 
-    // ----------------------------------------
-    // DELETE IMAGE
-    // ----------------------------------------
+    // ========================================
+    // DELETE FROM SUPABASE STORAGE
+    // ========================================
 
-    const { error: deleteError } = await adminSupabase.storage
-      .from(bucket)
-      .remove([filePath]);
+    const { data: deletedFiles, error: deleteError } =
+      await adminSupabase.storage.from(bucket).remove([filePath]);
 
     if (deleteError) {
       console.error("🔥 STORAGE DELETE ERROR:", deleteError);
@@ -129,12 +156,19 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 500,
         statusMessage:
-          deleteError.message || "Unable to delete image from storage",
+          deleteError.message || "Unable to delete image from Supabase Storage",
       });
     }
 
+    console.log("✅ IMAGE DELETED:", deletedFiles);
+
+    // ========================================
+    // SUCCESS
+    // ========================================
+
     return {
       success: true,
+      message: "Image deleted successfully",
       bucket,
       path: filePath,
     };

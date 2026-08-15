@@ -113,7 +113,8 @@
                   :key="child.id"
                   :value="child.id"
                 >
-                  &nbsp;&nbsp;&nbsp;└─ {{ child.name }}
+                  &nbsp;&nbsp;&nbsp;└─
+                  {{ child.name }}
                 </option>
               </template>
             </select>
@@ -749,15 +750,6 @@ const uploadImages = async (event: Event) => {
   try {
     const selectedFiles = Array.from(files);
 
-    console.log(
-      "🔥 SELECTED IMAGES:",
-      selectedFiles.map((file) => file.name),
-    );
-
-    // ========================================
-    // VALIDATE ALL FILES
-    // ========================================
-
     const allowedTypes = [
       "image/jpeg",
       "image/jpg",
@@ -765,6 +757,10 @@ const uploadImages = async (event: Event) => {
       "image/webp",
       "image/gif",
     ];
+
+    // ========================================
+    // VALIDATE FILES
+    // ========================================
 
     for (const file of selectedFiles) {
       if (file.size > 5 * 1024 * 1024) {
@@ -784,7 +780,7 @@ const uploadImages = async (event: Event) => {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session) {
+    if (!session?.access_token) {
       throw new Error("Authentication required.");
     }
 
@@ -849,7 +845,7 @@ const removeImage = async (index: number) => {
   }
 
   // ========================================
-  // CONFIRM
+  // CONFIRM DELETE
   // ========================================
 
   const confirmed = window.confirm(
@@ -869,23 +865,49 @@ const removeImage = async (index: number) => {
   try {
     console.log("🔥 DELETING IMAGE:", image);
 
-    await $fetch("/api/admin/products/delete-image", {
+    // ========================================
+    // GET SESSION
+    // ========================================
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error("Authentication required.");
+    }
+
+    console.log("✅ SESSION FOUND");
+
+    // ========================================
+    // DELETE FROM STORAGE
+    // ========================================
+
+    const response = await $fetch("/api/admin/products/delete-image", {
       method: "POST",
 
       body: {
         image,
       },
+
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
     });
 
+    console.log("🔥 DELETE RESPONSE:", response);
+
     // ========================================
-    // REMOVE FROM FORM ARRAY
+    // REMOVE FROM ARRAY ONLY AFTER SUCCESS
     // ========================================
 
-    form.images.splice(index, 1);
+    if (response?.success) {
+      form.images.splice(index, 1);
 
-    uploadMessage.value = "Image deleted successfully.";
-
-    console.log("✅ IMAGE REMOVED FROM PRODUCT");
+      uploadMessage.value = "Image deleted successfully.";
+    } else {
+      throw new Error("The image could not be deleted.");
+    }
   } catch (error: any) {
     console.error("🔥 IMAGE DELETE ERROR:", error);
 
@@ -981,10 +1003,8 @@ const saveProduct = async () => {
 
       active: form.active,
 
-      // Keep images as array
       images: form.images,
 
-      // Keep description as JSON array
       description: form.description,
     };
 
