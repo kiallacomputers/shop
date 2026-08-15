@@ -138,8 +138,6 @@
 
               <div>
                 <NuxtLink
-                  v-for="order in orders"
-                  :key="order.id"
                   :to="`/account/orders/${order.id}`"
                   title="View Invoice"
                   aria-label="View Invoice"
