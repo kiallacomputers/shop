@@ -560,7 +560,7 @@ definePageMeta({
 // COMPOSABLES
 // ==================================================
 
-const adminFetch = useAdminFetch();
+const { adminFetch } = useAdminFetch();
 
 const route = useRoute();
 
