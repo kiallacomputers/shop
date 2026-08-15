@@ -297,95 +297,91 @@ const getFirstImage = (product) => {
 */
 
 const groupedProducts = computed(() => {
-  const groups = {};
+  const categoryMap = new Map();
 
-  /*
-   * Create category groups
-   */
-
+  // Create category objects
   for (const category of categories.value) {
-    groups[category.id] = {
+    categoryMap.set(category.id, {
       id: category.id,
       name: category.name,
+      parent_id: category.parent_id,
       products: [],
-    };
+      children: [],
+    });
   }
 
-  /*
-   * Add products to categories
-   */
-
+  // Put products into their category
   for (const product of products.value) {
-    const categoryId = product.category_id;
+    const category = categoryMap.get(product.category_id);
 
-    /*
-     * If category exists
-     */
-
-    if (categoryId && groups[categoryId]) {
-      groups[categoryId].products.push(product);
-    } else {
-      /*
-       * Uncategorised
-       */
-
-      if (!groups.uncategorised) {
-        groups.uncategorised = {
-          id: "uncategorised",
-          name: "Uncategorised",
-          products: [],
-        };
-      }
-
-      groups.uncategorised.products.push(product);
+    if (category) {
+      category.products.push(product);
     }
   }
 
-  /*
-   * Sort products inside each category
-   */
+  // Build parent -> child relationship
+  for (const category of categoryMap.values()) {
+    if (category.parent_id) {
+      const parent = categoryMap.get(category.parent_id);
 
-  Object.values(groups).forEach((group) => {
-    group.products.sort((a, b) =>
+      if (parent) {
+        parent.children.push(category);
+      }
+    }
+  }
+
+  // Sort products alphabetically
+  const sortProducts = (items) => {
+    items.sort((a, b) =>
       String(a.name || "").localeCompare(String(b.name || ""), undefined, {
         sensitivity: "base",
       }),
     );
-  });
+  };
 
-  /*
-   * Convert object to array
-   */
+  // Sort child categories alphabetically
+  for (const category of categoryMap.values()) {
+    category.children.sort((a, b) =>
+      String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+        sensitivity: "base",
+      }),
+    );
 
-  const result = Object.values(groups);
+    sortProducts(category.products);
+  }
 
-  /*
-   * Remove empty categories
-   */
+  // Only top-level categories
+  const mainCategories = [];
 
-  const nonEmpty = result.filter((group) => group.products.length > 0);
-
-  /*
-   * Sort categories alphabetically
-   *
-   * Uncategorised goes to the bottom.
-   */
-
-  nonEmpty.sort((a, b) => {
-    if (a.id === "uncategorised") {
-      return 1;
+  for (const category of categoryMap.values()) {
+    if (!category.parent_id) {
+      mainCategories.push(category);
     }
+  }
 
-    if (b.id === "uncategorised") {
-      return -1;
-    }
-
-    return String(a.name).localeCompare(String(b.name), undefined, {
+  // Sort main categories
+  mainCategories.sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || ""), undefined, {
       sensitivity: "base",
-    });
-  });
+    }),
+  );
 
-  return nonEmpty;
+  // Remove empty categories
+  const result = [];
+
+  for (const category of mainCategories) {
+    const hasProducts = category.products.length > 0;
+
+    const hasChildren = category.children.some(
+      (child) => child.products.length > 0,
+    );
+
+    if (hasProducts || hasChildren) {
+      result.push(category);
+    }
+  }
+
+  return result;
 });
 
 /*
