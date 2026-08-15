@@ -138,8 +138,12 @@
 
               <div>
                 <NuxtLink
+                  v-for="order in orders"
+                  :key="order.id"
                   :to="`/account/orders/${order.id}`"
-                  class="inline-block bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition"
+                  title="View Invoice"
+                  aria-label="View Invoice"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -152,19 +156,7 @@
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
-                      d="M19.5 14.25v-8.625a1.125 1.125 0 0 0-1.125-1.125H5.625A1.125 1.125 0 0 0 4.5 5.625v12.75a1.125 1.125 0 0 0 1.125 1.125h9.75"
-                    />
-
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M8.25 8.25h7.5M8.25 11.25h7.5M8.25 14.25h3"
-                    />
-
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      d="M17.25 17.25h4.5m-2.25-2.25v4.5"
+                      d="M9 14.25h6M9 10.5h6M9 6.75h6M6.75 3.75h10.5A2.25 2.25 0 0 1 19.5 6v12a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18V6a2.25 2.25 0 0 1 2.25-2.25Z"
                     />
                   </svg>
                 </NuxtLink>
