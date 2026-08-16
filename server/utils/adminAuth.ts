@@ -38,58 +38,27 @@ export const getAdminSupabase = () => {
 };
 
 /**
- * Get the currently authenticated Supabase user.
- *
- * First try the normal Nuxt Supabase session cookie.
- *
- * If that is not available, fall back to the
- * Authorization: Bearer <token> header.
+ * Get the currently authenticated user
+ * and determine whether they are an administrator.
  */
 export const getAdminUser = async (event: H3Event) => {
-  let user = null;
-
-  // =========================================
-  // 1. TRY NORMAL NUXT SUPABASE SESSION
-  // =========================================
+  let user: any = null;
 
   try {
     user = await serverSupabaseUser(event);
   } catch (error) {
-    console.error("SUPABASE COOKIE USER CHECK ERROR:", error);
+    console.error("SUPABASE USER CHECK ERROR:", error);
+
+    user = null;
   }
 
-  // =========================================
-  // 2. FALL BACK TO BEARER TOKEN
-  // =========================================
-
-  if (!user) {
-    const authorization = getHeader(event, "authorization");
-
-    if (authorization && authorization.startsWith("Bearer ")) {
-      const accessToken = authorization.substring(7);
-
-      if (accessToken) {
-        try {
-          const supabase = getAdminSupabase();
-
-          const { data, error } = await supabase.auth.getUser(accessToken);
-
-          if (error) {
-            console.error("BEARER TOKEN USER ERROR:", error);
-          } else {
-            user = data.user;
-          }
-        } catch (error) {
-          console.error("BEARER TOKEN CHECK ERROR:", error);
-        }
-      }
-    }
-  }
-
-  // =========================================
-  // NO USER
-  // =========================================
-
+  /**
+   * No authenticated user.
+   *
+   * IMPORTANT:
+   * Return a normal response instead of throwing.
+   * This prevents the header from receiving a 500.
+   */
   if (!user) {
     console.log("ADMIN AUTH: No authenticated user");
 
@@ -102,30 +71,54 @@ export const getAdminUser = async (event: H3Event) => {
 
   console.log("ADMIN AUTH USER:", user.email);
 
-  // =========================================
-  // CHECK ADMIN_USERS
-  // =========================================
+  /**
+   * Make absolutely sure we have a valid
+   * Supabase Auth user ID before querying
+   * the UUID column in admin_users.
+   */
+  const userId = user.id;
+
+  if (!userId || typeof userId !== "string") {
+    console.error("ADMIN AUTH ERROR: User has no valid ID", user);
+
+    return {
+      user,
+      isAdmin: false,
+      adminUser: null,
+    };
+  }
+
+  console.log("ADMIN AUTH USER ID:", userId);
 
   const adminSupabase = getAdminSupabase();
 
+  /**
+   * Look up the authenticated user's UUID
+   * in admin_users.
+   */
   const { data: adminUser, error: adminError } = await adminSupabase
     .from("admin_users")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
 
   if (adminError) {
     console.error("ADMIN USER LOOKUP ERROR:", adminError);
 
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to verify administrator status",
-    });
+    /**
+     * Don't turn a temporary lookup problem
+     * into a server crash.
+     */
+    return {
+      user,
+      isAdmin: false,
+      adminUser: null,
+    };
   }
 
   const isAdmin = !!adminUser;
 
-  console.log("ADMIN USER FOUND:", !!adminUser);
+  console.log("ADMIN USER FOUND:", isAdmin);
 
   console.log("IS ADMIN:", isAdmin);
 
@@ -138,6 +131,8 @@ export const getAdminUser = async (event: H3Event) => {
 
 /**
  * Require an authenticated administrator.
+ *
+ * Used by protected server API routes.
  */
 export const requireAdmin = async (event: H3Event) => {
   const result = await getAdminUser(event);
