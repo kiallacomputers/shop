@@ -620,26 +620,69 @@ onBeforeUnmount(() => {
 
 const loadCategories = async () => {
   loading.value = true;
-
   errorMessage.value = "";
 
   try {
-    console.log("ADMIN FETCH: /api/admin/categories");
+    console.log("=================================");
+    console.log("ADMIN FETCH CATEGORIES");
+    console.log("=================================");
 
     const response = await adminFetch("/api/admin/categories");
 
-    categories.value = Array.isArray(response) ? response : [];
+    console.log("CATEGORY API RESPONSE:", response);
+    console.log("CATEGORY RESPONSE TYPE:", typeof response);
+    console.log("IS ARRAY:", Array.isArray(response));
 
-    console.log("ADMIN FETCH SUCCESS: /api/admin/categories");
+    // -----------------------------------------
+    // Handle normal array response
+    // -----------------------------------------
 
-    console.log("CATEGORIES:", categories.value);
+    if (Array.isArray(response)) {
+      categories.value = response;
+    }
+
+    // -----------------------------------------
+    // Handle { data: [...] }
+    // -----------------------------------------
+    else if (Array.isArray(response?.data)) {
+      categories.value = response.data;
+    }
+
+    // -----------------------------------------
+    // Anything else
+    // -----------------------------------------
+    else {
+      console.error("INVALID CATEGORY RESPONSE:", response);
+
+      categories.value = [];
+
+      throw new Error("Invalid category response from server.");
+    }
+
+    console.log("CATEGORIES LOADED:", categories.value);
+    console.log("CATEGORY COUNT:", categories.value.length);
+
+    // -----------------------------------------
+    // Validate each category
+    // -----------------------------------------
+
+    categories.value.forEach((category, index) => {
+      console.log(`CATEGORY ${index}:`, category);
+    });
   } catch (error: any) {
-    console.error("🔥 CATEGORY LOAD ERROR:", error);
+    console.error("=================================");
+    console.error("🔥 CATEGORY LOAD ERROR");
+    console.error("ERROR:", error);
+    console.error("ERROR DATA:", error?.data);
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("=================================");
 
     errorMessage.value =
       error?.data?.statusMessage ||
       error?.message ||
       "Unable to load categories.";
+
+    categories.value = [];
   } finally {
     loading.value = false;
   }
