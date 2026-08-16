@@ -16,16 +16,12 @@
       </div>
 
       <div class="flex flex-wrap gap-3">
-        <!-- ADMIN MENU -->
-
         <NuxtLink
           to="/admin"
           class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
         >
           ← Admin Menu
         </NuxtLink>
-
-        <!-- ADD CATEGORY -->
 
         <button
           type="button"
@@ -90,21 +86,23 @@
       <!-- ========================================== -->
 
       <div v-else class="divide-y">
-        <!-- MAIN CATEGORY -->
-
         <div
           v-for="category in mainCategories"
           :key="category.id"
           class="relative p-5"
         >
+          <!-- ====================================== -->
+          <!-- MAIN CATEGORY HEADER -->
+          <!-- ====================================== -->
+
           <div class="flex items-center justify-between gap-4">
             <!-- LEFT -->
 
             <div class="flex items-center gap-3 min-w-0">
-              <!-- EXPAND BUTTON -->
+              <!-- EXPAND -->
 
               <button
-                v-if="getChildren(category.id).length"
+                v-if="getChildren(category.id).length > 0"
                 type="button"
                 @click="toggleCategory(category.id)"
                 class="w-8 h-8 shrink-0 rounded-lg hover:bg-gray-100 flex items-center justify-center"
@@ -172,7 +170,7 @@
                 {{ category.active ? "Active" : "Inactive" }}
               </span>
 
-              <!-- THREE DOT MENU -->
+              <!-- MENU -->
 
               <div class="relative">
                 <button
@@ -188,64 +186,36 @@
                     viewBox="0 0 24 24"
                   >
                     <circle cx="5" cy="12" r="2" />
+
                     <circle cx="12" cy="12" r="2" />
+
                     <circle cx="19" cy="12" r="2" />
                   </svg>
                 </button>
 
-                <!-- ACTION MENU -->
+                <!-- MENU -->
 
                 <div
                   v-if="openMenuId === category.id"
                   class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-[100]"
                   @click.stop
                 >
-                  <!-- EDIT -->
-
                   <button
                     type="button"
                     @click="editCategory(category)"
                     class="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-700 hover:bg-gray-50"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-5 h-5 text-blue-600"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 8.5-8.5z"
-                      />
-                    </svg>
+                    <span class="text-blue-600"> ✏️ </span>
 
                     <span> Edit </span>
                   </button>
-
-                  <!-- DELETE -->
 
                   <button
                     type="button"
                     @click="deleteCategory(category)"
                     class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 border-t"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 011 3v3m-4 0h14"
-                      />
-                    </svg>
+                    <span> 🗑️ </span>
 
                     <span> Delete </span>
                   </button>
@@ -276,7 +246,7 @@
           <div
             v-if="
               expandedCategories.has(category.id) &&
-              getChildren(category.id).length
+              getChildren(category.id).length > 0
             "
             class="mt-4 ml-11 space-y-2"
           >
@@ -285,7 +255,7 @@
               :key="child.id"
               class="relative flex items-center justify-between gap-4 bg-gray-50 rounded-lg px-4 py-3 border"
             >
-              <!-- CHILD LEFT -->
+              <!-- LEFT -->
 
               <div class="flex items-center gap-3 min-w-0">
                 <span class="text-gray-400 shrink-0"> └─ </span>
@@ -303,7 +273,7 @@
                 </div>
               </div>
 
-              <!-- CHILD RIGHT -->
+              <!-- RIGHT -->
 
               <div class="flex items-center gap-3 shrink-0">
                 <!-- STATUS -->
@@ -319,7 +289,7 @@
                   {{ child.active ? "Active" : "Inactive" }}
                 </span>
 
-                <!-- THREE DOT MENU -->
+                <!-- MENU -->
 
                 <div class="relative">
                   <button
@@ -335,7 +305,9 @@
                       viewBox="0 0 24 24"
                     >
                       <circle cx="5" cy="12" r="2" />
+
                       <circle cx="12" cy="12" r="2" />
+
                       <circle cx="19" cy="12" r="2" />
                     </svg>
                   </button>
@@ -347,52 +319,22 @@
                     class="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-xl z-[100]"
                     @click.stop
                   >
-                    <!-- EDIT -->
-
                     <button
                       type="button"
                       @click="editCategory(child)"
                       class="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-700 hover:bg-gray-50"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5 text-blue-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 8.5-8.5z"
-                        />
-                      </svg>
+                      <span class="text-blue-600"> ✏️ </span>
 
                       Edit
                     </button>
-
-                    <!-- DELETE -->
 
                     <button
                       type="button"
                       @click="deleteCategory(child)"
                       class="w-full flex items-center gap-3 px-4 py-3 text-left text-red-600 hover:bg-red-50 border-t"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14"
-                        />
-                      </svg>
+                      <span> 🗑️ </span>
 
                       Delete
                     </button>
@@ -406,7 +348,7 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- EDIT / ADD MODAL -->
+    <!-- MODAL -->
     <!-- ============================================ -->
 
     <Transition name="fade">
@@ -586,13 +528,15 @@ const expandedCategories = ref<Set<string | number>>(new Set());
 // FORM
 // ============================================
 
-const newCategory = reactive({
-  id: null as string | number | null,
-
+const newCategory = reactive<{
+  id: string | number | null;
+  name: string;
+  parent_id: string | number | null;
+  active: boolean;
+}>({
+  id: null,
   name: "",
-
-  parent_id: null as string | number | null,
-
+  parent_id: null,
   active: true,
 });
 
@@ -622,9 +566,7 @@ const availableParentCategories = computed(() => {
 
 const getChildren = (parentId: string | number) => {
   return categories.value
-
-    .filter((category) => category.parent_id === parentId)
-
+    .filter((category) => String(category.parent_id) === String(parentId))
     .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 };
 
@@ -645,7 +587,7 @@ const toggleCategory = (categoryId: string | number) => {
 };
 
 // ============================================
-// TOGGLE THREE DOT MENU
+// TOGGLE MENU
 // ============================================
 
 const toggleMenu = (categoryId: string | number) => {
@@ -657,7 +599,7 @@ const toggleMenu = (categoryId: string | number) => {
 };
 
 // ============================================
-// CLOSE MENU WHEN CLICKING OUTSIDE
+// CLOSE MENU
 // ============================================
 
 const closeMenu = () => {
@@ -682,11 +624,15 @@ const loadCategories = async () => {
   errorMessage.value = "";
 
   try {
+    console.log("ADMIN FETCH: /api/admin/categories");
+
     const response = await adminFetch("/api/admin/categories");
 
     categories.value = Array.isArray(response) ? response : [];
 
-    console.log("✅ CATEGORIES:", categories.value);
+    console.log("ADMIN FETCH SUCCESS: /api/admin/categories");
+
+    console.log("CATEGORIES:", categories.value);
   } catch (error: any) {
     console.error("🔥 CATEGORY LOAD ERROR:", error);
 
@@ -700,7 +646,7 @@ const loadCategories = async () => {
 };
 
 // ============================================
-// OPEN ADD CATEGORY
+// OPEN ADD
 // ============================================
 
 const openAddCategory = () => {
@@ -764,24 +710,17 @@ const closeModal = () => {
 };
 
 // ============================================
-// GENERATE SLUG
+// SLUG
 // ============================================
 
 const generateSlug = (name: string) => {
   return name
-
     .toLowerCase()
-
     .trim()
-
     .replace(/&/g, "and")
-
     .replace(/[^a-z0-9\s-]/g, "")
-
     .replace(/\s+/g, "-")
-
     .replace(/-+/g, "-")
-
     .replace(/^-|-$/g, "");
 };
 
@@ -801,44 +740,42 @@ const saveCategory = async () => {
   formError.value = "";
 
   try {
-    // ==========================================
+    // ========================================
     // EDIT
-    // ==========================================
+    // ========================================
 
     if (editingCategory.value) {
       const slug = generateSlug(newCategory.name);
+
+      console.log("🔥 UPDATING CATEGORY:", newCategory.id);
 
       const response = await adminFetch(
         `/api/admin/categories/${newCategory.id}`,
         {
           method: "PUT",
-
           body: {
             name: newCategory.name.trim(),
-
             slug,
-
             parent_id: newCategory.parent_id,
-
             active: newCategory.active,
           },
         },
       );
 
       console.log("✅ CATEGORY UPDATED:", response);
-    } else {
-      // ========================================
-      // ADD
-      // ========================================
+    }
+
+    // ========================================
+    // ADD
+    // ========================================
+    else {
+      console.log("🔥 CREATING CATEGORY:", newCategory.name);
 
       const response = await adminFetch("/api/admin/categories", {
         method: "POST",
-
         body: {
           name: newCategory.name.trim(),
-
           parent_id: newCategory.parent_id,
-
           active: newCategory.active,
         },
       });
@@ -846,30 +783,15 @@ const saveCategory = async () => {
       console.log("✅ CATEGORY CREATED:", response);
     }
 
-    // ==========================================
-    // IMPORTANT
-    // CLOSE MODAL AFTER SUCCESS
-    // ==========================================
+    // ========================================
+    // RESET
+    // ========================================
 
-    showModal.value = false;
+    closeModal();
 
-    editingCategory.value = null;
-
-    formError.value = "";
-
-    newCategory.id = null;
-
-    newCategory.name = "";
-
-    newCategory.parent_id = null;
-
-    newCategory.active = true;
-
-    openMenuId.value = null;
-
-    // ==========================================
-    // RELOAD CATEGORIES
-    // ==========================================
+    // ========================================
+    // RELOAD
+    // ========================================
 
     await loadCategories();
   } catch (error: any) {
@@ -910,9 +832,13 @@ const deleteCategory = async (category: any) => {
   }
 
   try {
+    console.log("🔥 DELETING CATEGORY:", category.id);
+
     await adminFetch(`/api/admin/categories/${category.id}`, {
       method: "DELETE",
     });
+
+    console.log("✅ CATEGORY DELETED:", category.id);
 
     await loadCategories();
   } catch (error: any) {
@@ -926,7 +852,7 @@ const deleteCategory = async (category: any) => {
 };
 
 // ============================================
-// LOAD
+// INITIAL LOAD
 // ============================================
 
 onMounted(async () => {
