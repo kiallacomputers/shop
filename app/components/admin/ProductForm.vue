@@ -1,6 +1,15 @@
 <script setup lang="ts">
 
-const supabase = useSupabaseClient()
+// ============================================================
+// ADMIN API
+// ============================================================
+
+const { adminFetch } = useAdminFetch()
+
+
+// ============================================================
+// EVENTS
+// ============================================================
 
 const emit = defineEmits<{
   close: []
@@ -14,11 +23,11 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 
+const loadingCategories = ref(true)
+
 const errorMessage = ref("")
 
 const categories = ref<any[]>([])
-
-const loadingCategories = ref(true)
 
 
 // ============================================================
@@ -46,21 +55,44 @@ const loadCategories = async () => {
 
   loadingCategories.value = true
 
+  errorMessage.value = ""
+
   try {
 
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("active", true)
-      .order("sort_order", {
-        ascending: true,
-      })
+    console.log("🔥 LOADING ADMIN CATEGORIES")
 
-    if (error) {
-      throw error
+    const response =
+      await adminFetch("/api/admin/categories")
+
+
+    console.log(
+      "🔥 CATEGORY RESPONSE:",
+      response
+    )
+
+
+    if (Array.isArray(response)) {
+
+      categories.value = response
+
+    } else if (
+      response &&
+      Array.isArray(response.categories)
+    ) {
+
+      categories.value =
+        response.categories
+
+    } else {
+
+      categories.value = []
+
     }
 
-    categories.value = data || []
+
+    console.log(
+      `🔥 ${categories.value.length} categories loaded`
+    )
 
   } catch (error: any) {
 
@@ -70,6 +102,7 @@ const loadCategories = async () => {
     )
 
     errorMessage.value =
+      error?.data?.statusMessage ||
       error?.message ||
       "Unable to load categories."
 
@@ -83,7 +116,7 @@ const loadCategories = async () => {
 
 
 // ============================================================
-// SLUG
+// CREATE SLUG
 // ============================================================
 
 const createSlug = (
@@ -125,13 +158,16 @@ const addProduct = async () => {
 
   errorMessage.value = ""
 
+
   try {
 
-    // --------------------------------------------------------
+    // ========================================================
     // VALIDATION
-    // --------------------------------------------------------
+    // ========================================================
 
-    if (!product.value.name.trim()) {
+    if (
+      !product.value.name.trim()
+    ) {
 
       throw new Error(
         "Please enter a product name."
@@ -140,7 +176,9 @@ const addProduct = async () => {
     }
 
 
-    if (!product.value.category_id) {
+    if (
+      !product.value.category_id
+    ) {
 
       throw new Error(
         "Please select a category."
@@ -172,52 +210,74 @@ const addProduct = async () => {
     }
 
 
-    // --------------------------------------------------------
-    // INSERT
-    // --------------------------------------------------------
+    // ========================================================
+    // PRODUCT DATA
+    // ========================================================
 
-    const { error } = await supabase
-      .from("products")
-      .insert({
-        name:
-          product.value.name.trim(),
+    const productData = {
 
-        slug:
-          product.value.slug.trim(),
+      name:
+        product.value.name.trim(),
 
-        description:
-          product.value.description.trim() ||
-          null,
+      slug:
+        product.value.slug.trim(),
 
-        price:
-          Number(product.value.price),
+      description:
+        product.value.description.trim() ||
+        null,
 
-        stock:
-          Number(product.value.stock),
+      price:
+        Number(product.value.price),
 
-        category_id:
-          product.value.category_id,
+      stock:
+        Number(product.value.stock),
 
-        images:
-          product.value.images.trim() ||
-          null,
+      category_id:
+        product.value.category_id,
 
-        featured:
-          product.value.featured,
+      images:
+        product.value.images.trim() ||
+        null,
 
-        active:
-          product.value.active,
-      })
+      featured:
+        product.value.featured,
 
+      active:
+        product.value.active,
 
-    if (error) {
-      throw error
     }
 
 
-    // --------------------------------------------------------
+    console.log(
+      "🔥 ADDING PRODUCT:",
+      productData
+    )
+
+
+    // ========================================================
+    // CREATE PRODUCT THROUGH ADMIN API
+    // ========================================================
+
+    const response =
+      await adminFetch(
+        "/api/admin/products",
+        {
+          method: "POST",
+
+          body: productData,
+        }
+      )
+
+
+    console.log(
+      "🔥 PRODUCT CREATED:",
+      response
+    )
+
+
+    // ========================================================
     // SUCCESS
-    // --------------------------------------------------------
+    // ========================================================
 
     emit("saved")
 
@@ -228,7 +288,9 @@ const addProduct = async () => {
       error
     )
 
+
     errorMessage.value =
+      error?.data?.statusMessage ||
       error?.message ||
       "Unable to add product."
 
@@ -248,7 +310,9 @@ const addProduct = async () => {
 const close = () => {
 
   if (loading.value) {
+
     return
+
   }
 
   emit("close")
@@ -327,7 +391,9 @@ onMounted(async () => {
         class="grid grid-cols-1 md:grid-cols-2 gap-5"
       >
 
+        <!-- ================================================== -->
         <!-- NAME -->
+        <!-- ================================================== -->
 
         <div class="md:col-span-2">
 
@@ -350,7 +416,9 @@ onMounted(async () => {
         </div>
 
 
+        <!-- ================================================== -->
         <!-- SLUG -->
+        <!-- ================================================== -->
 
         <div>
 
@@ -372,7 +440,9 @@ onMounted(async () => {
         </div>
 
 
+        <!-- ================================================== -->
         <!-- CATEGORY -->
+        <!-- ================================================== -->
 
         <div>
 
@@ -399,6 +469,7 @@ onMounted(async () => {
               }}
             </option>
 
+
             <option
               v-for="category in categories"
               :key="category.id"
@@ -412,7 +483,9 @@ onMounted(async () => {
         </div>
 
 
+        <!-- ================================================== -->
         <!-- DESCRIPTION -->
+        <!-- ================================================== -->
 
         <div class="md:col-span-2">
 
@@ -439,7 +512,7 @@ onMounted(async () => {
 
 
     <!-- ====================================================== -->
-    <!-- PRICE & STOCK -->
+    <!-- PRICING & STOCK -->
     <!-- ====================================================== -->
 
     <div
@@ -457,7 +530,9 @@ onMounted(async () => {
         class="grid grid-cols-1 md:grid-cols-2 gap-5"
       >
 
+        <!-- ================================================== -->
         <!-- PRICE -->
+        <!-- ================================================== -->
 
         <div>
 
@@ -492,7 +567,9 @@ onMounted(async () => {
         </div>
 
 
+        <!-- ================================================== -->
         <!-- STOCK -->
+        <!-- ================================================== -->
 
         <div>
 
@@ -551,7 +628,7 @@ onMounted(async () => {
       />
 
 
-      <!-- PREVIEW -->
+      <!-- IMAGE PREVIEW -->
 
       <div
         v-if="product.images"
@@ -563,6 +640,7 @@ onMounted(async () => {
         >
           Preview
         </p>
+
 
         <div
           class="w-full h-56 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden"
@@ -582,7 +660,7 @@ onMounted(async () => {
 
 
     <!-- ====================================================== -->
-    <!-- SETTINGS -->
+    <!-- STORE SETTINGS -->
     <!-- ====================================================== -->
 
     <div
@@ -598,7 +676,9 @@ onMounted(async () => {
 
       <div class="space-y-5">
 
+        <!-- ================================================== -->
         <!-- FEATURED -->
+        <!-- ================================================== -->
 
         <label
           class="flex items-start gap-3 cursor-pointer"
@@ -609,6 +689,7 @@ onMounted(async () => {
             type="checkbox"
             class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
+
 
           <div>
 
@@ -625,7 +706,9 @@ onMounted(async () => {
         </label>
 
 
+        <!-- ================================================== -->
         <!-- ACTIVE -->
+        <!-- ================================================== -->
 
         <label
           class="flex items-start gap-3 cursor-pointer"
@@ -636,6 +719,7 @@ onMounted(async () => {
             type="checkbox"
             class="mt-1 w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
+
 
           <div>
 
@@ -664,6 +748,8 @@ onMounted(async () => {
       class="flex justify-end gap-3 pt-2 pb-2"
     >
 
+      <!-- CANCEL -->
+
       <button
         type="button"
         @click="close"
@@ -674,13 +760,21 @@ onMounted(async () => {
       </button>
 
 
+      <!-- SAVE -->
+
       <button
         type="submit"
         :disabled="loading"
         class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition"
       >
 
-        {{ loading ? "Adding Product..." : "Add Product" }}
+        <span v-if="loading">
+          Adding Product...
+        </span>
+
+        <span v-else>
+          Add Product
+        </span>
 
       </button>
 
