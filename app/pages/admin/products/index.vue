@@ -20,12 +20,12 @@
 
       <div class="flex flex-col sm:flex-row gap-3">
 
-        <!-- Back to Admin -->
+        <!-- BACK TO ADMIN -->
+
         <NuxtLink
           to="/admin"
           class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-slate-700 font-semibold rounded-lg transition"
         >
-          <!-- Arrow Left Icon -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-5 h-5"
@@ -44,13 +44,14 @@
           Back to Admin
         </NuxtLink>
 
-        <!-- Add Product -->
+
+        <!-- ADD PRODUCT -->
+
         <button
           type="button"
           @click="showAddProduct = true"
           class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
         >
-          <!-- Plus Icon -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-5 h-5"
@@ -68,8 +69,10 @@
 
           Add Product
         </button>
+
       </div>
     </div>
+
 
     <!-- ===================================================== -->
     <!-- LOADING -->
@@ -92,6 +95,7 @@
       </p>
     </div>
 
+
     <!-- ===================================================== -->
     <!-- ERROR -->
     <!-- ===================================================== -->
@@ -101,11 +105,13 @@
       class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"
     >
       <div class="flex items-start gap-3">
+
         <span class="text-xl">
           ⚠️
         </span>
 
         <div>
+
           <p class="font-semibold">
             Unable to load products
           </p>
@@ -113,9 +119,12 @@
           <p class="text-sm mt-1">
             {{ errorMessage }}
           </p>
+
         </div>
+
       </div>
     </div>
+
 
     <!-- ===================================================== -->
     <!-- NO PRODUCTS -->
@@ -125,6 +134,7 @@
       v-else-if="mainCategories.length === 0"
       class="bg-white rounded-xl shadow-sm p-12 text-center"
     >
+
       <div class="text-5xl mb-4">
         📦
       </div>
@@ -136,7 +146,9 @@
       <p class="text-gray-500 mt-2">
         There are currently no products to display.
       </p>
+
     </div>
+
 
     <!-- ===================================================== -->
     <!-- CATEGORY LIST -->
@@ -157,18 +169,16 @@
         class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible"
       >
 
-        <!-- ================================================= -->
         <!-- MAIN CATEGORY HEADER -->
-        <!-- ================================================= -->
 
         <button
           type="button"
           @click="toggleCategory(category.id)"
           class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition rounded-xl"
         >
+
           <div class="flex items-center gap-3">
 
-            <!-- Expand icon -->
             <span
               class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-bold transition-transform"
               :class="{
@@ -179,6 +189,7 @@
             </span>
 
             <div class="text-left">
+
               <h2 class="text-lg font-bold text-slate-800">
                 {{ category.name }}
               </h2>
@@ -187,10 +198,11 @@
                 {{ category.productCount }}
                 {{ category.productCount === 1 ? "product" : "products" }}
               </p>
+
             </div>
+
           </div>
 
-          <!-- Main category total -->
           <div
             class="hidden sm:flex items-center gap-2 text-sm text-gray-400"
           >
@@ -203,28 +215,28 @@
               }}
             </span>
           </div>
+
         </button>
 
-        <!-- ================================================= -->
+
         <!-- MAIN CATEGORY CONTENT -->
-        <!-- ================================================= -->
 
         <div
           v-if="isCategoryOpen(category.id)"
           class="border-t border-gray-200 p-4 space-y-4"
         >
 
-          <!-- =============================================== -->
           <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
-          <!-- =============================================== -->
 
           <div
             v-if="category.products.length"
             class="space-y-2"
           >
+
             <div
               class="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-500"
             >
+
               <span>
                 Products
               </span>
@@ -234,15 +246,15 @@
               >
                 {{ category.products.length }}
               </span>
+
             </div>
+
 
             <div
               v-for="product in category.products"
               :key="product.id"
               class="relative"
             >
-
-              <!-- PRODUCT -->
 
               <div
                 class="flex flex-col md:flex-row md:items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition bg-white"
@@ -253,6 +265,7 @@
                 <div
                   class="w-full md:w-24 h-24 flex-shrink-0 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden"
                 >
+
                   <img
                     v-if="getFirstImage(product)"
                     :src="getFirstImage(product)"
@@ -266,7 +279,9 @@
                   >
                     📦
                   </span>
+
                 </div>
+
 
                 <!-- PRODUCT INFO -->
 
@@ -289,22 +304,16 @@
                     class="flex flex-wrap items-center gap-3 mt-2"
                   >
 
-                    <!-- PRICE -->
-
                     <span class="font-bold text-blue-600">
-                      <span>$</span>{{ product.price }}
+                      ${{ product.price }}
                     </span>
-
-                    <!-- OLD PRICE -->
 
                     <span
                       v-if="product.oldPrice"
                       class="text-sm text-gray-400 line-through"
                     >
-                      <span>$</span>{{ product.oldPrice }}
+                      ${{ product.oldPrice }}
                     </span>
-
-                    <!-- STOCK -->
 
                     <span
                       class="text-sm"
@@ -316,8 +325,6 @@
                     >
                       {{ product.stock }} in stock
                     </span>
-
-                    <!-- ACTIVE -->
 
                     <span
                       v-if="product.active"
@@ -332,8 +339,11 @@
                     >
                       Inactive
                     </span>
+
                   </div>
+
                 </div>
+
 
                 <!-- ACTIONS -->
 
@@ -341,18 +351,14 @@
                   class="relative flex-shrink-0 self-start md:self-center"
                 >
 
-                  <!-- THREE DOTS -->
-
                   <button
                     type="button"
                     @click.stop="toggleMenu(product.id)"
                     class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition"
                     aria-label="Product actions"
                   >
+
                     <span class="flex items-center gap-1">
-                      <span
-                        class="w-1.5 h-1.5 rounded-full bg-current"
-                      ></span>
 
                       <span
                         class="w-1.5 h-1.5 rounded-full bg-current"
@@ -361,8 +367,15 @@
                       <span
                         class="w-1.5 h-1.5 rounded-full bg-current"
                       ></span>
+
+                      <span
+                        class="w-1.5 h-1.5 rounded-full bg-current"
+                      ></span>
+
                     </span>
+
                   </button>
+
 
                   <!-- ACTION MENU -->
 
@@ -372,43 +385,31 @@
                     @click.stop
                   >
 
-                    <!-- VIEW -->
-
                     <button
                       type="button"
                       @click="viewProduct(product)"
                       class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                     >
-                      <span
-                        class="w-5 text-center text-blue-600"
-                      >
+                      <span class="w-5 text-center text-blue-600">
                         👁
                       </span>
 
-                      <span>
-                        View
-                      </span>
+                      View
                     </button>
 
-                    <!-- EDIT -->
 
                     <button
                       type="button"
                       @click="editProduct(product)"
                       class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                     >
-                      <span
-                        class="w-5 text-center text-green-600"
-                      >
+                      <span class="w-5 text-center text-green-600">
                         ✎
                       </span>
 
-                      <span>
-                        Edit
-                      </span>
+                      Edit
                     </button>
 
-                    <!-- DELETE -->
 
                     <button
                       type="button"
@@ -419,20 +420,23 @@
                         🗑
                       </span>
 
-                      <span>
-                        Delete
-                      </span>
+                      Delete
                     </button>
 
                   </div>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
 
-          <!-- =============================================== -->
+
+          <!-- ================================================= -->
           <!-- SUBCATEGORIES -->
-          <!-- =============================================== -->
+          <!-- ================================================= -->
 
           <div
             v-for="subcategory in category.children"
@@ -440,13 +444,12 @@
             class="border border-gray-200 rounded-lg overflow-visible"
           >
 
-            <!-- SUBCATEGORY HEADER -->
-
             <button
               type="button"
               @click="toggleCategory(subcategory.id)"
               class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition rounded-lg"
             >
+
               <div class="flex items-center gap-3">
 
                 <span
@@ -458,9 +461,7 @@
                   ›
                 </span>
 
-                <span
-                  class="font-semibold text-slate-700"
-                >
+                <span class="font-semibold text-slate-700">
                   {{ subcategory.name }}
                 </span>
 
@@ -474,7 +475,9 @@
                 </span>
 
               </div>
+
             </button>
+
 
             <!-- SUBCATEGORY PRODUCTS -->
 
@@ -490,6 +493,7 @@
                 No products in this category.
               </div>
 
+
               <div
                 v-for="product in subcategory.products"
                 :key="product.id"
@@ -500,11 +504,10 @@
                   class="flex flex-col md:flex-row md:items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition bg-white"
                 >
 
-                  <!-- IMAGE -->
-
                   <div
                     class="w-full md:w-24 h-24 flex-shrink-0 bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden"
                   >
+
                     <img
                       v-if="getFirstImage(product)"
                       :src="getFirstImage(product)"
@@ -518,9 +521,9 @@
                     >
                       📦
                     </span>
+
                   </div>
 
-                  <!-- INFO -->
 
                   <div class="flex-1 min-w-0">
 
@@ -542,14 +545,14 @@
                     >
 
                       <span class="font-bold text-blue-600">
-                        <span>$</span>{{ product.price }}
+                        ${{ product.price }}
                       </span>
 
                       <span
                         v-if="product.oldPrice"
                         class="text-sm text-gray-400 line-through"
                       >
-                        <span>$</span>{{ product.oldPrice }}
+                        ${{ product.oldPrice }}
                       </span>
 
                       <span
@@ -578,28 +581,21 @@
                       </span>
 
                     </div>
+
                   </div>
 
-                  <!-- ACTIONS -->
 
                   <div
                     class="relative flex-shrink-0 self-start md:self-center"
                   >
 
-                    <!-- DOTS -->
-
                     <button
                       type="button"
                       @click.stop="toggleMenu(product.id)"
                       class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition"
-                      aria-label="Product actions"
                     >
-                      <span
-                        class="flex items-center gap-1"
-                      >
-                        <span
-                          class="w-1.5 h-1.5 rounded-full bg-current"
-                        ></span>
+
+                      <span class="flex items-center gap-1">
 
                         <span
                           class="w-1.5 h-1.5 rounded-full bg-current"
@@ -608,10 +604,15 @@
                         <span
                           class="w-1.5 h-1.5 rounded-full bg-current"
                         ></span>
+
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-current"
+                        ></span>
+
                       </span>
+
                     </button>
 
-                    <!-- MENU -->
 
                     <div
                       v-if="openMenu === product.id"
@@ -624,28 +625,26 @@
                         @click="viewProduct(product)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
-                        <span
-                          class="w-5 text-center text-blue-600"
-                        >
+                        <span class="w-5 text-center text-blue-600">
                           👁
                         </span>
 
                         View
                       </button>
 
+
                       <button
                         type="button"
                         @click="editProduct(product)"
                         class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
-                        <span
-                          class="w-5 text-center text-green-600"
-                        >
+                        <span class="w-5 text-center text-green-600">
                           ✎
                         </span>
 
                         Edit
                       </button>
+
 
                       <button
                         type="button"
@@ -660,107 +659,90 @@
                       </button>
 
                     </div>
+
                   </div>
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
 
         </div>
+
       </div>
+
     </div>
 
+
     <!-- ===================================================== -->
-    <!-- ADD PRODUCT MODAL -->
+    <!-- ADD PRODUCT INNER WINDOW -->
     <!-- ===================================================== -->
 
-    <div
-      v-if="showAddProduct"
-      class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4"
-      @click.self="closeAddProduct"
-    >
+    <Transition name="modal">
 
       <div
-        class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
+        v-if="showAddProduct"
+        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4"
+        @click.self="closeAddProduct"
       >
 
-        <!-- ================================================= -->
-        <!-- MODAL HEADER -->
-        <!-- ================================================= -->
-
         <div
-          class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white"
+          class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
         >
 
-          <div>
-            <h2
-              class="text-xl font-bold text-slate-800"
-            >
-              Add Product
-            </h2>
-
-            <p
-              class="text-sm text-gray-500 mt-1"
-            >
-              Add a new product to your store.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            @click="closeAddProduct"
-            class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-
-        </div>
-
-        <!-- ================================================= -->
-        <!-- MODAL CONTENT -->
-        <!-- ================================================= -->
-
-        <div
-          class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
-        >
-
-          <!--
-            ===================================================
-            ADD PRODUCT FORM
-            ===================================================
-
-            Put your existing Add Product form here.
-
-            The modal is now working independently from the
-            /admin/products/new route.
-          -->
+          <!-- HEADER -->
 
           <div
-            class="border-2 border-dashed border-gray-200 rounded-xl p-10 text-center"
+            class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white"
           >
 
-            <div class="text-5xl mb-4">
-              📦
+            <div>
+
+              <h2 class="text-xl font-bold text-slate-800">
+                Add Product
+              </h2>
+
+              <p class="text-sm text-gray-500 mt-1">
+                Add a new product to your store.
+              </p>
+
             </div>
 
-            <h3
-              class="text-lg font-semibold text-slate-700"
-            >
-              Add Product Form
-            </h3>
 
-            <p
-              class="text-gray-500 text-sm mt-2"
+            <button
+              type="button"
+              @click="closeAddProduct"
+              class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
+              aria-label="Close"
             >
-              Your existing Add Product form should go here.
-            </p>
+              ✕
+            </button>
+
+          </div>
+
+
+          <!-- FORM -->
+
+          <div
+            class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
+          >
+
+            <AdminProductForm
+              @close="closeAddProduct"
+              @saved="productAdded"
+            />
 
           </div>
 
         </div>
+
       </div>
-    </div>
+
+    </Transition>
+
 
     <!-- ===================================================== -->
     <!-- DELETE CONFIRMATION -->
@@ -786,15 +768,11 @@
 
           <div>
 
-            <h2
-              class="text-xl font-bold text-slate-800"
-            >
+            <h2 class="text-xl font-bold text-slate-800">
               Delete Product?
             </h2>
 
-            <p
-              class="text-gray-600 mt-2"
-            >
+            <p class="text-gray-600 mt-2">
               Are you sure you really want to delete
 
               <strong>
@@ -804,18 +782,16 @@
               ?
             </p>
 
-            <p
-              class="text-sm text-red-600 mt-2"
-            >
+            <p class="text-sm text-red-600 mt-2">
               This action cannot be undone.
             </p>
 
           </div>
+
         </div>
 
-        <div
-          class="flex justify-end gap-3 mt-6"
-        >
+
+        <div class="flex justify-end gap-3 mt-6">
 
           <button
             type="button"
@@ -824,6 +800,7 @@
           >
             Cancel
           </button>
+
 
           <button
             type="button"
@@ -835,11 +812,14 @@
           </button>
 
         </div>
+
       </div>
+
     </div>
 
   </div>
 </template>
+
 
 <script setup lang="ts">
 
@@ -851,17 +831,20 @@ definePageMeta({
   middleware: "admin",
 });
 
+
 // ============================================================
 // ADMIN FETCH
 // ============================================================
 
 const { adminFetch } = useAdminFetch();
 
+
 // ============================================================
 // ROUTER
 // ============================================================
 
 const router = useRouter();
+
 
 // ============================================================
 // STATE
@@ -883,6 +866,7 @@ const productToDelete = ref<any | null>(null);
 
 const deleting = ref(false);
 
+
 // ============================================================
 // ADD PRODUCT MODAL
 // ============================================================
@@ -892,6 +876,20 @@ const showAddProduct = ref(false);
 const closeAddProduct = () => {
   showAddProduct.value = false;
 };
+
+
+// ============================================================
+// PRODUCT SAVED
+// ============================================================
+
+const productAdded = async () => {
+
+  showAddProduct.value = false;
+
+  await loadData();
+
+};
+
 
 // ============================================================
 // LOAD DATA
@@ -915,19 +913,20 @@ const loadData = async () => {
       adminFetch("/api/admin/categories"),
     ]);
 
+
     console.log(
       "🔥 PRODUCTS RESPONSE:",
       productResponse
     );
+
 
     console.log(
       "🔥 CATEGORIES RESPONSE:",
       categoryResponse
     );
 
-    // --------------------------------------------------------
+
     // PRODUCTS
-    // --------------------------------------------------------
 
     if (Array.isArray(productResponse)) {
 
@@ -946,9 +945,8 @@ const loadData = async () => {
 
     }
 
-    // --------------------------------------------------------
+
     // CATEGORIES
-    // --------------------------------------------------------
 
     if (Array.isArray(categoryResponse)) {
 
@@ -967,9 +965,11 @@ const loadData = async () => {
 
     }
 
+
     console.log(
       `🔥 ${products.value.length} products loaded`
     );
+
 
     console.log(
       `🔥 ${categories.value.length} categories loaded`
@@ -992,7 +992,9 @@ const loadData = async () => {
     loading.value = false;
 
   }
+
 };
+
 
 // ============================================================
 // GET FIRST IMAGE
@@ -1009,6 +1011,7 @@ const getFirstImage = (product: any) => {
 
   }
 
+
   if (
     typeof product?.images === "string" &&
     product.images
@@ -1018,8 +1021,11 @@ const getFirstImage = (product: any) => {
 
   }
 
+
   return null;
+
 };
+
 
 // ============================================================
 // SORTED PRODUCTS
@@ -1035,6 +1041,7 @@ const sortedProducts = computed(() => {
   );
 
 });
+
 
 // ============================================================
 // MAIN CATEGORIES
@@ -1053,6 +1060,7 @@ const mainCategories = computed(() => {
         )
     );
 
+
   return parentCategories.map((parent) => {
 
     const children = categories.value
@@ -1068,12 +1076,14 @@ const mainCategories = computed(() => {
           )
       );
 
+
     const parentProducts =
       sortedProducts.value.filter(
         (product) =>
           Number(product.category_id) ===
           Number(parent.id)
       );
+
 
     const childCategories =
       children.map((child) => {
@@ -1085,12 +1095,14 @@ const mainCategories = computed(() => {
               Number(child.id)
           );
 
+
         return {
           ...child,
           products: childProducts,
         };
 
       });
+
 
     const productCount =
       parentProducts.length +
@@ -1099,6 +1111,7 @@ const mainCategories = computed(() => {
           total + child.products.length,
         0,
       );
+
 
     return {
       ...parent,
@@ -1111,6 +1124,7 @@ const mainCategories = computed(() => {
 
 });
 
+
 // ============================================================
 // TOGGLE CATEGORY
 // ============================================================
@@ -1122,6 +1136,7 @@ const toggleCategory = (
   const newSet =
     new Set(openCategories.value);
 
+
   if (newSet.has(categoryId)) {
 
     newSet.delete(categoryId);
@@ -1132,8 +1147,11 @@ const toggleCategory = (
 
   }
 
+
   openCategories.value = newSet;
+
 };
+
 
 // ============================================================
 // CATEGORY OPEN
@@ -1148,6 +1166,7 @@ const isCategoryOpen = (
   );
 
 };
+
 
 // ============================================================
 // TOGGLE PRODUCT MENU
@@ -1171,6 +1190,7 @@ const toggleMenu = (
 
 };
 
+
 // ============================================================
 // CLOSE MENU WHEN CLICKING OUTSIDE
 // ============================================================
@@ -1181,6 +1201,7 @@ const closeMenu = () => {
 
 };
 
+
 onMounted(() => {
 
   document.addEventListener(
@@ -1190,6 +1211,7 @@ onMounted(() => {
 
 });
 
+
 onBeforeUnmount(() => {
 
   document.removeEventListener(
@@ -1198,6 +1220,7 @@ onBeforeUnmount(() => {
   );
 
 });
+
 
 // ============================================================
 // VIEW PRODUCT
@@ -1209,6 +1232,7 @@ const viewProduct = (
 
   openMenu.value = null;
 
+
   if (product?.slug) {
 
     router.push(
@@ -1218,6 +1242,7 @@ const viewProduct = (
   }
 
 };
+
 
 // ============================================================
 // EDIT PRODUCT
@@ -1229,11 +1254,13 @@ const editProduct = (
 
   openMenu.value = null;
 
+
   router.push(
     `/admin/products/edit/${product.id}`
   );
 
 };
+
 
 // ============================================================
 // CONFIRM DELETE
@@ -1249,6 +1276,7 @@ const confirmDelete = (
 
 };
 
+
 // ============================================================
 // CANCEL DELETE
 // ============================================================
@@ -1258,6 +1286,7 @@ const cancelDelete = () => {
   productToDelete.value = null;
 
 };
+
 
 // ============================================================
 // DELETE PRODUCT
@@ -1271,17 +1300,21 @@ const deleteProduct = async () => {
 
   }
 
+
   deleting.value = true;
+
 
   try {
 
     const id =
       productToDelete.value.id;
 
+
     console.log(
       "🔥 DELETING PRODUCT:",
       id
     );
+
 
     await adminFetch(
       `/api/admin/products/${id}`,
@@ -1290,7 +1323,6 @@ const deleteProduct = async () => {
       }
     );
 
-    // Remove from local list immediately
 
     products.value =
       products.value.filter(
@@ -1298,6 +1330,7 @@ const deleteProduct = async () => {
           Number(product.id) !==
           Number(id)
       );
+
 
     productToDelete.value = null;
 
@@ -1308,10 +1341,12 @@ const deleteProduct = async () => {
       error
     );
 
+
     errorMessage.value =
       error?.data?.statusMessage ||
       error?.message ||
       "Unable to delete product.";
+
 
     productToDelete.value = null;
 
@@ -1323,8 +1358,9 @@ const deleteProduct = async () => {
 
 };
 
+
 // ============================================================
-// LOAD
+// INITIAL LOAD
 // ============================================================
 
 onMounted(async () => {
@@ -1334,3 +1370,18 @@ onMounted(async () => {
 });
 
 </script>
+
+
+<style scoped>
+
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+</style>
