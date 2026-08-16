@@ -3,6 +3,7 @@ import { isAdminUser } from "~~/server/utils/adminAuth";
 export default defineEventHandler(async (event) => {
   console.log("=================================");
   console.log("ADMIN CHECK API");
+  console.log("=================================");
 
   try {
     const result = await isAdminUser(event);
@@ -22,12 +23,9 @@ export default defineEventHandler(async (event) => {
 
     return {
       authenticated: true,
-
       isAdmin: result.isAdmin,
-
       user: {
         id: result.user.id,
-
         email: result.user.email,
       },
     };

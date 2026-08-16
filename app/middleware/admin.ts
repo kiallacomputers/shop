@@ -1,24 +1,29 @@
 export default defineNuxtRouteMiddleware(async () => {
   // ============================================================
-  // IMPORTANT
+  // SERVER
   // ============================================================
-  // Do not perform the Supabase admin check during SSR.
   //
-  // The browser session/access token is available once the
-  // application has hydrated on the client.
+  // Do not perform the admin API check during SSR.
+  // The client-side Supabase session will be checked after
+  // hydration.
+  //
   // ============================================================
 
   if (import.meta.server) {
     return;
   }
 
-  const { checkAdmin, isAdmin, adminChecked } = useAdminFetch();
-
   // ============================================================
-  // CHECK ADMIN
+  // ADMIN COMPOSABLE
   // ============================================================
 
-  if (!adminChecked.value) {
+  const { checkAdmin, isAdmin, adminChecked, checkingAdmin } = useAdminFetch();
+
+  // ============================================================
+  // CHECK ADMIN STATUS
+  // ============================================================
+
+  if (!adminChecked.value && !checkingAdmin.value) {
     const result = await checkAdmin();
 
     if (!result) {
@@ -27,10 +32,10 @@ export default defineNuxtRouteMiddleware(async () => {
   }
 
   // ============================================================
-  // ADMIN CHECKED
+  // ADMIN CHECK FAILED
   // ============================================================
 
-  if (!isAdmin.value) {
+  if (adminChecked.value && !isAdmin.value) {
     return navigateTo("/");
   }
 });

@@ -1,215 +1,138 @@
+import { serverSupabaseClient } from "#supabase/server";
 import { createClient } from "@supabase/supabase-js";
-import type { H3Event } from "h3";
-import { getHeader } from "h3";
 
-/**
- * ============================================================
- * GET AUTHENTICATED USER
- * ============================================================
- *
- * Authentication is performed using:
- *
- * Authorization: Bearer <supabase_access_token>
- *
- * This is reliable for Netlify/serverless requests.
- *
- */
+export async function isAdminUser(event: any) {
+  console.log("=================================");
+  console.log("AUTHENTICATION CHECK");
+  console.log("=================================");
 
-export async function getUserFromEvent(event: H3Event) {
   try {
-    const authorization = getHeader(event, "authorization");
+    // ============================================================
+    // GET AUTHENTICATED SUPABASE CLIENT
+    // ============================================================
 
-    console.log("=================================");
-    console.log("AUTHENTICATION CHECK");
-    console.log("AUTHORIZATION HEADER:", authorization ? "PRESENT" : "MISSING");
+    const supabase = await serverSupabaseClient(event);
 
-    // ----------------------------------------------------------
-    // REQUIRE BEARER TOKEN
-    // ----------------------------------------------------------
+    // ============================================================
+    // GET LOGGED IN USER
+    // ============================================================
 
-    if (!authorization) {
-      console.error("❌ NO AUTHORIZATION HEADER");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      return null;
+    if (userError) {
+      console.error("❌ SUPABASE USER ERROR:", userError);
     }
 
-    if (!authorization.startsWith("Bearer ")) {
-      console.error("❌ INVALID AUTHORIZATION HEADER");
+    if (!user) {
+      console.log("❌ NO LOGGED IN USER");
 
-      return null;
+      return {
+        user: null,
+        isAdmin: false,
+      };
     }
 
-    const accessToken = authorization.substring(7).trim();
+    console.log("✅ AUTHENTICATED USER:", user.email);
+    console.log("USER ID:", user.id);
 
-    if (!accessToken) {
-      console.error("❌ EMPTY ACCESS TOKEN");
-
-      return null;
-    }
-
-    // ----------------------------------------------------------
-    // SUPABASE CONFIGURATION
-    // ----------------------------------------------------------
+    // ============================================================
+    // SERVER CONFIGURATION
+    // ============================================================
 
     const config = useRuntimeConfig();
 
-    const supabaseUrl = config.public.supabaseUrl || config.supabaseUrl;
+    const supabaseUrl =
+      config.public.supabaseUrl ||
+      config.supabaseUrl ||
+      process.env.SUPABASE_URL;
 
-    const supabaseAnonKey =
-      config.public.supabaseAnonKey || config.supabaseAnonKey;
+    const serviceKey =
+      config.supabaseSecretKey ||
+      config.supabaseServiceKey ||
+      process.env.SUPABASE_SECRET_KEY;
 
     if (!supabaseUrl) {
-      console.error("❌ SUPABASE URL NOT CONFIGURED");
+      console.error("❌ SUPABASE URL IS MISSING");
 
-      return null;
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase URL is not configured",
+      });
     }
 
-    if (!supabaseAnonKey) {
-      console.error("❌ SUPABASE ANON KEY NOT CONFIGURED");
+    if (!serviceKey) {
+      console.error("❌ SUPABASE SECRET KEY IS MISSING");
 
-      return null;
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Supabase server secret key is not configured",
+      });
     }
 
-    // ----------------------------------------------------------
-    // CREATE AUTH CLIENT
-    // ----------------------------------------------------------
+    // ============================================================
+    // SERVICE ROLE CLIENT
+    // ============================================================
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const adminSupabase = createClient(supabaseUrl, serviceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
       },
     });
 
-    // ----------------------------------------------------------
-    // VERIFY TOKEN
-    // ----------------------------------------------------------
+    // ============================================================
+    // CHECK ADMIN TABLE
+    // ============================================================
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(accessToken);
+    const { data: adminUser, error: adminError } = await adminSupabase
+      .from("admin_users")
+      .select("id, email")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (error) {
-      console.error("❌ SUPABASE TOKEN ERROR:", error.message);
+    console.log("👤 ADMIN DATABASE RESULT:", adminUser);
 
-      return null;
+    if (adminError) {
+      console.error("❌ ADMIN DATABASE ERROR:", adminError);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          adminError.message || "Unable to verify administrator access",
+      });
     }
 
-    if (!user) {
-      console.error("❌ USER NOT FOUND");
+    const isAdmin = !!adminUser;
 
-      return null;
-    }
-
-    console.log("✅ AUTHENTICATED USER:", user.email);
-    console.log("USER ID:", user.id);
+    console.log("IS ADMIN:", isAdmin);
     console.log("=================================");
-
-    return user;
-  } catch (error) {
-    console.error("🔥 GET USER ERROR:", error);
-
-    return null;
-  }
-}
-
-/**
- * ============================================================
- * ADMIN SUPABASE CLIENT
- * ============================================================
- *
- * SERVER SIDE ONLY.
- *
- * Uses the Supabase secret/service key.
- *
- */
-
-export function getAdminSupabase() {
-  const config = useRuntimeConfig();
-
-  const supabaseUrl = config.public.supabaseUrl || config.supabaseUrl;
-
-  const supabaseKey = config.supabaseSecretKey || config.supabaseServiceKey;
-
-  if (!supabaseUrl) {
-    throw new Error("Supabase URL is not configured");
-  }
-
-  if (!supabaseKey) {
-    throw new Error("Supabase secret key is not configured");
-  }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
-/**
- * ============================================================
- * CHECK ADMIN USER
- * ============================================================
- */
-
-export async function isAdminUser(event: H3Event) {
-  const user = await getUserFromEvent(event);
-
-  // ----------------------------------------------------------
-  // NOT AUTHENTICATED
-  // ----------------------------------------------------------
-
-  if (!user) {
-    console.log("❌ ADMIN CHECK: NO USER");
-
-    return {
-      user: null,
-      isAdmin: false,
-    };
-  }
-
-  // ----------------------------------------------------------
-  // SERVER ADMIN CLIENT
-  // ----------------------------------------------------------
-
-  const supabase = getAdminSupabase();
-
-  // ----------------------------------------------------------
-  // CHECK ADMIN USERS TABLE
-  // ----------------------------------------------------------
-
-  const { data, error } = await supabase
-    .from("admin_users")
-    .select("id, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("🔥 ADMIN DATABASE CHECK ERROR:", error);
 
     return {
       user,
-      isAdmin: false,
+      isAdmin,
     };
+  } catch (error: any) {
+    console.error("🔥 ADMIN AUTH ERROR:", error);
+
+    if (error?.statusCode) {
+      throw error;
+    }
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: error?.message || "Unable to verify administrator access",
+    });
   }
-
-  console.log("👤 ADMIN DATABASE RESULT:", data);
-
-  return {
-    user,
-    isAdmin: !!data,
-  };
 }
 
-/**
- * ============================================================
- * REQUIRE ADMIN
- * ============================================================
- */
+// ================================================================
+// REQUIRE ADMIN
+// ================================================================
 
-export async function requireAdmin(event: H3Event) {
+export async function requireAdmin(event: any) {
   const result = await isAdminUser(event);
 
   if (!result.user) {

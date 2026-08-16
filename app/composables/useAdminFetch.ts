@@ -1,46 +1,9 @@
 export function useAdminFetch() {
-  const supabase = useSupabaseClient();
+  const isAdmin = useState<boolean>("isAdmin", () => false);
 
-  const isAdmin = useState<boolean>("admin-is-admin", () => false);
-  const adminChecked = useState<boolean>("admin-checked", () => false);
-  const checkingAdmin = useState<boolean>("admin-checking", () => false);
+  const adminChecked = useState<boolean>("adminChecked", () => false);
 
-  // ============================================================
-  // GET SUPABASE ACCESS TOKEN
-  // ============================================================
-
-  const getAccessToken = async (): Promise<string | null> => {
-    try {
-      console.log("GETTING SUPABASE SESSION...");
-
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("❌ SUPABASE SESSION ERROR:", error);
-        return null;
-      }
-
-      if (!session) {
-        console.log("❌ NO SUPABASE SESSION");
-        return null;
-      }
-
-      if (!session.access_token) {
-        console.log("❌ SESSION HAS NO ACCESS TOKEN");
-        return null;
-      }
-
-      console.log("✅ SUPABASE ACCESS TOKEN FOUND");
-
-      return session.access_token;
-    } catch (error) {
-      console.error("❌ GET SESSION ERROR:", error);
-      return null;
-    }
-  };
+  const checkingAdmin = useState<boolean>("checkingAdmin", () => false);
 
   // ============================================================
   // CHECK ADMIN STATUS
@@ -56,17 +19,30 @@ export function useAdminFetch() {
     try {
       console.log("=================================");
       console.log("CHECKING ADMIN STATUS...");
+      console.log("=================================");
 
-      const token = await getAccessToken();
+      // ============================================================
+      // WAIT FOR SUPABASE SESSION
+      // ============================================================
 
-      if (!token) {
-        console.log("❌ NO ACCESS TOKEN");
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("SUPABASE SESSION:", session?.user?.email || "NONE");
+
+      if (!session) {
+        console.log("❌ NO SUPABASE SESSION");
 
         isAdmin.value = false;
         adminChecked.value = true;
 
         return false;
       }
+
+      // ============================================================
+      // CHECK ADMIN
+      // ============================================================
 
       const result = await $fetch<{
         authenticated: boolean;
@@ -77,10 +53,7 @@ export function useAdminFetch() {
         };
       }>("/api/admin/check", {
         method: "GET",
-
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       console.log("ADMIN CHECK RESULT:", result);
@@ -89,11 +62,10 @@ export function useAdminFetch() {
       adminChecked.value = true;
 
       console.log("IS ADMIN:", isAdmin.value);
-      console.log("=================================");
 
       return isAdmin.value;
     } catch (error: any) {
-      console.error("❌ ADMIN CHECK ERROR:", error);
+      console.error("ADMIN CHECK ERROR:", error);
 
       isAdmin.value = false;
       adminChecked.value = true;
@@ -115,45 +87,19 @@ export function useAdminFetch() {
     console.log("=================================");
     console.log("ADMIN FETCH:", url);
 
-    const token = await getAccessToken();
-
-    if (!token) {
-      console.error("❌ ADMIN FETCH: NO ACCESS TOKEN");
-
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Authentication required",
-      });
-    }
-
-    // ==========================================================
-    // HEADERS
-    // ==========================================================
-
-    const headers = new Headers(options.headers || {});
-
-    headers.set("Authorization", `Bearer ${token}`);
-
-    // ==========================================================
-    // REQUEST
-    // ==========================================================
-
     try {
       const result = await $fetch<T>(url, {
         ...options,
-        headers,
         credentials: "include",
       });
 
-      console.log("✅ ADMIN FETCH SUCCESS:", url);
+      console.log("ADMIN FETCH SUCCESS:", url);
       console.log("=================================");
 
       return result;
     } catch (error: any) {
       console.error("=================================");
-      console.error("🔥 ADMIN FETCH ERROR:", url);
-      console.error("STATUS:", error?.statusCode);
-      console.error("MESSAGE:", error?.statusMessage);
+      console.error("ADMIN FETCH ERROR:", url);
       console.error(error);
       console.error("=================================");
 
