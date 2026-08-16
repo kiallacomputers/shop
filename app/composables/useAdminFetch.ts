@@ -5,11 +5,15 @@ export function useAdminFetch() {
 
   const checkingAdmin = useState<boolean>("checkingAdmin", () => false);
 
+  const supabase = useSupabaseClient();
+  const user = useSupabaseUser();
+
   // ============================================================
   // CHECK ADMIN STATUS
   // ============================================================
 
   const checkAdmin = async () => {
+    // Already checking
     if (checkingAdmin.value) {
       return isAdmin.value;
     }
@@ -21,28 +25,42 @@ export function useAdminFetch() {
       console.log("CHECKING ADMIN STATUS...");
       console.log("=================================");
 
-      // ============================================================
+      // ========================================================
       // WAIT FOR SUPABASE SESSION
-      // ============================================================
+      // ========================================================
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let attempts = 0;
 
-      console.log("SUPABASE SESSION:", session?.user?.email || "NONE");
+      while (!user.value && attempts < 50) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-      if (!session) {
-        console.log("❌ NO SUPABASE SESSION");
+        attempts++;
+      }
+
+      console.log("SUPABASE USER:", user.value?.email || "NONE");
+
+      // ========================================================
+      // NO USER
+      // ========================================================
+
+      if (!user.value) {
+        console.log("❌ NO SUPABASE USER");
 
         isAdmin.value = false;
-        adminChecked.value = true;
+
+        // IMPORTANT:
+        // Don't permanently mark the admin check as complete
+        // when the Supabase session has not loaded yet.
+        adminChecked.value = false;
 
         return false;
       }
 
-      // ============================================================
-      // CHECK ADMIN
-      // ============================================================
+      // ========================================================
+      // CHECK ADMIN ON SERVER
+      // ========================================================
+
+      console.log("ADMIN CHECK: Checking", user.value.email);
 
       const result = await $fetch<{
         authenticated: boolean;
@@ -50,7 +68,7 @@ export function useAdminFetch() {
         user?: {
           id: string;
           email: string;
-        };
+        } | null;
       }>("/api/admin/check", {
         method: "GET",
         credentials: "include",
@@ -58,7 +76,16 @@ export function useAdminFetch() {
 
       console.log("ADMIN CHECK RESULT:", result);
 
-      isAdmin.value = result.isAdmin === true;
+      // ========================================================
+      // UPDATE STATE
+      // ========================================================
+
+      if (result.authenticated === true && result.isAdmin === true) {
+        isAdmin.value = true;
+      } else {
+        isAdmin.value = false;
+      }
+
       adminChecked.value = true;
 
       console.log("IS ADMIN:", isAdmin.value);
@@ -68,7 +95,15 @@ export function useAdminFetch() {
       console.error("ADMIN CHECK ERROR:", error);
 
       isAdmin.value = false;
-      adminChecked.value = true;
+
+      /*
+       * Do NOT permanently mark this as checked after
+       * an authentication/session error.
+       *
+       * This allows another attempt once the session
+       * is available.
+       */
+      adminChecked.value = false;
 
       return false;
     } finally {
@@ -94,6 +129,7 @@ export function useAdminFetch() {
       });
 
       console.log("ADMIN FETCH SUCCESS:", url);
+
       console.log("=================================");
 
       return result;
@@ -103,10 +139,18 @@ export function useAdminFetch() {
       console.error(error);
       console.error("=================================");
 
+      // ========================================================
+      // UNAUTHENTICATED
+      // ========================================================
+
       if (error?.statusCode === 401) {
         isAdmin.value = false;
-        adminChecked.value = true;
+        adminChecked.value = false;
       }
+
+      // ========================================================
+      // NOT ADMIN
+      // ========================================================
 
       if (error?.statusCode === 403) {
         isAdmin.value = false;

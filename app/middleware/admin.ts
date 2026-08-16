@@ -2,40 +2,68 @@ export default defineNuxtRouteMiddleware(async () => {
   // ============================================================
   // SERVER
   // ============================================================
-  //
-  // Do not perform the admin API check during SSR.
-  // The client-side Supabase session will be checked after
-  // hydration.
-  //
-  // ============================================================
 
   if (import.meta.server) {
     return;
   }
 
   // ============================================================
-  // ADMIN COMPOSABLE
+  // ADMIN
   // ============================================================
 
   const { checkAdmin, isAdmin, adminChecked, checkingAdmin } = useAdminFetch();
 
   // ============================================================
-  // CHECK ADMIN STATUS
+  // WAIT FOR EXISTING CHECK
   // ============================================================
 
-  if (!adminChecked.value && !checkingAdmin.value) {
-    const result = await checkAdmin();
+  if (checkingAdmin.value) {
+    let attempts = 0;
 
-    if (!result) {
-      return navigateTo("/");
+    while (checkingAdmin.value && attempts < 50) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      attempts++;
     }
   }
 
   // ============================================================
-  // ADMIN CHECK FAILED
+  // CHECK ADMIN
   // ============================================================
 
-  if (adminChecked.value && !isAdmin.value) {
-    return navigateTo("/");
+  if (!adminChecked.value) {
+    await checkAdmin();
   }
+
+  // ============================================================
+  // WAIT FOR CHECK TO FINISH
+  // ============================================================
+
+  if (checkingAdmin.value) {
+    let attempts = 0;
+
+    while (checkingAdmin.value && attempts < 50) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      attempts++;
+    }
+  }
+
+  // ============================================================
+  // ADMIN VERIFIED
+  // ============================================================
+
+  if (isAdmin.value === true) {
+    console.log("ADMIN MIDDLEWARE: Administrator verified");
+
+    return;
+  }
+
+  // ============================================================
+  // ACCESS DENIED
+  // ============================================================
+
+  console.log("ADMIN MIDDLEWARE: Access denied");
+
+  return navigateTo("/");
 });
