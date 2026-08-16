@@ -1,105 +1,128 @@
-import {
-  serverSupabaseClient,
-  serverSupabaseServiceRole,
-  serverSupabaseUser,
-} from "#supabase/server";
+import { createClient } from "@supabase/supabase-js";
+import type { H3Event } from "h3";
 
-/**
- * Get the currently logged-in Supabase user
- */
-export async function getAdminUser(event: any) {
-  try {
-    const user = await serverSupabaseUser(event);
+export async function getAdminSupabase() {
+  const config = useRuntimeConfig();
 
-    if (!user) {
-      return {
-        user: null,
-        isAdmin: false,
-      };
-    }
+  const supabaseUrl = config.supabaseUrl || process.env.SUPABASE_URL;
 
-    /*
-     * Use the service-role client for the admin_users lookup.
-     *
-     * This is server-side only and avoids RLS preventing the
-     * application from checking the admin_users table.
-     */
-    const supabase = serverSupabaseServiceRole(event);
+  const supabaseSecretKey =
+    config.supabaseSecretKey || process.env.SUPABASE_SECRET_KEY;
 
-    const { data, error } = await supabase
-      .from("admin_users")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("=================================");
-      console.error("ADMIN DATABASE CHECK ERROR");
-      console.error("=================================");
-      console.error(error);
-      console.error("=================================");
-
-      return {
-        user,
-        isAdmin: false,
-      };
-    }
-
-    return {
-      user,
-      isAdmin: !!data,
-    };
-  } catch (error) {
-    console.error("=================================");
-    console.error("GET ADMIN USER ERROR");
-    console.error("=================================");
-    console.error(error);
-    console.error("=================================");
-
-    return {
-      user: null,
-      isAdmin: false,
-    };
-  }
-}
-
-/**
- * Check whether the current user is an administrator.
- *
- * Returns only true/false.
- */
-export async function isAdminUser(event: any): Promise<boolean> {
-  const result = await getAdminUser(event);
-
-  return result.isAdmin;
-}
-
-/**
- * Require the current user to be an administrator.
- *
- * API endpoints can simply call:
- *
- * await requireAdmin(event);
- *
- * It will throw a 401 if the user is not logged in
- * or a 403 if the user is logged in but not an administrator.
- */
-export async function requireAdmin(event: any) {
-  const result = await getAdminUser(event);
-
-  if (!result.user) {
+  if (!supabaseUrl) {
     throw createError({
-      statusCode: 401,
-      statusMessage: "Not authenticated",
+      statusCode: 500,
+      statusMessage: "Supabase URL is not configured",
     });
   }
 
-  if (!result.isAdmin) {
+  if (!supabaseSecretKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Supabase secret key is not configured",
+    });
+  }
+
+  return createClient(supabaseUrl, supabaseSecretKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+export async function requireAdmin(event: H3Event) {
+  const config = useRuntimeConfig();
+
+  const supabaseUrl = config.supabaseUrl || process.env.SUPABASE_URL;
+
+  const supabaseAnonKey =
+    config.public?.supabaseAnonKey || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Supabase URL is not configured",
+    });
+  }
+
+  if (!supabaseAnonKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Supabase anon key is not configured",
+    });
+  }
+
+  /*
+   * Create a client using the user's authentication cookies.
+   *
+   * This is important because we need to determine WHICH
+   * user is making the admin request.
+   */
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+
+  /*
+   * Get the user's access token from the request.
+   */
+  const authorization = getHeader(event, "authorization");
+
+  if (!authorization) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Authentication required",
+    });
+  }
+
+  const token = authorization.replace(/^Bearer\s+/i, "");
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser(token);
+
+  if (userError || !user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Invalid or expired authentication",
+    });
+  }
+
+  /*
+   * Use the service/secret client to check admin_users.
+   * This bypasses RLS and is ONLY used server-side.
+   */
+  const adminSupabase = await getAdminSupabase();
+
+  const { data: adminUser, error: adminError } = await adminSupabase
+    .from("admin_users")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (adminError) {
+    console.error("Admin lookup error:", adminError);
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Unable to verify administrator status",
+    });
+  }
+
+  if (!adminUser) {
     throw createError({
       statusCode: 403,
       statusMessage: "Administrator access required",
     });
   }
 
-  return result.user;
+  return {
+    user,
+    adminUser,
+    supabase: adminSupabase,
+  };
 }
