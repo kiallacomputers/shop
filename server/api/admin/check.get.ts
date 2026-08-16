@@ -8,8 +8,12 @@ export default defineEventHandler(async (event) => {
   try {
     const result = await getAdminUser(event);
 
-    console.log("ADMIN USER:", result.user?.email || "NONE");
+    console.log("USER:", result.user);
+    console.log("USER ID:", result.user?.id);
+    console.log("USER EMAIL:", result.user?.email);
+    console.log("ADMIN USER:", result.adminUser);
     console.log("IS ADMIN:", result.isAdmin);
+
     console.log("=================================");
 
     return {
@@ -20,18 +24,16 @@ export default defineEventHandler(async (event) => {
             id: result.user.id,
             email: result.user.email,
           }
-        : undefined,
+        : null,
+      adminUser: result.adminUser,
     };
   } catch (error: any) {
     console.error("🔥 ADMIN CHECK ERROR:", error);
 
-    if (error?.statusCode) {
-      throw error;
-    }
-
     throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to check administrator status",
+      statusCode: error?.statusCode || 500,
+      statusMessage:
+        error?.statusMessage || "Unable to check administrator status",
     });
   }
 });
