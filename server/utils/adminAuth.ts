@@ -1,91 +1,47 @@
-import type { H3Event } from "h3";
-import { createError, getHeader } from "h3";
-import { serverSupabaseClient } from "#supabase/server";
+import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 
-// ============================================================
-// GET ADMIN SUPABASE CLIENT
-// ============================================================
+export async function isAdminUser(event: any) {
+  try {
+    // Get the currently logged-in Supabase user
+    const user = await serverSupabaseUser(event);
 
-export async function getAdminSupabase(event: H3Event) {
-  return await serverSupabaseClient(event);
-}
+    // No authenticated user
+    if (!user) {
+      return {
+        user: null,
+        isAdmin: false,
+      };
+    }
 
-// ============================================================
-// REQUIRE ADMIN
-// ============================================================
+    // Get the Supabase server client
+    const supabase = await serverSupabaseClient(event);
 
-export async function requireAdmin(event: H3Event) {
-  console.log("=================================");
-  console.log("AUTHENTICATION CHECK");
-  console.log("=================================");
+    // Check whether the user exists in admin_users
+    const { data, error } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-  const authorization = getHeader(event, "authorization");
+    if (error) {
+      console.error("Admin check error:", error);
 
-  console.log("AUTHORIZATION HEADER:", authorization ? "PRESENT" : "MISSING");
+      return {
+        user,
+        isAdmin: false,
+      };
+    }
 
-  if (!authorization) {
-    console.error("❌ NO AUTHORIZATION HEADER");
+    return {
+      user,
+      isAdmin: !!data,
+    };
+  } catch (error) {
+    console.error("isAdminUser error:", error);
 
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Not authenticated",
-    });
+    return {
+      user: null,
+      isAdmin: false,
+    };
   }
-
-  const supabase = await getAdminSupabase(event);
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    console.error("❌ SUPABASE USER ERROR:", userError);
-
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Not authenticated",
-    });
-  }
-
-  console.log("✅ AUTHENTICATED USER:", user.email);
-  console.log("USER ID:", user.id);
-
-  // ============================================================
-  // CHECK ADMIN TABLE
-  // ============================================================
-
-  const { data: adminUser, error: adminError } = await supabase
-    .from("admin_users")
-    .select("id, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (adminError) {
-    console.error("❌ ADMIN DATABASE ERROR:", adminError);
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to verify administrator",
-    });
-  }
-
-  console.log("👤 ADMIN DATABASE RESULT:", adminUser);
-
-  if (!adminUser) {
-    console.error("❌ USER IS NOT AN ADMIN");
-
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Administrator access required",
-    });
-  }
-
-  console.log("✅ ADMIN USER:", adminUser.email);
-
-  return {
-    user,
-    adminUser,
-    supabase,
-  };
 }
