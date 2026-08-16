@@ -1,4 +1,4 @@
-import { isAdminUser } from "~~/server/utils/adminAuth";
+import { getAdminUser } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   console.log("=================================");
 
   try {
-    const result = await isAdminUser(event);
+    const result = await getAdminUser(event);
 
     console.log("ADMIN USER:", result.user?.email || "NONE");
 
