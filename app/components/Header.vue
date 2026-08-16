@@ -1,124 +1,74 @@
 <template>
   <header class="bg-white relative z-50">
-    <!-- ===================================================== -->
+    <!-- ========================================= -->
     <!-- HEADER -->
-    <!-- ===================================================== -->
+    <!-- ========================================= -->
 
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <!-- ================================================= -->
+      <!-- ======================================= -->
       <!-- LOGO -->
-      <!-- ================================================= -->
+      <!-- ======================================= -->
 
-      <NuxtLink
-        to="/"
-        class="flex items-center shrink-0"
-        @click="closeMobileMenu"
-      >
+      <NuxtLink to="/" class="flex items-center shrink-0">
         <img
-          :src="logo"
+          src="~/assets/images/logos/kc_logo.png"
           alt="Kialla Computers"
-          class="w-20 h-auto object-contain"
+          class="w-20"
         />
       </NuxtLink>
 
-      <!-- ================================================= -->
-      <!-- RIGHT SIDE -->
-      <!-- MENU + CART + MOBILE BUTTON -->
-      <!-- ================================================= -->
+      <!-- ======================================= -->
+      <!-- DESKTOP MENU -->
+      <!-- ======================================= -->
 
-      <div class="ml-auto flex items-center gap-6">
-        <!-- =============================================== -->
-        <!-- DESKTOP MENU -->
-        <!-- =============================================== -->
+      <nav class="hidden md:flex items-center gap-8">
+        <!-- Signup / Login -->
+        <NuxtLink
+          v-if="!user"
+          to="/auth/signin"
+          class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
+        >
+          Signup/Login
+        </NuxtLink>
 
-        <nav class="hidden md:flex items-center justify-end gap-6">
-          <!-- ============================================= -->
-          <!-- SIGNUP / LOGIN -->
-          <!-- ============================================= -->
+        <!-- Welcome -->
+        <p v-if="user" class="text-[#566C9D] font-bold">
+          Welcome {{ firstName }}
+        </p>
 
-          <NuxtLink
-            v-if="!user"
-            to="/auth/signin"
-            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
-          >
-            Signup/Login
-          </NuxtLink>
+        <!-- My Account -->
+        <NuxtLink
+          v-if="user"
+          to="/admin/dashboard"
+          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
+        >
+          My Account
+        </NuxtLink>
 
-          <!-- ============================================= -->
-          <!-- WELCOME -->
-          <!-- ============================================= -->
-
-          <p v-if="user" class="text-[#566C9D] font-bold whitespace-nowrap">
-            Welcome {{ firstName }}
-          </p>
-
-          <!-- ============================================= -->
-          <!-- MY ACCOUNT -->
-          <!-- ============================================= -->
-
-          <NuxtLink
-            v-if="user"
-            to="/account/"
-            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition whitespace-nowrap"
-          >
-            My Account
-          </NuxtLink>
-
-          <!-- ============================================= -->
-          <!-- ADMIN -->
-          <!-- ============================================= -->
-
-          <NuxtLink
-            v-if="user && isAdmin"
-            to="/admin"
-            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-          >
-            Admin
-          </NuxtLink>
-
-          <!-- ============================================= -->
-          <!-- SIGN OUT -->
-          <!-- ============================================= -->
-
-          <button
-            v-if="user"
-            type="button"
-            @click="logout"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition whitespace-nowrap"
-            title="Sign Out"
-          >
-            <!-- Sign out icon -->
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-              />
-            </svg>
-
-            <span>Sign Out</span>
-          </button>
-        </nav>
-
-        <!-- =============================================== -->
-        <!-- SHOPPING CART -->
-        <!-- =============================================== -->
+        <!-- =================================== -->
+        <!-- ADMIN -->
+        <!-- =================================== -->
 
         <NuxtLink
-          to="/shoppingcart"
-          class="relative p-1 shrink-0"
-          aria-label="Shopping Cart"
+          v-if="user && isAdmin"
+          to="/admin"
+          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
         >
+          Admin
+        </NuxtLink>
+
+        <!-- Logout -->
+        <button
+          v-if="user"
+          type="button"
+          @click="logout"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
+          title="Sign Out"
+        >
+          <!-- Sign out icon -->
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-7 h-7 text-slate-700 hover:text-[#2CB6D5] transition"
+            class="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -127,35 +77,63 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 7h13"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+            />
+          </svg>
+
+          <span>Logout</span>
+        </button>
+      </nav>
+
+      <!-- ======================================= -->
+      <!-- RIGHT SIDE -->
+      <!-- ======================================= -->
+
+      <div class="flex items-center gap-4">
+        <!-- ===================================== -->
+        <!-- SHOPPING CART -->
+        <!-- ===================================== -->
+
+        <NuxtLink
+          to="/shoppingcart"
+          class="relative p-1"
+          aria-label="Shopping Cart"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-7 h-7 text-[#404E71] hover:text-[#2CB6D5] transition"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.25 3h1.386c.51 0 .955.343 1.087.835L5.61 6.75m0 0h14.64c.66 0 1.155.604.996 1.245l-1.5 6A1.125 1.125 0 0118.65 14.85H8.13a1.125 1.125 0 01-1.087-.835L5.61 6.75zm2.52 11.1a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0zm9 0a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0z"
             />
           </svg>
 
           <!-- Cart Count -->
-
           <span
             v-if="cart.count > 0"
-            class="absolute -top-2 -right-2 bg-red-800 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center"
+            class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
           >
             {{ cart.count }}
           </span>
         </NuxtLink>
 
-        <!-- =============================================== -->
+        <!-- ===================================== -->
         <!-- MOBILE MENU BUTTON -->
-        <!-- =============================================== -->
+        <!-- ===================================== -->
 
         <button
           type="button"
-          class="md:hidden p-2 text-slate-700 hover:text-[#2CB6D5] transition"
-          :aria-expanded="mobileMenuOpen"
-          aria-label="Toggle navigation menu"
+          class="md:hidden p-2 text-[#404E71]"
           @click="mobileMenuOpen = !mobileMenuOpen"
+          aria-label="Toggle Menu"
         >
-          <!-- Hamburger -->
-
           <svg
-            v-if="!mobileMenuOpen"
             xmlns="http://www.w3.org/2000/svg"
             class="w-7 h-7"
             fill="none"
@@ -169,31 +147,13 @@
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-
-          <!-- Close -->
-
-          <svg
-            v-else
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-7 h-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
         </button>
       </div>
     </div>
 
-    <!-- ===================================================== -->
+    <!-- ========================================= -->
     <!-- MOBILE MENU -->
-    <!-- ===================================================== -->
+    <!-- ========================================= -->
 
     <Transition
       enter-active-class="transition duration-200 ease-out"
@@ -208,9 +168,9 @@
         class="md:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-xl"
       >
         <nav class="max-w-7xl mx-auto px-4 py-3">
-          <!-- ============================================= -->
+          <!-- =================================== -->
           <!-- SIGNUP / LOGIN -->
-          <!-- ============================================= -->
+          <!-- =================================== -->
 
           <NuxtLink
             v-if="!user"
@@ -236,21 +196,21 @@
             </svg>
           </NuxtLink>
 
-          <!-- ============================================= -->
+          <!-- =================================== -->
           <!-- WELCOME -->
-          <!-- ============================================= -->
+          <!-- =================================== -->
 
           <div v-if="user" class="px-4 py-4 border-b border-gray-200">
             <p class="text-[#566C9D] font-bold">Welcome {{ firstName }}</p>
           </div>
 
-          <!-- ============================================= -->
+          <!-- =================================== -->
           <!-- MY ACCOUNT -->
-          <!-- ============================================= -->
+          <!-- =================================== -->
 
           <NuxtLink
             v-if="user"
-            to="/account/"
+            to="/admin/dashboard"
             class="mobile-menu-item"
             @click="closeMobileMenu"
           >
@@ -272,9 +232,9 @@
             </svg>
           </NuxtLink>
 
-          <!-- ============================================= -->
+          <!-- =================================== -->
           <!-- ADMIN -->
-          <!-- ============================================= -->
+          <!-- =================================== -->
 
           <NuxtLink
             v-if="user && isAdmin"
@@ -300,9 +260,9 @@
             </svg>
           </NuxtLink>
 
-          <!-- ============================================= -->
+          <!-- =================================== -->
           <!-- LOGOUT -->
-          <!-- ============================================= -->
+          <!-- =================================== -->
 
           <button
             v-if="user"
@@ -332,9 +292,9 @@
     </Transition>
   </header>
 
-  <!-- ===================================================== -->
+  <!-- ========================================= -->
   <!-- CART NOTIFICATION -->
-  <!-- ===================================================== -->
+  <!-- ========================================= -->
 
   <Transition name="toast">
     <div
@@ -348,32 +308,16 @@
   </Transition>
 </template>
 
-<script setup lang="ts">
-// ==========================================================
-// LOGO
-// Nuxt 4 asset location:
-// app/assets/images/logos/kc_logo.png
-// ==========================================================
-
-import logo from "~/assets/images/logos/kc_logo.png";
-
-// ==========================================================
-// SUPABASE
-// ==========================================================
-
+<script setup>
 const user = useSupabaseUser();
 
 const supabase = useSupabaseClient();
 
-// ==========================================================
-// CART
-// ==========================================================
-
 const cart = useCartStore();
 
-// ==========================================================
+// ========================================
 // MOBILE MENU
-// ==========================================================
+// ========================================
 
 const mobileMenuOpen = ref(false);
 
@@ -381,29 +325,23 @@ const closeMobileMenu = () => {
   mobileMenuOpen.value = false;
 };
 
-// ==========================================================
+// ========================================
 // FIRST NAME
-// ==========================================================
+// ========================================
 
 const firstName = computed(() => {
-  const displayName = user.value?.user_metadata?.display_name;
-
-  if (!displayName) {
-    return "";
-  }
-
-  return displayName.trim().split(/\s+/)[0] ?? "";
+  return user.value?.user_metadata?.display_name?.trim().split(/\s+/)[0] ?? "";
 });
 
-// ==========================================================
+// ========================================
 // ADMIN STATUS
-// ==========================================================
+// ========================================
 
 const isAdmin = ref(false);
 
-// ==========================================================
+// ========================================
 // CHECK ADMIN
-// ==========================================================
+// ========================================
 
 const checkAdmin = async () => {
   // Always reset first
@@ -411,7 +349,6 @@ const checkAdmin = async () => {
 
   // No logged-in user
   if (!user.value) {
-    console.log("NO LOGGED IN USER");
     return;
   }
 
@@ -422,15 +359,14 @@ const checkAdmin = async () => {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      console.log("NO SUPABASE SESSION");
+      console.log("ADMIN CHECK: No session");
       return;
     }
 
-    console.log("CHECKING ADMIN:", user.value.email);
+    console.log("ADMIN CHECK: Checking", user.value.email);
 
-    // Ask server whether this user is an admin
+    // Send access token to server
     const result = await $fetch("/api/admin/check", {
-      method: "GET",
       headers: {
         Authorization: `Bearer ${session.access_token}`,
       },
@@ -438,26 +374,26 @@ const checkAdmin = async () => {
 
     console.log("ADMIN CHECK RESULT:", result);
 
-    // Only set true if the server explicitly confirms it
-    if (result?.isAdmin === true) {
-      isAdmin.value = true;
+    // IMPORTANT:
+    // Only become admin when the API explicitly
+    // tells us the user is an administrator.
+    isAdmin.value = result.isAdmin === true;
 
+    if (isAdmin.value) {
       console.log("ADMIN USER:", user.value.email);
     } else {
-      isAdmin.value = false;
-
       console.log("USER IS NOT ADMIN");
     }
   } catch (error) {
     isAdmin.value = false;
 
-    console.log("ADMIN CHECK ERROR:", error);
+    console.error("ADMIN CHECK FAILED:", error);
   }
 };
 
-// ==========================================================
+// ========================================
 // WATCH USER
-// ==========================================================
+// ========================================
 
 watch(
   user,
@@ -469,9 +405,17 @@ watch(
   },
 );
 
-// ==========================================================
+// ========================================
+// ALSO CHECK AUTH STATE CHANGES
+// ========================================
+
+supabase.auth.onAuthStateChange(async () => {
+  await checkAdmin();
+});
+
+// ========================================
 // LOGOUT
-// ==========================================================
+// ========================================
 
 const logout = async () => {
   closeMobileMenu();
@@ -504,20 +448,5 @@ const logout = async () => {
 
 .mobile-menu-item:last-child {
   border-bottom: none;
-}
-
-/* ==========================================================
-   TOAST
-   ========================================================== */
-
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
 }
 </style>

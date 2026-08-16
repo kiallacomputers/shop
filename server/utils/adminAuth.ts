@@ -10,8 +10,7 @@ import { serverSupabaseUser } from "#supabase/server";
 export const getAdminSupabase = () => {
   const config = useRuntimeConfig();
 
-  const supabaseUrl =
-    config.public?.supabaseUrl || process.env.SUPABASE_URL;
+  const supabaseUrl = config.public?.supabaseUrl || process.env.SUPABASE_URL;
 
   const supabaseSecretKey =
     config.supabaseSecretKey || process.env.SUPABASE_SECRET_KEY;
@@ -36,31 +35,76 @@ export const getAdminSupabase = () => {
       persistSession: false,
     },
   });
-}
+};
 
 /**
  * Get the currently authenticated Supabase user.
  *
- * @nuxtjs/supabase reads the authenticated session from the
- * request cookies, which is what the browser sends with $fetch.
+ * First try the normal Nuxt Supabase session cookie.
+ *
+ * If that is not available, fall back to the
+ * Authorization: Bearer <token> header.
  */
 export const getAdminUser = async (event: H3Event) => {
-  let user;
+  let user = null;
+
+  // =========================================
+  // 1. TRY NORMAL NUXT SUPABASE SESSION
+  // =========================================
 
   try {
     user = await serverSupabaseUser(event);
   } catch (error) {
-    console.error("SUPABASE USER CHECK ERROR:", error);
-    user = null;
+    console.error("SUPABASE COOKIE USER CHECK ERROR:", error);
   }
 
+  // =========================================
+  // 2. FALL BACK TO BEARER TOKEN
+  // =========================================
+
   if (!user) {
+    const authorization = getHeader(event, "authorization");
+
+    if (authorization && authorization.startsWith("Bearer ")) {
+      const accessToken = authorization.substring(7);
+
+      if (accessToken) {
+        try {
+          const supabase = getAdminSupabase();
+
+          const { data, error } = await supabase.auth.getUser(accessToken);
+
+          if (error) {
+            console.error("BEARER TOKEN USER ERROR:", error);
+          } else {
+            user = data.user;
+          }
+        } catch (error) {
+          console.error("BEARER TOKEN CHECK ERROR:", error);
+        }
+      }
+    }
+  }
+
+  // =========================================
+  // NO USER
+  // =========================================
+
+  if (!user) {
+    console.log("ADMIN AUTH: No authenticated user");
+
     return {
       user: null,
       isAdmin: false,
       adminUser: null,
     };
   }
+
+  console.log("ADMIN AUTH USER:", user.email);
+
+  // =========================================
+  // CHECK ADMIN_USERS
+  // =========================================
 
   const adminSupabase = getAdminSupabase();
 
@@ -79,18 +123,21 @@ export const getAdminUser = async (event: H3Event) => {
     });
   }
 
+  const isAdmin = !!adminUser;
+
+  console.log("ADMIN USER FOUND:", !!adminUser);
+
+  console.log("IS ADMIN:", isAdmin);
+
   return {
     user,
-    isAdmin: !!adminUser,
+    isAdmin,
     adminUser,
   };
-}
+};
 
 /**
  * Require an authenticated administrator.
- *
- * Returns the authenticated Supabase user so existing routes can
- * use the returned value as `user`.
  */
 export const requireAdmin = async (event: H3Event) => {
   const result = await getAdminUser(event);
@@ -110,4 +157,4 @@ export const requireAdmin = async (event: H3Event) => {
   }
 
   return result.user;
-}
+};
