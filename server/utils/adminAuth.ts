@@ -7,7 +7,7 @@ import { serverSupabaseUser } from "#supabase/server";
  *
  * NEVER expose this client or its key to browser code.
  */
-export function getAdminSupabase() {
+export const getAdminSupabase = () => {
   const config = useRuntimeConfig();
 
   const supabaseUrl =
@@ -44,7 +44,7 @@ export function getAdminSupabase() {
  * @nuxtjs/supabase reads the authenticated session from the
  * request cookies, which is what the browser sends with $fetch.
  */
-export async function getAdminUser(event: H3Event) {
+export const getAdminUser = async (event: H3Event) => {
   let user;
 
   try {
@@ -92,7 +92,7 @@ export async function getAdminUser(event: H3Event) {
  * Returns the authenticated Supabase user so existing routes can
  * use the returned value as `user`.
  */
-export async function requireAdmin(event: H3Event) {
+export const requireAdmin = async (event: H3Event) => {
   const result = await getAdminUser(event);
 
   if (!result.user) {

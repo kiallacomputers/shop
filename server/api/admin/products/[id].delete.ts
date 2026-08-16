@@ -1,16 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
-import { requireAdmin } from "../../../utils/adminAuth";
+import { requireAdmin, getAdminSupabase } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  // ----------------------------------------
-  // ADMIN AUTH
-  // ----------------------------------------
-
   await requireAdmin(event);
-
-  // ----------------------------------------
-  // PRODUCT ID
-  // ----------------------------------------
 
   const productId = getRouterParam(event, "id");
 
@@ -21,30 +12,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
-  // CONFIG
-  // ----------------------------------------
-
-  const config = useRuntimeConfig();
-
-  // ----------------------------------------
-  // SUPABASE
-  // ----------------------------------------
-
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.supabaseSecretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
-
-  // ----------------------------------------
-  // CHECK PRODUCT
-  // ----------------------------------------
+  const supabase = getAdminSupabase();
 
   const { data: product, error: findError } = await supabase
     .from("products")
@@ -54,7 +22,6 @@ export default defineEventHandler(async (event) => {
 
   if (findError) {
     console.error("FIND PRODUCT ERROR:", findError);
-
     throw createError({
       statusCode: 500,
       statusMessage: findError.message || "Unable to find product",
@@ -68,10 +35,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
-  // DELETE
-  // ----------------------------------------
-
   const { error: deleteError } = await supabase
     .from("products")
     .delete()
@@ -79,7 +42,6 @@ export default defineEventHandler(async (event) => {
 
   if (deleteError) {
     console.error("DELETE PRODUCT ERROR:", deleteError);
-
     throw createError({
       statusCode: 500,
       statusMessage: deleteError.message || "Unable to delete product",
@@ -90,9 +52,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-
     message: "Product deleted successfully",
-
     productId: product.id,
   };
 });
