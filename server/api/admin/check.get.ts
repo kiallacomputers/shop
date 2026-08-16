@@ -1,13 +1,14 @@
 import { isAdminUser } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  try {
-    console.log("=================================");
-    console.log("ADMIN CHECK");
+  console.log("=================================");
+  console.log("ADMIN CHECK API");
 
+  try {
     const result = await isAdminUser(event);
 
     console.log("ADMIN USER:", result.user?.email || "NONE");
+
     console.log("IS ADMIN:", result.isAdmin);
 
     console.log("=================================");
@@ -21,14 +22,17 @@ export default defineEventHandler(async (event) => {
 
     return {
       authenticated: true,
+
       isAdmin: result.isAdmin,
+
       user: {
         id: result.user.id,
+
         email: result.user.email,
       },
     };
   } catch (error: any) {
-    console.error("ADMIN CHECK ERROR:", error);
+    console.error("🔥 ADMIN CHECK ERROR:", error);
 
     if (error?.statusCode) {
       throw error;
