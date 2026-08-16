@@ -3,7 +3,7 @@ definePageMeta({
   middleware: "admin",
 });
 
-const { adminFetch } = useAdminFetch();
+const { adminFetch, checkAdmin, isAdmin } = useAdminFetch();
 
 const loading = ref(true);
 

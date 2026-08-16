@@ -11,14 +11,29 @@ export function useAdminFetch() {
 
   const getAccessToken = async (): Promise<string | null> => {
     try {
+      console.log("GETTING SUPABASE SESSION...");
+
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
+      if (error) {
+        console.error("❌ SUPABASE SESSION ERROR:", error);
+        return null;
+      }
+
+      if (!session) {
         console.log("❌ NO SUPABASE SESSION");
         return null;
       }
+
+      if (!session.access_token) {
+        console.log("❌ SESSION HAS NO ACCESS TOKEN");
+        return null;
+      }
+
+      console.log("✅ SUPABASE ACCESS TOKEN FOUND");
 
       return session.access_token;
     } catch (error) {
