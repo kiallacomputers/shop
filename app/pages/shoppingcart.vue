@@ -289,7 +289,7 @@ async function checkout() {
     if (!currentUser) {
       console.error("❌ NO AUTHENTICATED USER");
 
-      await navigateTo("/login");
+      await navigateTo("/auth/signin?redirect=/shoppingcart");
 
       return;
     }

@@ -9,25 +9,18 @@ export default defineEventHandler(async (event) => {
     const result = await getAdminUser(event);
 
     console.log("ADMIN USER:", result.user?.email || "NONE");
-
     console.log("IS ADMIN:", result.isAdmin);
-
     console.log("=================================");
 
-    if (!result.user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Not authenticated",
-      });
-    }
-
     return {
-      authenticated: true,
+      authenticated: !!result.user,
       isAdmin: result.isAdmin,
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-      },
+      user: result.user
+        ? {
+            id: result.user.id,
+            email: result.user.email,
+          }
+        : undefined,
     };
   } catch (error: any) {
     console.error("🔥 ADMIN CHECK ERROR:", error);

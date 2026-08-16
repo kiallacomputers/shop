@@ -4,6 +4,7 @@ export const useCartStore = defineStore(
   "cart",
   () => {
     const items = ref<any[]>([]);
+    const notification = ref("");
 
     const count = computed(() => {
       return items.value.reduce((total, item) => total + item.quantity, 0);
@@ -33,10 +34,10 @@ export const useCartStore = defineStore(
           quantity: 1,
         });
       }
-      this.notification = `${product.name} has been added to your cart.`;
+      notification.value = `${product.name} has been added to your cart.`;
 
       setTimeout(() => {
-        this.notification = "";
+        notification.value = "";
       }, 3000);
 
       console.log("CART ITEMS:", items.value);
@@ -72,6 +73,7 @@ export const useCartStore = defineStore(
 
     return {
       items,
+      notification,
       count,
       total,
       addToCart,

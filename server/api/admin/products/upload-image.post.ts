@@ -1,106 +1,10 @@
 import { createError, defineEventHandler, readMultipartFormData } from "h3";
-
-import { createClient } from "@supabase/supabase-js";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  // ==================================================
-  // RUNTIME CONFIG
-  // ==================================================
+  await requireAdmin(event);
 
-  const config = useRuntimeConfig();
-
-  const supabaseUrl = config.public.supabaseUrl;
-  const supabaseSecretKey = config.supabaseSecretKey;
-
-  if (!supabaseUrl || !supabaseSecretKey) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Supabase server configuration is missing.",
-    });
-  }
-
-  // ==================================================
-  // GET AUTHORIZATION HEADER
-  // ==================================================
-
-  const authHeader = event.node.req.headers.authorization;
-
-  if (!authHeader) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Authentication required.",
-    });
-  }
-
-  const token = authHeader.replace("Bearer ", "").trim();
-
-  if (!token) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Authentication required.",
-    });
-  }
-
-  // ==================================================
-  // SERVER SUPABASE CLIENT
-  // ==================================================
-
-  const supabase = createClient(supabaseUrl, supabaseSecretKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-
-  // ==================================================
-  // VERIFY USER
-  // ==================================================
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(token);
-
-  if (userError || !user) {
-    console.error("UPLOAD USER ERROR:", userError);
-
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Invalid authentication.",
-    });
-  }
-
-  console.log("IMAGE UPLOAD USER:", user.email);
-
-  // ==================================================
-  // CHECK ADMIN
-  // ==================================================
-
-  const { data: adminUser, error: adminError } = await supabase
-    .from("admin_users")
-    .select("*")
-    .eq("email", user.email)
-    .maybeSingle();
-
-  if (adminError) {
-    console.error("ADMIN CHECK ERROR:", adminError);
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to verify administrator.",
-    });
-  }
-
-  if (!adminUser) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: "Administrator access required.",
-    });
-  }
-
-  // ==================================================
-  // READ FILE
-  // ==================================================
+  const supabase = getAdminSupabase();
 
   const formData = await readMultipartFormData(event);
 
@@ -120,10 +24,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ==================================================
-  // CHECK FILE TYPE
-  // ==================================================
-
   const allowedTypes = [
     "image/jpeg",
     "image/jpg",
@@ -139,11 +39,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ==================================================
-  // CHECK FILE SIZE
-  // 5MB MAX
-  // ==================================================
-
   const maxSize = 5 * 1024 * 1024;
 
   if (file.data.length > maxSize) {
@@ -153,21 +48,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ==================================================
-  // GET ORIGINAL FILENAME
-  // ==================================================
-
   const originalName = file.filename || "image";
 
-  // Remove unsafe characters
   const cleanName = originalName
     .replace(/\s+/g, "-")
     .replace(/[^a-zA-Z0-9._-]/g, "")
     .toLowerCase();
-
-  // ==================================================
-  // CREATE UNIQUE FILENAME
-  // ==================================================
 
   const extension = cleanName.includes(".")
     ? cleanName.substring(cleanName.lastIndexOf("."))
@@ -175,25 +61,18 @@ export default defineEventHandler(async (event) => {
 
   const baseName = cleanName
     .replace(extension, "")
-    .replace(/[^a-zA-Z0-9-]/g, "");
+    .replace(/[^a-zA-Z0-9-]/g, "") || "image";
 
   const uniqueName = `${baseName}-${Date.now()}${extension}`;
-
   const filePath = `products/${uniqueName}`;
 
   console.log("🔥 UPLOADING IMAGE:", filePath);
-
-  // ==================================================
-  // UPLOAD TO SUPABASE STORAGE
-  // ==================================================
 
   const { error: uploadError } = await supabase.storage
     .from("products")
     .upload(filePath, file.data, {
       contentType: file.type || "application/octet-stream",
-
       cacheControl: "3600",
-
       upsert: false,
     });
 
@@ -206,29 +85,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ==================================================
-  // GET PUBLIC URL
-  // ==================================================
-
   const { data: publicUrlData } = supabase.storage
     .from("products")
     .getPublicUrl(filePath);
 
-  const publicUrl = publicUrlData.publicUrl;
-
-  console.log("🔥 IMAGE URL:", publicUrl);
-
-  // ==================================================
-  // RETURN IMAGE INFORMATION
-  // ==================================================
-
   return {
     success: true,
-
     filename: cleanName,
-
     path: filePath,
-
-    url: publicUrl,
+    url: publicUrlData.publicUrl,
   };
 });

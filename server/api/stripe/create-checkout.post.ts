@@ -1,4 +1,6 @@
 import Stripe from "stripe";
+import { serverSupabaseUser } from "#supabase/server";
+import { getAdminSupabase } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -7,29 +9,22 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig();
 
-  // ----------------------------------------
-  // STRIPE
-  // ----------------------------------------
+  if (!config.stripeSecretKey) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Stripe is not configured",
+    });
+  }
 
   const stripe = new Stripe(config.stripeSecretKey);
 
   // ----------------------------------------
-  // READ REQUEST BODY
+  // AUTHENTICATE THE REAL USER
   // ----------------------------------------
 
-  const body = await readBody(event);
+  const user = await serverSupabaseUser(event);
 
-  // ----------------------------------------
-  // USER ID
-  // ----------------------------------------
-
-  const userId = body.userId || null;
-
-  console.log("USER ID:", userId);
-
-  if (!userId) {
-    console.error("❌ NO USER ID RECEIVED");
-
+  if (!user) {
     throw createError({
       statusCode: 401,
       statusMessage: "You must be logged in to checkout",
@@ -37,116 +32,166 @@ export default defineEventHandler(async (event) => {
   }
 
   // ----------------------------------------
-  // CART
+  // READ CART
   // ----------------------------------------
 
-  if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
-    console.error("❌ CART IS EMPTY");
+  const body = await readBody(event);
 
+  if (!Array.isArray(body?.items) || body.items.length === 0) {
     throw createError({
       statusCode: 400,
       statusMessage: "Cart is empty",
     });
   }
 
-  console.log("CART ITEMS:", body.items);
-
   // ----------------------------------------
-  // CREATE STRIPE LINE ITEMS
+  // NORMALISE / VALIDATE CART IDS
   // ----------------------------------------
 
-  const lineItems = body.items.map((item: any) => {
-    const price = Number(item.price);
-    const quantity = Number(item.quantity);
+  const requestedItems = body.items.map((item: any) => ({
+    id: Number(item?.id),
+    quantity: Number(item?.quantity),
+  }));
 
-    if (!item.id) {
+  if (
+    requestedItems.some(
+      (item: any) =>
+        !Number.isInteger(item.id) ||
+        item.id <= 0 ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0,
+    )
+  ) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Invalid cart item",
+    });
+  }
+
+  // Combine duplicate product IDs safely.
+  const quantities = new Map<number, number>();
+
+  for (const item of requestedItems) {
+    quantities.set(item.id, (quantities.get(item.id) || 0) + item.quantity);
+  }
+
+  const productIds = [...quantities.keys()];
+
+  // ----------------------------------------
+  // LOAD PRODUCTS FROM DATABASE
+  // ----------------------------------------
+  // Never trust product names/prices/stock supplied
+  // by the browser.
+
+  const supabase = getAdminSupabase();
+
+  const { data: products, error: productError } = await supabase
+    .from("products")
+    .select("id, name, price, stock, active")
+    .in("id", productIds);
+
+  if (productError) {
+    console.error("PRODUCT LOOKUP ERROR:", productError);
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: productError.message,
+    });
+  }
+
+  if (!products || products.length !== productIds.length) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "One or more products in your cart no longer exist",
+    });
+  }
+
+  // ----------------------------------------
+  // VALIDATE STOCK AND BUILD STRIPE ITEMS
+  // ----------------------------------------
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+  for (const product of products) {
+    const quantity = quantities.get(Number(product.id)) || 0;
+    const stock = Number(product.stock);
+    const price = Number(product.price);
+
+    if (product.active === false) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Product ID is missing",
-      });
-    }
-
-    if (!item.name) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Product name is missing",
+        statusMessage: `${product.name} is no longer available`,
       });
     }
 
     if (!Number.isFinite(price) || price <= 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Invalid price for ${item.name}`,
+        statusMessage: `Invalid price for ${product.name}`,
       });
     }
 
-    if (!Number.isInteger(quantity) || quantity <= 0) {
+    if (!Number.isInteger(stock) || stock < 0) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: `Invalid stock value for ${product.name}`,
+      });
+    }
+
+    if (quantity > stock) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Invalid quantity for ${item.name}`,
+        statusMessage:
+          stock === 0
+            ? `${product.name} is out of stock`
+            : `Only ${stock} of ${product.name} is available`,
       });
     }
 
-    return {
+    lineItems.push({
       price_data: {
         currency: "aud",
-
         product_data: {
-          name: item.name,
-
-          // --------------------------------
-          // THIS IS IMPORTANT
-          // --------------------------------
-          // Stripe stores your Supabase
-          // product ID in the Stripe product
-          // metadata.
-
+          name: product.name,
           metadata: {
-            product_id: String(item.id),
+            product_id: String(product.id),
           },
         },
-
         unit_amount: Math.round(price * 100),
       },
+      quantity,
+    });
+  }
 
-      quantity: quantity,
-    };
-  });
-
-  console.log("STRIPE LINE ITEMS:", JSON.stringify(lineItems, null, 2));
+  console.log(
+    "STRIPE LINE ITEMS:",
+    JSON.stringify(lineItems, null, 2),
+  );
 
   // ----------------------------------------
-  // REQUEST URL
+  // CREATE CHECKOUT SESSION
   // ----------------------------------------
 
   const requestUrl = getRequestURL(event);
-
-  console.log("CHECKOUT ORIGIN:", requestUrl.origin);
-
-  // ----------------------------------------
-  // CREATE STRIPE CHECKOUT SESSION
-  // ----------------------------------------
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
 
     line_items: lineItems,
 
-    // --------------------------------------
-    // USER INFORMATION
-    // --------------------------------------
-    // This travels with the Stripe session
-    // and is available to the webhook.
+    client_reference_id: user.id,
 
     metadata: {
-      user_id: String(userId),
+      user_id: user.id,
     },
+
+    customer_email: user.email || undefined,
 
     success_url:
       `${requestUrl.origin}/checkout/success` +
       `?session_id={CHECKOUT_SESSION_ID}`,
 
-    cancel_url: `${requestUrl.origin}/cart`,
+    cancel_url: `${requestUrl.origin}/shoppingcart`,
 
     billing_address_collection: "required",
 
@@ -158,13 +203,9 @@ export default defineEventHandler(async (event) => {
   console.log("=================================");
   console.log("✅ STRIPE SESSION CREATED");
   console.log("SESSION ID:", session.id);
-  console.log("USER ID:", userId);
+  console.log("USER ID:", user.id);
   console.log("CHECKOUT URL:", session.url);
   console.log("=================================");
-
-  // ----------------------------------------
-  // RETURN TO BROWSER
-  // ----------------------------------------
 
   return {
     url: session.url,

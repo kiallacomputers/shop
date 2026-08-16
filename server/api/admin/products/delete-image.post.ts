@@ -1,115 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   try {
-    // ==================================================
-    // GET AUTHORIZATION HEADER
-    // ==================================================
+    await requireAdmin(event);
 
-    const authorization = getHeader(event, "authorization");
-
-    if (!authorization) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Authentication required",
-      });
-    }
-
-    const token = authorization.replace(/^Bearer\s+/i, "").trim();
-
-    if (!token) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Authentication token missing",
-      });
-    }
-
-    // ==================================================
-    // SUPABASE CONFIG
-    // ==================================================
-
-    const config = useRuntimeConfig();
-
-    const supabaseUrl = config.public.supabaseUrl || config.supabaseUrl;
-
-    const serviceKey = config.supabaseSecretKey || config.supabaseServiceKey;
-
-    if (!supabaseUrl || !serviceKey) {
-      console.error("❌ SUPABASE SERVER CONFIGURATION MISSING");
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Supabase server configuration is missing",
-      });
-    }
-
-    // ==================================================
-    // SERVICE CLIENT
-    // ==================================================
-
-    const adminSupabase = createClient(supabaseUrl, serviceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    // ==================================================
-    // VERIFY USER TOKEN
-    // ==================================================
-
-    const {
-      data: { user },
-      error: userError,
-    } = await adminSupabase.auth.getUser(token);
-
-    if (userError || !user) {
-      console.error("❌ USER TOKEN ERROR:", userError);
-
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Authentication required",
-      });
-    }
-
-    console.log("✅ AUTHENTICATED USER:", user.email);
-
-    // ==================================================
-    // CHECK ADMIN
-    // ==================================================
-
-    const { data: adminUser, error: adminError } = await adminSupabase
-      .from("admin_users")
-      .select("id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (adminError) {
-      console.error("❌ ADMIN DATABASE ERROR:", adminError);
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: `Unable to verify administrator access: ${adminError.message}`,
-      });
-    }
-
-    if (!adminUser) {
-      console.error("❌ ADMIN RECORD NOT FOUND FOR USER:", user.id);
-
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Administrator access required",
-      });
-    }
-
-    console.log("✅ ADMIN VERIFIED:", adminUser.id);
-
-    // ==================================================
-    // GET REQUEST BODY
-    // ==================================================
+    const adminSupabase = getAdminSupabase();
 
     const body = await readBody(event);
-
     const imageUrl = body?.image;
 
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -119,14 +16,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("🔥 IMAGE TO DELETE:", imageUrl);
-
-    // ==================================================
-    // EXTRACT STORAGE LOCATION
-    // ==================================================
-
     const marker = "/storage/v1/object/public/";
-
     const markerIndex = imageUrl.indexOf(marker);
 
     if (markerIndex === -1) {
@@ -137,7 +27,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const storageLocation = imageUrl.substring(markerIndex + marker.length);
-
     const firstSlash = storageLocation.indexOf("/");
 
     if (firstSlash === -1) {
@@ -148,7 +37,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const bucket = storageLocation.substring(0, firstSlash);
-
     const filePath = storageLocation.substring(firstSlash + 1);
 
     if (!bucket || !filePath) {
@@ -158,19 +46,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("🔥 DELETE IMAGE");
-
-    console.log("Bucket:", bucket);
-
-    console.log("Path:", filePath);
-
-    // ==================================================
-    // DELETE IMAGE FROM SUPABASE STORAGE
-    // ==================================================
-
-    const { data: deleteData, error: deleteError } = await adminSupabase.storage
-      .from(bucket)
-      .remove([filePath]);
+    const { data: deleteData, error: deleteError } =
+      await adminSupabase.storage.from(bucket).remove([filePath]);
 
     if (deleteError) {
       console.error("🔥 STORAGE DELETE ERROR:", deleteError);
@@ -182,17 +59,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ STORAGE DELETE SUCCESS:", deleteData);
-
-    // ==================================================
-    // RETURN
-    // ==================================================
-
     return {
       success: true,
       message: "Image deleted successfully",
       bucket,
       path: filePath,
+      data: deleteData,
     };
   } catch (error: any) {
     console.error("🔥 DELETE IMAGE ERROR:", error);
