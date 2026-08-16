@@ -1,291 +1,175 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  try {
-    await requireAdmin(event);
-    const adminSupabase = getAdminSupabase();
+  await requireAdmin(event);
 
-    // ============================================================
-    // GET CATEGORY ID
-    // ============================================================
+  const id = getRouterParam(event, "id");
 
-    const categoryId = getRouterParam(event, "id");
+  if (!id) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Category ID is required.",
+    });
+  }
 
-    if (!categoryId) {
+  const supabase = getAdminSupabase();
+
+  const method = event.method;
+
+  // ============================================
+  // GET CATEGORY
+  // ============================================
+
+  if (method === "GET") {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
       throw createError({
-        statusCode: 400,
-        statusMessage: "Category ID is required",
+        statusCode: 404,
+        statusMessage: error.message || "Category not found.",
       });
     }
 
-    console.log("CATEGORY ID:", categoryId);
-
-    // ============================================================
-    // GET REQUEST METHOD
-    // ============================================================
-
-    const method = event.method;
-
-    // ============================================================
-    // PUT - UPDATE CATEGORY
-    // ============================================================
-
-    if (method === "PUT") {
-      const body = await readBody(event);
-
-      console.log("UPDATE CATEGORY BODY:", body);
-
-      // ----------------------------------------------------------
-      // CATEGORY NAME
-      // ----------------------------------------------------------
-
-      const name = String(body?.name || "").trim();
-
-      if (!name) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: "Category name is required",
-        });
-      }
-
-      // ----------------------------------------------------------
-      // SLUG
-      // ----------------------------------------------------------
-
-      const slug = String(body?.slug || "").trim() || generateSlug(name);
-
-      // ----------------------------------------------------------
-      // PARENT CATEGORY
-      // ----------------------------------------------------------
-
-      const parentId =
-        body?.parent_id === null ||
-        body?.parent_id === "" ||
-        body?.parent_id === undefined
-          ? null
-          : body.parent_id;
-
-      // ----------------------------------------------------------
-      // ACTIVE
-      // ----------------------------------------------------------
-
-      const active = body?.active !== false;
-
-      // ----------------------------------------------------------
-      // PREVENT CATEGORY BEING ITS OWN PARENT
-      // ----------------------------------------------------------
-
-      if (parentId !== null && String(parentId) === String(categoryId)) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: "A category cannot be its own parent.",
-        });
-      }
-
-      // ==========================================================
-      // CHECK CATEGORY EXISTS
-      // ==========================================================
-
-      const { data: existingCategory, error: existingError } =
-        await adminSupabase
-          .from("categories")
-          .select("id")
-          .eq("id", categoryId)
-          .maybeSingle();
-
-      if (existingError) {
-        console.error("🔥 CATEGORY LOOKUP ERROR:", existingError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage: existingError.message || "Unable to find category",
-        });
-      }
-
-      if (!existingCategory) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: "Category not found",
-        });
-      }
-
-      // ==========================================================
-      // CHECK SLUG IS UNIQUE
-      // ==========================================================
-
-      const { data: slugCategory, error: slugError } = await adminSupabase
-        .from("categories")
-        .select("id")
-        .eq("slug", slug)
-        .neq("id", categoryId)
-        .maybeSingle();
-
-      if (slugError) {
-        console.error("🔥 SLUG CHECK ERROR:", slugError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage: slugError.message || "Unable to check category slug",
-        });
-      }
-
-      if (slugCategory) {
-        throw createError({
-          statusCode: 409,
-          statusMessage: "A category with this name already exists.",
-        });
-      }
-
-      // ==========================================================
-      // UPDATE CATEGORY
-      // ==========================================================
-
-      const { data: updatedCategory, error: updateError } = await adminSupabase
-        .from("categories")
-        .update({
-          name,
-          slug,
-          parent_id: parentId,
-          active,
-        })
-        .eq("id", categoryId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error("🔥 CATEGORY UPDATE ERROR:", updateError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage: updateError.message || "Unable to update category",
-        });
-      }
-
-      console.log("✅ CATEGORY UPDATED:", updatedCategory);
-
-      return updatedCategory;
-    }
-
-    // ============================================================
-    // DELETE CATEGORY
-    // ============================================================
-
-    if (method === "DELETE") {
-      console.log("🗑️ DELETE CATEGORY:", categoryId);
-
-      // ==========================================================
-      // CHECK FOR CHILD CATEGORIES
-      // ==========================================================
-
-      const { data: children, error: childrenError } = await adminSupabase
-        .from("categories")
-        .select("id")
-        .eq("parent_id", categoryId);
-
-      if (childrenError) {
-        console.error("🔥 CHILD CATEGORY ERROR:", childrenError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage:
-            childrenError.message || "Unable to check subcategories",
-        });
-      }
-
-      if (children && children.length > 0) {
-        throw createError({
-          statusCode: 409,
-          statusMessage:
-            "This category has subcategories. Delete or move the subcategories first.",
-        });
-      }
-
-      // ==========================================================
-      // CHECK PRODUCTS USING CATEGORY
-      // ==========================================================
-
-      const { data: products, error: productsError } = await adminSupabase
-        .from("products")
-        .select("id")
-        .eq("category_id", categoryId)
-        .limit(1);
-
-      if (productsError) {
-        console.error("🔥 PRODUCT CATEGORY CHECK ERROR:", productsError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage: productsError.message || "Unable to check products",
-        });
-      }
-
-      if (products && products.length > 0) {
-        throw createError({
-          statusCode: 409,
-          statusMessage:
-            "This category is being used by products and cannot be deleted.",
-        });
-      }
-
-      // ==========================================================
-      // DELETE CATEGORY
-      // ==========================================================
-
-      const { error: deleteError } = await adminSupabase
-        .from("categories")
-        .delete()
-        .eq("id", categoryId);
-
-      if (deleteError) {
-        console.error("🔥 CATEGORY DELETE ERROR:", deleteError);
-
-        throw createError({
-          statusCode: 500,
-          statusMessage: deleteError.message || "Unable to delete category",
-        });
-      }
-
-      console.log("✅ CATEGORY DELETED");
-
-      return {
-        success: true,
-        id: categoryId,
-      };
-    }
-
-    // ============================================================
-    // METHOD NOT ALLOWED
-    // ============================================================
-
-    throw createError({
-      statusCode: 405,
-      statusMessage: "Method not allowed",
-    });
-  } catch (error: any) {
-    console.error("🔥 CATEGORY API ERROR:", error);
-
-    if (error?.statusCode) {
-      throw error;
-    }
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: error?.message || "Unable to process category request",
-    });
+    return data;
   }
+
+  // ============================================
+  // UPDATE CATEGORY
+  // ============================================
+
+  if (method === "PUT") {
+    const body = await readBody(event);
+
+    if (!body?.name || !body.name.trim()) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Category name is required.",
+      });
+    }
+
+    const name = body.name.trim();
+
+    const slug =
+      body.slug ||
+      name
+        .toLowerCase()
+        .trim()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+
+    const parent_id =
+      body.parent_id === null ||
+      body.parent_id === undefined ||
+      body.parent_id === ""
+        ? null
+        : body.parent_id;
+
+    const active = body.active !== false;
+
+    console.log("=================================");
+    console.log("ADMIN UPDATE CATEGORY");
+    console.log("ID:", id);
+    console.log("NAME:", name);
+    console.log("SLUG:", slug);
+    console.log("PARENT:", parent_id);
+    console.log("ACTIVE:", active);
+    console.log("=================================");
+
+    const { data, error } = await supabase
+      .from("categories")
+      .update({
+        name,
+        slug,
+        parent_id,
+        active,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("ADMIN CATEGORY UPDATE ERROR:", error);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: error.message || "Unable to update category.",
+      });
+    }
+
+    console.log("CATEGORY UPDATED:", data);
+
+    return data;
+  }
+
+  // ============================================
+  // DELETE CATEGORY
+  // ============================================
+
+  if (method === "DELETE") {
+    console.log("=================================");
+    console.log("ADMIN DELETE CATEGORY");
+    console.log("ID:", id);
+    console.log("=================================");
+
+    // Check for children first
+    const { data: children, error: childrenError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("parent_id", id);
+
+    if (childrenError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          childrenError.message || "Unable to check subcategories.",
+      });
+    }
+
+    if (children && children.length > 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "This category has subcategories. Delete or move the subcategories first.",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("ADMIN CATEGORY DELETE ERROR:", error);
+
+      throw createError({
+        statusCode: 500,
+        statusMessage: error.message || "Unable to delete category.",
+      });
+    }
+
+    console.log("CATEGORY DELETED:", data);
+
+    return {
+      success: true,
+      category: data,
+    };
+  }
+
+  // ============================================
+  // METHOD NOT ALLOWED
+  // ============================================
+
+  throw createError({
+    statusCode: 405,
+    statusMessage: `Method ${method} not allowed.`,
+  });
 });
-
-// ================================================================
-// SLUG GENERATOR
-// ================================================================
-
-function generateSlug(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
