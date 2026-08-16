@@ -38,7 +38,7 @@ export const getAdminSupabase = () => {
 };
 
 /**
- * Get the currently authenticated user
+ * Get the currently authenticated Supabase user
  * and determine whether they are an administrator.
  */
 export const getAdminUser = async (event: H3Event) => {
@@ -55,9 +55,8 @@ export const getAdminUser = async (event: H3Event) => {
   /**
    * No authenticated user.
    *
-   * IMPORTANT:
-   * Return a normal response instead of throwing.
-   * This prevents the header from receiving a 500.
+   * This can happen briefly while the Supabase
+   * session is being restored.
    */
   if (!user) {
     console.log("ADMIN AUTH: No authenticated user");
@@ -72,11 +71,17 @@ export const getAdminUser = async (event: H3Event) => {
   console.log("ADMIN AUTH USER:", user.email);
 
   /**
-   * Make absolutely sure we have a valid
-   * Supabase Auth user ID before querying
-   * the UUID column in admin_users.
+   * serverSupabaseUser() can return the JWT claims
+   * where the user UUID is stored in `sub` rather
+   * than `id`.
+   *
+   * Full Supabase user:
+   *   user.id
+   *
+   * JWT claims:
+   *   user.sub
    */
-  const userId = user.id;
+  const userId = user.id || user.sub;
 
   if (!userId || typeof userId !== "string") {
     console.error("ADMIN AUTH ERROR: User has no valid ID", user);
@@ -94,7 +99,7 @@ export const getAdminUser = async (event: H3Event) => {
 
   /**
    * Look up the authenticated user's UUID
-   * in admin_users.
+   * in the admin_users table.
    */
   const { data: adminUser, error: adminError } = await adminSupabase
     .from("admin_users")
@@ -105,10 +110,6 @@ export const getAdminUser = async (event: H3Event) => {
   if (adminError) {
     console.error("ADMIN USER LOOKUP ERROR:", adminError);
 
-    /**
-     * Don't turn a temporary lookup problem
-     * into a server crash.
-     */
     return {
       user,
       isAdmin: false,
