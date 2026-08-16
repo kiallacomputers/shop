@@ -1,31 +1,11 @@
 export default defineNuxtRouteMiddleware(async () => {
-  const user = useSupabaseUser();
+  const { checkAdmin, isAdmin, adminChecked } = useAdminFetch();
 
-  /*
-   * User must be logged in.
-   */
-  if (!user.value) {
-    return navigateTo("/signin");
+  if (!adminChecked.value) {
+    await checkAdmin();
   }
 
-  try {
-    const result = await $fetch<{
-      authenticated: boolean;
-      isAdmin: boolean;
-      user?: {
-        id: string;
-        email?: string;
-      };
-    }>("/api/admin/check");
-
-    console.log("ADMIN MIDDLEWARE:", result);
-
-    if (!result.isAdmin) {
-      return navigateTo("/");
-    }
-  } catch (error) {
-    console.error("ADMIN MIDDLEWARE ERROR:", error);
-
+  if (!isAdmin.value) {
     return navigateTo("/");
   }
 });
