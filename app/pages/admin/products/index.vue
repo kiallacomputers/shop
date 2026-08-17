@@ -156,6 +156,19 @@
                           class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition">
                           Edit
                         </NuxtLink>
+                        <button
+                          type="button"
+                          :disabled="duplicatingId === String(product.id)"
+                          class="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition"
+                          @click="duplicateProduct(product)"
+                        >
+                          {{
+                            duplicatingId === String(product.id)
+                              ? "Duplicating..."
+                              : "Duplicate"
+                          }}
+                        </button>
+
                         <button type="button" :disabled="deletingId === String(product.id)"
                           class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
                           @click="deleteProduct(product)">
@@ -208,6 +221,7 @@ const categories = ref<Category[]>([]);
 const loading = ref(true);
 const errorMessage = ref("");
 const deletingId = ref<string | null>(null);
+const duplicatingId = ref<string | null>(null);
 
 const search = ref("");
 const categoryFilter = ref("");
@@ -380,6 +394,37 @@ const loadCategories = async () => {
     console.error("LOAD PRODUCT CATEGORIES ERROR:", error);
   }
 };
+
+const duplicateProduct = async (product: Product) => {
+  duplicatingId.value = String(product.id);
+  errorMessage.value = "";
+
+  try {
+    const duplicated = await adminFetch<Product>(
+      `/api/admin/products/${product.id}/duplicate`,
+      {
+        method: "POST",
+      },
+    );
+
+    products.value.push(duplicated);
+
+    await navigateTo(`/admin/products/${duplicated.id}`);
+  } catch (error: any) {
+    console.error("DUPLICATE PRODUCT ERROR:", error);
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to duplicate product.";
+  } finally {
+    duplicatingId.value = null;
+  }
+};
+
+// ========================================
+// DELETE PRODUCT
+// ========================================
 
 const deleteProduct = async (product: Product) => {
   if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
