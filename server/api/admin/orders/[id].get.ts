@@ -1,0 +1,73 @@
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+
+export default defineEventHandler(async (event) => {
+  await requireAdmin(event);
+
+  const id = getRouterParam(event, "id");
+
+  if (!id) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Order ID is required.",
+    });
+  }
+
+  const supabase = getAdminSupabase();
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      user_id,
+      stripe_session_id,
+      customer_email,
+      customer_name,
+      total,
+      status,
+      created_at
+    `)
+    .eq("id", id)
+    .single();
+
+  if (orderError || !order) {
+    console.error("ADMIN ORDER ERROR:", orderError);
+
+    throw createError({
+      statusCode: orderError?.code === "PGRST116" ? 404 : 500,
+      statusMessage:
+        orderError?.message ||
+        "Unable to load order.",
+    });
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from("order_items")
+    .select(`
+      id,
+      order_id,
+      product_id,
+      product_name,
+      quantity,
+      price
+    `)
+    .eq("order_id", order.id)
+    .order("id", {
+      ascending: true,
+    });
+
+  if (itemsError) {
+    console.error("ADMIN ORDER ITEMS ERROR:", itemsError);
+
+    throw createError({
+      statusCode: 500,
+      statusMessage:
+        itemsError.message ||
+        "Unable to load order items.",
+    });
+  }
+
+  return {
+    ...order,
+    items: items ?? [],
+  };
+});
