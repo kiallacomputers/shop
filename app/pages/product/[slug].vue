@@ -280,7 +280,13 @@
                   v-else-if="section.type === 'paragraph'"
                   class="text-gray-700 leading-7 mb-4"
                 >
-                  {{ section.text }}
+                  <template
+                    v-for="(part, partIndex) in parseBoldText(section.text)"
+                    :key="partIndex"
+                  >
+                    <strong v-if="part.bold">{{ part.text }}</strong>
+                    <span v-else>{{ part.text }}</span>
+                  </template>
                 </p>
 
                 <!-- Quote -->
@@ -314,7 +320,13 @@
                   v-else-if="section.type === 'warning'"
                   class="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg"
                 >
-                  {{ section.text }}
+                  <template
+                    v-for="(part, partIndex) in parseBoldText(section.text)"
+                    :key="partIndex"
+                  >
+                    <strong v-if="part.bold">{{ part.text }}</strong>
+                    <span v-else>{{ part.text }}</span>
+                  </template>
                 </div>
 
                 <!-- Info -->
@@ -518,6 +530,34 @@ const supabase = useSupabaseClient();
 const route = useRoute();
 
 const cart = useCartStore();
+
+/*
+|--------------------------------------------------------------------------
+| Description Bold Text
+|--------------------------------------------------------------------------
+*/
+
+const parseBoldText = (text = "") => {
+  const parts = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: text.slice(lastIndex, match.index), bold: false });
+    }
+
+    parts.push({ text: match[1], bold: true });
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ text: text.slice(lastIndex), bold: false });
+  }
+
+  return parts.length ? parts : [{ text, bold: false }];
+};
 
 /*
 |--------------------------------------------------------------------------
