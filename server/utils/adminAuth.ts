@@ -2,153 +2,182 @@ import { createClient } from "@supabase/supabase-js";
 import type { H3Event } from "h3";
 import { serverSupabaseUser } from "#supabase/server";
 
-/**
- * Create a server-only Supabase client using the secret key.
- *
- * NEVER expose this client or its key to browser code.
- */
+export type AdminRole = "superadmin" | "admin";
+
 export const getAdminSupabase = () => {
   const config = useRuntimeConfig();
 
-  const supabaseUrl = config.public?.supabaseUrl || process.env.SUPABASE_URL;
+  const supabaseUrl =
+    config.public?.supabaseUrl ||
+    process.env.SUPABASE_URL;
 
   const supabaseSecretKey =
-    config.supabaseSecretKey || process.env.SUPABASE_SECRET_KEY;
+    config.supabaseSecretKey ||
+    process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Supabase URL is not configured",
+      statusMessage:
+        "Supabase URL is not configured",
     });
   }
 
   if (!supabaseSecretKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Supabase secret key is not configured",
+      statusMessage:
+        "Supabase secret key is not configured",
     });
   }
 
-  return createClient(supabaseUrl, supabaseSecretKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
+  return createClient(
+    supabaseUrl,
+    supabaseSecretKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     },
-  });
+  );
 };
 
-/**
- * Get the currently authenticated Supabase user
- * and determine whether they are an administrator.
- */
-export const getAdminUser = async (event: H3Event) => {
+export const getAdminUser = async (
+  event: H3Event,
+) => {
   let user: any = null;
 
   try {
     user = await serverSupabaseUser(event);
   } catch (error) {
-    console.error("SUPABASE USER CHECK ERROR:", error);
+    console.error(
+      "SUPABASE USER CHECK ERROR:",
+      error,
+    );
 
     user = null;
   }
 
-  /**
-   * No authenticated user.
-   *
-   * This can happen briefly while the Supabase
-   * session is being restored.
-   */
   if (!user) {
-    console.log("ADMIN AUTH: No authenticated user");
-
     return {
       user: null,
       isAdmin: false,
+      isSuperAdmin: false,
+      role: null as AdminRole | null,
       adminUser: null,
     };
   }
 
-  console.log("ADMIN AUTH USER:", user.email);
-
-  /**
-   * serverSupabaseUser() can return the JWT claims
-   * where the user UUID is stored in `sub` rather
-   * than `id`.
-   *
-   * Full Supabase user:
-   *   user.id
-   *
-   * JWT claims:
-   *   user.sub
-   */
   const userId = user.id || user.sub;
 
-  if (!userId || typeof userId !== "string") {
-    console.error("ADMIN AUTH ERROR: User has no valid ID", user);
-
+  if (
+    !userId ||
+    typeof userId !== "string"
+  ) {
     return {
       user,
       isAdmin: false,
+      isSuperAdmin: false,
+      role: null as AdminRole | null,
       adminUser: null,
     };
   }
 
-  console.log("ADMIN AUTH USER ID:", userId);
+  const adminSupabase =
+    getAdminSupabase();
 
-  const adminSupabase = getAdminSupabase();
-
-  /**
-   * Look up the authenticated user's UUID
-   * in the admin_users table.
-   */
-  const { data: adminUser, error: adminError } = await adminSupabase
+  const {
+    data: adminUser,
+    error: adminError,
+  } = await adminSupabase
     .from("admin_users")
-    .select("*")
+    .select("id, email, created_at, role")
     .eq("id", userId)
     .maybeSingle();
 
   if (adminError) {
-    console.error("ADMIN USER LOOKUP ERROR:", adminError);
+    console.error(
+      "ADMIN USER LOOKUP ERROR:",
+      adminError,
+    );
 
     return {
       user,
       isAdmin: false,
+      isSuperAdmin: false,
+      role: null as AdminRole | null,
       adminUser: null,
     };
   }
 
-  const isAdmin = !!adminUser;
+  const role =
+    adminUser?.role === "superadmin"
+      ? "superadmin"
+      : adminUser
+        ? "admin"
+        : null;
 
-  console.log("ADMIN USER FOUND:", isAdmin);
+  const isAdmin =
+    role === "admin" ||
+    role === "superadmin";
 
-  console.log("IS ADMIN:", isAdmin);
+  const isSuperAdmin =
+    role === "superadmin";
 
   return {
     user,
     isAdmin,
+    isSuperAdmin,
+    role,
     adminUser,
   };
 };
 
-/**
- * Require an authenticated administrator.
- *
- * Used by protected server API routes.
- */
-export const requireAdmin = async (event: H3Event) => {
-  const result = await getAdminUser(event);
+export const requireAdmin = async (
+  event: H3Event,
+) => {
+  const result =
+    await getAdminUser(event);
 
   if (!result.user) {
     throw createError({
       statusCode: 401,
-      statusMessage: "Authentication required",
+      statusMessage:
+        "Authentication required",
     });
   }
 
   if (!result.isAdmin) {
     throw createError({
       statusCode: 403,
-      statusMessage: "Administrator access required",
+      statusMessage:
+        "Administrator access required",
+    });
+  }
+
+  return result.user;
+};
+
+export const requireSuperAdmin = async (
+  event: H3Event,
+) => {
+  const result =
+    await getAdminUser(event);
+
+  if (!result.user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage:
+        "Authentication required",
+    });
+  }
+
+  if (!result.isSuperAdmin) {
+    throw createError({
+      statusCode: 403,
+      statusMessage:
+        "SuperAdmin access required",
     });
   }
 

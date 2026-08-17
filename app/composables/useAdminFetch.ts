@@ -1,19 +1,46 @@
 export function useAdminFetch() {
-  const isAdmin = useState<boolean>("isAdmin", () => false);
+  const isAdmin =
+    useState<boolean>(
+      "isAdmin",
+      () => false,
+    );
 
-  const adminChecked = useState<boolean>("adminChecked", () => false);
+  const isSuperAdmin =
+    useState<boolean>(
+      "isSuperAdmin",
+      () => false,
+    );
 
-  const checkingAdmin = useState<boolean>("checkingAdmin", () => false);
+  const adminRole =
+    useState<
+      "superadmin" | "admin" | null
+    >(
+      "adminRole",
+      () => null,
+    );
 
-  const supabase = useSupabaseClient();
-  const user = useSupabaseUser();
+  const adminChecked =
+    useState<boolean>(
+      "adminChecked",
+      () => false,
+    );
 
-  // ============================================================
-  // CHECK ADMIN STATUS
-  // ============================================================
+  const checkingAdmin =
+    useState<boolean>(
+      "checkingAdmin",
+      () => false,
+    );
+
+  const user =
+    useSupabaseUser();
+
+  const clearAdminState = () => {
+    isAdmin.value = false;
+    isSuperAdmin.value = false;
+    adminRole.value = null;
+  };
 
   const checkAdmin = async () => {
-    // Already checking
     if (checkingAdmin.value) {
       return isAdmin.value;
     }
@@ -21,88 +48,66 @@ export function useAdminFetch() {
     checkingAdmin.value = true;
 
     try {
-      console.log("=================================");
-      console.log("CHECKING ADMIN STATUS...");
-      console.log("=================================");
-
-      // ========================================================
-      // WAIT FOR SUPABASE SESSION
-      // ========================================================
-
       let attempts = 0;
 
-      while (!user.value && attempts < 50) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      while (
+        !user.value &&
+        attempts < 50
+      ) {
+        await new Promise(
+          (resolve) =>
+            setTimeout(resolve, 100),
+        );
 
         attempts++;
       }
 
-      console.log("SUPABASE USER:", user.value?.email || "NONE");
-
-      // ========================================================
-      // NO USER
-      // ========================================================
-
       if (!user.value) {
-        console.log("❌ NO SUPABASE USER");
-
-        isAdmin.value = false;
-
-        // IMPORTANT:
-        // Don't permanently mark the admin check as complete
-        // when the Supabase session has not loaded yet.
+        clearAdminState();
         adminChecked.value = false;
 
         return false;
       }
 
-      // ========================================================
-      // CHECK ADMIN ON SERVER
-      // ========================================================
+      const result =
+        await $fetch<{
+          authenticated: boolean;
+          isAdmin: boolean;
+          isSuperAdmin: boolean;
+          role:
+            | "superadmin"
+            | "admin"
+            | null;
+          user?: {
+            id: string;
+            email: string | null;
+          } | null;
+        }>("/api/admin/check", {
+          method: "GET",
+          credentials: "include",
+        });
 
-      console.log("ADMIN CHECK: Checking", user.value.email);
+      isAdmin.value =
+        result.authenticated === true &&
+        result.isAdmin === true;
 
-      const result = await $fetch<{
-        authenticated: boolean;
-        isAdmin: boolean;
-        user?: {
-          id: string;
-          email: string;
-        } | null;
-      }>("/api/admin/check", {
-        method: "GET",
-        credentials: "include",
-      });
+      isSuperAdmin.value =
+        result.authenticated === true &&
+        result.isSuperAdmin === true;
 
-      console.log("ADMIN CHECK RESULT:", result);
-
-      // ========================================================
-      // UPDATE STATE
-      // ========================================================
-
-      if (result.authenticated === true && result.isAdmin === true) {
-        isAdmin.value = true;
-      } else {
-        isAdmin.value = false;
-      }
+      adminRole.value =
+        result.role || null;
 
       adminChecked.value = true;
 
-      console.log("IS ADMIN:", isAdmin.value);
-
       return isAdmin.value;
-    } catch (error: any) {
-      console.error("ADMIN CHECK ERROR:", error);
+    } catch (error) {
+      console.error(
+        "ADMIN CHECK ERROR:",
+        error,
+      );
 
-      isAdmin.value = false;
-
-      /*
-       * Do NOT permanently mark this as checked after
-       * an authentication/session error.
-       *
-       * This allows another attempt once the session
-       * is available.
-       */
+      clearAdminState();
       adminChecked.value = false;
 
       return false;
@@ -111,65 +116,40 @@ export function useAdminFetch() {
     }
   };
 
-  // ============================================================
-  // ADMIN FETCH
-  // ============================================================
-
-  const adminFetch = async <T = any>(
+  const adminFetch = async <
+    T = any,
+  >(
     url: string,
     options: any = {},
   ): Promise<T> => {
-    console.log("=================================");
-    console.log("ADMIN FETCH:", url);
-
     try {
-      const result = await $fetch<T>(url, {
-        ...options,
-        credentials: "include",
-      });
-
-      console.log("ADMIN FETCH SUCCESS:", url);
-
-      console.log("=================================");
-
-      return result;
+      return await $fetch<T>(
+        url,
+        {
+          ...options,
+          credentials: "include",
+        },
+      );
     } catch (error: any) {
-      console.error("=================================");
-      console.error("ADMIN FETCH ERROR:", url);
-      console.error(error);
-      console.error("=================================");
-
-      // ========================================================
-      // UNAUTHENTICATED
-      // ========================================================
-
-      if (error?.statusCode === 401) {
-        isAdmin.value = false;
+      if (
+        error?.statusCode === 401
+      ) {
+        clearAdminState();
         adminChecked.value = false;
-      }
-
-      // ========================================================
-      // NOT ADMIN
-      // ========================================================
-
-      if (error?.statusCode === 403) {
-        isAdmin.value = false;
-        adminChecked.value = true;
       }
 
       throw error;
     }
   };
 
-  // ============================================================
-  // RETURN
-  // ============================================================
-
   return {
     adminFetch,
     checkAdmin,
     isAdmin,
+    isSuperAdmin,
+    adminRole,
     adminChecked,
     checkingAdmin,
+    clearAdminState,
   };
 }

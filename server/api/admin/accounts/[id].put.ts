@@ -1,73 +1,115 @@
-import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import {
+  getAdminSupabase,
+  requireSuperAdmin,
+} from "~~/server/utils/adminAuth";
 
-export default defineEventHandler(async (event) => {
-  const currentUser = await requireAdmin(event);
+const allowedRoles = [
+  "user",
+  "admin",
+  "superadmin",
+] as const;
 
-  const userId = getRouterParam(event, "id");
+export default defineEventHandler(
+  async (event) => {
+    const currentUser =
+      await requireSuperAdmin(event);
 
-  if (!userId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "User ID is required.",
-    });
-  }
+    const userId =
+      getRouterParam(event, "id");
 
-  const body = await readBody(event);
+    if (!userId) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "User ID is required.",
+      });
+    }
 
-  if (typeof body?.isAdmin !== "boolean") {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        "isAdmin must be true or false.",
-    });
-  }
+    const body =
+      await readBody(event);
 
-  const currentUserId =
-    (currentUser as any)?.id ||
-    (currentUser as any)?.sub ||
-    "";
+    const role = String(
+      body?.role ?? "",
+    ).toLowerCase();
 
-  if (
-    body.isAdmin === false &&
-    String(userId) === String(currentUserId)
-  ) {
-    throw createError({
-      statusCode: 400,
-      statusMessage:
-        "You cannot remove your own administrator access.",
-    });
-  }
+    if (
+      !allowedRoles.includes(
+        role as any,
+      )
+    ) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "Role must be user, admin or superadmin.",
+      });
+    }
 
-  const supabase = getAdminSupabase();
+    const currentUserId =
+      (currentUser as any)?.id ||
+      (currentUser as any)?.sub ||
+      "";
 
-  const {
-    data: targetUserResult,
-    error: targetUserError,
-  } = await supabase.auth.admin.getUserById(
-    userId,
-  );
+    if (
+      String(userId) ===
+        String(currentUserId) &&
+      role !== "superadmin"
+    ) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "You cannot demote your own SuperAdmin account.",
+      });
+    }
 
-  if (
-    targetUserError ||
-    !targetUserResult?.user
-  ) {
-    console.error(
-      "ADMIN TARGET USER ERROR:",
-      targetUserError,
-    );
+    const supabase =
+      getAdminSupabase();
 
-    throw createError({
-      statusCode: 404,
-      statusMessage:
-        targetUserError?.message ||
-        "User account was not found.",
-    });
-  }
+    const {
+      data: targetResult,
+      error: targetError,
+    } =
+      await supabase.auth.admin.getUserById(
+        userId,
+      );
 
-  const targetUser =
-    targetUserResult.user;
+    if (
+      targetError ||
+      !targetResult?.user
+    ) {
+      throw createError({
+        statusCode: 404,
+        statusMessage:
+          targetError?.message ||
+          "User account was not found.",
+      });
+    }
 
-  if (body.isAdmin === true) {
+    const targetUser =
+      targetResult.user;
+
+    if (role === "user") {
+      const {
+        error: deleteError,
+      } = await supabase
+        .from("admin_users")
+        .delete()
+        .eq("id", userId);
+
+      if (deleteError) {
+        throw createError({
+          statusCode: 500,
+          statusMessage:
+            deleteError.message ||
+            "Unable to demote account.",
+        });
+      }
+
+      return {
+        success: true,
+        role: "user",
+      };
+    }
+
     const {
       data,
       error,
@@ -76,59 +118,33 @@ export default defineEventHandler(async (event) => {
       .upsert(
         {
           id: targetUser.id,
-          email: targetUser.email ?? null,
+          email:
+            targetUser.email ??
+            null,
+          role,
         },
         {
           onConflict: "id",
         },
       )
-      .select("*")
+      .select(
+        "id, email, role, created_at",
+      )
       .single();
 
     if (error) {
-      console.error(
-        "PROMOTE ADMIN ERROR:",
-        error,
-      );
-
       throw createError({
         statusCode: 500,
         statusMessage:
           error.message ||
-          "Unable to grant administrator access.",
+          "Unable to update administrator role.",
       });
     }
 
     return {
       success: true,
-      isAdmin: true,
+      role,
       adminUser: data,
     };
-  }
-
-  const {
-    error: deleteError,
-  } = await supabase
-    .from("admin_users")
-    .delete()
-    .eq("id", userId);
-
-  if (deleteError) {
-    console.error(
-      "REMOVE ADMIN ERROR:",
-      deleteError,
-    );
-
-    throw createError({
-      statusCode: 500,
-      statusMessage:
-        deleteError.message ||
-        "Unable to remove administrator access.",
-    });
-  }
-
-  return {
-    success: true,
-    isAdmin: false,
-  };
-});
+  },
+);
