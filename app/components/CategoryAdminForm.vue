@@ -8,6 +8,7 @@
           <label class="mb-2 block text-sm font-semibold text-slate-700">
             Category Name
           </label>
+
           <input
             v-model="form.name"
             type="text"
@@ -21,6 +22,7 @@
           <label class="mb-2 block text-sm font-semibold text-slate-700">
             Slug
           </label>
+
           <input
             v-model="form.slug"
             type="text"
@@ -33,11 +35,13 @@
           <label class="mb-2 block text-sm font-semibold text-slate-700">
             Parent Category
           </label>
+
           <select
             v-model="form.parent_id"
             class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="">No Parent Category</option>
+
             <option
               v-for="category in availableParents"
               :key="category.id"
@@ -49,13 +53,18 @@
         </div>
 
         <div class="flex items-end">
-          <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+          <label
+            class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3"
+          >
             <input
               v-model="form.active"
               type="checkbox"
               class="h-4 w-4 rounded border-slate-300 text-blue-600"
             />
-            <span class="text-sm font-semibold text-slate-700">Active</span>
+
+            <span class="text-sm font-semibold text-slate-700">
+              Active
+            </span>
           </label>
         </div>
       </div>
@@ -79,9 +88,9 @@
       <button
         type="submit"
         :disabled="saving"
-        class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+        class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {{ saving ? "Saving..." : submitLabel }}
+        {{ saving ? "Saving..." : buttonText }}
       </button>
     </div>
   </form>
@@ -96,11 +105,17 @@ type Category = {
   active: boolean;
 };
 
-const props = defineProps<{
-  category?: Category | null;
-  categories: Category[];
-  submitLabel?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    category?: Category | null;
+    categories: Category[];
+    submitLabel?: string;
+  }>(),
+  {
+    category: null,
+    submitLabel: "",
+  },
+);
 
 const emit = defineEmits<{
   saved: [];
@@ -110,35 +125,52 @@ const { adminFetch } = useAdminFetch();
 
 const saving = ref(false);
 const errorMessage = ref("");
-const slugManuallyChanged = ref(Boolean(props.category?.slug));
 
 const form = reactive({
   name: props.category?.name ?? "",
   slug: props.category?.slug ?? "",
-  parent_id: props.category?.parent_id ? String(props.category.parent_id) : "",
+  parent_id: props.category?.parent_id
+    ? String(props.category.parent_id)
+    : "",
   active: props.category?.active ?? true,
+});
+
+const buttonText = computed(() => {
+  if (props.submitLabel.trim()) {
+    return props.submitLabel;
+  }
+
+  return props.category ? "Save Changes" : "Create Category";
 });
 
 watch(
   () => props.category,
   (category) => {
-    if (!category) return;
+    if (!category) {
+      return;
+    }
+
     form.name = category.name ?? "";
     form.slug = category.slug ?? "";
-    form.parent_id = category.parent_id ? String(category.parent_id) : "";
+    form.parent_id = category.parent_id
+      ? String(category.parent_id)
+      : "";
     form.active = category.active ?? true;
-    slugManuallyChanged.value = true;
   },
 );
 
 const descendantIds = computed(() => {
-  if (!props.category) return new Set<string>();
+  if (!props.category) {
+    return new Set<string>();
+  }
 
   const result = new Set<string>();
+
   const walk = (parentId: string) => {
     for (const category of props.categories) {
       if (String(category.parent_id ?? "") === parentId) {
         const id = String(category.id);
+
         if (!result.has(id)) {
           result.add(id);
           walk(id);
@@ -148,17 +180,29 @@ const descendantIds = computed(() => {
   };
 
   walk(String(props.category.id));
+
   return result;
 });
 
 const availableParents = computed(() =>
   props.categories
     .filter((category) => {
-      if (!props.category) return true;
+      if (!props.category) {
+        return true;
+      }
+
       const id = String(category.id);
-      return id !== String(props.category.id) && !descendantIds.value.has(id);
+
+      return (
+        id !== String(props.category.id) &&
+        !descendantIds.value.has(id)
+      );
     })
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+    .sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, {
+        sensitivity: "base",
+      }),
+    ),
 );
 
 const slugify = (value: string) =>
@@ -169,7 +213,7 @@ const slugify = (value: string) =>
     .replace(/^-+|-+$/g, "");
 
 const generateSlug = () => {
-  if (!slugManuallyChanged.value || !props.category) {
+  if (!props.category) {
     form.slug = slugify(form.name);
   }
 };
@@ -187,10 +231,13 @@ const submitForm = async () => {
     };
 
     if (props.category) {
-      await adminFetch(`/api/admin/categories/${props.category.id}`, {
-        method: "PUT",
-        body: payload,
-      });
+      await adminFetch(
+        `/api/admin/categories/${props.category.id}`,
+        {
+          method: "PUT",
+          body: payload,
+        },
+      );
     } else {
       await adminFetch("/api/admin/categories", {
         method: "POST",
@@ -200,8 +247,13 @@ const submitForm = async () => {
 
     emit("saved");
   } catch (error: any) {
+    console.error("SAVE CATEGORY ERROR:", error);
+
     errorMessage.value =
-      error?.data?.statusMessage || error?.message || "Unable to save category.";
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to save category.";
   } finally {
     saving.value = false;
   }
