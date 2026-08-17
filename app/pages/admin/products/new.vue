@@ -3,5 +3,9 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin" });
+import ProductAdminForm from "~/components/ProductAdminForm.vue";
+
+definePageMeta({
+  middleware: "admin",
+});
 </script>
