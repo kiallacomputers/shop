@@ -166,10 +166,12 @@
       </section>
 
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900">Product Description JSON</h2>
-        <p class="text-sm text-slate-500 mt-1">This uses the structured JSON format already displayed by your product page.</p>
+        <h2 class="text-lg font-bold text-slate-900">Product Description</h2>
+        <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
 
-        <textarea v-model="descriptionText" rows="16" class="input mt-5 font-mono text-sm"></textarea>
+        <div class="mt-5">
+          <ProductDescriptionBuilder v-model="descriptionBlocks" />
+        </div>
       </section>
 
       <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -203,7 +205,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const uploadingImages = ref(false);
 const uploadProgress = ref(0);
 const uploadError = ref("");
-const descriptionText = ref("[]");
+const descriptionBlocks = ref<any[]>([]);
 
 const form = reactive({
   name: "",
@@ -310,7 +312,11 @@ const loadForm = async () => {
       }
       imageUrls.value = images;
 
-      descriptionText.value = JSON.stringify(product.description ?? [], null, 2);
+      let description = product.description ?? [];
+      if (typeof description === "string") {
+        try { description = JSON.parse(description); } catch { description = []; }
+      }
+      descriptionBlocks.value = Array.isArray(description) ? description : [];
     }
   } catch (error: any) {
     errorMessage.value = error?.data?.statusMessage || error?.statusMessage || "Unable to load product details.";
@@ -324,13 +330,7 @@ const saveProduct = async () => {
   saving.value = true;
 
   try {
-    let description: unknown = [];
-
-    try {
-      description = descriptionText.value.trim() ? JSON.parse(descriptionText.value) : [];
-    } catch {
-      throw new Error("Product Description JSON is not valid JSON.");
-    }
+    const description = descriptionBlocks.value;
 
     const payload = {
       ...form,
