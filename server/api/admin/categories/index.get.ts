@@ -12,7 +12,6 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error("ADMIN CATEGORIES ERROR:", error);
-
     throw createError({
       statusCode: 500,
       statusMessage: error.message || "Unable to load categories",
