@@ -50,6 +50,10 @@
               {{ category.name }}
             </option>
           </select>
+
+          <p class="mt-2 text-xs text-slate-500">
+            Only top-level categories can be selected as a parent.
+          </p>
         </div>
 
         <div class="flex items-end">
@@ -159,44 +163,28 @@ watch(
   },
 );
 
-const descendantIds = computed(() => {
-  if (!props.category) {
-    return new Set<string>();
-  }
-
-  const result = new Set<string>();
-
-  const walk = (parentId: string) => {
-    for (const category of props.categories) {
-      if (String(category.parent_id ?? "") === parentId) {
-        const id = String(category.id);
-
-        if (!result.has(id)) {
-          result.add(id);
-          walk(id);
-        }
-      }
-    }
-  };
-
-  walk(String(props.category.id));
-
-  return result;
-});
-
 const availableParents = computed(() =>
   props.categories
     .filter((category) => {
-      if (!props.category) {
-        return true;
+      // Only allow top-level categories to be selected as a parent.
+      const isTopLevel =
+        category.parent_id === null ||
+        category.parent_id === undefined ||
+        category.parent_id === "";
+
+      if (!isTopLevel) {
+        return false;
       }
 
-      const id = String(category.id);
+      // When editing, don't allow the category to select itself.
+      if (
+        props.category &&
+        String(category.id) === String(props.category.id)
+      ) {
+        return false;
+      }
 
-      return (
-        id !== String(props.category.id) &&
-        !descendantIds.value.has(id)
-      );
+      return true;
     })
     .sort((a, b) =>
       a.name.localeCompare(b.name, undefined, {
