@@ -264,12 +264,16 @@
                 class="mb-6"
               >
                 <!-- Heading -->
-                <h2
+                <component
+                  :is="section.level === 4 ? 'h4' : section.level === 3 ? 'h3' : 'h2'"
                   v-if="section.type === 'heading'"
-                  class="text-2xl font-semibold border-b border-gray-200 pb-2 mb-4"
+                  :class="[
+                    'font-semibold border-b border-gray-200 pb-2 mb-4',
+                    section.level === 4 ? 'text-lg' : section.level === 3 ? 'text-xl' : 'text-2xl'
+                  ]"
                 >
                   {{ section.text }}
-                </h2>
+                </component>
 
                 <!-- Paragraph -->
                 <p
@@ -288,12 +292,20 @@
                 </blockquote>
 
                 <!-- List -->
+                <ol
+                  v-else-if="section.type === 'list' && section.style === 'number'"
+                  class="list-decimal pl-6 space-y-2 text-gray-700"
+                >
+                  <li v-for="(item, i) in section.items" :key="i">{{ item }}</li>
+                </ol>
+
                 <ul
                   v-else-if="section.type === 'list'"
-                  class="list-disc pl-6 space-y-2 text-gray-700"
+                  :class="section.style === 'check' ? 'space-y-2 text-gray-700' : 'list-disc pl-6 space-y-2 text-gray-700'"
                 >
-                  <li v-for="(item, i) in section.items" :key="i">
-                    {{ item }}
+                  <li v-for="(item, i) in section.items" :key="i" :class="section.style === 'check' ? 'flex gap-2' : ''">
+                    <span v-if="section.style === 'check'" class="font-bold text-green-600">✓</span>
+                    <span>{{ item }}</span>
                   </li>
                 </ul>
 
@@ -304,6 +316,17 @@
                 >
                   {{ section.text }}
                 </div>
+
+                <!-- Info -->
+                <div
+                  v-else-if="section.type === 'info'"
+                  class="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-lg"
+                >
+                  {{ section.text }}
+                </div>
+
+                <!-- Divider -->
+                <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
                 <!-- Table -->
                 <div
