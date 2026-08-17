@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { getAdminSupabase } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -8,22 +8,35 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig();
 
-  // ----------------------------------------
-  // STRIPE
-  // ----------------------------------------
+  if (!config.stripeSecretKey) {
+    console.error("❌ STRIPE_SECRET_KEY IS MISSING");
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Stripe secret key is not configured",
+    });
+  }
+
+  if (!config.stripeWebhookSecret) {
+    console.error("❌ STRIPE_WEBHOOK_SECRET IS MISSING");
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Stripe webhook secret is not configured",
+    });
+  }
 
   const stripe = new Stripe(config.stripeSecretKey);
 
-  // ----------------------------------------
-  // READ RAW BODY
-  // ----------------------------------------
+  // ========================================
+  // RAW BODY + SIGNATURE
+  // ========================================
 
   const body = await readRawBody(event);
-
   const signature = getHeader(event, "stripe-signature");
 
   if (!body || !signature) {
-    console.error("❌ MISSING STRIPE WEBHOOK DATA");
+    console.error("❌ MISSING WEBHOOK BODY OR SIGNATURE");
 
     throw createError({
       statusCode: 400,
@@ -31,9 +44,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
-  // VERIFY STRIPE SIGNATURE
-  // ----------------------------------------
+  // ========================================
+  // VERIFY EVENT
+  // ========================================
 
   let stripeEvent: Stripe.Event;
 
@@ -44,98 +57,98 @@ export default defineEventHandler(async (event) => {
       config.stripeWebhookSecret,
     );
   } catch (error: any) {
-    console.error("❌ WEBHOOK SIGNATURE ERROR:", error.message);
+    console.error(
+      "❌ STRIPE WEBHOOK SIGNATURE ERROR:",
+      error?.message || error,
+    );
 
     throw createError({
       statusCode: 400,
-      statusMessage: error.message,
+      statusMessage: "Invalid Stripe webhook signature",
     });
   }
 
+  console.log("EVENT ID:", stripeEvent.id);
   console.log("EVENT TYPE:", stripeEvent.type);
 
-  // ----------------------------------------
-  // ONLY PROCESS CHECKOUT COMPLETED
-  // ----------------------------------------
-
   if (stripeEvent.type !== "checkout.session.completed") {
-    console.log("Ignoring event:", stripeEvent.type);
+    console.log("IGNORED EVENT:", stripeEvent.type);
 
     return {
       received: true,
+      ignored: true,
     };
   }
 
-  // ----------------------------------------
+  // ========================================
   // CHECKOUT SESSION
-  // ----------------------------------------
+  // ========================================
 
-  const session = stripeEvent.data.object as Stripe.Checkout.Session;
+  const session =
+    stripeEvent.data.object as Stripe.Checkout.Session;
 
   console.log("SESSION ID:", session.id);
-
   console.log("PAYMENT STATUS:", session.payment_status);
-
-  // ----------------------------------------
-  // MAKE SURE PAYMENT IS PAID
-  // ----------------------------------------
+  console.log("SESSION METADATA:", session.metadata);
+  console.log(
+    "CLIENT REFERENCE ID:",
+    session.client_reference_id,
+  );
 
   if (session.payment_status !== "paid") {
-    console.log("❌ PAYMENT NOT PAID");
+    console.log("⚠️ SESSION COMPLETED BUT PAYMENT NOT PAID");
 
     return {
       received: true,
+      unpaid: true,
     };
   }
 
-  console.log("✅ PAYMENT IS PAID");
-
-  // ----------------------------------------
-  // GET USER ID FROM STRIPE METADATA
-  // ----------------------------------------
-
-  const userId = session.metadata?.user_id || null;
-
-  console.log("SUPABASE USER ID:", userId);
+  // Use metadata first, then client_reference_id.
+  const userId = String(
+    session.metadata?.user_id ||
+      session.client_reference_id ||
+      "",
+  );
 
   if (!userId) {
-    console.error("❌ NO USER ID FOUND IN STRIPE METADATA");
+    console.error(
+      "❌ NO SUPABASE USER ID ON STRIPE SESSION",
+      {
+        sessionId: session.id,
+        metadata: session.metadata,
+        clientReferenceId: session.client_reference_id,
+      },
+    );
 
     throw createError({
       statusCode: 500,
-      statusMessage: "No user ID found in Stripe session metadata",
+      statusMessage: "Stripe session has no Supabase user ID",
     });
   }
 
-  // ----------------------------------------
-  // SUPABASE SERVICE CLIENT
-  // ----------------------------------------
+  console.log("SUPABASE USER ID:", userId);
 
-  const supabase = createClient(
-    config.public.supabaseUrl,
-    config.supabaseSecretKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    },
-  );
+  const supabase = getAdminSupabase();
 
-  // ----------------------------------------
-  // CHECK FOR DUPLICATE ORDER
-  // ----------------------------------------
+  // ========================================
+  // IDEMPOTENCY / DUPLICATE CHECK
+  // ========================================
 
-  console.log("CHECKING FOR EXISTING ORDER...");
-
-  const { data: existingOrder, error: existingOrderError } = await supabase
+  const {
+    data: existingOrder,
+    error: existingOrderError,
+  } = await supabase
     .from("orders")
     .select("id")
     .eq("stripe_session_id", session.id)
     .maybeSingle();
 
   if (existingOrderError) {
-    console.error("❌ EXISTING ORDER CHECK ERROR:", existingOrderError);
+    console.error(
+      "❌ EXISTING ORDER CHECK ERROR:",
+      existingOrderError,
+    );
 
     throw createError({
       statusCode: 500,
@@ -144,7 +157,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (existingOrder) {
-    console.log("⚠️ ORDER ALREADY EXISTS:", existingOrder.id);
+    console.log(
+      "⚠️ ORDER ALREADY EXISTS:",
+      existingOrder.id,
+    );
 
     return {
       received: true,
@@ -153,165 +169,151 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  // ----------------------------------------
-  // CUSTOMER
-  // ----------------------------------------
+  // ========================================
+  // CUSTOMER + TOTAL
+  // ========================================
 
   const customerEmail =
-    session.customer_details?.email || session.customer_email || null;
+    session.customer_details?.email ||
+    session.customer_email ||
+    null;
 
-  const customerName = session.customer_details?.name || null;
+  const customerName =
+    session.customer_details?.name ||
+    null;
 
-  const total = (session.amount_total || 0) / 100;
+  const total =
+    Number(session.amount_total || 0) / 100;
 
-  console.log("CUSTOMER:", customerName);
+  // ========================================
+  // STRIPE LINE ITEMS
+  // ========================================
 
-  console.log("EMAIL:", customerEmail);
+  const lineItems =
+    await stripe.checkout.sessions.listLineItems(
+      session.id,
+      {
+        limit: 100,
+        expand: ["data.price.product"],
+      },
+    );
 
-  console.log("TOTAL:", total);
+  console.log(
+    "LINE ITEM COUNT:",
+    lineItems.data.length,
+  );
 
-  // ----------------------------------------
-  // GET LINE ITEMS
-  // ----------------------------------------
-
-  console.log("GETTING STRIPE LINE ITEMS...");
-
-  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-    expand: ["data.price.product"],
-  });
-
-  console.log("LINE ITEMS:", JSON.stringify(lineItems.data, null, 2));
-
-  // ----------------------------------------
-  // CREATE ORDER
-  // ----------------------------------------
-
-  console.log("CREATING ORDER...");
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      // ----------------------------------
-      // IMPORTANT
-      // ----------------------------------
-
-      user_id: userId,
-
-      stripe_session_id: session.id,
-
-      customer_email: customerEmail,
-
-      customer_name: customerName,
-
-      total: total,
-
-      status: "paid",
-    })
-    .select()
-    .single();
-
-  if (orderError) {
-    console.error("❌ ORDER CREATION FAILED:", orderError);
+  if (lineItems.data.length === 0) {
+    console.error("❌ STRIPE SESSION HAS NO LINE ITEMS");
 
     throw createError({
       statusCode: 500,
-      statusMessage: orderError.message,
+      statusMessage: "Stripe session contains no line items",
     });
   }
 
-  console.log("=================================");
+  // ========================================
+  // CREATE ORDER
+  // ========================================
+
+  const {
+    data: order,
+    error: orderError,
+  } = await supabase
+    .from("orders")
+    .insert({
+      user_id: userId,
+      stripe_session_id: session.id,
+      customer_email: customerEmail,
+      customer_name: customerName,
+      total,
+      status: "paid",
+    })
+    .select("*")
+    .single();
+
+  if (orderError || !order) {
+    console.error(
+      "❌ ORDER CREATION FAILED:",
+      orderError,
+    );
+
+    throw createError({
+      statusCode: 500,
+      statusMessage:
+        orderError?.message ||
+        "Unable to create order",
+    });
+  }
 
   console.log("✅ ORDER CREATED:", order.id);
 
-  console.log("USER ID:", userId);
-
-  console.log("=================================");
-
-  // ----------------------------------------
-  // PROCESS PRODUCTS
-  // ----------------------------------------
+  // ========================================
+  // SAVE ITEMS + UPDATE STOCK
+  // ========================================
 
   for (const lineItem of lineItems.data) {
-    console.log("---------------------------------");
+    const stripeProduct =
+      lineItem.price?.product;
 
-    console.log("PROCESSING ITEM");
-
-    // --------------------------------------
-    // STRIPE PRODUCT
-    // --------------------------------------
-
-    const product = lineItem.price?.product;
-
-    console.log("STRIPE PRODUCT:", product);
-
-    if (!product || typeof product === "string") {
-      console.log("❌ PRODUCT NOT FOUND");
+    if (
+      !stripeProduct ||
+      typeof stripeProduct === "string"
+    ) {
+      console.error(
+        "❌ STRIPE PRODUCT WAS NOT EXPANDED:",
+        lineItem.id,
+      );
 
       continue;
     }
 
-    // --------------------------------------
-    // DATABASE PRODUCT ID
-    // --------------------------------------
-
-    const productId = product.metadata?.product_id;
-
-    console.log("DATABASE PRODUCT ID:", productId);
+    const productId =
+      stripeProduct.metadata?.product_id;
 
     if (!productId) {
-      console.error("❌ NO PRODUCT ID IN STRIPE METADATA");
+      console.error(
+        "❌ PRODUCT ID MISSING FROM STRIPE PRODUCT METADATA:",
+        stripeProduct.id,
+      );
 
       continue;
     }
 
-    // --------------------------------------
-    // QUANTITY
-    // --------------------------------------
+    const quantity =
+      Number(lineItem.quantity || 1);
 
-    const quantity = Number(lineItem.quantity) || 1;
+    const productName =
+      stripeProduct.name ||
+      lineItem.description ||
+      "Product";
 
-    console.log("QUANTITY SOLD:", quantity);
+    const price =
+      Number(lineItem.price?.unit_amount || 0) /
+      100;
 
-    // --------------------------------------
-    // PRODUCT NAME
-    // --------------------------------------
+    console.log(
+      `PROCESSING PRODUCT ${productId}: ${productName} x ${quantity}`,
+    );
 
-    const productName = product.name;
-
-    console.log("PRODUCT NAME:", productName);
-
-    // --------------------------------------
-    // PRICE
-    // --------------------------------------
-
-    const price = (lineItem.price?.unit_amount || 0) / 100;
-
-    console.log("PRODUCT PRICE:", price);
-
-    // --------------------------------------
-    // SAVE ORDER ITEM
-    // --------------------------------------
-
-    console.log("SAVING ORDER ITEM...");
-
-    const { data: orderItem, error: orderItemError } = await supabase
+    // Save order item.
+    const {
+      error: orderItemError,
+    } = await supabase
       .from("order_items")
       .insert({
         order_id: order.id,
-
         product_id: Number(productId),
-
         product_name: productName,
-
-        quantity: quantity,
-
-        price: price,
-      })
-      .select()
-      .single();
+        quantity,
+        price,
+      });
 
     if (orderItemError) {
-      console.error("❌ ORDER ITEM ERROR:", orderItemError);
+      console.error(
+        "❌ ORDER ITEM INSERT ERROR:",
+        orderItemError,
+      );
 
       throw createError({
         statusCode: 500,
@@ -319,110 +321,68 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("✅ ORDER ITEM CREATED:", orderItem.id);
-
-    // --------------------------------------
-    // GET CURRENT STOCK
-    // --------------------------------------
-
-    console.log("GETTING CURRENT STOCK...");
-
-    const { data: productData, error: productError } = await supabase
+    // Read current stock.
+    const {
+      data: productData,
+      error: productError,
+    } = await supabase
       .from("products")
       .select("id, name, stock")
-      .eq("id", productId)
+      .eq("id", Number(productId))
       .single();
 
-    console.log("SUPABASE PRODUCT:", productData);
-
-    console.log("SUPABASE ERROR:", productError);
-
     if (productError || !productData) {
-      console.error("❌ COULD NOT FIND SUPABASE PRODUCT");
+      console.error(
+        "❌ PRODUCT LOOKUP ERROR:",
+        productError,
+      );
 
       throw createError({
         statusCode: 500,
-        statusMessage: "Product not found",
+        statusMessage:
+          productError?.message ||
+          `Product ${productId} was not found`,
       });
     }
 
-    // --------------------------------------
-    // CURRENT STOCK
-    // --------------------------------------
+    const currentStock =
+      Number(productData.stock || 0);
 
-    const currentStock = Number(productData.stock);
+    const newStock = Math.max(
+      0,
+      currentStock - quantity,
+    );
 
-    // --------------------------------------
-    // NEW STOCK
-    // --------------------------------------
-
-    const newStock = Math.max(0, currentStock - quantity);
-
-    console.log(`STOCK: ${currentStock} -> ${newStock}`);
-
-    // --------------------------------------
-    // UPDATE STOCK
-    // --------------------------------------
-
-    console.log("UPDATING STOCK...");
-
-    const { data: updateData, error: updateError } = await supabase
+    const {
+      error: stockError,
+    } = await supabase
       .from("products")
       .update({
         stock: newStock,
       })
-      .eq("id", productId)
-      .select("id, name, stock");
+      .eq("id", Number(productId));
 
-    console.log("UPDATE RESULT:", updateData);
-
-    console.log("UPDATE ERROR:", updateError);
-
-    if (updateError) {
-      console.error("❌ STOCK UPDATE FAILED:", updateError);
+    if (stockError) {
+      console.error(
+        "❌ STOCK UPDATE ERROR:",
+        stockError,
+      );
 
       throw createError({
         statusCode: 500,
-        statusMessage: updateError.message,
+        statusMessage: stockError.message,
       });
     }
 
-    // --------------------------------------
-    // MAKE SURE PRODUCT WAS UPDATED
-    // --------------------------------------
-
-    if (!updateData || updateData.length === 0) {
-      console.error("❌ STOCK UPDATE DID NOT MATCH ANY PRODUCT");
-
-      console.error("PRODUCT ID:", productId);
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Product stock update matched no rows",
-      });
-    }
-
-    console.log("✅ DATABASE STOCK UPDATED");
-
-    console.log("PRODUCT:", updateData[0].name);
-
-    console.log("NEW STOCK:", updateData[0].stock);
+    console.log(
+      `✅ STOCK UPDATED: ${productData.name}: ${currentStock} -> ${newStock}`,
+    );
   }
 
-  // ----------------------------------------
-  // COMPLETE
-  // ----------------------------------------
-
   console.log("=================================");
-
   console.log("🎉 WEBHOOK COMPLETE");
-
   console.log("ORDER ID:", order.id);
-
-  console.log("USER ID:", userId);
-
-  console.log("STRIPE SESSION:", session.id);
-
+  console.log("SESSION ID:", session.id);
   console.log("=================================");
 
   return {

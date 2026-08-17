@@ -18,11 +18,11 @@ export default defineEventHandler(async (event) => {
 
   const stripe = new Stripe(config.stripeSecretKey);
 
-  // ----------------------------------------
-  // AUTHENTICATE THE REAL USER
-  // ----------------------------------------
+  // ========================================
+  // AUTHENTICATE USER
+  // ========================================
 
-  const user = await serverSupabaseUser(event);
+  const user: any = await serverSupabaseUser(event);
 
   if (!user) {
     throw createError({
@@ -31,9 +31,24 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
+  // Nuxt Supabase/server user may expose the UUID
+  // as either id or sub depending on the returned claims.
+  const userId = String(user.id || user.sub || "");
+
+  if (!userId) {
+    console.error("CHECKOUT USER HAS NO UUID:", user);
+
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unable to determine your user ID",
+    });
+  }
+
+  console.log("CHECKOUT USER ID:", userId);
+
+  // ========================================
   // READ CART
-  // ----------------------------------------
+  // ========================================
 
   const body = await readBody(event);
 
@@ -43,10 +58,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Cart is empty",
     });
   }
-
-  // ----------------------------------------
-  // NORMALISE / VALIDATE CART IDS
-  // ----------------------------------------
 
   const requestedItems = body.items.map((item: any) => ({
     id: Number(item?.id),
@@ -68,20 +79,21 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Combine duplicate product IDs safely.
+  // Combine duplicate IDs.
   const quantities = new Map<number, number>();
 
   for (const item of requestedItems) {
-    quantities.set(item.id, (quantities.get(item.id) || 0) + item.quantity);
+    quantities.set(
+      item.id,
+      (quantities.get(item.id) || 0) + item.quantity,
+    );
   }
 
   const productIds = [...quantities.keys()];
 
-  // ----------------------------------------
-  // LOAD PRODUCTS FROM DATABASE
-  // ----------------------------------------
-  // Never trust product names/prices/stock supplied
-  // by the browser.
+  // ========================================
+  // LOAD PRODUCTS FROM SUPABASE
+  // ========================================
 
   const supabase = getAdminSupabase();
 
@@ -106,9 +118,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ----------------------------------------
-  // VALIDATE STOCK AND BUILD STRIPE ITEMS
-  // ----------------------------------------
+  // ========================================
+  // BUILD STRIPE LINE ITEMS
+  // ========================================
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
@@ -163,14 +175,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  console.log(
-    "STRIPE LINE ITEMS:",
-    JSON.stringify(lineItems, null, 2),
-  );
-
-  // ----------------------------------------
-  // CREATE CHECKOUT SESSION
-  // ----------------------------------------
+  // ========================================
+  // CREATE STRIPE SESSION
+  // ========================================
 
   const requestUrl = getRequestURL(event);
 
@@ -179,10 +186,12 @@ export default defineEventHandler(async (event) => {
 
     line_items: lineItems,
 
-    client_reference_id: user.id,
+    // Store UUID in two places so the webhook has
+    // a reliable fallback.
+    client_reference_id: userId,
 
     metadata: {
-      user_id: user.id,
+      user_id: userId,
     },
 
     customer_email: user.email || undefined,
@@ -203,8 +212,7 @@ export default defineEventHandler(async (event) => {
   console.log("=================================");
   console.log("✅ STRIPE SESSION CREATED");
   console.log("SESSION ID:", session.id);
-  console.log("USER ID:", user.id);
-  console.log("CHECKOUT URL:", session.url);
+  console.log("USER ID:", userId);
   console.log("=================================");
 
   return {
