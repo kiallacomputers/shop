@@ -4,7 +4,7 @@
     <!-- HEADER -->
     <!-- ========================================= -->
 
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center">
       <!-- ======================================= -->
       <!-- LOGO -->
       <!-- ======================================= -->
@@ -18,78 +18,51 @@
       </NuxtLink>
 
       <!-- ======================================= -->
-      <!-- DESKTOP MENU -->
-      <!-- ======================================= -->
-
-      <nav class="hidden md:flex items-center gap-8">
-        <!-- Signup / Login -->
-        <NuxtLink
-          v-if="!user"
-          to="/auth/signin"
-          class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
-        >
-          Signup/Login
-        </NuxtLink>
-
-        <!-- Welcome -->
-        <p v-if="user" class="text-[#566C9D] font-bold">
-          Welcome {{ firstName }}
-        </p>
-
-        <!-- My Account -->
-        <NuxtLink
-          v-if="user"
-          to="/admin/dashboard"
-          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-        >
-          My Account
-        </NuxtLink>
-
-        <!-- =================================== -->
-        <!-- ADMIN -->
-        <!-- =================================== -->
-
-        <NuxtLink
-          v-if="user && isAdmin"
-          to="/admin"
-          class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-        >
-          Admin
-        </NuxtLink>
-
-        <!-- Logout -->
-        <button
-          v-if="user"
-          type="button"
-          @click="logout"
-          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
-          title="Sign Out"
-        >
-          <!-- Sign out icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-            />
-          </svg>
-
-          <span>Logout</span>
-        </button>
-      </nav>
-
-      <!-- ======================================= -->
       <!-- RIGHT SIDE -->
       <!-- ======================================= -->
 
-      <div class="flex items-center gap-4">
+      <div class="ml-auto flex items-center gap-6">
+        <!-- ===================================== -->
+        <!-- DESKTOP MENU -->
+        <!-- ===================================== -->
+
+        <nav class="hidden md:flex items-center gap-6">
+          <!-- Signup / Login -->
+          <NuxtLink
+            v-if="!user"
+            to="/auth/signin"
+            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
+          >
+            Signup/Login
+          </NuxtLink>
+
+          <!-- Welcome -->
+          <p v-if="user" class="text-[#566C9D] font-bold whitespace-nowrap">
+            Welcome {{ firstName }}
+          </p>
+
+          <!-- My Account -->
+          <NuxtLink
+            v-if="user"
+            to="/admin/dashboard"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition whitespace-nowrap"
+          >
+            My Account
+          </NuxtLink>
+
+          <!-- =================================== -->
+          <!-- ADMIN -->
+          <!-- =================================== -->
+
+          <NuxtLink
+            v-if="user && isAdmin"
+            to="/admin"
+            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
+          >
+            Admin
+          </NuxtLink>
+        </nav>
+
         <!-- ===================================== -->
         <!-- SHOPPING CART -->
         <!-- ===================================== -->
@@ -122,6 +95,34 @@
             {{ cart.count }}
           </span>
         </NuxtLink>
+
+        <!-- ===================================== -->
+        <!-- DESKTOP LOGOUT ICON -->
+        <!-- ===================================== -->
+
+        <button
+          v-if="user"
+          type="button"
+          @click="logout"
+          class="hidden md:flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
+          title="Sign Out"
+          aria-label="Sign Out"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+            />
+          </svg>
+        </button>
 
         <!-- ===================================== -->
         <!-- MOBILE MENU BUTTON -->
@@ -201,7 +202,9 @@
           <!-- =================================== -->
 
           <div v-if="user" class="px-4 py-4 border-b border-gray-200">
-            <p class="text-[#566C9D] font-bold">Welcome {{ firstName }}</p>
+            <p class="text-[#566C9D] font-bold">
+              Welcome {{ firstName }}
+            </p>
           </div>
 
           <!-- =================================== -->
@@ -344,16 +347,13 @@ const isAdmin = ref(false);
 // ========================================
 
 const checkAdmin = async () => {
-  // Always reset first
   isAdmin.value = false;
 
-  // No logged-in user
   if (!user.value) {
     return;
   }
 
   try {
-    // Get current Supabase session
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -365,7 +365,6 @@ const checkAdmin = async () => {
 
     console.log("ADMIN CHECK: Checking", user.value.email);
 
-    // Send access token to server
     const result = await $fetch("/api/admin/check", {
       headers: {
         Authorization: `Bearer ${session.access_token}`,
@@ -374,9 +373,6 @@ const checkAdmin = async () => {
 
     console.log("ADMIN CHECK RESULT:", result);
 
-    // IMPORTANT:
-    // Only become admin when the API explicitly
-    // tells us the user is an administrator.
     isAdmin.value = result.isAdmin === true;
 
     if (isAdmin.value) {
