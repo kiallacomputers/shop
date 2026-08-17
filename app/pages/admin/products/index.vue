@@ -376,7 +376,7 @@
 
                       <div class="min-w-0">
                         <p
-                          class="font-semibold text-slate-900"
+                          class="font-semibold text-slate-900 truncate"
                         >
                           {{ product.name }}
                         </p>
