@@ -1,479 +1,170 @@
 <template>
   <div class="min-h-screen bg-slate-50">
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <!-- ========================================= -->
-      <!-- PAGE HEADER -->
-      <!-- ========================================= -->
-
-      <div
-        class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8"
-      >
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-slate-900">
-            Manage Products
-          </h1>
-
-          <p class="mt-1 text-slate-500">
-            Add, edit and manage products in your store.
-          </p>
+          <h1 class="text-3xl font-bold text-slate-900">Manage Products</h1>
+          <p class="mt-1 text-slate-500">Add, edit and manage products in your store.</p>
         </div>
 
-        <NuxtLink
-          to="/admin/products/new"
-          class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 transition"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-
-          Add Product
+        <NuxtLink to="/admin/products/new"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 transition">
+          <span class="text-xl leading-none">+</span> Add Product
         </NuxtLink>
       </div>
 
-      <!-- ========================================= -->
-      <!-- FILTERS -->
-      <!-- ========================================= -->
-
-      <div
-        class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6"
-      >
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- Search -->
           <div>
-            <label
-              for="product-search"
-              class="block text-sm font-semibold text-slate-700 mb-2"
-            >
-              Search Products
-            </label>
-
-            <input
-              id="product-search"
-              v-model="search"
-              type="text"
-              placeholder="Search by product name..."
-              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Search Products</label>
+            <input v-model="search" type="text" placeholder="Search by product name..."
+              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
           </div>
 
-          <!-- Category -->
           <div>
-            <label
-              for="category-filter"
-              class="block text-sm font-semibold text-slate-700 mb-2"
-            >
-              Category
-            </label>
-
-            <select
-              id="category-filter"
-              v-model="categoryFilter"
-              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="">
-                All Categories
-              </option>
-
-              <option
-                v-for="category in sortedCategories"
-                :key="category.id"
-                :value="String(category.id)"
-              >
-                {{ category.name }}
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+            <select v-model="categoryFilter"
+              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+              <option value="">All Categories</option>
+              <option v-for="category in sortedCategories" :key="category.id" :value="String(category.id)">
+                {{ categoryLabel(category) }}
               </option>
             </select>
           </div>
 
-          <!-- Stock -->
           <div>
-            <label
-              for="stock-filter"
-              class="block text-sm font-semibold text-slate-700 mb-2"
-            >
-              Stock
-            </label>
-
-            <select
-              id="stock-filter"
-              v-model="stockFilter"
-              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="">
-                All Stock
-              </option>
-
-              <option value="in-stock">
-                In Stock
-              </option>
-
-              <option value="low-stock">
-                Low Stock
-              </option>
-
-              <option value="out-of-stock">
-                Out of Stock
-              </option>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Stock</label>
+            <select v-model="stockFilter"
+              class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+              <option value="">All Stock</option>
+              <option value="in-stock">In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
             </select>
           </div>
         </div>
 
-        <!-- Filter Summary -->
-        <div
-          class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4"
-        >
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
           <p class="text-sm text-slate-500">
-            Showing
-            <span class="font-semibold text-slate-700">
-              {{ filteredProducts.length }}
-            </span>
-            of
-            <span class="font-semibold text-slate-700">
-              {{ products.length }}
-            </span>
-            products
+            Showing <span class="font-semibold text-slate-700">{{ filteredProducts.length }}</span>
+            of <span class="font-semibold text-slate-700">{{ products.length }}</span> products
           </p>
-
-          <button
-            v-if="hasFilters"
-            type="button"
-            class="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            @click="clearFilters"
-          >
+          <button v-if="hasFilters" type="button"
+            class="text-sm font-semibold text-blue-600 hover:text-blue-700" @click="clearFilters">
             Clear Filters
           </button>
         </div>
       </div>
 
-      <!-- ========================================= -->
-      <!-- ERROR -->
-      <!-- ========================================= -->
-
-      <div
-        v-if="errorMessage"
-        class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700"
-      >
+      <div v-if="errorMessage"
+        class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
         {{ errorMessage }}
       </div>
 
-      <!-- ========================================= -->
-      <!-- LOADING -->
-      <!-- ========================================= -->
-
-      <div
-        v-if="loading"
-        class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center"
-      >
-        <svg
-          class="mx-auto h-8 w-8 animate-spin text-blue-600"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          />
-        </svg>
-
-        <p class="mt-3 text-slate-500">
-          Loading products...
-        </p>
+      <div v-if="loading"
+        class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center text-slate-500">
+        Loading products...
       </div>
 
-      <!-- ========================================= -->
-      <!-- NO PRODUCTS -->
-      <!-- ========================================= -->
-
-      <div
-        v-else-if="filteredProducts.length === 0"
-        class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center"
-      >
-        <div
-          class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-7 h-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-          </svg>
-        </div>
-
-        <h2 class="mt-4 text-lg font-bold text-slate-800">
-          No products found
-        </h2>
-
-        <p class="mt-1 text-sm text-slate-500">
-          Try adjusting your filters or add a new product.
-        </p>
+      <div v-else-if="filteredProducts.length === 0"
+        class="bg-white rounded-xl border border-slate-200 shadow-sm p-10 text-center">
+        <h2 class="text-lg font-bold text-slate-800">No products found</h2>
+        <p class="mt-1 text-sm text-slate-500">Try adjusting your filters or add a new product.</p>
       </div>
 
-      <!-- ========================================= -->
-      <!-- PRODUCTS TABLE -->
-      <!-- ========================================= -->
-
-      <div
-        v-else
-        class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
-      >
+      <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <!-- =================================== -->
-            <!-- TABLE HEADER -->
-            <!-- =================================== -->
-
             <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th
-                  class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Product
-                </th>
-
-                <th
-                  class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Category
-                </th>
-
-                <th
-                  class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Price
-                </th>
-
-                <th
-                  class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Stock
-                </th>
-
-                <th
-                  class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Status
-                </th>
-
-                <th
-                  class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500"
-                >
-                  Actions
-                </th>
+                <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
+                <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
+                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
+                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
+                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
+                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Actions</th>
               </tr>
             </thead>
 
-            <!-- =================================== -->
-            <!-- GROUPED PRODUCTS -->
-            <!-- =================================== -->
-
             <tbody>
-              <template
-                v-for="group in groupedProducts"
-                :key="group.category"
-              >
-                <!-- ================================= -->
-                <!-- CATEGORY HEADING -->
-                <!-- ================================= -->
-
-                <tr class="bg-slate-100 border-y border-slate-200">
+              <template v-for="main in groupedProducts" :key="main.name">
+                <tr class="bg-slate-200 border-y border-slate-300">
                   <td colspan="6" class="px-5 py-3">
-                    <div class="flex items-center gap-3">
-                      <div
-                        class="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-slate-200"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-4 h-4 text-blue-600"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M3 7a2 2 0 012-2h5l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"
-                          />
-                        </svg>
-                      </div>
-
-                      <div>
-                        <p class="font-bold text-slate-800">
-                          {{ group.category }}
-                        </p>
-
-                        <p class="text-xs text-slate-500">
-                          {{ group.products.length }}
-                          {{
-                            group.products.length === 1
-                              ? "product"
-                              : "products"
-                          }}
-                        </p>
-                      </div>
-                    </div>
+                    <p class="font-bold text-slate-900">{{ main.name }}</p>
+                    <p class="text-xs text-slate-500">
+                      {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
+                    </p>
                   </td>
                 </tr>
 
-                <!-- ================================= -->
-                <!-- PRODUCT ROWS -->
-                <!-- ================================= -->
+                <template v-for="sub in main.subcategories" :key="`${main.name}-${sub.name}`">
+                  <tr v-if="sub.name !== main.name" class="bg-blue-50 border-b border-blue-100">
+                    <td colspan="6" class="px-5 py-2.5 pl-10">
+                      <p class="font-bold text-blue-800">{{ sub.name }}</p>
+                      <p class="text-xs text-blue-600">
+                        {{ sub.products.length }}
+                        {{ sub.products.length === 1 ? "product" : "products" }}
+                      </p>
+                    </td>
+                  </tr>
 
-                <tr
-                  v-for="product in group.products"
-                  :key="product.id"
-                  class="border-b border-slate-100 hover:bg-slate-50/70 transition"
-                >
-                  <!-- Product -->
-                  <td class="px-5 py-4">
-                    <div class="flex items-center gap-3 min-w-[280px]">
-                      <div
-                        class="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white"
-                      >
-                        <img
-                          v-if="firstImage(product)"
-                          :src="firstImage(product)"
-                          :alt="product.name"
-                          class="h-full w-full object-contain p-1"
-                        />
-
-                        <div
-                          v-else
-                          class="flex h-full w-full items-center justify-center text-[10px] text-slate-400"
-                        >
-                          No image
+                  <tr v-for="product in sub.products" :key="product.id"
+                    class="border-b border-slate-100 hover:bg-slate-50/70 transition">
+                    <td class="px-5 py-4">
+                      <div class="flex items-center gap-3 min-w-[280px]">
+                        <div class="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          <img v-if="firstImage(product)" :src="firstImage(product)" :alt="product.name"
+                            class="h-full w-full object-contain p-1" />
+                          <div v-else class="flex h-full w-full items-center justify-center text-[10px] text-slate-400">
+                            No image
+                          </div>
+                        </div>
+                        <div class="min-w-0">
+                          <p class="font-semibold text-slate-900 truncate" :title="product.name">{{ product.name }}</p>
+                          <p v-if="product.slug" class="mt-1 text-xs text-slate-400 truncate">/{{ product.slug }}</p>
+                          <div class="mt-2 flex flex-wrap gap-1.5">
+                            <span v-if="product.featured"
+                              class="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">Featured</span>
+                            <span v-if="product.refurbished"
+                              class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Refurbished</span>
+                          </div>
                         </div>
                       </div>
+                    </td>
 
-                      <div class="min-w-0">
-                        <p
-                          class="font-semibold text-slate-900 truncate"
-                        >
-                          {{ product.name }}
-                        </p>
-
-                        <p
-                          v-if="product.slug"
-                          class="mt-1 text-xs text-slate-400"
-                        >
-                          /{{ product.slug }}
-                        </p>
-
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                          <span
-                            v-if="product.featured"
-                            class="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700"
-                          >
-                            Featured
-                          </span>
-
-                          <span
-                            v-if="product.refurbished"
-                            class="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
-                          >
-                            Refurbished
-                          </span>
-                        </div>
+                    <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
+                      {{ product.categories?.name || "Uncategorised" }}
+                    </td>
+                    <td class="px-5 py-4 text-right font-semibold text-slate-900 whitespace-nowrap">
+                      {{ currency(product.price) }}
+                    </td>
+                    <td class="px-5 py-4 text-center">
+                      <span class="inline-flex min-w-12 justify-center rounded-full px-2.5 py-1 text-xs font-bold"
+                        :class="stockClass(product.stock)">
+                        {{ Number(product.stock || 0) }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4 text-center">
+                      <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                        :class="product.active === false ? 'bg-slate-100 text-slate-600' : 'bg-green-100 text-green-700'">
+                        {{ product.active === false ? "Inactive" : "Active" }}
+                      </span>
+                    </td>
+                    <td class="px-5 py-4 text-right whitespace-nowrap">
+                      <div class="flex justify-end gap-2">
+                        <NuxtLink :to="`/admin/products/${product.id}`"
+                          class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition">
+                          Edit
+                        </NuxtLink>
+                        <button type="button" :disabled="deletingId === String(product.id)"
+                          class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
+                          @click="deleteProduct(product)">
+                          {{ deletingId === String(product.id) ? "Deleting..." : "Delete" }}
+                        </button>
                       </div>
-                    </div>
-                  </td>
-
-                  <!-- Category -->
-                  <td
-                    class="px-5 py-4 text-slate-600 whitespace-nowrap"
-                  >
-                    {{ product.categories?.name || "Uncategorised" }}
-                  </td>
-
-                  <!-- Price -->
-                  <td
-                    class="px-5 py-4 text-right font-semibold text-slate-900 whitespace-nowrap"
-                  >
-                    {{ currency(product.price) }}
-                  </td>
-
-                  <!-- Stock -->
-                  <td class="px-5 py-4 text-center">
-                    <span
-                      class="inline-flex min-w-12 justify-center rounded-full px-2.5 py-1 text-xs font-bold"
-                      :class="stockClass(product.stock)"
-                    >
-                      {{ Number(product.stock || 0) }}
-                    </span>
-                  </td>
-
-                  <!-- Status -->
-                  <td class="px-5 py-4 text-center">
-                    <span
-                      class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
-                      :class="
-                        product.active === false
-                          ? 'bg-slate-100 text-slate-600'
-                          : 'bg-green-100 text-green-700'
-                      "
-                    >
-                      {{
-                        product.active === false
-                          ? "Inactive"
-                          : "Active"
-                      }}
-                    </span>
-                  </td>
-
-                  <!-- Actions -->
-                  <td class="px-5 py-4 text-right whitespace-nowrap">
-                    <div class="flex justify-end gap-2">
-                      <NuxtLink
-                        :to="`/admin/products/${product.id}`"
-                        class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition"
-                      >
-                        Edit
-                      </NuxtLink>
-
-                      <button
-                        type="button"
-                        :disabled="deletingId === String(product.id)"
-                        class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
-                        @click="deleteProduct(product)"
-                      >
-                        {{
-                          deletingId === String(product.id)
-                            ? "Deleting..."
-                            : "Delete"
-                        }}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                </template>
               </template>
             </tbody>
           </table>
@@ -484,13 +175,12 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  middleware: "admin",
-});
+definePageMeta({ middleware: "admin" });
 
 type Category = {
   id: string | number;
   name: string;
+  parent_id?: string | number | null;
 };
 
 type Product = {
@@ -504,182 +194,137 @@ type Product = {
   featured?: boolean | null;
   refurbished?: boolean | null;
   images?: string[] | string | null;
-
   categories?: {
     id?: string | number;
     name?: string;
+    parent_id?: string | number | null;
   } | null;
 };
 
-// ========================================
-// ADMIN FETCH
-// ========================================
-
 const { adminFetch } = useAdminFetch();
-
-// ========================================
-// STATE
-// ========================================
 
 const products = ref<Product[]>([]);
 const categories = ref<Category[]>([]);
-
 const loading = ref(true);
 const errorMessage = ref("");
-
 const deletingId = ref<string | null>(null);
-
-// ========================================
-// FILTERS
-// ========================================
 
 const search = ref("");
 const categoryFilter = ref("");
 const stockFilter = ref("");
 
-// ========================================
-// SORTED CATEGORIES
-// ========================================
-
-const sortedCategories = computed(() => {
-  return [...categories.value].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, {
-      sensitivity: "base",
-    }),
-  );
+const categoryMap = computed(() => {
+  const map = new Map<string, Category>();
+  categories.value.forEach((category) => map.set(String(category.id), category));
+  return map;
 });
 
-// ========================================
-// FILTERED PRODUCTS
-// ========================================
+const mainCategoryFor = (category?: Category | null) => {
+  if (!category) return null;
+  if (!category.parent_id) return category;
+  return categoryMap.value.get(String(category.parent_id)) || category;
+};
+
+const categoryLabel = (category: Category) => {
+  if (!category.parent_id) return category.name;
+  const parent = categoryMap.value.get(String(category.parent_id));
+  return parent ? `${parent.name} → ${category.name}` : category.name;
+};
+
+const sortedCategories = computed(() =>
+  [...categories.value].sort((a, b) => {
+    const mainA = mainCategoryFor(a)?.name || a.name;
+    const mainB = mainCategoryFor(b)?.name || b.name;
+    const mainSort = mainA.localeCompare(mainB, undefined, { sensitivity: "base" });
+    return mainSort || a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  }),
+);
 
 const filteredProducts = computed(() => {
-  const searchValue = search.value.trim().toLowerCase();
+  const term = search.value.trim().toLowerCase();
 
   return products.value.filter((product) => {
-    // ------------------------------------
-    // Search
-    // ------------------------------------
+    const category = categoryMap.value.get(String(product.category_id ?? ""));
+    const main = mainCategoryFor(category);
 
-    if (searchValue) {
-      const productName =
-        product.name?.toLowerCase() || "";
-
-      const productSlug =
-        product.slug?.toLowerCase() || "";
-
-      const categoryName =
-        product.categories?.name?.toLowerCase() || "";
-
-      const matchesSearch =
-        productName.includes(searchValue) ||
-        productSlug.includes(searchValue) ||
-        categoryName.includes(searchValue);
-
-      if (!matchesSearch) {
-        return false;
-      }
+    if (term) {
+      const text = [product.name, product.slug, category?.name, main?.name]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (!text.includes(term)) return false;
     }
-
-    // ------------------------------------
-    // Category
-    // ------------------------------------
 
     if (categoryFilter.value) {
-      if (
-        String(product.category_id) !==
-        String(categoryFilter.value)
-      ) {
+      const selected = categoryMap.value.get(String(categoryFilter.value));
+
+      if (selected && !selected.parent_id) {
+        const belongs =
+          String(product.category_id) === String(selected.id) ||
+          String(category?.parent_id) === String(selected.id);
+        if (!belongs) return false;
+      } else if (String(product.category_id) !== String(categoryFilter.value)) {
         return false;
       }
     }
-
-    // ------------------------------------
-    // Stock
-    // ------------------------------------
 
     const stock = Number(product.stock || 0);
-
-    if (stockFilter.value === "in-stock") {
-      if (stock <= 5) {
-        return false;
-      }
-    }
-
-    if (stockFilter.value === "low-stock") {
-      if (stock <= 0 || stock > 5) {
-        return false;
-      }
-    }
-
-    if (stockFilter.value === "out-of-stock") {
-      if (stock > 0) {
-        return false;
-      }
-    }
+    if (stockFilter.value === "in-stock" && stock <= 5) return false;
+    if (stockFilter.value === "low-stock" && (stock <= 0 || stock > 5)) return false;
+    if (stockFilter.value === "out-of-stock" && stock > 0) return false;
 
     return true;
   });
 });
 
-// ========================================
-// GROUP PRODUCTS BY CATEGORY
-// ========================================
-
 const groupedProducts = computed(() => {
-  const groups = new Map<string, Product[]>();
+  const mains = new Map<string, Map<string, Product[]>>();
 
   for (const product of filteredProducts.value) {
-    const categoryName =
-      product.categories?.name?.trim() ||
-      "Uncategorised";
+    const category = categoryMap.value.get(String(product.category_id ?? ""));
 
-    if (!groups.has(categoryName)) {
-      groups.set(categoryName, []);
+    let mainName = "Uncategorised";
+    let subName = "Uncategorised";
+
+    if (category) {
+      if (category.parent_id) {
+        mainName =
+          categoryMap.value.get(String(category.parent_id))?.name?.trim() ||
+          "Uncategorised";
+        subName = category.name.trim();
+      } else {
+        mainName = category.name.trim();
+        subName = category.name.trim();
+      }
     }
 
-    groups.get(categoryName)?.push(product);
+    if (!mains.has(mainName)) mains.set(mainName, new Map());
+    const subs = mains.get(mainName)!;
+    if (!subs.has(subName)) subs.set(subName, []);
+    subs.get(subName)!.push(product);
   }
 
-  return Array.from(groups.entries())
-    .sort(([categoryA], [categoryB]) =>
-      categoryA.localeCompare(categoryB, undefined, {
-        sensitivity: "base",
-      }),
-    )
-    .map(([category, categoryProducts]) => {
-      return {
-        category,
+  return [...mains.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: "base" }))
+    .map(([name, subs]) => {
+      const subcategories = [...subs.entries()]
+        .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: "base" }))
+        .map(([subName, subProducts]) => ({
+          name: subName,
+          products: [...subProducts].sort((a, b) =>
+            a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+          ),
+        }));
 
-        products: [...categoryProducts].sort(
-          (productA, productB) =>
-            productA.name.localeCompare(
-              productB.name,
-              undefined,
-              {
-                sensitivity: "base",
-              },
-            ),
-        ),
+      return {
+        name,
+        count: subcategories.reduce((total, sub) => total + sub.products.length, 0),
+        subcategories,
       };
     });
 });
 
-// ========================================
-// HAS FILTERS
-// ========================================
-
-const hasFilters = computed(() => {
-  return Boolean(
-    search.value ||
-      categoryFilter.value ||
-      stockFilter.value,
-  );
-});
-
-// ========================================
-// CLEAR FILTERS
-// ========================================
+const hasFilters = computed(() =>
+  Boolean(search.value || categoryFilter.value || stockFilter.value),
+);
 
 const clearFilters = () => {
   search.value = "";
@@ -687,167 +332,76 @@ const clearFilters = () => {
   stockFilter.value = "";
 };
 
-// ========================================
-// CURRENCY
-// ========================================
-
-const currency = (
-  amount: number | string | null | undefined,
-) => {
-  const value = Number(amount || 0);
-
-  return new Intl.NumberFormat("en-AU", {
+const currency = (amount: number | string | null | undefined) =>
+  new Intl.NumberFormat("en-AU", {
     style: "currency",
     currency: "AUD",
-  }).format(value);
-};
+  }).format(Number(amount || 0));
 
-// ========================================
-// STOCK CLASS
-// ========================================
-
-const stockClass = (
-  stockValue: number | string | null | undefined,
-) => {
-  const stock = Number(stockValue || 0);
-
-  if (stock <= 0) {
-    return "bg-red-100 text-red-700";
-  }
-
-  if (stock <= 5) {
-    return "bg-amber-100 text-amber-700";
-  }
-
+const stockClass = (value: number | string | null | undefined) => {
+  const stock = Number(value || 0);
+  if (stock <= 0) return "bg-red-100 text-red-700";
+  if (stock <= 5) return "bg-amber-100 text-amber-700";
   return "bg-green-100 text-green-700";
 };
 
-// ========================================
-// FIRST IMAGE
-// ========================================
-
 const firstImage = (product: Product) => {
-  if (!product.images) {
-    return "";
+  if (!product.images) return "";
+  if (Array.isArray(product.images)) return product.images[0] || "";
+
+  try {
+    const parsed = JSON.parse(product.images);
+    return Array.isArray(parsed) ? parsed[0] || "" : product.images;
+  } catch {
+    return product.images;
   }
-
-  // Already an array
-  if (Array.isArray(product.images)) {
-    return product.images[0] || "";
-  }
-
-  // JSON string
-  if (typeof product.images === "string") {
-    try {
-      const parsed = JSON.parse(product.images);
-
-      if (Array.isArray(parsed)) {
-        return parsed[0] || "";
-      }
-
-      return product.images;
-    } catch {
-      return product.images;
-    }
-  }
-
-  return "";
 };
-
-// ========================================
-// LOAD PRODUCTS
-// ========================================
 
 const loadProducts = async () => {
   loading.value = true;
   errorMessage.value = "";
 
   try {
-    const result = await adminFetch<Product[]>(
-      "/api/admin/products",
-    );
-
-    products.value = result || [];
+    products.value = (await adminFetch<Product[]>("/api/admin/products")) || [];
   } catch (error: any) {
     console.error("LOAD PRODUCTS ERROR:", error);
-
     errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to load products.";
+      error?.data?.statusMessage || error?.message || "Unable to load products.";
   } finally {
     loading.value = false;
   }
 };
 
-// ========================================
-// LOAD CATEGORIES
-// ========================================
-
 const loadCategories = async () => {
   try {
-    const result = await adminFetch<Category[]>(
-      "/api/admin/categories",
-    );
-
-    categories.value = result || [];
+    categories.value =
+      (await adminFetch<Category[]>("/api/admin/categories")) || [];
   } catch (error) {
-    console.error(
-      "LOAD PRODUCT CATEGORIES ERROR:",
-      error,
-    );
+    console.error("LOAD PRODUCT CATEGORIES ERROR:", error);
   }
 };
 
-// ========================================
-// DELETE PRODUCT
-// ========================================
-
 const deleteProduct = async (product: Product) => {
-  const confirmed = window.confirm(
-    `Are you sure you want to delete "${product.name}"?`,
-  );
-
-  if (!confirmed) {
-    return;
-  }
+  if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
 
   deletingId.value = String(product.id);
-
   errorMessage.value = "";
 
   try {
-    await adminFetch(
-      `/api/admin/products/${product.id}`,
-      {
-        method: "DELETE",
-      },
-    );
-
+    await adminFetch(`/api/admin/products/${product.id}`, { method: "DELETE" });
     products.value = products.value.filter(
-      (item) =>
-        String(item.id) !== String(product.id),
+      (item) => String(item.id) !== String(product.id),
     );
   } catch (error: any) {
     console.error("DELETE PRODUCT ERROR:", error);
-
     errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.message ||
-      "Unable to delete product.";
+      error?.data?.statusMessage || error?.message || "Unable to delete product.";
   } finally {
     deletingId.value = null;
   }
 };
 
-// ========================================
-// LOAD PAGE
-// ========================================
-
 onMounted(async () => {
-  await Promise.all([
-    loadProducts(),
-    loadCategories(),
-  ]);
+  await Promise.all([loadProducts(), loadCategories()]);
 });
 </script>

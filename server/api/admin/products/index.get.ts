@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
       categories (
         id,
         name,
-        slug
+        slug,
+        parent_id
       )
     `)
     .order("name", { ascending: true });
