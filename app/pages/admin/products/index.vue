@@ -1,4 +1,5 @@
 <template>
+
   <div class="max-w-7xl mx-auto px-4 py-8">
 
     <!-- ===================================================== -->
@@ -8,7 +9,9 @@
     <div
       class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
     >
+
       <div>
+
         <h1 class="text-3xl font-bold text-slate-800">
           Products
         </h1>
@@ -16,16 +19,19 @@
         <p class="text-gray-500 mt-1">
           Manage your products, stock, pricing and product information.
         </p>
+
       </div>
+
 
       <div class="flex flex-col sm:flex-row gap-3">
 
-        <!-- BACK TO ADMIN -->
+        <!-- BACK -->
 
         <NuxtLink
           to="/admin"
           class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-slate-700 font-semibold rounded-lg transition"
         >
+
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-5 h-5"
@@ -33,15 +39,18 @@
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
+
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
               d="M10 19l-7-7m0 0l7-7m-7 7h18"
             />
+
           </svg>
 
           Back to Admin
+
         </NuxtLink>
 
 
@@ -52,6 +61,7 @@
           @click="showAddProduct = true"
           class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
         >
+
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-5 h-5"
@@ -59,18 +69,22 @@
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
+
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
               d="M12 4v16m8-8H4"
             />
+
           </svg>
 
           Add Product
+
         </button>
 
       </div>
+
     </div>
 
 
@@ -82,6 +96,7 @@
       v-if="loading"
       class="bg-white rounded-xl shadow-sm p-12 flex flex-col items-center justify-center"
     >
+
       <div
         class="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"
       ></div>
@@ -93,6 +108,7 @@
       <p class="text-sm text-gray-400 mt-1">
         Please wait
       </p>
+
     </div>
 
 
@@ -104,6 +120,7 @@
       v-else-if="errorMessage"
       class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-5"
     >
+
       <div class="flex items-start gap-3">
 
         <span class="text-xl">
@@ -123,6 +140,7 @@
         </div>
 
       </div>
+
     </div>
 
 
@@ -151,7 +169,7 @@
 
 
     <!-- ===================================================== -->
-    <!-- CATEGORY LIST -->
+    <!-- CATEGORIES -->
     <!-- ===================================================== -->
 
     <div
@@ -168,8 +186,6 @@
         :key="category.id"
         class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible"
       >
-
-        <!-- MAIN CATEGORY HEADER -->
 
         <button
           type="button"
@@ -203,9 +219,11 @@
 
           </div>
 
+
           <div
             class="hidden sm:flex items-center gap-2 text-sm text-gray-400"
           >
+
             <span>
               {{ category.children.length }}
               {{
@@ -214,19 +232,20 @@
                   : "subcategories"
               }}
             </span>
+
           </div>
 
         </button>
 
 
-        <!-- MAIN CATEGORY CONTENT -->
+        <!-- CATEGORY CONTENT -->
 
         <div
           v-if="isCategoryOpen(category.id)"
           class="border-t border-gray-200 p-4 space-y-4"
         >
 
-          <!-- PRODUCTS DIRECTLY IN MAIN CATEGORY -->
+          <!-- DIRECT PRODUCTS -->
 
           <div
             v-if="category.products.length"
@@ -283,7 +302,7 @@
                 </div>
 
 
-                <!-- PRODUCT INFO -->
+                <!-- INFO -->
 
                 <div class="flex-1 min-w-0">
 
@@ -299,6 +318,7 @@
                   >
                     {{ product.slug }}
                   </p>
+
 
                   <div
                     class="flex flex-wrap items-center gap-3 mt-2"
@@ -355,7 +375,6 @@
                     type="button"
                     @click.stop="toggleMenu(product.id)"
                     class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600 transition"
-                    aria-label="Product actions"
                   >
 
                     <span class="flex items-center gap-1">
@@ -377,8 +396,6 @@
                   </button>
 
 
-                  <!-- ACTION MENU -->
-
                   <div
                     v-if="openMenu === product.id"
                     class="absolute right-0 bottom-full mb-2 z-[9999] w-44 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
@@ -388,38 +405,27 @@
                     <button
                       type="button"
                       @click="viewProduct(product)"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <span class="w-5 text-center text-blue-600">
-                        👁
-                      </span>
-
+                      👁
                       View
                     </button>
-
 
                     <button
                       type="button"
                       @click="editProduct(product)"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <span class="w-5 text-center text-green-600">
-                        ✎
-                      </span>
-
+                      ✎
                       Edit
                     </button>
-
 
                     <button
                       type="button"
                       @click="confirmDelete(product)"
-                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition"
+                      class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
                     >
-                      <span class="w-5 text-center">
-                        🗑
-                      </span>
-
+                      🗑
                       Delete
                     </button>
 
@@ -434,9 +440,7 @@
           </div>
 
 
-          <!-- ================================================= -->
           <!-- SUBCATEGORIES -->
-          <!-- ================================================= -->
 
           <div
             v-for="subcategory in category.children"
@@ -479,8 +483,6 @@
             </button>
 
 
-            <!-- SUBCATEGORY PRODUCTS -->
-
             <div
               v-if="isCategoryOpen(subcategory.id)"
               class="p-3 space-y-2"
@@ -497,7 +499,6 @@
               <div
                 v-for="product in subcategory.products"
                 :key="product.id"
-                class="relative"
               >
 
                 <div
@@ -539,6 +540,7 @@
                     >
                       {{ product.slug }}
                     </p>
+
 
                     <div
                       class="flex flex-wrap items-center gap-3 mt-2"
@@ -623,38 +625,27 @@
                       <button
                         type="button"
                         @click="viewProduct(product)"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <span class="w-5 text-center text-blue-600">
-                          👁
-                        </span>
-
+                        👁
                         View
                       </button>
-
 
                       <button
                         type="button"
                         @click="editProduct(product)"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 transition"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <span class="w-5 text-center text-green-600">
-                          ✎
-                        </span>
-
+                        ✎
                         Edit
                       </button>
-
 
                       <button
                         type="button"
                         @click="confirmDelete(product)"
-                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition"
+                        class="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
                       >
-                        <span class="w-5 text-center">
-                          🗑
-                        </span>
-
+                        🗑
                         Delete
                       </button>
 
@@ -681,71 +672,66 @@
     <!-- ADD PRODUCT INNER WINDOW -->
     <!-- ===================================================== -->
 
-    <Transition name="modal">
+    <div
+      v-if="showAddProduct"
+      class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4"
+      @click.self="closeAddProduct"
+    >
 
       <div
-        v-if="showAddProduct"
-        class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 px-4"
-        @click.self="closeAddProduct"
+        class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
       >
 
+        <!-- HEADER -->
+
         <div
-          class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden"
+          class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white"
         >
 
-          <!-- HEADER -->
+          <div>
 
-          <div
-            class="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white"
-          >
+            <h2 class="text-xl font-bold text-slate-800">
+              Add Product
+            </h2>
 
-            <div>
-
-              <h2 class="text-xl font-bold text-slate-800">
-                Add Product
-              </h2>
-
-              <p class="text-sm text-gray-500 mt-1">
-                Add a new product to your store.
-              </p>
-
-            </div>
-
-
-            <button
-              type="button"
-              @click="closeAddProduct"
-              class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
-              aria-label="Close"
-            >
-              ✕
-            </button>
+            <p class="text-sm text-gray-500 mt-1">
+              Add a new product to your store.
+            </p>
 
           </div>
 
 
-          <!-- FORM -->
-
-          <div
-            class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
+          <button
+            type="button"
+            @click="closeAddProduct"
+            class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
           >
+            ✕
+          </button>
 
-            <AdminProductForm
-              @close="closeAddProduct"
-              @saved="productAdded"
-            />
+        </div>
 
-          </div>
+
+        <!-- FORM -->
+
+        <div
+          class="p-6 overflow-y-auto max-h-[calc(90vh-80px)]"
+        >
+
+          <AdminProductForm
+            @close="closeAddProduct"
+            @saved="productAdded"
+          />
 
         </div>
 
       </div>
 
-    </Transition>
+    </div>
 
 
     <!-- ===================================================== -->
-    <!-- DELETE CONFIRMATION -->
+    <!-- DELETE MODAL -->
     <!-- ===================================================== -->
 
     <div
@@ -774,11 +760,9 @@
 
             <p class="text-gray-600 mt-2">
               Are you sure you really want to delete
-
               <strong>
                 {{ productToDelete.name }}
               </strong>
-
               ?
             </p>
 
@@ -801,7 +785,6 @@
             Cancel
           </button>
 
-
           <button
             type="button"
             @click="deleteProduct"
@@ -818,77 +801,74 @@
     </div>
 
   </div>
+
 </template>
 
 
 <script setup lang="ts">
 
-// ============================================================
-// PAGE META
-// ============================================================
-
 definePageMeta({
   middleware: "admin",
-});
+})
 
+const { adminFetch } = useAdminFetch()
 
-// ============================================================
-// ADMIN FETCH
-// ============================================================
-
-const { adminFetch } = useAdminFetch();
-
-
-// ============================================================
-// ROUTER
-// ============================================================
-
-const router = useRouter();
+const router = useRouter()
 
 
 // ============================================================
 // STATE
 // ============================================================
 
-const loading = ref(true);
+const loading = ref(true)
 
-const errorMessage = ref("");
+const errorMessage = ref("")
 
-const products = ref<any[]>([]);
+const products = ref<any[]>([])
 
-const categories = ref<any[]>([]);
+const categories = ref<any[]>([])
 
-const openMenu = ref<number | null>(null);
+const openMenu = ref<number | null>(null)
 
-const openCategories = ref<Set<number>>(new Set());
+const openCategories =
+  ref<Set<number>>(new Set())
 
-const productToDelete = ref<any | null>(null);
+const productToDelete =
+  ref<any | null>(null)
 
-const deleting = ref(false);
+const deleting = ref(false)
 
 
 // ============================================================
-// ADD PRODUCT MODAL
+// ADD PRODUCT
 // ============================================================
 
-const showAddProduct = ref(false);
+const showAddProduct =
+  ref(false)
+
 
 const closeAddProduct = () => {
-  showAddProduct.value = false;
-};
+
+  showAddProduct.value = false
+
+}
 
 
 // ============================================================
-// PRODUCT SAVED
+// PRODUCT ADDED
 // ============================================================
 
 const productAdded = async () => {
 
-  showAddProduct.value = false;
+  console.log(
+    "🔥 PRODUCT ADDED - REFRESHING PRODUCT LIST"
+  )
 
-  await loadData();
+  showAddProduct.value = false
 
-};
+  await loadData()
+
+}
 
 
 // ============================================================
@@ -897,236 +877,288 @@ const productAdded = async () => {
 
 const loadData = async () => {
 
-  loading.value = true;
+  loading.value = true
 
-  errorMessage.value = "";
+  errorMessage.value = ""
 
   try {
 
-    console.log("🔥 ADMIN PRODUCTS LOADING");
+    console.log(
+      "🔥 ADMIN PRODUCTS LOADING"
+    )
 
     const [
       productResponse,
       categoryResponse
     ] = await Promise.all([
-      adminFetch("/api/admin/products"),
-      adminFetch("/api/admin/categories"),
-    ]);
+
+      adminFetch(
+        "/api/admin/products"
+      ),
+
+      adminFetch(
+        "/api/admin/categories"
+      ),
+
+    ])
 
 
-    console.log(
-      "🔥 PRODUCTS RESPONSE:",
-      productResponse
-    );
+    if (
+      Array.isArray(productResponse)
+    ) {
 
-
-    console.log(
-      "🔥 CATEGORIES RESPONSE:",
-      categoryResponse
-    );
-
-
-    // PRODUCTS
-
-    if (Array.isArray(productResponse)) {
-
-      products.value = productResponse;
+      products.value =
+        productResponse
 
     } else if (
       productResponse &&
-      Array.isArray(productResponse.products)
+      Array.isArray(
+        productResponse.products
+      )
     ) {
 
-      products.value = productResponse.products;
+      products.value =
+        productResponse.products
 
     } else {
 
-      products.value = [];
+      products.value = []
 
     }
 
 
-    // CATEGORIES
+    if (
+      Array.isArray(categoryResponse)
+    ) {
 
-    if (Array.isArray(categoryResponse)) {
-
-      categories.value = categoryResponse;
+      categories.value =
+        categoryResponse
 
     } else if (
       categoryResponse &&
-      Array.isArray(categoryResponse.categories)
+      Array.isArray(
+        categoryResponse.categories
+      )
     ) {
 
-      categories.value = categoryResponse.categories;
+      categories.value =
+        categoryResponse.categories
 
     } else {
 
-      categories.value = [];
+      categories.value = []
 
     }
 
 
     console.log(
       `🔥 ${products.value.length} products loaded`
-    );
-
+    )
 
     console.log(
       `🔥 ${categories.value.length} categories loaded`
-    );
+    )
 
   } catch (error: any) {
 
     console.error(
       "🔥 ADMIN PRODUCTS LOAD ERROR:",
       error
-    );
+    )
 
     errorMessage.value =
       error?.data?.statusMessage ||
       error?.message ||
-      "Unable to load products.";
+      "Unable to load products."
 
   } finally {
 
-    loading.value = false;
+    loading.value = false
 
   }
 
-};
+}
 
 
 // ============================================================
-// GET FIRST IMAGE
+// FIRST IMAGE
 // ============================================================
 
-const getFirstImage = (product: any) => {
+const getFirstImage = (
+  product: any
+) => {
 
   if (
     Array.isArray(product?.images) &&
     product.images.length
   ) {
 
-    return product.images[0];
+    return product.images[0]
 
   }
-
 
   if (
     typeof product?.images === "string" &&
     product.images
   ) {
 
-    return product.images;
+    return product.images
 
   }
 
+  return null
 
-  return null;
-
-};
+}
 
 
 // ============================================================
-// SORTED PRODUCTS
+// SORT PRODUCTS
 // ============================================================
 
 const sortedProducts = computed(() => {
 
-  return [...products.value].sort(
+  return [
+    ...products.value
+  ].sort(
     (a, b) =>
-      String(a.name || "").localeCompare(
-        String(b.name || "")
+      String(
+        a.name || ""
+      ).localeCompare(
+        String(
+          b.name || ""
+        )
       )
-  );
+  )
 
-});
+})
 
 
 // ============================================================
 // MAIN CATEGORIES
 // ============================================================
 
-const mainCategories = computed(() => {
+const mainCategories =
+  computed(() => {
 
-  const parentCategories = categories.value
-    .filter(
-      (category) => !category.parent_id
-    )
-    .sort(
-      (a, b) =>
-        String(a.name || "").localeCompare(
-          String(b.name || "")
+    const parentCategories =
+      categories.value
+        .filter(
+          category =>
+            !category.parent_id
         )
-    );
+        .sort(
+          (a, b) =>
+            String(
+              a.name || ""
+            ).localeCompare(
+              String(
+                b.name || ""
+              )
+            )
+        )
 
 
-  return parentCategories.map((parent) => {
+    return parentCategories.map(
+      parent => {
 
-    const children = categories.value
-      .filter(
-        (category) =>
-          Number(category.parent_id) ===
-          Number(parent.id)
-      )
-      .sort(
-        (a, b) =>
-          String(a.name || "").localeCompare(
-            String(b.name || "")
-          )
-      );
+        const children =
+          categories.value
+            .filter(
+              category =>
+                Number(
+                  category.parent_id
+                ) ===
+                Number(
+                  parent.id
+                )
+            )
+            .sort(
+              (a, b) =>
+                String(
+                  a.name || ""
+                ).localeCompare(
+                  String(
+                    b.name || ""
+                  )
+                )
+            )
 
 
-    const parentProducts =
-      sortedProducts.value.filter(
-        (product) =>
-          Number(product.category_id) ===
-          Number(parent.id)
-      );
-
-
-    const childCategories =
-      children.map((child) => {
-
-        const childProducts =
+        const parentProducts =
           sortedProducts.value.filter(
-            (product) =>
-              Number(product.category_id) ===
-              Number(child.id)
-          );
+            product =>
+              Number(
+                product.category_id
+              ) ===
+              Number(
+                parent.id
+              )
+          )
+
+
+        const childCategories =
+          children.map(
+            child => {
+
+              const childProducts =
+                sortedProducts.value.filter(
+                  product =>
+                    Number(
+                      product.category_id
+                    ) ===
+                    Number(
+                      child.id
+                    )
+                )
+
+              return {
+
+                ...child,
+
+                products:
+                  childProducts,
+
+              }
+
+            }
+          )
+
+
+        const productCount =
+          parentProducts.length +
+          childCategories.reduce(
+            (
+              total,
+              child
+            ) =>
+              total +
+              child.products.length,
+            0
+          )
 
 
         return {
-          ...child,
-          products: childProducts,
-        };
 
-      });
+          ...parent,
 
+          products:
+            parentProducts,
 
-    const productCount =
-      parentProducts.length +
-      childCategories.reduce(
-        (total, child) =>
-          total + child.products.length,
-        0,
-      );
+          children:
+            childCategories,
 
+          productCount,
 
-    return {
-      ...parent,
-      products: parentProducts,
-      children: childCategories,
-      productCount,
-    };
+        }
 
-  });
+      }
+    )
 
-});
+  })
 
 
 // ============================================================
-// TOGGLE CATEGORY
+// CATEGORY TOGGLE
 // ============================================================
 
 const toggleCategory = (
@@ -1134,28 +1166,31 @@ const toggleCategory = (
 ) => {
 
   const newSet =
-    new Set(openCategories.value);
+    new Set(
+      openCategories.value
+    )
 
+  if (
+    newSet.has(categoryId)
+  ) {
 
-  if (newSet.has(categoryId)) {
-
-    newSet.delete(categoryId);
+    newSet.delete(
+      categoryId
+    )
 
   } else {
 
-    newSet.add(categoryId);
+    newSet.add(
+      categoryId
+    )
 
   }
 
+  openCategories.value =
+    newSet
 
-  openCategories.value = newSet;
+}
 
-};
-
-
-// ============================================================
-// CATEGORY OPEN
-// ============================================================
 
 const isCategoryOpen = (
   categoryId: number
@@ -1163,43 +1198,32 @@ const isCategoryOpen = (
 
   return openCategories.value.has(
     categoryId
-  );
+  )
 
-};
+}
 
 
 // ============================================================
-// TOGGLE PRODUCT MENU
+// PRODUCT MENU
 // ============================================================
 
 const toggleMenu = (
   productId: number
 ) => {
 
-  if (
+  openMenu.value =
     openMenu.value === productId
-  ) {
+      ? null
+      : productId
 
-    openMenu.value = null;
+}
 
-  } else {
-
-    openMenu.value = productId;
-
-  }
-
-};
-
-
-// ============================================================
-// CLOSE MENU WHEN CLICKING OUTSIDE
-// ============================================================
 
 const closeMenu = () => {
 
-  openMenu.value = null;
+  openMenu.value = null
 
-};
+}
 
 
 onMounted(() => {
@@ -1207,9 +1231,9 @@ onMounted(() => {
   document.addEventListener(
     "click",
     closeMenu
-  );
+  )
 
-});
+})
 
 
 onBeforeUnmount(() => {
@@ -1217,171 +1241,145 @@ onBeforeUnmount(() => {
   document.removeEventListener(
     "click",
     closeMenu
-  );
+  )
 
-});
+})
 
 
 // ============================================================
-// VIEW PRODUCT
+// VIEW
 // ============================================================
 
 const viewProduct = (
   product: any
 ) => {
 
-  openMenu.value = null;
+  openMenu.value = null
 
-
-  if (product?.slug) {
+  if (
+    product?.slug
+  ) {
 
     router.push(
       `/product/${product.slug}`
-    );
+    )
 
   }
 
-};
+}
 
 
 // ============================================================
-// EDIT PRODUCT
+// EDIT
 // ============================================================
 
 const editProduct = (
   product: any
 ) => {
 
-  openMenu.value = null;
-
+  openMenu.value = null
 
   router.push(
     `/admin/products/edit/${product.id}`
-  );
+  )
 
-};
+}
 
 
 // ============================================================
-// CONFIRM DELETE
+// DELETE
 // ============================================================
 
 const confirmDelete = (
   product: any
 ) => {
 
-  openMenu.value = null;
+  openMenu.value = null
 
-  productToDelete.value = product;
+  productToDelete.value =
+    product
 
-};
+}
 
-
-// ============================================================
-// CANCEL DELETE
-// ============================================================
 
 const cancelDelete = () => {
 
-  productToDelete.value = null;
+  productToDelete.value =
+    null
 
-};
+}
 
-
-// ============================================================
-// DELETE PRODUCT
-// ============================================================
 
 const deleteProduct = async () => {
 
-  if (!productToDelete.value) {
+  if (
+    !productToDelete.value
+  ) {
 
-    return;
+    return
 
   }
 
-
-  deleting.value = true;
-
+  deleting.value = true
 
   try {
 
     const id =
-      productToDelete.value.id;
-
-
-    console.log(
-      "🔥 DELETING PRODUCT:",
-      id
-    );
-
+      productToDelete.value.id
 
     await adminFetch(
       `/api/admin/products/${id}`,
       {
         method: "DELETE",
       }
-    );
+    )
 
 
     products.value =
       products.value.filter(
-        (product) =>
-          Number(product.id) !==
+        product =>
+          Number(
+            product.id
+          ) !==
           Number(id)
-      );
+      )
 
 
-    productToDelete.value = null;
+    productToDelete.value =
+      null
 
   } catch (error: any) {
 
     console.error(
       "🔥 DELETE PRODUCT ERROR:",
       error
-    );
-
+    )
 
     errorMessage.value =
       error?.data?.statusMessage ||
       error?.message ||
-      "Unable to delete product.";
+      "Unable to delete product."
 
-
-    productToDelete.value = null;
+    productToDelete.value =
+      null
 
   } finally {
 
-    deleting.value = false;
+    deleting.value = false
 
   }
 
-};
+}
 
 
 // ============================================================
-// INITIAL LOAD
+// LOAD
 // ============================================================
 
 onMounted(async () => {
 
-  await loadData();
+  await loadData()
 
-});
+})
 
 </script>
-
-
-<style scoped>
-
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-
-</style>
