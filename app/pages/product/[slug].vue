@@ -278,7 +278,7 @@
                 <!-- Paragraph -->
                 <p
                   v-else-if="section.type === 'paragraph'"
-                  class="text-gray-700 leading-7 mb-4"
+                  class="text-gray-700 leading-7 mb-4 whitespace-pre-line"
                 >
                   <template
                     v-for="(part, partIndex) in parseBoldText(section.text)"
@@ -318,7 +318,7 @@
                 <!-- Warning -->
                 <div
                   v-else-if="section.type === 'warning'"
-                  class="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg"
+                  class="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg whitespace-pre-line"
                 >
                   <template
                     v-for="(part, partIndex) in parseBoldText(section.text)"
