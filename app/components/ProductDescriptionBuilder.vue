@@ -152,8 +152,13 @@
               v-model="block.text"
               rows="5"
               class="input"
-              placeholder="Enter product information..."
+              placeholder="Enter product information... Use **double asterisks** for bold text."
             ></textarea>
+
+            <span class="mt-2 block text-xs text-slate-500">
+              Bold text by placing <strong>**double asterisks**</strong> around it,
+              for example: This item includes a <strong>**30-day warranty**</strong>.
+            </span>
           </label>
         </template>
 
@@ -309,10 +314,18 @@
               class="input"
               :placeholder="
                 block.type === 'warning'
-                  ? 'Important information for the customer...'
+                  ? 'Important information for the customer... Use **double asterisks** for bold text.'
                   : 'Enter text...'
               "
             ></textarea>
+
+            <span
+              v-if="block.type === 'warning'"
+              class="mt-2 block text-xs text-slate-500"
+            >
+              Bold text by placing <strong>**double asterisks**</strong> around it,
+              for example: <strong>**Important:**</strong> Please read before purchase.
+            </span>
           </label>
         </template>
 
