@@ -325,6 +325,26 @@
                   {{ section.text }}
                 </div>
 
+                <!-- Image -->
+                <figure
+                  v-else-if="section.type === 'image' && section.url"
+                  class="my-8"
+                >
+                  <img
+                    :src="section.url"
+                    :alt="section.alt || product.name"
+                    class="mx-auto h-auto rounded-lg object-contain"
+                    :class="descriptionImageClass(section.width)"
+                  />
+
+                  <figcaption
+                    v-if="section.caption"
+                    class="mt-2 text-center text-sm text-gray-500"
+                  >
+                    {{ section.caption }}
+                  </figcaption>
+                </figure>
+
                 <!-- Divider -->
                 <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
@@ -498,6 +518,28 @@ const supabase = useSupabaseClient();
 const route = useRoute();
 
 const cart = useCartStore();
+
+/*
+|--------------------------------------------------------------------------
+| Description Image Width
+|--------------------------------------------------------------------------
+*/
+
+const descriptionImageClass = (width) => {
+  if (width === "small") {
+    return "w-full max-w-xs";
+  }
+
+  if (width === "medium") {
+    return "w-full max-w-md";
+  }
+
+  if (width === "large") {
+    return "w-full max-w-2xl";
+  }
+
+  return "w-full";
+};
 
 /*
 |--------------------------------------------------------------------------
