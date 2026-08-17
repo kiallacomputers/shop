@@ -95,14 +95,72 @@
       </section>
 
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-        <h2 class="text-lg font-bold text-slate-900">Product Images</h2>
-        <p class="text-sm text-slate-500 mt-1">Enter one image path per line, for example /images/products/example.png</p>
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Product Images</h2>
+            <p class="text-sm text-slate-500 mt-1">Select one or more images. They are uploaded to the Supabase Storage bucket <strong>products</strong>.</p>
+          </div>
+          <span v-if="imageUrls.length" class="text-sm font-semibold text-slate-600">{{ imageUrls.length }} image{{ imageUrls.length === 1 ? "" : "s" }}</span>
+        </div>
 
-        <textarea v-model="imageText" rows="5" class="input mt-5 font-mono text-sm" placeholder="/images/products/product-front.png&#10;/images/products/product-back.png"></textarea>
+        <div class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            class="hidden"
+            @change="handleImageSelection"
+          />
 
-        <div v-if="imagePreview.length" class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div v-for="(image, index) in imagePreview" :key="`${image}-${index}`" class="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-            <img :src="image" :alt="`Product image ${index + 1}`" class="h-full w-full object-contain p-2" />
+          <div class="text-sm text-slate-600">
+            <p class="font-semibold text-slate-800">Choose product images</p>
+            <p class="mt-1">JPG, PNG, WEBP or GIF. You can select multiple files at once.</p>
+          </div>
+
+          <button
+            type="button"
+            :disabled="uploadingImages"
+            class="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            @click="fileInput?.click()"
+          >
+            {{ uploadingImages ? "Uploading..." : "Select Images" }}
+          </button>
+        </div>
+
+        <div v-if="uploadError" class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ uploadError }}
+        </div>
+
+        <div v-if="uploadingImages" class="mt-4">
+          <div class="mb-1 flex items-center justify-between text-sm text-slate-600">
+            <span>Uploading images...</span>
+            <span>{{ uploadProgress }}%</span>
+          </div>
+          <div class="h-2 overflow-hidden rounded-full bg-slate-200">
+            <div class="h-full bg-blue-600 transition-all" :style="{ width: `${uploadProgress}%` }"></div>
+          </div>
+        </div>
+
+        <div v-if="imageUrls.length" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div
+            v-for="(image, index) in imageUrls"
+            :key="`${image}-${index}`"
+            class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white"
+          >
+            <div class="aspect-square bg-slate-50">
+              <img :src="image" :alt="`Product image ${index + 1}`" class="h-full w-full object-contain p-2" />
+            </div>
+            <div class="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
+              <span class="truncate text-xs text-slate-500">Image {{ index + 1 }}</span>
+              <button
+                type="button"
+                class="text-xs font-semibold text-red-600 hover:text-red-700"
+                @click="removeImage(index)"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -140,7 +198,11 @@ const loading = ref(props.mode === "edit");
 const saving = ref(false);
 const errorMessage = ref("");
 const slugTouched = ref(props.mode === "edit");
-const imageText = ref("");
+const imageUrls = ref<string[]>([]);
+const fileInput = ref<HTMLInputElement | null>(null);
+const uploadingImages = ref(false);
+const uploadProgress = ref(0);
+const uploadError = ref("");
 const descriptionText = ref("[]");
 
 const form = reactive({
@@ -173,12 +235,48 @@ watch(() => form.slug, (value, oldValue) => {
   if (oldValue && value !== slugify(form.name)) slugTouched.value = true;
 });
 
-const imagePreview = computed(() =>
-  imageText.value
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean),
-);
+const handleImageSelection = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+
+  if (!files.length) return;
+
+  uploadError.value = "";
+  uploadingImages.value = true;
+  uploadProgress.value = 0;
+
+  try {
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await adminFetch<{ url: string; path: string }>(
+        "/api/admin/products/upload-image",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      imageUrls.value.push(result.url);
+      uploadProgress.value = Math.round(((index + 1) / files.length) * 100);
+    }
+  } catch (error: any) {
+    uploadError.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to upload image.";
+  } finally {
+    uploadingImages.value = false;
+    if (input) input.value = "";
+  }
+};
+
+const removeImage = (index: number) => {
+  imageUrls.value.splice(index, 1);
+};
 
 const loadForm = async () => {
   errorMessage.value = "";
@@ -210,7 +308,7 @@ const loadForm = async () => {
           images = product.images.trim() ? [product.images.trim()] : [];
         }
       }
-      imageText.value = images.join("\n");
+      imageUrls.value = images;
 
       descriptionText.value = JSON.stringify(product.description ?? [], null, 2);
     }
@@ -240,7 +338,7 @@ const saveProduct = async () => {
       price: Number(form.price),
       oldPrice: form.oldPrice === "" ? null : Number(form.oldPrice),
       stock: Number(form.stock),
-      images: imagePreview.value,
+      images: imageUrls.value,
       description,
     };
 
