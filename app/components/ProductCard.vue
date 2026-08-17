@@ -117,7 +117,7 @@
         </span>
 
         <span v-else class="text-sm text-red-600 font-medium">
-          Out of Stock
+          Backorder please call.
         </span>
       </div>
 
