@@ -116,7 +116,7 @@
           In Stock
         </span>
 
-        <span v-else class="text-sm text-red-600 font-medium">
+        <span v-else class="text-sm text-red-800 font-medium">
           Backorder please call.
         </span>
       </div>
