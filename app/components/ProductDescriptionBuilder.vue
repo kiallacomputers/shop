@@ -157,7 +157,7 @@
 
             <span class="mt-2 block text-xs text-slate-500">
               Bold text by placing <strong>**double asterisks**</strong> around it,
-              for example: This item includes a <strong>**30-day warranty**</strong>.
+              for example: This item includes a <strong>**30-day warranty**</strong>. Press <strong>Enter</strong> to add a new line.
             </span>
           </label>
         </template>
