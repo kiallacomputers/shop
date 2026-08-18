@@ -24,6 +24,10 @@ export default defineEventHandler(async (event) => {
       customer_name,
       total,
       status,
+      shipping_postcode,
+      shipping_method,
+      shipping_service_code,
+      shipping_cost,
       created_at
     `)
     .eq("id", id)
