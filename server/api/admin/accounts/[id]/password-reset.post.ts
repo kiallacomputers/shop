@@ -1,61 +1,103 @@
 import {
   getAdminSupabase,
-  requireSuperAdmin,
+  requireAdmin,
 } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  // ========================================
+  // REQUIRE ADMIN
+  // ========================================
+  await requireAdmin(event);
 
-  const userId = getRouterParam(event, "id");
+  const supabase = getAdminSupabase();
 
-  if (!userId) {
+  // ========================================
+  // GET USER ID
+  // ========================================
+  const id = getRouterParam(event, "id");
+
+  if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: "User ID is required.",
     });
   }
 
-  const supabase = getAdminSupabase();
+  // ========================================
+  // GET USER FROM SUPABASE AUTH
+  // ========================================
+  const {
+    data: userData,
+    error: userError,
+  } = await supabase.auth.admin.getUserById(id);
 
-  const { data: userResult, error: userError } =
-    await supabase.auth.admin.getUserById(userId);
+  if (userError) {
+    console.error("PASSWORD RESET USER LOOKUP ERROR:", userError);
 
-  if (userError || !userResult?.user) {
+    throw createError({
+      statusCode: 500,
+      statusMessage:
+        userError.message || "Unable to find user.",
+    });
+  }
+
+  const user = userData?.user;
+
+  if (!user?.email) {
     throw createError({
       statusCode: 404,
-      statusMessage: userError?.message || "User account was not found.",
+      statusMessage: "User email address was not found.",
     });
   }
 
-  const email = userResult.user.email;
+  // ========================================
+  // BUILD RESET REDIRECT URL
+  // ========================================
+  const config = useRuntimeConfig();
 
-  if (!email) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "This account does not have an email address.",
-    });
-  }
+  const siteUrl =
+    config.public?.siteUrl ||
+    "https://shop.kiallacomputers.com.au";
 
-  const requestUrl = getRequestURL(event);
-  const redirectTo = `${requestUrl.origin}/auth/reset-password`;
+  const redirectTo =
+    `${String(siteUrl).replace(/\/$/, "")}/reset-password`;
 
-  const { error: resetError } =
-    await supabase.auth.resetPasswordForEmail(email, {
+  // ========================================
+  // SEND PASSWORD RESET EMAIL
+  // ========================================
+  const {
+    data: resetData,
+    error: resetError,
+  } = await supabase.auth.resetPasswordForEmail(
+    user.email,
+    {
       redirectTo,
-    });
+    },
+  );
 
   if (resetError) {
     console.error("PASSWORD RESET EMAIL ERROR:", resetError);
 
     throw createError({
       statusCode: 500,
-      statusMessage: resetError.message || "Unable to send password reset email.",
+      statusMessage:
+        resetError.message ||
+        "Unable to send password reset email.",
     });
   }
 
+  // Supabase normally returns an empty object for
+  // resetPasswordForEmail(). A null error means the
+  // reset request was accepted.
+  console.log(
+    "PASSWORD RESET EMAIL REQUEST ACCEPTED:",
+    user.email,
+    resetData,
+  );
+
   return {
     success: true,
-    email,
-    redirectTo,
+    message: `Password reset email sent to ${user.email}`,
+    email: user.email,
   };
 });
