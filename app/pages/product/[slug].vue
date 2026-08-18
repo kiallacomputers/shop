@@ -427,14 +427,14 @@ const cart = useCartStore();
 
 const headingClass = (level) => {
   if (Number(level) === 4) {
-    return "text-base font-semibold text-slate-700 mt-5 mb-2";
+    return "text-base font-semibold text-[#566C9D] mt-5 mb-2";
   }
 
   if (Number(level) === 3) {
-    return "text-xl font-bold text-slate-800 border-b border-slate-200 pb-2 mt-6 mb-3";
+    return "text-xl font-bold text-[#566C9D]  pb-2 mt-6 mb-3";
   }
 
-  return "text-2xl font-bold text-slate-900 border rounded-lg border-slate-300 pb-2 mt-8 mb-4";
+  return "text-2xl font-bold text-[#566C9D] pb-2 mt-8 mb-4";
 };
 
 const parseBoldText = (text = "") => {
