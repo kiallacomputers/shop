@@ -228,6 +228,14 @@ export default defineEventHandler(async (event) => {
       customer_name: customerName,
       total,
       status: "paid",
+      shipping_postcode:
+        session.metadata?.shipping_postcode || null,
+      shipping_method:
+        session.metadata?.shipping_method || null,
+      shipping_service_code:
+        session.metadata?.shipping_service_code || null,
+      shipping_cost:
+        Number(session.metadata?.shipping_cost || 0),
     })
     .select("*")
     .single();
