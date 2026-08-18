@@ -256,6 +256,52 @@
           </div>
         </section>
 
+
+        <!-- ======================================= -->
+        <!-- DELIVERY INFORMATION -->
+        <!-- ======================================= -->
+
+        <section
+          class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+        >
+          <h2 class="text-lg font-bold text-slate-900">
+            Delivery Information
+          </h2>
+
+          <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <div>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Postcode
+              </dt>
+              <dd class="mt-1 font-semibold text-slate-800">
+                {{ order.shipping_postcode || "Not available" }}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Delivery Method
+              </dt>
+              <dd class="mt-1 font-semibold text-slate-800">
+                {{ order.shipping_method || "Not available" }}
+              </dd>
+            </div>
+
+            <div>
+              <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Freight
+              </dt>
+              <dd class="mt-1 font-semibold text-slate-800">
+                {{
+                  Number(order.shipping_cost || 0) === 0
+                    ? "FREE"
+                    : currency(order.shipping_cost)
+                }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
         <!-- ======================================= -->
         <!-- PAYMENT INFORMATION -->
         <!-- ======================================= -->
@@ -306,6 +352,10 @@ type Order = {
   customer_name?: string | null;
   total?: number | string | null;
   status?: string | null;
+  shipping_postcode?: string | null;
+  shipping_method?: string | null;
+  shipping_service_code?: string | null;
+  shipping_cost?: number | string | null;
   created_at?: string | null;
   items: OrderItem[];
 };

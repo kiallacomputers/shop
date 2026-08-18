@@ -51,7 +51,7 @@
       </h2>
 
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"
       >
         <NuxtLink
           to="/admin/products"
@@ -89,6 +89,19 @@
 
           <p class="text-sm text-slate-500 mt-1">
             Review purchases and update order status.
+          </p>
+        </NuxtLink>
+
+        <NuxtLink
+          to="/admin/freight"
+          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
+        >
+          <p class="font-bold text-slate-900 group-hover:text-cyan-700">
+            Manage Freight
+          </p>
+
+          <p class="text-sm text-slate-500 mt-1">
+            Australia Post rates and free-delivery postcodes.
           </p>
         </NuxtLink>
 
