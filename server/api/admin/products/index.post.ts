@@ -24,6 +24,10 @@ export default defineEventHandler(async (event) => {
   const slug = cleanSlug(body?.slug || name);
   const price = Number(body?.price);
   const stock = Number(body?.stock);
+  const weightKg = Number(body?.weight_kg);
+  const lengthCm = Number(body?.length_cm);
+  const widthCm = Number(body?.width_cm);
+  const heightCm = Number(body?.height_cm);
 
   if (!name) {
     throw createError({ statusCode: 400, statusMessage: "Product name is required" });
@@ -39,6 +43,20 @@ export default defineEventHandler(async (event) => {
 
   if (!Number.isInteger(stock) || stock < 0) {
     throw createError({ statusCode: 400, statusMessage: "Stock must be a whole number of 0 or more" });
+  }
+
+  for (const [label, value] of [
+    ["Weight", weightKg],
+    ["Length", lengthCm],
+    ["Width", widthCm],
+    ["Height", heightCm],
+  ] as const) {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `${label} must be greater than 0`,
+      });
+    }
   }
 
   const oldPrice = body?.oldPrice === "" || body?.oldPrice == null
@@ -57,6 +75,10 @@ export default defineEventHandler(async (event) => {
     price,
     oldPrice,
     stock,
+    weight_kg: weightKg,
+    length_cm: lengthCm,
+    width_cm: widthCm,
+    height_cm: heightCm,
     active: body?.active !== false,
     featured: body?.featured === true,
     refurbished: body?.refurbished === true,
