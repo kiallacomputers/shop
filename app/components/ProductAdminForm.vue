@@ -39,19 +39,10 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
             <select v-model="form.category_id" class="input">
               <option value="">Uncategorised</option>
-
-              <option
-                v-for="category in selectableCategories"
-                :key="category.id"
-                :value="String(category.id)"
-              >
-                {{ categoryDisplayName(category) }}
+              <option v-for="category in categories" :key="category.id" :value="String(category.id)">
+                {{ category.name }}
               </option>
             </select>
-
-            <span class="mt-1.5 block text-xs text-slate-500">
-              Only categories with no subcategories can be selected.
-            </span>
           </label>
 
           <label class="md:col-span-2">
@@ -68,16 +59,16 @@
           <label>
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Price *</span>
             <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-              <input v-model="form.price" required min="0" step="0.01" type="number" class="input pl-7" />
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">$</span>
+              <input v-model="form.price" required min="0" step="0.01" type="number" class="input !pl-10" />
             </div>
           </label>
 
           <label>
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Old Price</span>
             <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-              <input v-model="form.oldPrice" min="0" step="0.01" type="number" class="input pl-7" />
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">$</span>
+              <input v-model="form.oldPrice" min="0" step="0.01" type="number" class="input !pl-10" />
             </div>
           </label>
 
@@ -113,38 +104,21 @@
         </div>
 
         <div class="mt-5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            multiple
-            class="hidden"
-            @change="handleImageSelection"
-          />
-
+          <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="hidden" @change="handleImageSelection" />
           <div class="text-sm text-slate-600">
             <p class="font-semibold text-slate-800">Choose product images</p>
             <p class="mt-1">JPG, PNG, WEBP or GIF. You can select multiple files at once.</p>
           </div>
-
-          <button
-            type="button"
-            :disabled="uploadingImages"
-            class="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            @click="fileInput?.click()"
-          >
+          <button type="button" :disabled="uploadingImages" class="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" @click="fileInput?.click()">
             {{ uploadingImages ? "Uploading..." : "Select Images" }}
           </button>
         </div>
 
-        <div v-if="uploadError" class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {{ uploadError }}
-        </div>
+        <div v-if="uploadError" class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ uploadError }}</div>
 
         <div v-if="uploadingImages" class="mt-4">
           <div class="mb-1 flex items-center justify-between text-sm text-slate-600">
-            <span>Uploading images...</span>
-            <span>{{ uploadProgress }}%</span>
+            <span>Uploading images...</span><span>{{ uploadProgress }}%</span>
           </div>
           <div class="h-2 overflow-hidden rounded-full bg-slate-200">
             <div class="h-full bg-blue-600 transition-all" :style="{ width: `${uploadProgress}%` }"></div>
@@ -152,23 +126,13 @@
         </div>
 
         <div v-if="imageUrls.length" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          <div
-            v-for="(image, index) in imageUrls"
-            :key="`${image}-${index}`"
-            class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white"
-          >
+          <div v-for="(image, index) in imageUrls" :key="`${image}-${index}`" class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white">
             <div class="aspect-square bg-slate-50">
               <img :src="image" :alt="`Product image ${index + 1}`" class="h-full w-full object-contain p-2" />
             </div>
             <div class="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
               <span class="truncate text-xs text-slate-500">Image {{ index + 1 }}</span>
-              <button
-                type="button"
-                class="text-xs font-semibold text-red-600 hover:text-red-700"
-                @click="removeImage(index)"
-              >
-                Remove
-              </button>
+              <button type="button" class="text-xs font-semibold text-red-600 hover:text-red-700" @click="removeImage(index)">Remove</button>
             </div>
           </div>
         </div>
@@ -177,16 +141,11 @@
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Product Description</h2>
         <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
-
-        <div class="mt-5">
-          <ProductDescriptionBuilder v-model="descriptionBlocks" />
-        </div>
+        <div class="mt-5"><ProductDescriptionBuilder v-model="descriptionBlocks" /></div>
       </section>
 
       <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <NuxtLink to="/admin/products" class="rounded-lg border border-slate-300 px-5 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50">
-          Cancel
-        </NuxtLink>
+        <NuxtLink to="/admin/products" class="rounded-lg border border-slate-300 px-5 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</NuxtLink>
         <button type="submit" :disabled="saving" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
           {{ saving ? "Saving..." : mode === "create" ? "Create Product" : "Save Changes" }}
         </button>
@@ -196,21 +155,11 @@
 </template>
 
 <script setup lang="ts">
-type Category = {
-  id: string | number;
-  name: string;
-  parent_id?: string | number | null;
-};
-
-const props = defineProps<{
-  mode: "create" | "edit";
-  productId?: string;
-}>();
-
+const props = defineProps<{ mode: "create" | "edit"; productId?: string }>();
 const { adminFetch } = useAdminFetch();
 const router = useRouter();
 
-const categories = ref<Category[]>([]);
+const categories = ref<Array<{ id: string | number; name: string }>>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
 const errorMessage = ref("");
@@ -223,100 +172,14 @@ const uploadError = ref("");
 const descriptionBlocks = ref<any[]>([]);
 
 const form = reactive({
-  name: "",
-  slug: "",
-  category_id: "",
-  blurb: "",
-  price: "0.00",
-  oldPrice: "",
-  stock: "0",
-  active: true,
-  featured: false,
-  refurbished: false,
+  name: "", slug: "", category_id: "", blurb: "", price: "0.00",
+  oldPrice: "", stock: "0", active: true, featured: false, refurbished: false,
 });
 
-// ========================================
-// PRODUCT CATEGORY FILTER
-// ========================================
-
-const categoryMap = computed(() => {
-  const map = new Map<string, Category>();
-
-  for (const category of categories.value) {
-    map.set(String(category.id), category);
-  }
-
-  return map;
-});
-
-const selectableCategories = computed(() => {
-  const categoriesWithChildren = new Set(
-    categories.value
-      .filter(
-        (category) =>
-          category.parent_id !== null &&
-          category.parent_id !== undefined &&
-          String(category.parent_id) !== "",
-      )
-      .map((category) => String(category.parent_id)),
-  );
-
-  return categories.value
-    .filter(
-      (category) =>
-        !categoriesWithChildren.has(String(category.id)),
-    )
-    .sort((a, b) => {
-      const parentA = a.parent_id
-        ? categoryMap.value.get(String(a.parent_id))?.name || ""
-        : "";
-
-      const parentB = b.parent_id
-        ? categoryMap.value.get(String(b.parent_id))?.name || ""
-        : "";
-
-      const parentCompare = parentA.localeCompare(
-        parentB,
-        undefined,
-        { sensitivity: "base" },
-      );
-
-      if (parentCompare !== 0) {
-        return parentCompare;
-      }
-
-      return a.name.localeCompare(
-        b.name,
-        undefined,
-        { sensitivity: "base" },
-      );
-    });
-});
-
-const categoryDisplayName = (category: Category) => {
-  if (!category.parent_id) {
-    return category.name;
-  }
-
-  const parent =
-    categoryMap.value.get(String(category.parent_id));
-
-  return parent
-    ? `${parent.name} → ${category.name}`
-    : category.name;
-};
-
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 const autoSlug = () => {
-  if (!slugTouched.value || props.mode === "create") {
-    form.slug = slugify(form.name);
-  }
+  if (!slugTouched.value || props.mode === "create") form.slug = slugify(form.name);
 };
 
 watch(() => form.slug, (value, oldValue) => {
@@ -326,7 +189,6 @@ watch(() => form.slug, (value, oldValue) => {
 const handleImageSelection = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
-
   if (!files.length) return;
 
   uploadError.value = "";
@@ -339,42 +201,30 @@ const handleImageSelection = async (event: Event) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const result = await adminFetch<{ url: string; path: string }>(
-        "/api/admin/products/upload-image",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const result = await adminFetch<{ url: string; path: string }>("/api/admin/products/upload-image", {
+        method: "POST", body: formData,
+      });
 
       imageUrls.value.push(result.url);
       uploadProgress.value = Math.round(((index + 1) / files.length) * 100);
     }
   } catch (error: any) {
-    uploadError.value =
-      error?.data?.statusMessage ||
-      error?.statusMessage ||
-      error?.message ||
-      "Unable to upload image.";
+    uploadError.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to upload image.";
   } finally {
     uploadingImages.value = false;
-    if (input) input.value = "";
+    input.value = "";
   }
 };
 
-const removeImage = (index: number) => {
-  imageUrls.value.splice(index, 1);
-};
+const removeImage = (index: number) => imageUrls.value.splice(index, 1);
 
 const loadForm = async () => {
   errorMessage.value = "";
-
   try {
-    categories.value = await adminFetch<Category[]>("/api/admin/categories");
+    categories.value = await adminFetch("/api/admin/categories");
 
     if (props.mode === "edit") {
       const product: any = await adminFetch(`/api/admin/products/${props.productId}`);
-
       form.name = product.name || "";
       form.slug = product.slug || "";
       form.category_id = product.category_id == null ? "" : String(product.category_id);
@@ -400,19 +250,12 @@ const loadForm = async () => {
 
       let description = product.description ?? [];
       if (typeof description === "string") {
-        try {
-          description = JSON.parse(description);
-        } catch {
-          description = [];
-        }
+        try { description = JSON.parse(description); } catch { description = []; }
       }
       descriptionBlocks.value = Array.isArray(description) ? description : [];
     }
   } catch (error: any) {
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.statusMessage ||
-      "Unable to load product details.";
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || "Unable to load product details.";
   } finally {
     loading.value = false;
   }
@@ -423,8 +266,6 @@ const saveProduct = async () => {
   saving.value = true;
 
   try {
-    const description = descriptionBlocks.value;
-
     const payload = {
       ...form,
       category_id: form.category_id || null,
@@ -432,29 +273,18 @@ const saveProduct = async () => {
       oldPrice: form.oldPrice === "" ? null : Number(form.oldPrice),
       stock: Number(form.stock),
       images: imageUrls.value,
-      description,
+      description: descriptionBlocks.value,
     };
 
     if (props.mode === "create") {
-      await adminFetch("/api/admin/products", {
-        method: "POST",
-        body: payload,
-      });
+      await adminFetch("/api/admin/products", { method: "POST", body: payload });
     } else {
-      await adminFetch(`/api/admin/products/${props.productId}`, {
-        method: "PUT",
-        body: payload,
-      });
+      await adminFetch(`/api/admin/products/${props.productId}`, { method: "PUT", body: payload });
     }
 
     await router.push("/admin/products");
   } catch (error: any) {
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.statusMessage ||
-      error?.message ||
-      "Unable to save product.";
-
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to save product.";
     window.scrollTo({ top: 0, behavior: "smooth" });
   } finally {
     saving.value = false;
