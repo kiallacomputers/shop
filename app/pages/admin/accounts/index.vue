@@ -143,12 +143,12 @@
             >
               <tr>
                 <th
-                  class="w-[27%] px-4 py-3"
+                  class="w-[24%] px-4 py-3"
                 >
                   Account
                 </th>
                 <th
-                  class="w-[27%] px-4 py-3"
+                  class="w-[24%] px-4 py-3"
                 >
                   Email
                 </th>
@@ -163,7 +163,7 @@
                   Role
                 </th>
                 <th
-                  class="w-[18%] px-4 py-3 text-right"
+                  class="w-[24%] px-4 py-3 text-right"
                 >
                   Actions
                 </th>
@@ -233,46 +233,59 @@
                 <td
                   class="px-4 py-4 text-right"
                 >
-                  <div
-                    v-if="account.is_current_user"
-                    class="text-xs font-semibold text-slate-400"
-                  >
-                    Protected
-                  </div>
-
-                  <div
-                    v-else
-                    class="flex justify-end gap-2"
-                  >
+                  <div class="flex flex-wrap justify-end gap-2">
                     <button
-                      v-if="account.role !== 'admin'"
                       type="button"
-                      :disabled="changingId === account.id"
-                      class="rounded-lg border border-blue-200 px-2.5 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
-                      @click="changeRole(account, 'admin')"
+                      :disabled="resettingId === account.id"
+                      class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      @click="sendPasswordReset(account)"
                     >
-                      Make Admin
+                      {{
+                        resettingId === account.id
+                          ? "Sending..."
+                          : "Reset Password"
+                      }}
                     </button>
 
-                    <button
-                      v-if="account.role !== 'superadmin'"
-                      type="button"
-                      :disabled="changingId === account.id"
-                      class="rounded-lg border border-violet-200 px-2.5 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-50"
-                      @click="changeRole(account, 'superadmin')"
-                    >
-                      Make SuperAdmin
-                    </button>
+                    <template v-if="!account.is_current_user">
+                      <button
+                        v-if="account.role !== 'admin'"
+                        type="button"
+                        :disabled="changingId === account.id"
+                        class="rounded-lg border border-blue-200 px-2.5 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                        @click="changeRole(account, 'admin')"
+                      >
+                        Make Admin
+                      </button>
 
-                    <button
-                      v-if="account.role"
-                      type="button"
-                      :disabled="changingId === account.id"
-                      class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                      @click="changeRole(account, 'user')"
+                      <button
+                        v-if="account.role !== 'superadmin'"
+                        type="button"
+                        :disabled="changingId === account.id"
+                        class="rounded-lg border border-violet-200 px-2.5 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-50"
+                        @click="changeRole(account, 'superadmin')"
+                      >
+                        Make SuperAdmin
+                      </button>
+
+                      <button
+                        v-if="account.role"
+                        type="button"
+                        :disabled="changingId === account.id"
+                        class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                        @click="changeRole(account, 'user')"
+                      >
+                        Demote
+                      </button>
+                    </template>
+
+                    <span
+                      v-else
+                      class="self-center text-xs font-semibold text-slate-400"
+                      title="Your SuperAdmin role is protected."
                     >
-                      Demote
-                    </button>
+                      Role Protected
+                    </span>
                   </div>
                 </td>
               </tr>
@@ -327,6 +340,9 @@ const loading = ref(true);
 const errorMessage = ref("");
 const successMessage = ref("");
 const changingId =
+  ref<string | null>(null);
+
+const resettingId =
   ref<string | null>(null);
 
 const search = ref("");
@@ -540,6 +556,56 @@ const changeRole = async (
       "Unable to change account role.";
   } finally {
     changingId.value = null;
+  }
+};
+
+const sendPasswordReset = async (
+  account: Account,
+) => {
+  if (!account.email) {
+    errorMessage.value =
+      "This account does not have an email address.";
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Send a password reset email to ${account.email}?`,
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  resettingId.value = account.id;
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  try {
+    const result = await adminFetch<{
+      success: boolean;
+      email: string;
+    }>(
+      `/api/admin/accounts/${account.id}/password-reset`,
+      {
+        method: "POST",
+      },
+    );
+
+    successMessage.value =
+      `Password reset email sent to ${result.email}.`;
+  } catch (error: any) {
+    console.error(
+      "PASSWORD RESET ERROR:",
+      error,
+    );
+
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to send password reset email.";
+  } finally {
+    resettingId.value = null;
   }
 };
 
