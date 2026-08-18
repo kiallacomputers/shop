@@ -111,10 +111,6 @@
       </header>
 
       <div class="p-4 sm:p-5">
-        <!-- ======================================== -->
-        <!-- HEADING -->
-        <!-- ======================================== -->
-
         <template v-if="block.type === 'heading'">
           <div class="grid gap-4 sm:grid-cols-[150px_1fr]">
             <label>
@@ -140,10 +136,6 @@
           </div>
         </template>
 
-        <!-- ======================================== -->
-        <!-- PARAGRAPH -->
-        <!-- ======================================== -->
-
         <template v-else-if="block.type === 'paragraph'">
           <label>
             <span class="field-label">Paragraph</span>
@@ -157,14 +149,11 @@
 
             <span class="mt-2 block text-xs text-slate-500">
               Bold text by placing <strong>**double asterisks**</strong> around it,
-              for example: This item includes a <strong>**30-day warranty**</strong>. Press <strong>Enter</strong> to add a new line.
+              for example: This item includes a <strong>**30-day warranty**</strong>.
+              Press <strong>Enter</strong> to add a new line.
             </span>
           </label>
         </template>
-
-        <!-- ======================================== -->
-        <!-- IMAGE -->
-        <!-- ======================================== -->
 
         <template v-else-if="block.type === 'image'">
           <div class="space-y-5">
@@ -292,10 +281,6 @@
           </div>
         </template>
 
-        <!-- ======================================== -->
-        <!-- QUOTE / WARNING / INFO -->
-        <!-- ======================================== -->
-
         <template
           v-else-if="
             block.type === 'quote' ||
@@ -329,10 +314,6 @@
           </label>
         </template>
 
-        <!-- ======================================== -->
-        <!-- LIST -->
-        <!-- ======================================== -->
-
         <template v-else-if="block.type === 'list'">
           <div class="mb-4 flex flex-wrap items-end gap-4">
             <label class="w-full sm:w-44">
@@ -360,9 +341,7 @@
               :key="itemIndex"
               class="flex items-center gap-2"
             >
-              <span
-                class="w-6 text-center text-sm font-semibold text-slate-400"
-              >
+              <span class="w-6 text-center text-sm font-semibold text-slate-400">
                 {{ itemIndex + 1 }}
               </span>
 
@@ -383,10 +362,6 @@
             </div>
           </div>
         </template>
-
-        <!-- ======================================== -->
-        <!-- TABLE -->
-        <!-- ======================================== -->
 
         <template v-else-if="block.type === 'table'">
           <div class="mb-4 flex flex-wrap gap-2">
@@ -472,10 +447,6 @@
           </div>
         </template>
 
-        <!-- ======================================== -->
-        <!-- DIVIDER -->
-        <!-- ======================================== -->
-
         <template v-else-if="block.type === 'divider'">
           <div class="py-4">
             <hr class="border-slate-300" />
@@ -537,10 +508,6 @@ let syncingFromParent = false;
 const makeKey = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-// ========================================
-// NORMALISE BLOCK
-// ========================================
-
 const normaliseBlock = (input: any): DescriptionBlock => {
   const type = input?.type || "paragraph";
 
@@ -588,25 +555,15 @@ const normaliseBlock = (input: any): DescriptionBlock => {
   return base;
 };
 
-// ========================================
-// REMOVE INTERNAL FIELDS BEFORE SAVING
-// ========================================
-
 const stripInternalFields = (block: DescriptionBlock) => {
   const { _key, ...clean } = block;
-
   return clean;
 };
-
-// ========================================
-// SYNC FROM PARENT
-// ========================================
 
 watch(
   () => props.modelValue,
   (value) => {
     const incoming = Array.isArray(value) ? value : [];
-
     const currentClean = blocks.value.map(stripInternalFields);
 
     if (JSON.stringify(incoming) === JSON.stringify(currentClean)) {
@@ -614,7 +571,6 @@ watch(
     }
 
     syncingFromParent = true;
-
     blocks.value = incoming.map(normaliseBlock);
 
     nextTick(() => {
@@ -626,10 +582,6 @@ watch(
     deep: true,
   },
 );
-
-// ========================================
-// SYNC TO PARENT
-// ========================================
 
 watch(
   blocks,
@@ -647,10 +599,6 @@ watch(
     deep: true,
   },
 );
-
-// ========================================
-// CREATE BLOCK
-// ========================================
 
 const createBlock = (type: string): DescriptionBlock => {
   if (type === "heading") {
@@ -705,10 +653,6 @@ const createBlock = (type: string): DescriptionBlock => {
   });
 };
 
-// ========================================
-// BLOCK ACTIONS
-// ========================================
-
 const addBlock = () => {
   blocks.value.push(createBlock(newBlockType.value));
 };
@@ -733,20 +677,14 @@ const moveBlock = (index: number, direction: number) => {
   }
 
   const [item] = blocks.value.splice(index, 1);
-
   blocks.value.splice(target, 0, item);
 };
-
-// ========================================
-// DESCRIPTION IMAGE UPLOAD
-// ========================================
 
 const uploadDescriptionImage = async (
   event: Event,
   index: number,
 ) => {
   const input = event.target as HTMLInputElement;
-
   const file = input.files?.[0];
 
   if (!file) {
@@ -766,7 +704,6 @@ const uploadDescriptionImage = async (
 
   try {
     const formData = new FormData();
-
     formData.append("file", file);
 
     const result = await adminFetch<{
@@ -799,18 +736,10 @@ const uploadDescriptionImage = async (
   }
 };
 
-// ========================================
-// CLEAR IMAGE FROM BLOCK
-// ========================================
-
 const clearImage = (block: DescriptionBlock) => {
   block.url = "";
   block.path = "";
 };
-
-// ========================================
-// TABLE ACTIONS
-// ========================================
 
 const addTableColumn = (block: DescriptionBlock) => {
   block.headers!.push(`Column ${block.headers!.length + 1}`);
@@ -836,10 +765,6 @@ const addTableRow = (block: DescriptionBlock) => {
   block.rows!.push(Array(block.headers!.length).fill(""));
 };
 
-// ========================================
-// LABELS
-// ========================================
-
 const blockLabel = (type: string) =>
   ({
     heading: "Heading",
@@ -852,10 +777,6 @@ const blockLabel = (type: string) =>
     info: "Info Box",
     divider: "Divider",
   })[type] || "Content";
-
-// ========================================
-// JSON PREVIEW
-// ========================================
 
 const jsonPreview = computed(() =>
   JSON.stringify(
