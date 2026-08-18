@@ -39,10 +39,19 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
             <select v-model="form.category_id" class="input">
               <option value="">Uncategorised</option>
-              <option v-for="category in categories" :key="category.id" :value="String(category.id)">
-                {{ category.name }}
+
+              <option
+                v-for="category in selectableCategories"
+                :key="category.id"
+                :value="String(category.id)"
+              >
+                {{ categoryDisplayName(category) }}
               </option>
             </select>
+
+            <span class="mt-1.5 block text-xs text-slate-500">
+              Only categories with no subcategories can be selected.
+            </span>
           </label>
 
           <label class="md:col-span-2">
@@ -187,6 +196,12 @@
 </template>
 
 <script setup lang="ts">
+type Category = {
+  id: string | number;
+  name: string;
+  parent_id?: string | number | null;
+};
+
 const props = defineProps<{
   mode: "create" | "edit";
   productId?: string;
@@ -195,7 +210,7 @@ const props = defineProps<{
 const { adminFetch } = useAdminFetch();
 const router = useRouter();
 
-const categories = ref<Array<{ id: string | number; name: string }>>([]);
+const categories = ref<Category[]>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
 const errorMessage = ref("");
@@ -219,6 +234,77 @@ const form = reactive({
   featured: false,
   refurbished: false,
 });
+
+// ========================================
+// PRODUCT CATEGORY FILTER
+// ========================================
+
+const categoryMap = computed(() => {
+  const map = new Map<string, Category>();
+
+  for (const category of categories.value) {
+    map.set(String(category.id), category);
+  }
+
+  return map;
+});
+
+const selectableCategories = computed(() => {
+  const categoriesWithChildren = new Set(
+    categories.value
+      .filter(
+        (category) =>
+          category.parent_id !== null &&
+          category.parent_id !== undefined &&
+          String(category.parent_id) !== "",
+      )
+      .map((category) => String(category.parent_id)),
+  );
+
+  return categories.value
+    .filter(
+      (category) =>
+        !categoriesWithChildren.has(String(category.id)),
+    )
+    .sort((a, b) => {
+      const parentA = a.parent_id
+        ? categoryMap.value.get(String(a.parent_id))?.name || ""
+        : "";
+
+      const parentB = b.parent_id
+        ? categoryMap.value.get(String(b.parent_id))?.name || ""
+        : "";
+
+      const parentCompare = parentA.localeCompare(
+        parentB,
+        undefined,
+        { sensitivity: "base" },
+      );
+
+      if (parentCompare !== 0) {
+        return parentCompare;
+      }
+
+      return a.name.localeCompare(
+        b.name,
+        undefined,
+        { sensitivity: "base" },
+      );
+    });
+});
+
+const categoryDisplayName = (category: Category) => {
+  if (!category.parent_id) {
+    return category.name;
+  }
+
+  const parent =
+    categoryMap.value.get(String(category.parent_id));
+
+  return parent
+    ? `${parent.name} → ${category.name}`
+    : category.name;
+};
 
 const slugify = (value: string) =>
   value
@@ -284,7 +370,7 @@ const loadForm = async () => {
   errorMessage.value = "";
 
   try {
-    categories.value = await adminFetch("/api/admin/categories");
+    categories.value = await adminFetch<Category[]>("/api/admin/categories");
 
     if (props.mode === "edit") {
       const product: any = await adminFetch(`/api/admin/products/${props.productId}`);
@@ -314,12 +400,19 @@ const loadForm = async () => {
 
       let description = product.description ?? [];
       if (typeof description === "string") {
-        try { description = JSON.parse(description); } catch { description = []; }
+        try {
+          description = JSON.parse(description);
+        } catch {
+          description = [];
+        }
       }
       descriptionBlocks.value = Array.isArray(description) ? description : [];
     }
   } catch (error: any) {
-    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || "Unable to load product details.";
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      "Unable to load product details.";
   } finally {
     loading.value = false;
   }
@@ -356,7 +449,12 @@ const saveProduct = async () => {
 
     await router.push("/admin/products");
   } catch (error: any) {
-    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to save product.";
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to save product.";
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   } finally {
     saving.value = false;
