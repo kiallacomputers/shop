@@ -1,17 +1,26 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <!-- Advertisement -->
     <Ads />
 
+    <!-- Sidebar + Product -->
     <div class="flex flex-col md:flex-row gap-6">
+      <!-- Sidebar -->
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
       </aside>
 
+      <!-- Product -->
       <main class="flex-1">
         <div
           class="bg-white rounded-xl transition-all duration-300 overflow-hidden group"
         >
+          <!-- ========================= -->
+          <!-- PRODUCT IMAGE GALLERY -->
+          <!-- ========================= -->
+
           <div class="relative overflow-hidden bg-gray-100">
+            <!-- Featured Badge -->
             <span
               v-if="product.featured"
               class="absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-20"
@@ -19,12 +28,17 @@
               Featured
             </span>
 
+            <!-- Refurbished Badge -->
             <span
               v-if="product.refurbished"
               class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-20"
             >
               Refurbished
             </span>
+
+            <!-- ========================= -->
+            <!-- MAIN IMAGE -->
+            <!-- ========================= -->
 
             <div
               class="w-full h-96 flex items-center justify-center cursor-zoom-in"
@@ -37,6 +51,7 @@
                 class="w-full h-96 object-contain p-6 transition-transform duration-300 group-hover:scale-105"
               />
 
+              <!-- No image -->
               <div
                 v-else
                 class="flex items-center justify-center h-96 text-gray-400"
@@ -45,6 +60,10 @@
               </div>
             </div>
 
+            <!-- ========================= -->
+            <!-- PREVIOUS BUTTON -->
+            <!-- ========================= -->
+
             <button
               v-if="images.length > 1"
               type="button"
@@ -52,8 +71,25 @@
               class="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition"
               aria-label="Previous image"
             >
-              ‹
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
             </button>
+
+            <!-- ========================= -->
+            <!-- NEXT BUTTON -->
+            <!-- ========================= -->
 
             <button
               v-if="images.length > 1"
@@ -62,8 +98,25 @@
               class="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition"
               aria-label="Next image"
             >
-              ›
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
             </button>
+
+            <!-- ========================= -->
+            <!-- IMAGE COUNTER -->
+            <!-- ========================= -->
 
             <div
               v-if="images.length > 1"
@@ -71,6 +124,10 @@
             >
               {{ currentImageIndex + 1 }} / {{ images.length }}
             </div>
+
+            <!-- ========================= -->
+            <!-- IMAGE DOTS -->
+            <!-- ========================= -->
 
             <div
               v-if="images.length > 1"
@@ -91,6 +148,10 @@
               />
             </div>
 
+            <!-- ========================= -->
+            <!-- ZOOM INDICATOR -->
+            <!-- ========================= -->
+
             <div
               v-if="currentImage"
               class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full z-20 pointer-events-none"
@@ -98,6 +159,10 @@
               Click image to enlarge
             </div>
           </div>
+
+          <!-- ========================= -->
+          <!-- THUMBNAIL IMAGES -->
+          <!-- ========================= -->
 
           <div
             v-if="images.length > 1"
@@ -123,7 +188,12 @@
             </button>
           </div>
 
+          <!-- ========================= -->
+          <!-- PRODUCT DETAILS -->
+          <!-- ========================= -->
+
           <div class="p-5">
+            <!-- Category -->
             <NuxtLink
               :to="`/category/${product.categories.slug}`"
               class="text-lg text-[#2CB6D5] font-medium hover:text-[#566C9D]"
@@ -131,9 +201,14 @@
               {{ product.categories.name }}
             </NuxtLink>
 
+            <!-- Product Name -->
             <h3 class="text-base font-semibold text-[#566C9D] line-clamp-2">
               {{ product.name }}
             </h3>
+
+            <!-- ========================= -->
+            <!-- PRICE -->
+            <!-- ========================= -->
 
             <div class="flex items-center justify-between mt-5">
               <div>
@@ -149,6 +224,7 @@
                 </p>
               </div>
 
+              <!-- Add Cart -->
               <button
                 v-if="product.stock > 0"
                 @click="cart.addToCart(product)"
@@ -158,10 +234,12 @@
               </button>
             </div>
 
+            <!-- ========================= -->
+            <!-- AVAILABILITY -->
+            <!-- ========================= -->
+
             <div class="flex items-center mt-3">
-              <span class="font-semibold text-[#566C9D]">
-                Availability :
-              </span>
+              <span class="font-semibold text-[#566C9D]"> Availability : </span>
 
               <span
                 v-if="product.stock > 0"
@@ -175,6 +253,10 @@
               </span>
             </div>
 
+            <!-- ========================= -->
+            <!-- DESCRIPTION -->
+            <!-- ========================= -->
+
             <div class="text-[#566C9D] text-sm mt-6">
               <div
                 v-for="(section, index) in product.description"
@@ -185,11 +267,15 @@
                 <component
                   :is="section.level === 4 ? 'h4' : section.level === 3 ? 'h3' : 'h2'"
                   v-if="section.type === 'heading'"
-                  :class="headingClass(section.level)"
+                  :class="[
+                    'font-semibold border-b border-gray-200 pb-2 mb-4',
+                    section.level === 4 ? 'text-lg' : section.level === 3 ? 'text-xl' : 'text-2xl'
+                  ]"
                 >
                   {{ section.text }}
                 </component>
 
+                <!-- Paragraph -->
                 <p
                   v-else-if="section.type === 'paragraph'"
                   class="text-gray-700 leading-7 mb-4 whitespace-pre-line"
@@ -203,6 +289,7 @@
                   </template>
                 </p>
 
+                <!-- Quote -->
                 <blockquote
                   v-else-if="section.type === 'quote'"
                   class="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4"
@@ -210,37 +297,41 @@
                   {{ section.text }}
                 </blockquote>
 
+                <!-- List -->
                 <ol
                   v-else-if="section.type === 'list' && section.style === 'number'"
                   class="list-decimal pl-6 space-y-2 text-gray-700"
                 >
                   <li v-for="(item, i) in section.items" :key="i">
-                    {{ item }}
+                    <template
+                      v-for="(part, partIndex) in parseBoldText(item)"
+                      :key="partIndex"
+                    >
+                      <strong v-if="part.bold">{{ part.text }}</strong>
+                      <span v-else>{{ part.text }}</span>
+                    </template>
                   </li>
                 </ol>
 
                 <ul
                   v-else-if="section.type === 'list'"
-                  :class="section.style === 'check'
-                    ? 'space-y-2 text-gray-700'
-                    : 'list-disc pl-6 space-y-2 text-gray-700'"
+                  :class="section.style === 'check' ? 'space-y-2 text-gray-700' : 'list-disc pl-6 space-y-2 text-gray-700'"
                 >
-                  <li
-                    v-for="(item, i) in section.items"
-                    :key="i"
-                    :class="section.style === 'check' ? 'flex gap-2' : ''"
-                  >
-                    <span
-                      v-if="section.style === 'check'"
-                      class="font-bold text-green-600"
-                    >
-                      ✓
+                  <li v-for="(item, i) in section.items" :key="i" :class="section.style === 'check' ? 'flex gap-2' : ''">
+                    <span v-if="section.style === 'check'" class="font-bold text-green-600">✓</span>
+                    <span>
+                      <template
+                        v-for="(part, partIndex) in parseBoldText(item)"
+                        :key="partIndex"
+                      >
+                        <strong v-if="part.bold">{{ part.text }}</strong>
+                        <span v-else>{{ part.text }}</span>
+                      </template>
                     </span>
-
-                    <span>{{ item }}</span>
                   </li>
                 </ul>
 
+                <!-- Warning -->
                 <div
                   v-else-if="section.type === 'warning'"
                   class="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg whitespace-pre-line"
@@ -254,6 +345,7 @@
                   </template>
                 </div>
 
+                <!-- Info -->
                 <div
                   v-else-if="section.type === 'info'"
                   class="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-lg"
@@ -261,6 +353,7 @@
                   {{ section.text }}
                 </div>
 
+                <!-- Image -->
                 <figure
                   v-else-if="section.type === 'image' && section.url"
                   class="my-8"
@@ -280,11 +373,10 @@
                   </figcaption>
                 </figure>
 
-                <hr
-                  v-else-if="section.type === 'divider'"
-                  class="my-6 border-gray-200"
-                />
+                <!-- Divider -->
+                <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
+                <!-- Table -->
                 <div
                   v-else-if="section.type === 'table'"
                   class="overflow-hidden rounded-lg border border-gray-200"
@@ -308,11 +400,7 @@
                         :key="r"
                         class="border-t"
                       >
-                        <td
-                          v-for="(cell, c) in row"
-                          :key="c"
-                          class="p-3"
-                        >
+                        <td v-for="(cell, c) in row" :key="c" class="p-3">
                           {{ cell }}
                         </td>
                       </tr>
@@ -327,12 +415,17 @@
     </div>
   </div>
 
+  <!-- ========================================================= -->
+  <!-- IMAGE LIGHTBOX / ZOOM -->
+  <!-- ========================================================= -->
+
   <Teleport to="body">
     <div
       v-if="lightboxOpen"
       class="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
       @click="closeLightbox"
     >
+      <!-- Close Button -->
       <button
         type="button"
         @click.stop="closeLightbox"
@@ -342,6 +435,7 @@
         &times;
       </button>
 
+      <!-- Zoom Controls -->
       <div
         class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-white/90 rounded-lg p-2 shadow-lg"
         @click.stop
@@ -350,6 +444,7 @@
           type="button"
           @click="zoomOut"
           class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 text-xl font-bold"
+          aria-label="Zoom out"
         >
           −
         </button>
@@ -362,6 +457,7 @@
           type="button"
           @click="zoomIn"
           class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 text-xl font-bold"
+          aria-label="Zoom in"
         >
           +
         </button>
@@ -375,24 +471,55 @@
         </button>
       </div>
 
+      <!-- Previous Lightbox Image -->
       <button
         v-if="images.length > 1"
         type="button"
         @click.stop="previousLightboxImage"
         class="absolute left-5 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-lg"
+        aria-label="Previous image"
       >
-        ‹
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-7 h-7"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
       </button>
 
+      <!-- Next Lightbox Image -->
       <button
         v-if="images.length > 1"
         type="button"
         @click.stop="nextLightboxImage"
         class="absolute right-5 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-lg"
+        aria-label="Next image"
       >
-        ›
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-7 h-7"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7 7-7-7"
+          />
+        </svg>
       </button>
 
+      <!-- Image -->
       <div
         class="max-w-[90vw] max-h-[85vh] overflow-hidden flex items-center justify-center"
         @click.stop
@@ -417,25 +544,14 @@
 <script setup>
 const supabase = useSupabaseClient();
 const route = useRoute();
+
 const cart = useCartStore();
 
 /*
 |--------------------------------------------------------------------------
-| Description Heading Styles
+| Description Bold Text
 |--------------------------------------------------------------------------
 */
-
-const headingClass = (level) => {
-  if (Number(level) === 4) {
-    return "text-base font-semibold text-[#566C9D] mt-5 mb-2";
-  }
-
-  if (Number(level) === 3) {
-    return "text-xl font-bold text-[#566C9D]  pb-2 mt-6 mb-3";
-  }
-
-  return "text-2xl font-bold text-[#566C9D] pb-2 mt-8 mb-4";
-};
 
 const parseBoldText = (text = "") => {
   const parts = [];
@@ -445,31 +561,25 @@ const parseBoldText = (text = "") => {
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({
-        text: text.slice(lastIndex, match.index),
-        bold: false,
-      });
+      parts.push({ text: text.slice(lastIndex, match.index), bold: false });
     }
 
-    parts.push({
-      text: match[1],
-      bold: true,
-    });
-
+    parts.push({ text: match[1], bold: true });
     lastIndex = regex.lastIndex;
   }
 
   if (lastIndex < text.length) {
-    parts.push({
-      text: text.slice(lastIndex),
-      bold: false,
-    });
+    parts.push({ text: text.slice(lastIndex), bold: false });
   }
 
-  return parts.length
-    ? parts
-    : [{ text, bold: false }];
+  return parts.length ? parts : [{ text, bold: false }];
 };
+
+/*
+|--------------------------------------------------------------------------
+| Description Image Width
+|--------------------------------------------------------------------------
+*/
 
 const descriptionImageClass = (width) => {
   if (width === "small") {
@@ -487,18 +597,26 @@ const descriptionImageClass = (width) => {
   return "w-full";
 };
 
+/*
+|--------------------------------------------------------------------------
+| Load Product
+|--------------------------------------------------------------------------
+*/
+
 const { data: product } = await useAsyncData(
   `product-${route.params.slug}`,
   async () => {
     const { data, error } = await supabase
       .from("products")
-      .select(`
+      .select(
+        `
         *,
         categories (
           name,
           slug
         )
-      `)
+        `,
+      )
       .eq("slug", route.params.slug)
       .single();
 
@@ -510,17 +628,31 @@ const { data: product } = await useAsyncData(
   },
 );
 
+/*
+|--------------------------------------------------------------------------
+| Current Image
+|--------------------------------------------------------------------------
+*/
+
 const currentImageIndex = ref(0);
+
+/*
+|--------------------------------------------------------------------------
+| Convert Images Into An Array
+|--------------------------------------------------------------------------
+*/
 
 const images = computed(() => {
   if (!product.value?.images) {
     return [];
   }
 
+  // Already an array
   if (Array.isArray(product.value.images)) {
     return product.value.images.filter(Boolean);
   }
 
+  // JSON string
   if (typeof product.value.images === "string") {
     try {
       const parsed = JSON.parse(product.value.images);
@@ -536,18 +668,35 @@ const images = computed(() => {
   return [];
 });
 
+/*
+|--------------------------------------------------------------------------
+| Current Image
+|--------------------------------------------------------------------------
+*/
+
 const currentImage = computed(() => {
   return images.value[currentImageIndex.value] || "";
 });
+
+/*
+|--------------------------------------------------------------------------
+| Next Image
+|--------------------------------------------------------------------------
+*/
 
 const nextImage = () => {
   if (images.value.length <= 1) {
     return;
   }
 
-  currentImageIndex.value =
-    (currentImageIndex.value + 1) % images.value.length;
+  currentImageIndex.value = (currentImageIndex.value + 1) % images.value.length;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Previous Image
+|--------------------------------------------------------------------------
+*/
 
 const previousImage = () => {
   if (images.value.length <= 1) {
@@ -555,13 +704,24 @@ const previousImage = () => {
   }
 
   currentImageIndex.value =
-    (currentImageIndex.value - 1 + images.value.length) %
-    images.value.length;
+    (currentImageIndex.value - 1 + images.value.length) % images.value.length;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Select Image
+|--------------------------------------------------------------------------
+*/
 
 const goToImage = (index) => {
   currentImageIndex.value = index;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Reset Image When Product Changes
+|--------------------------------------------------------------------------
+*/
 
 watch(
   () => product.value?.id,
@@ -570,7 +730,14 @@ watch(
   },
 );
 
+/*
+|--------------------------------------------------------------------------
+| IMAGE LIGHTBOX / ZOOM
+|--------------------------------------------------------------------------
+*/
+
 const lightboxOpen = ref(false);
+
 const zoomLevel = ref(1);
 
 const openLightbox = () => {
@@ -579,33 +746,55 @@ const openLightbox = () => {
   }
 
   zoomLevel.value = 1;
+
   lightboxOpen.value = true;
+
   document.body.style.overflow = "hidden";
 };
 
 const closeLightbox = () => {
   lightboxOpen.value = false;
+
   zoomLevel.value = 1;
+
   document.body.style.overflow = "";
 };
 
+/*
+|--------------------------------------------------------------------------
+| Zoom In
+|--------------------------------------------------------------------------
+*/
+
 const zoomIn = () => {
-  zoomLevel.value = Math.min(
-    zoomLevel.value + 0.25,
-    4,
-  );
+  zoomLevel.value = Math.min(zoomLevel.value + 0.25, 4);
 };
 
+/*
+|--------------------------------------------------------------------------
+| Zoom Out
+|--------------------------------------------------------------------------
+*/
+
 const zoomOut = () => {
-  zoomLevel.value = Math.max(
-    zoomLevel.value - 0.25,
-    1,
-  );
+  zoomLevel.value = Math.max(zoomLevel.value - 0.25, 1);
 };
+
+/*
+|--------------------------------------------------------------------------
+| Reset Zoom
+|--------------------------------------------------------------------------
+*/
 
 const resetZoom = () => {
   zoomLevel.value = 1;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Click Image To Zoom
+|--------------------------------------------------------------------------
+*/
 
 const handleImageClick = () => {
   if (zoomLevel.value < 4) {
@@ -615,6 +804,12 @@ const handleImageClick = () => {
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| Mouse Wheel Zoom
+|--------------------------------------------------------------------------
+*/
+
 const handleWheel = (event) => {
   if (event.deltaY < 0) {
     zoomIn();
@@ -623,48 +818,59 @@ const handleWheel = (event) => {
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| Lightbox Previous Image
+|--------------------------------------------------------------------------
+*/
+
 const previousLightboxImage = () => {
   previousImage();
+
   resetZoom();
 };
+
+/*
+|--------------------------------------------------------------------------
+| Lightbox Next Image
+|--------------------------------------------------------------------------
+*/
 
 const nextLightboxImage = () => {
   nextImage();
+
   resetZoom();
 };
 
+/*
+|--------------------------------------------------------------------------
+| Close With Escape
+|--------------------------------------------------------------------------
+*/
+
 const handleEscape = (event) => {
-  if (
-    event.key === "Escape" &&
-    lightboxOpen.value
-  ) {
+  if (event.key === "Escape" && lightboxOpen.value) {
     closeLightbox();
   }
 };
 
 onMounted(() => {
-  window.addEventListener(
-    "keydown",
-    handleEscape,
-  );
+  window.addEventListener("keydown", handleEscape);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener(
-    "keydown",
-    handleEscape,
-  );
+  window.removeEventListener("keydown", handleEscape);
 
   document.body.style.overflow = "";
 });
 
-console.log(
-  "PRODUCT IMAGES:",
-  product.value?.images,
-);
+/*
+|--------------------------------------------------------------------------
+| Debug
+|--------------------------------------------------------------------------
+*/
 
-console.log(
-  "NORMALISED IMAGES:",
-  images.value,
-);
+console.log("PRODUCT IMAGES:", product.value?.images);
+
+console.log("NORMALISED IMAGES:", images.value);
 </script>
