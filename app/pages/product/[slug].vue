@@ -434,7 +434,7 @@ const headingClass = (level) => {
     return "text-xl font-bold text-slate-800 border-b border-slate-200 pb-2 mt-6 mb-3";
   }
 
-  return "text-2xl font-bold text-slate-900 border-b border-slate-300 pb-2 mt-8 mb-4";
+  return "text-2xl font-bold text-slate-900 border rounded-lg border-slate-300 pb-2 mt-8 mb-4";
 };
 
 const parseBoldText = (text = "") => {
