@@ -170,7 +170,7 @@ export const calculateFreightOptions = async ({
     error: freeError,
   } = await supabase
     .from("free_delivery_postcodes")
-    .select("id, postcode, description")
+    .select("id, postcode, description, flat_rate")
     .eq("postcode", destinationPostcode)
     .eq("active", true)
     .maybeSingle();
@@ -189,19 +189,32 @@ export const calculateFreightOptions = async ({
   }
 
   if (freePostcode) {
+    const flatRate = Number(
+      freePostcode.flat_rate || 10,
+    );
+
+    if (![10, 15].includes(flatRate)) {
+      throw createError({
+        statusCode: 500,
+        statusMessage:
+          "Invalid local flat freight rate configured.",
+      });
+    }
+
     return {
       postcode: destinationPostcode,
       originPostcode,
-      freeDelivery: true,
+      freeDelivery: false,
+      localFlatRate: true,
       package: null,
       rates: [
         {
-          code: "FREE_LOCAL",
+          code: `LOCAL_FLAT_${flatRate}`,
           name:
             freePostcode.description?.trim() ||
-            "Free Local Delivery",
-          price: 0,
-          free: true,
+            "Local Flat Rate Delivery",
+          price: flatRate,
+          free: false,
         },
       ] satisfies FreightRate[],
     };

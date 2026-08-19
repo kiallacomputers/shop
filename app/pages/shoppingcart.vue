@@ -103,7 +103,7 @@
           </h2>
 
           <p class="mt-1 text-sm text-slate-500">
-            Enter your delivery postcode to calculate freight. Free-delivery postcodes are applied automatically.
+            Enter your delivery postcode to calculate freight. Local postcodes use your configured $10 or $15 flat rate automatically; all other postcodes use Australia Post.
           </p>
 
           <div
@@ -171,7 +171,7 @@
                     v-if="rate.free"
                     class="text-xs font-semibold text-green-600"
                   >
-                    This postcode qualifies for free delivery.
+                    Local flat-rate delivery.
                   </p>
                 </div>
               </div>

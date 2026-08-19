@@ -13,11 +13,21 @@ export default defineEventHandler(async (event) => {
     String(body?.description || "").trim() ||
     null;
 
+  const flatRate = Number(body?.flat_rate);
+
   if (!/^\d{4}$/.test(postcode)) {
     throw createError({
       statusCode: 400,
       statusMessage:
         "Postcode must contain exactly 4 digits.",
+    });
+  }
+
+  if (![10, 15].includes(flatRate)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage:
+        "Flat rate must be either $10 or $15.",
     });
   }
 
@@ -29,6 +39,7 @@ export default defineEventHandler(async (event) => {
       {
         postcode,
         description,
+        flat_rate: flatRate,
         active: true,
       },
       {

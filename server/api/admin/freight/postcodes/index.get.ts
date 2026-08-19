@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("free_delivery_postcodes")
-    .select("id, postcode, description, active, created_at")
+    .select("id, postcode, description, flat_rate, active, created_at")
     .order("postcode", {
       ascending: true,
     });
