@@ -116,7 +116,7 @@
         <!-- ======================================== -->
 
         <template v-if="block.type === 'heading'">
-          <div class="grid gap-4 sm:grid-cols-[150px_1fr]">
+          <div class="grid gap-4 sm:grid-cols-[150px_1fr_180px]">
             <label>
               <span class="field-label">Heading Size</span>
 
@@ -136,6 +136,24 @@
                 class="input"
                 placeholder="e.g. CPU Specifications"
               />
+            </label>
+
+            <label>
+              <span class="field-label">Font Colour</span>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="block.headingColor"
+                  type="color"
+                  class="h-11 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1"
+                  title="Choose heading font colour"
+                />
+                <input
+                  v-model="block.headingColor"
+                  type="text"
+                  class="input min-w-0"
+                  placeholder="#566C9D"
+                />
+              </div>
             </label>
           </div>
         </template>
@@ -566,6 +584,7 @@ type DescriptionBlock = {
   type: string;
   text?: string;
   level?: number;
+  headingColor?: string;
   style?: string;
   items?: string[];
   headers?: string[];
@@ -732,6 +751,7 @@ const normaliseBlock = (input: any): DescriptionBlock => {
   if (type === "heading") {
     base.text = input?.text || "";
     base.level = Number(input?.level || 2);
+    base.headingColor = input?.headingColor || "#566C9D";
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -842,6 +862,7 @@ const createBlock = (type: string): DescriptionBlock => {
       type,
       text: "",
       level: 2,
+      headingColor: "#566C9D",
     });
   }
 

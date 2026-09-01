@@ -268,9 +268,10 @@
                   :is="section.level === 4 ? 'h4' : section.level === 3 ? 'h3' : 'h2'"
                   v-if="section.type === 'heading'"
                   :class="[
-                    'font-semibold border-b border-gray-200 pb-2 mb-4',
+                    'font-semibold text-center mb-4',
                     section.level === 4 ? 'text-lg' : section.level === 3 ? 'text-xl' : 'text-2xl'
                   ]"
+                  :style="{ color: section.headingColor || '#566C9D' }"
                 >
                   {{ section.text }}
                 </component>
