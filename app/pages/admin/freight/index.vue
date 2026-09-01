@@ -69,7 +69,7 @@
             <h2 class="text-lg font-bold text-slate-900">Local Flat Rate Postcodes</h2>
 
             <p class="mt-1 text-sm text-slate-500">
-              Local postcodes bypass Australia Post and use either a $10 or $15 delivery rate.
+              Local postcodes bypass Australia Post and use either a $11 or $16.50 delivery rate.
             </p>
 
             <div class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-[140px_1fr_130px_auto]">
@@ -93,8 +93,8 @@
                 v-model.number="newFlatRate"
                 class="rounded-lg border border-slate-300 px-4 py-2.5"
               >
-                <option :value="10">$10.00</option>
-                <option :value="15">$15.00</option>
+                <option :value="10">$11.00</option>
+                <option :value="15">$16.50</option>
               </select>
 
               <button
@@ -125,8 +125,8 @@
                   v-model.number="bulkFlatRate"
                   class="self-end rounded-lg border border-slate-300 px-4 py-2.5"
                 >
-                  <option :value="10">$10.00</option>
-                  <option :value="15">$15.00</option>
+                  <option :value="10">$11.00</option>
+                  <option :value="15">$16.50</option>
                 </select>
 
                 <button
@@ -216,10 +216,10 @@ const postcodes = ref<LocalPostcode[]>([]);
 
 const newPostcode = ref("");
 const newDescription = ref("");
-const newFlatRate = ref(10);
+const newFlatRate = ref(11);
 
 const bulkPostcodes = ref("");
-const bulkFlatRate = ref(10);
+const bulkFlatRate = ref(11);
 
 const currency = (value: unknown) =>
   new Intl.NumberFormat("en-AU", {
