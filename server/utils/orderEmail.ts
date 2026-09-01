@@ -85,7 +85,7 @@ const totalsHtml = (order: OrderEmailData) => {
   return `<div style="margin-top:22px;margin-left:auto;max-width:320px;font-size:14px;">
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Delivery</span><strong>${deliveryCost === 0 ? "FREE" : money(deliveryCost)}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>GST included (10%)</span><strong>${money(gstIncluded)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>GST (10%)</span><strong>${money(gstIncluded)}</strong></div>
     <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;margin-top:6px;padding-top:10px;font-size:20px;"><span><strong>Total</strong></span><strong>${money(total)}</strong></div>
   </div>`;
 };

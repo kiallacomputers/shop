@@ -254,7 +254,7 @@
                 <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
               </div>
               <div class="flex items-center justify-between text-sm text-slate-600">
-                <span>GST included (10%)</span>
+                <span>GST (10%)</span>
                 <span>{{ currency(Number(order.total || 0) / 11) }}</span>
               </div>
               <div class="flex items-center justify-between border-t border-slate-300 pt-3">

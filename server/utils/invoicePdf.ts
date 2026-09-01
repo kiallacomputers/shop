@@ -223,7 +223,7 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
   text(400, y, "Delivery");
   text(485, y, money(deliveryCost));
   y -= 18;
-  text(400, y, "GST included (10%)");
+  text(400, y, "GST (10%)");
   text(485, y, money(gstIncluded));
   y -= 22;
   line(395, y + 8, right, y + 8);

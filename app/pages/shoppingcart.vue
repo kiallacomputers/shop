@@ -146,58 +146,20 @@
           </div>
         </section>
 
-        <!-- DELIVERY FREIGHT -->
-        <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-bold text-slate-900">Delivery Method</h2>
-          <p class="mt-1 text-sm text-slate-500">
-            Delivery is calculated from the postcode of the selected address. Local postcodes use your configured flat rate; all other postcodes use Australia Post.
-          </p>
-
-          <div v-if="selectedAddress" class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            Calculating for <strong>{{ selectedAddress.postcode }}</strong> — {{ selectedAddress.suburb }}, {{ selectedAddress.state }}.
-          </div>
-
-          <div class="mt-4">
-            <button
-              type="button"
-              :disabled="quoting || !selectedAddress"
-              class="rounded-lg bg-slate-900 px-5 py-2.5 font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-              @click="getFreightQuote"
-            >
-              {{ quoting ? "Calculating..." : "Calculate Delivery" }}
-            </button>
-          </div>
-
-          <div v-if="freightError" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ freightError }}</div>
-
-          <div v-if="freightRates.length" class="mt-5 space-y-3">
-            <label
-              v-for="rate in freightRates"
-              :key="rate.code"
-              class="flex cursor-pointer items-center justify-between gap-4 rounded-lg border px-4 py-3"
-              :class="selectedServiceCode === rate.code ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'"
-            >
-              <div class="flex items-center gap-3">
-                <input v-model="selectedServiceCode" type="radio" :value="rate.code" class="h-4 w-4" />
-                <div>
-                  <p class="font-semibold text-slate-800">{{ rate.name }}</p>
-                  <p v-if="rate.free" class="text-xs font-semibold text-green-600">Local flat-rate delivery.</p>
-                </div>
-              </div>
-              <span class="font-bold" :class="rate.free ? 'text-green-600' : 'text-slate-900'">{{ rate.free ? "FREE" : currency(rate.price) }}</span>
-            </label>
-          </div>
-        </section>
+        <!-- Freight is calculated automatically from the selected delivery address. -->
+        <div v-if="freightError" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ freightError }}
+        </div>
 
         <!-- TOTALS -->
         <div class="ml-auto mt-6 max-w-sm space-y-2 text-right">
           <div class="flex items-center justify-between text-slate-600"><span>Subtotal</span><span>{{ currency(cart.total) }}</span></div>
           <div class="flex items-center justify-between text-slate-600">
             <span>Delivery</span>
-            <span>{{ selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
+            <span>{{ quoting ? "Calculating..." : selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
           </div>
           <div class="flex items-center justify-between text-slate-600">
-            <span>GST included (10%)</span>
+            <span>GST (10%)</span>
             <span>{{ currency(gstIncluded) }}</span>
           </div>
           <div class="flex items-center justify-between border-t pt-3 text-2xl font-bold"><span>Total</span><span>{{ currency(grandTotal) }}</span></div>
@@ -210,7 +172,7 @@
             :disabled="loading || !cart.items.length || !selectedAddress || !selectedRate"
             class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading ? "Processing..." : !selectedAddress ? "Choose Delivery Address" : selectedRate ? "Checkout" : "Calculate Delivery First" }}
+            {{ loading ? "Processing..." : !selectedAddress ? "Choose Delivery Address" : quoting ? "Calculating Delivery..." : selectedRate ? "Checkout" : "Delivery Unavailable" }}
           </button>
         </div>
       </div>
@@ -290,7 +252,6 @@ function resetFreight() {
 
 function selectAddress(address: CustomerAddress) {
   selectedAddressId.value = String(address.id);
-  resetFreight();
 }
 
 async function loadAddresses(preferredId?: string) {
@@ -329,7 +290,6 @@ async function saveNewAddress() {
     });
     await loadAddresses(String(saved.id));
     showNewAddressForm.value = false;
-    resetFreight();
   } catch (error: any) {
     newAddressError.value = error?.data?.statusMessage || error?.message || "Unable to save delivery address.";
   } finally {
@@ -338,8 +298,23 @@ async function saveNewAddress() {
 }
 
 watch(
+  selectedAddressId,
+  async () => {
+    resetFreight();
+    if (selectedAddress.value && cart.items.length) {
+      await getFreightQuote();
+    }
+  },
+);
+
+watch(
   () => cart.items.map((item: any) => ({ id: item.id, quantity: item.quantity })),
-  () => resetFreight(),
+  async () => {
+    resetFreight();
+    if (selectedAddress.value && cart.items.length) {
+      await getFreightQuote();
+    }
+  },
   { deep: true },
 );
 
