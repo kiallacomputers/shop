@@ -8,7 +8,7 @@
 
         <h1 class="mt-3 text-3xl font-bold text-slate-900">Manage Freight</h1>
         <p class="mt-1 text-slate-500">
-          Configure Australia Post freight and $10 / $15 local delivery postcodes.
+          Configure Australia Post freight and $11 / $16.50 local delivery postcodes.
         </p>
       </div>
 
@@ -93,8 +93,8 @@
                 v-model.number="newFlatRate"
                 class="rounded-lg border border-slate-300 px-4 py-2.5"
               >
-                <option :value="10">$11.00</option>
-                <option :value="15">$16.50</option>
+                <option :value="11">$11.00</option>
+                <option :value="16.5">$16.50</option>
               </select>
 
               <button
@@ -125,8 +125,8 @@
                   v-model.number="bulkFlatRate"
                   class="self-end rounded-lg border border-slate-300 px-4 py-2.5"
                 >
-                  <option :value="10">$11.00</option>
-                  <option :value="15">$16.50</option>
+                  <option :value="11">$11.00</option>
+                  <option :value="16.5">$16.50</option>
                 </select>
 
                 <button

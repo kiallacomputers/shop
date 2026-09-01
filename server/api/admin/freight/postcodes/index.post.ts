@@ -23,11 +23,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (![10, 15].includes(flatRate)) {
+  if (![11, 16.5].includes(flatRate)) {
     throw createError({
       statusCode: 400,
       statusMessage:
-        "Flat rate must be either $10 or $15.",
+        "Flat rate must be either $11 or $16.50.",
     });
   }
 

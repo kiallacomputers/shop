@@ -190,10 +190,10 @@ export const calculateFreightOptions = async ({
 
   if (freePostcode) {
     const flatRate = Number(
-      freePostcode.flat_rate || 10,
+      freePostcode.flat_rate || 11,
     );
 
-    if (![10, 15].includes(flatRate)) {
+    if (![11, 16.5].includes(flatRate)) {
       throw createError({
         statusCode: 500,
         statusMessage:

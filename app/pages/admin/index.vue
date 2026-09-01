@@ -101,7 +101,7 @@
           </p>
 
           <p class="text-sm text-slate-500 mt-1">
-            Australia Post rates and $10/$15 local postcode delivery.
+            Australia Post rates and $11/$16.50 local postcode delivery.
           </p>
         </NuxtLink>
 
