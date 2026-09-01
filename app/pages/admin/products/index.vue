@@ -151,30 +151,20 @@
                       </span>
                     </td>
                     <td class="px-5 py-4 text-right whitespace-nowrap">
-                      <div class="flex justify-end gap-2">
-                        <NuxtLink :to="`/admin/products/${product.id}`"
-                          class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition">
-                          Edit
-                        </NuxtLink>
-                        <button
-                          type="button"
-                          :disabled="duplicatingId === String(product.id)"
-                          class="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 transition"
-                          @click="duplicateProduct(product)"
-                        >
-                          {{
-                            duplicatingId === String(product.id)
-                              ? "Duplicating..."
-                              : "Duplicate"
-                          }}
-                        </button>
-
-                        <button type="button" :disabled="deletingId === String(product.id)"
-                          class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition"
-                          @click="deleteProduct(product)">
-                          {{ deletingId === String(product.id) ? "Deleting..." : "Delete" }}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold leading-none text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                        :disabled="
+                          duplicatingId === String(product.id) ||
+                          deletingId === String(product.id)
+                        "
+                        :aria-expanded="actionsMenuProductId === String(product.id)"
+                        aria-haspopup="menu"
+                        :aria-label="`Actions for ${product.name}`"
+                        @click="toggleActionsMenu(product, $event)"
+                      >
+                        <span aria-hidden="true">⋯</span>
+                      </button>
                     </td>
                   </tr>
                 </template>
@@ -183,6 +173,51 @@
           </table>
         </div>
       </div>
+
+      <Teleport to="body">
+        <div
+          v-if="actionsMenuProduct"
+          ref="actionsMenuRef"
+          class="fixed z-[100] w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-xl"
+          :style="actionsMenuStyle"
+          role="menu"
+          @click.stop
+        >
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-blue-700"
+            role="menuitem"
+            @click="editFromMenu"
+          >
+            <span class="w-5 text-center text-base" aria-hidden="true">✎</span>
+            <span>Edit</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-emerald-700 disabled:opacity-50"
+            role="menuitem"
+            :disabled="duplicatingId === String(actionsMenuProduct.id)"
+            @click="duplicateFromMenu"
+          >
+            <span class="w-5 text-center text-base" aria-hidden="true">⧉</span>
+            <span>{{ duplicatingId === String(actionsMenuProduct.id) ? "Duplicating..." : "Duplicate" }}</span>
+          </button>
+
+          <div class="my-1 border-t border-slate-100"></div>
+
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            role="menuitem"
+            :disabled="deletingId === String(actionsMenuProduct.id)"
+            @click="deleteFromMenu"
+          >
+            <span class="w-5 text-center text-base" aria-hidden="true">🗑</span>
+            <span>{{ deletingId === String(actionsMenuProduct.id) ? "Deleting..." : "Delete" }}</span>
+          </button>
+        </div>
+      </Teleport>
     </div>
   </div>
 </template>
@@ -222,6 +257,11 @@ const loading = ref(true);
 const errorMessage = ref("");
 const deletingId = ref<string | null>(null);
 const duplicatingId = ref<string | null>(null);
+
+const actionsMenuProductId = ref<string | null>(null);
+const actionsMenuProduct = ref<Product | null>(null);
+const actionsMenuRef = ref<HTMLElement | null>(null);
+const actionsMenuStyle = ref<Record<string, string>>({});
 
 const search = ref("");
 const categoryFilter = ref("");
@@ -395,6 +435,81 @@ const loadCategories = async () => {
   }
 };
 
+const closeActionsMenu = () => {
+  actionsMenuProductId.value = null;
+  actionsMenuProduct.value = null;
+};
+
+const positionActionsMenu = (button: HTMLElement) => {
+  const rect = button.getBoundingClientRect();
+  const menuWidth = 176;
+  const margin = 8;
+  const viewportPadding = 12;
+
+  const left = Math.min(
+    window.innerWidth - menuWidth - viewportPadding,
+    Math.max(viewportPadding, rect.right - menuWidth),
+  );
+
+  const estimatedMenuHeight = 142;
+  const roomBelow = window.innerHeight - rect.bottom;
+  const top =
+    roomBelow >= estimatedMenuHeight + margin
+      ? rect.bottom + margin
+      : Math.max(viewportPadding, rect.top - estimatedMenuHeight - margin);
+
+  actionsMenuStyle.value = {
+    left: `${left}px`,
+    top: `${top}px`,
+  };
+};
+
+const toggleActionsMenu = (product: Product, event: MouseEvent) => {
+  event.stopPropagation();
+
+  const productId = String(product.id);
+  if (actionsMenuProductId.value === productId) {
+    closeActionsMenu();
+    return;
+  }
+
+  actionsMenuProductId.value = productId;
+  actionsMenuProduct.value = product;
+  positionActionsMenu(event.currentTarget as HTMLElement);
+};
+
+const editFromMenu = async () => {
+  const product = actionsMenuProduct.value;
+  if (!product) return;
+  closeActionsMenu();
+  await navigateTo(`/admin/products/${product.id}`);
+};
+
+const duplicateFromMenu = async () => {
+  const product = actionsMenuProduct.value;
+  if (!product) return;
+  closeActionsMenu();
+  await duplicateProduct(product);
+};
+
+const deleteFromMenu = async () => {
+  const product = actionsMenuProduct.value;
+  if (!product) return;
+  closeActionsMenu();
+  await deleteProduct(product);
+};
+
+const handleActionsMenuOutside = (event: MouseEvent) => {
+  if (!actionsMenuProduct.value) return;
+  const target = event.target as Node | null;
+  if (target && actionsMenuRef.value?.contains(target)) return;
+  closeActionsMenu();
+};
+
+const handleActionsMenuKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") closeActionsMenu();
+};
+
 const duplicateProduct = async (product: Product) => {
   duplicatingId.value = String(product.id);
   errorMessage.value = "";
@@ -447,6 +562,18 @@ const deleteProduct = async (product: Product) => {
 };
 
 onMounted(async () => {
+  document.addEventListener("click", handleActionsMenuOutside);
+  document.addEventListener("keydown", handleActionsMenuKeydown);
+  window.addEventListener("resize", closeActionsMenu);
+  window.addEventListener("scroll", closeActionsMenu, true);
+
   await Promise.all([loadProducts(), loadCategories()]);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleActionsMenuOutside);
+  document.removeEventListener("keydown", handleActionsMenuKeydown);
+  window.removeEventListener("resize", closeActionsMenu);
+  window.removeEventListener("scroll", closeActionsMenu, true);
 });
 </script>
