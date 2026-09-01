@@ -209,7 +209,6 @@
 definePageMeta({ middleware: "auth" });
 
 const supabase = useSupabaseClient();
-const requestFetch = useRequestFetch();
 
 const user = ref<any>(null);
 const orders = ref<any[]>([]);
@@ -227,6 +226,22 @@ const deletingAddressId = ref<string | null>(null);
 const primaryAddressId = ref<string | null>(null);
 
 const australianStates = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
+
+async function accountFetch<T = any>(url: string, options: any = {}) {
+  const { data: { session }, error } = await supabase.auth.getSession();
+
+  if (error || !session?.access_token) {
+    throw new Error("You must be signed in.");
+  }
+
+  return await $fetch<T>(url, {
+    ...options,
+    headers: {
+      ...(options?.headers || {}),
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+}
 
 const emptyAddressForm = () => ({
   label: "",
@@ -289,7 +304,7 @@ function validateAddress() {
 }
 
 async function loadAddresses() {
-  addresses.value = await requestFetch<any[]>("/api/account/addresses");
+  addresses.value = await accountFetch<any[]>("/api/account/addresses");
 }
 
 async function saveAddress() {
@@ -302,10 +317,10 @@ async function saveAddress() {
   try {
     const body = { ...addressForm, postcode: addressForm.postcode.trim(), state: addressForm.state.toUpperCase() };
     if (editingAddressId.value) {
-      await requestFetch(`/api/account/addresses/${editingAddressId.value}`, { method: "PUT", body });
+      await accountFetch(`/api/account/addresses/${editingAddressId.value}`, { method: "PUT", body });
       successMessage.value = "Delivery address updated.";
     } else {
-      await requestFetch("/api/account/addresses", { method: "POST", body });
+      await accountFetch("/api/account/addresses", { method: "POST", body });
       successMessage.value = "Delivery address added.";
     }
     await loadAddresses();
@@ -322,7 +337,7 @@ async function makePrimary(address: any) {
   successMessage.value = "";
   primaryAddressId.value = String(address.id);
   try {
-    await requestFetch(`/api/account/addresses/${address.id}/primary`, { method: "PUT" });
+    await accountFetch(`/api/account/addresses/${address.id}/primary`, { method: "PUT" });
     await loadAddresses();
     successMessage.value = `${address.label || "Delivery address"} is now your primary address.`;
   } catch (error: any) {
@@ -338,7 +353,7 @@ async function deleteAddress(address: any) {
   successMessage.value = "";
   deletingAddressId.value = String(address.id);
   try {
-    await requestFetch(`/api/account/addresses/${address.id}`, { method: "DELETE" });
+    await accountFetch(`/api/account/addresses/${address.id}`, { method: "DELETE" });
     await loadAddresses();
     successMessage.value = "Delivery address deleted.";
     if (editingAddressId.value === String(address.id)) cancelAddressForm();
@@ -362,7 +377,7 @@ async function loadAccount() {
     user.value = currentUser;
 
     const [addressResult, orderResult] = await Promise.all([
-      requestFetch<any[]>("/api/account/addresses"),
+      accountFetch<any[]>("/api/account/addresses"),
       supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
     ]);
 
@@ -394,5 +409,5 @@ function statusClass(status: string) {
   }
 }
 
-await loadAccount();
+onMounted(loadAccount);
 </script>

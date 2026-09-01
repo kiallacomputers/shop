@@ -1,4 +1,4 @@
-import { serverSupabaseUser } from "#supabase/server";
+import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 
 const states = new Set(["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"]);
@@ -8,11 +8,7 @@ function clean(value: unknown) {
 }
 
 export default defineEventHandler(async (event) => {
-  const user: any = await serverSupabaseUser(event);
-
-  if (!user?.id) {
-    throw createError({ statusCode: 401, statusMessage: "You must be signed in." });
-  }
+  const user = await requireRequestUser(event);
 
   const body = await readBody(event);
   const fullName = clean(body?.full_name);

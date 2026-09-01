@@ -1,12 +1,8 @@
-import { serverSupabaseUser } from "#supabase/server";
+import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  const user: any = await serverSupabaseUser(event);
-
-  if (!user?.id) {
-    throw createError({ statusCode: 401, statusMessage: "You must be signed in." });
-  }
+  const user = await requireRequestUser(event);
 
   const supabase = getAdminSupabase();
   const { data, error } = await supabase
