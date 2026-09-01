@@ -23,15 +23,39 @@ export { escapeHtml };
 export async function sendDomainEmail(options: SendDomainEmailOptions) {
   const config = useRuntimeConfig();
 
-  const tenantId = String(config.microsoftTenantId || "").trim();
-  const clientId = String(config.microsoftClientId || "").trim();
-  const clientSecret = String(config.microsoftClientSecret || "").trim();
-  const senderEmail = String(config.microsoftSenderEmail || "").trim();
-  const senderName = String(config.microsoftSenderName || "Kialla Computers").trim();
+  // Prefer the real runtime environment variables on Netlify.
+  // Nuxt runtimeConfig can be populated at build time, which may leave secrets
+  // empty in a deployed serverless function even though Netlify exposes them at runtime.
+  const tenantId = String(
+    process.env.MICROSOFT_TENANT_ID || config.microsoftTenantId || "",
+  ).trim();
+  const clientId = String(
+    process.env.MICROSOFT_CLIENT_ID || config.microsoftClientId || "",
+  ).trim();
+  const clientSecret = String(
+    process.env.MICROSOFT_CLIENT_SECRET || config.microsoftClientSecret || "",
+  ).trim();
+  const senderEmail = String(
+    process.env.MICROSOFT_SENDER_EMAIL || config.microsoftSenderEmail || "",
+  ).trim();
+  const senderName = String(
+    process.env.MICROSOFT_SENDER_NAME ||
+      config.microsoftSenderName ||
+      "Kialla Computers",
+  ).trim();
 
-  if (!tenantId || !clientId || !clientSecret || !senderEmail) {
+  const missing = [
+    !tenantId && "MICROSOFT_TENANT_ID",
+    !clientId && "MICROSOFT_CLIENT_ID",
+    !clientSecret && "MICROSOFT_CLIENT_SECRET",
+    !senderEmail && "MICROSOFT_SENDER_EMAIL",
+  ].filter(Boolean);
+
+  if (missing.length) {
     throw new Error(
-      "Microsoft Graph email is not configured. Set MICROSOFT_TENANT_ID, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET and MICROSOFT_SENDER_EMAIL.",
+      `Microsoft Graph email is not configured. Missing runtime variable${
+        missing.length === 1 ? "" : "s"
+      }: ${missing.join(", ")}.`,
     );
   }
 
