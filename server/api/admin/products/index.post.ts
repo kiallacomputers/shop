@@ -13,6 +13,10 @@ const normaliseImages = (value: unknown) => {
 };
 
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const roundToNearestFive = (value: number) => {
+  if (value <= 0) return 0;
+  return Math.max(5, Math.round(value / 5) * 5);
+};
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
@@ -56,8 +60,8 @@ export default defineEventHandler(async (event) => {
 
   const sellExGst = roundMoney(buyPriceExGst * (1 + sellMarkupPercent / 100));
   const rrpExGst = roundMoney(buyPriceExGst * (1 + rrpMarkupPercent / 100));
-  const price = roundMoney(sellExGst * 1.1);
-  const oldPrice = roundMoney(rrpExGst * 1.1);
+  const price = roundToNearestFive(sellExGst * 1.1);
+  const oldPrice = roundToNearestFive(rrpExGst * 1.1);
 
   const product = {
     name,

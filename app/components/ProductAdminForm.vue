@@ -56,7 +56,7 @@
         <h2 class="text-lg font-bold text-slate-900">Pricing & Stock</h2>
 
         <p class="mt-1 text-sm text-slate-500">
-          Enter your supplier buy price excluding GST, then set the markup percentages. The website calculates the GST-inclusive Sell Price and RRP automatically.
+          Enter your supplier buy price excluding GST, then set the markup percentages. The website calculates the GST-inclusive Sell Price and RRP automatically and rounds each final price to the nearest $5.
         </p>
 
         <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -94,13 +94,13 @@
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Calculated Sell Price</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">GST inclusive · {{ currency(calculatedSellPriceExGst) }} ex GST</p>
+            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest $5 · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Calculated RRP</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedRrpPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">GST inclusive · {{ currency(calculatedRrpPriceExGst) }} ex GST</p>
+            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest $5 · {{ currency(calculatedRrpPriceExGst) }} ex GST before rounding</p>
           </div>
         </div>
 
@@ -323,6 +323,10 @@ const form = reactive({
 
 
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const roundToNearestFive = (value: number) => {
+  if (value <= 0) return 0;
+  return Math.max(5, Math.round(value / 5) * 5);
+};
 const numeric = (value: string) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -331,11 +335,11 @@ const numeric = (value: string) => {
 const calculatedSellPriceExGst = computed(() =>
   roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.sell_markup_percent) / 100)),
 );
-const calculatedSellPrice = computed(() => roundMoney(calculatedSellPriceExGst.value * 1.1));
+const calculatedSellPrice = computed(() => roundToNearestFive(calculatedSellPriceExGst.value * 1.1));
 const calculatedRrpPriceExGst = computed(() =>
   roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.rrp_markup_percent) / 100)),
 );
-const calculatedRrpPrice = computed(() => roundMoney(calculatedRrpPriceExGst.value * 1.1));
+const calculatedRrpPrice = computed(() => roundToNearestFive(calculatedRrpPriceExGst.value * 1.1));
 const rrpBelowSell = computed(() => calculatedRrpPrice.value > 0 && calculatedRrpPrice.value < calculatedSellPrice.value);
 const currency = (value: number) =>
   new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(value || 0);
