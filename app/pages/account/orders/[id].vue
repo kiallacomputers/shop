@@ -226,7 +226,7 @@ async function loadOrder() {
     if (!currentUser) {
       console.log("NO USER - REDIRECTING TO LOGIN");
 
-      await navigateTo("/login");
+      await navigateTo({ path: "/auth/signin", query: { redirect: route.fullPath } });
 
       return;
     }

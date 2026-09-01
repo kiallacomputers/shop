@@ -44,7 +44,7 @@
           <!-- My Account -->
           <NuxtLink
             v-if="user"
-            to="/admin/dashboard"
+            to="/account"
             class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition whitespace-nowrap"
           >
             My Account
@@ -213,7 +213,7 @@
 
           <NuxtLink
             v-if="user"
-            to="/admin/dashboard"
+            to="/account"
             class="mobile-menu-item"
             @click="closeMobileMenu"
           >

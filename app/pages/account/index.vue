@@ -218,7 +218,7 @@ async function loadAccount() {
     }
 
     if (!currentUser) {
-      await navigateTo("/login");
+      await navigateTo({ path: "/auth/signin", query: { redirect: "/account" } });
 
       return;
     }

@@ -1,11 +1,11 @@
-export default defineNuxtRouteMiddleware(() => {
+export default defineNuxtRouteMiddleware((to) => {
   const user = useSupabaseUser();
 
   if (!user.value) {
     return navigateTo({
       path: "/auth/signin",
       query: {
-        redirect: "/shoppingcart",
+        redirect: to.fullPath || "/account",
       },
     });
   }
