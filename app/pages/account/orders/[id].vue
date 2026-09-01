@@ -91,6 +91,34 @@
       </div>
 
       <!-- ================================= -->
+      <!-- DELIVERY ADDRESS -->
+      <!-- ================================= -->
+
+      <div v-if="order.shipping_address_line_1 || order.shipping_postcode" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-bold mb-5">Delivery Details</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <p class="text-sm text-gray-500">Ship To</p>
+            <div class="font-semibold mt-1 space-y-0.5">
+              <p>{{ order.shipping_name || order.customer_name || "Customer" }}</p>
+              <p v-if="order.shipping_address_line_1">{{ order.shipping_address_line_1 }}</p>
+              <p v-if="order.shipping_address_line_2">{{ order.shipping_address_line_2 }}</p>
+              <p>{{ [order.shipping_suburb, order.shipping_state, order.shipping_postcode].filter(Boolean).join(" ") }}</p>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Delivery Method</p>
+            <p class="font-semibold mt-1">{{ order.shipping_method || "Delivery" }}</p>
+            <p v-if="Number(order.shipping_cost || 0) > 0" class="text-sm text-gray-500 mt-1">
+              Delivery: ${{ Number(order.shipping_cost || 0).toFixed(2) }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================= -->
       <!-- ORDER ITEMS -->
       <!-- ================================= -->
 

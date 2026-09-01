@@ -180,31 +180,27 @@ export default defineEventHandler(async (event) => {
     null;
 
   const customerName =
+    session.metadata?.shipping_name ||
     session.customer_details?.name ||
     null;
 
-  // Stripe has used both `shipping_details` and
-  // `collected_information.shipping_details` across API versions.
-  // Fall back to the billing/customer address if needed.
-  const stripeSession: any = session as any;
-  const shippingDetails =
-    stripeSession.shipping_details ||
-    stripeSession.collected_information?.shipping_details ||
-    null;
-  const shippingAddressSource =
-    shippingDetails?.address ||
-    session.customer_details?.address ||
-    null;
+  // The customer selects a saved delivery address before Stripe Checkout.
+  // create-checkout snapshots that exact address into Stripe metadata so the
+  // webhook, emails and invoice do not depend on the address later being edited.
+  const hasSavedShippingAddress = Boolean(
+    session.metadata?.shipping_address_line_1 ||
+      session.metadata?.shipping_postcode,
+  );
 
-  const shippingAddress = shippingAddressSource
+  const shippingAddress = hasSavedShippingAddress
     ? {
-        name: shippingDetails?.name || customerName || null,
-        line1: shippingAddressSource.line1 || null,
-        line2: shippingAddressSource.line2 || null,
-        city: shippingAddressSource.city || null,
-        state: shippingAddressSource.state || null,
-        postal_code: shippingAddressSource.postal_code || session.metadata?.shipping_postcode || null,
-        country: shippingAddressSource.country || "AU",
+        name: session.metadata?.shipping_name || customerName || null,
+        line1: session.metadata?.shipping_address_line_1 || null,
+        line2: session.metadata?.shipping_address_line_2 || null,
+        city: session.metadata?.shipping_suburb || null,
+        state: session.metadata?.shipping_state || null,
+        postal_code: session.metadata?.shipping_postcode || null,
+        country: session.metadata?.shipping_country || "AU",
       }
     : null;
 
@@ -254,8 +250,20 @@ export default defineEventHandler(async (event) => {
       customer_name: customerName,
       total,
       status: "paid",
+      shipping_name:
+        session.metadata?.shipping_name || null,
+      shipping_address_line_1:
+        session.metadata?.shipping_address_line_1 || null,
+      shipping_address_line_2:
+        session.metadata?.shipping_address_line_2 || null,
+      shipping_suburb:
+        session.metadata?.shipping_suburb || null,
+      shipping_state:
+        session.metadata?.shipping_state || null,
       shipping_postcode:
         session.metadata?.shipping_postcode || null,
+      shipping_country:
+        session.metadata?.shipping_country || "AU",
       shipping_method:
         session.metadata?.shipping_method || null,
       shipping_service_code:
