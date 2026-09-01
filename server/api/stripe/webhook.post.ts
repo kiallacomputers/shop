@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { sendOrderConfirmationEmail } from "~~/server/utils/orderEmail";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -387,14 +388,63 @@ export default defineEventHandler(async (event) => {
     );
   }
 
+  // ========================================
+  // CUSTOMER ORDER CONFIRMATION EMAIL
+  // ========================================
+
+  let confirmationEmailSent = false;
+
+  if (customerEmail) {
+    try {
+      const { data: savedItems, error: savedItemsError } = await supabase
+        .from("order_items")
+        .select("product_name, quantity, price")
+        .eq("order_id", order.id)
+        .order("id", { ascending: true });
+
+      if (savedItemsError) {
+        throw savedItemsError;
+      }
+
+      await sendOrderConfirmationEmail({
+        id: order.id,
+        customer_email: customerEmail,
+        customer_name: customerName,
+        total,
+        shipping_method: session.metadata?.shipping_method || null,
+        shipping_postcode: session.metadata?.shipping_postcode || null,
+        shipping_cost: Number(session.metadata?.shipping_cost || 0),
+        items: (savedItems || []).map((item: any) => ({
+          product_name: item.product_name || "Product",
+          quantity: Number(item.quantity || 0),
+          price: Number(item.price || 0),
+        })),
+      });
+
+      confirmationEmailSent = true;
+      console.log("✅ ORDER CONFIRMATION EMAIL SENT:", customerEmail);
+    } catch (emailError: any) {
+      // The order/payment must remain successful even if email delivery fails.
+      // Logging the error avoids Stripe repeatedly re-processing a paid order.
+      console.error(
+        "❌ ORDER CONFIRMATION EMAIL ERROR:",
+        emailError?.message || emailError,
+      );
+    }
+  } else {
+    console.warn("⚠️ ORDER HAS NO CUSTOMER EMAIL; CONFIRMATION NOT SENT");
+  }
+
   console.log("=================================");
   console.log("🎉 WEBHOOK COMPLETE");
   console.log("ORDER ID:", order.id);
   console.log("SESSION ID:", session.id);
+  console.log("EMAIL SENT:", confirmationEmailSent);
   console.log("=================================");
 
   return {
     received: true,
     orderId: order.id,
+    confirmationEmailSent,
   };
 });
