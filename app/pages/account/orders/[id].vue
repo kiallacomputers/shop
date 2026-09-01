@@ -179,12 +179,23 @@
       <!-- ================================= -->
 
       <div class="bg-white border border-gray-200 rounded-lg p-6">
-        <div class="flex items-center justify-between">
-          <span class="text-xl font-semibold"> Total </span>
-
-          <span class="text-3xl font-bold">
-            ${{ Number(order.total || 0).toFixed(2) }}
-          </span>
+        <div class="ml-auto max-w-sm space-y-2">
+          <div class="flex items-center justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0))) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-gray-600">
+            <span>Delivery</span>
+            <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-gray-600">
+            <span>GST included (10%)</span>
+            <span>{{ currency(Number(order.total || 0) / 11) }}</span>
+          </div>
+          <div class="flex items-center justify-between border-t pt-3">
+            <span class="text-xl font-semibold">Total</span>
+            <span class="text-3xl font-bold">{{ currency(order.total) }}</span>
+          </div>
         </div>
       </div>
     </div>

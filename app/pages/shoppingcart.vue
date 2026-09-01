@@ -196,6 +196,10 @@
             <span>Delivery</span>
             <span>{{ selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
           </div>
+          <div class="flex items-center justify-between text-slate-600">
+            <span>GST included (10%)</span>
+            <span>{{ currency(gstIncluded) }}</span>
+          </div>
           <div class="flex items-center justify-between border-t pt-3 text-2xl font-bold"><span>Total</span><span>{{ currency(grandTotal) }}</span></div>
         </div>
 
@@ -274,6 +278,7 @@ async function authenticatedFetch<T = any>(url: string, options: any = {}) {
 const selectedAddress = computed(() => addresses.value.find((address) => String(address.id) === selectedAddressId.value) || null);
 const selectedRate = computed(() => freightRates.value.find((rate) => rate.code === selectedServiceCode.value) || null);
 const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0));
+const gstIncluded = computed(() => grandTotal.value / 11);
 
 const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
 

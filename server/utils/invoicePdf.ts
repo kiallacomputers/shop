@@ -209,11 +209,27 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
     y -= 10;
   }
 
-  ensure(80);
+  ensure(125);
   y -= 8;
+  const deliveryCost = Number(order.shipping_cost || 0);
+  const orderTotal = Number(order.total || 0);
+  const merchandiseSubtotal = Math.max(0, orderTotal - deliveryCost);
+  const gstIncluded = orderTotal / 11;
+
+  setFont("F1", 10);
+  text(400, y, "Subtotal");
+  text(485, y, money(merchandiseSubtotal));
+  y -= 18;
+  text(400, y, "Delivery");
+  text(485, y, money(deliveryCost));
+  y -= 18;
+  text(400, y, "GST included (10%)");
+  text(485, y, money(gstIncluded));
+  y -= 22;
+  line(395, y + 8, right, y + 8);
   setFont("F2", 12);
   text(400, y, "TOTAL");
-  text(485, y, money(order.total));
+  text(485, y, money(orderTotal));
   y -= 32;
   setFont("F1", 9);
   text(left, y, "Thank you for purchasing from Kialla Computers.");

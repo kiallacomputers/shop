@@ -75,6 +75,21 @@ const itemRows = (order: OrderEmailData) =>
     })
     .join("");
 
+
+const totalsHtml = (order: OrderEmailData) => {
+  const deliveryCost = Number(order.shipping_cost || 0);
+  const total = Number(order.total || 0);
+  const subtotal = Math.max(0, total - deliveryCost);
+  const gstIncluded = total / 11;
+
+  return `<div style="margin-top:22px;margin-left:auto;max-width:320px;font-size:14px;">
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Delivery</span><strong>${deliveryCost === 0 ? "FREE" : money(deliveryCost)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>GST included (10%)</span><strong>${money(gstIncluded)}</strong></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;margin-top:6px;padding-top:10px;font-size:20px;"><span><strong>Total</strong></span><strong>${money(total)}</strong></div>
+  </div>`;
+};
+
 const invoiceFor = (order: OrderEmailData) => {
   const invoiceData: InvoiceData = {
     ...order,
@@ -108,7 +123,7 @@ export async function sendOrderEmails(order: OrderEmailData) {
 ${delivery}
 ${addressHtml(order)}
 <table style="width:100%;border-collapse:collapse;margin-top:22px;font-size:14px;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px;text-align:left;">Product</th><th style="padding:12px;text-align:center;">Qty</th><th style="padding:12px;text-align:right;">Price</th><th style="padding:12px;text-align:right;">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>
-<p style="margin:22px 0 0;text-align:right;font-size:20px;"><strong>Total: ${money(order.total)}</strong></p>
+${totalsHtml(order)}
 <p style="margin-top:24px;"><strong>Your PDF invoice is attached to this email.</strong></p>
 <p>We will contact you if we need any further information while preparing your order.</p>
 <p style="margin-bottom:0;">Regards,<br><strong>Kialla Computers</strong></p>
@@ -132,7 +147,7 @@ ${addressHtml(order)}
 ${delivery}
 ${addressHtml(order)}
 <table style="width:100%;border-collapse:collapse;margin-top:22px;font-size:14px;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px;text-align:left;">Product</th><th style="padding:12px;text-align:center;">Qty</th><th style="padding:12px;text-align:right;">Price</th><th style="padding:12px;text-align:right;">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>
-<p style="margin:22px 0 0;text-align:right;font-size:20px;"><strong>Total: ${money(order.total)}</strong></p>
+${totalsHtml(order)}
 <p style="margin-top:24px;"><strong>A PDF copy of the invoice is attached.</strong></p>
 </div></div></div></body></html>`;
 

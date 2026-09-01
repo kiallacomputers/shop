@@ -244,14 +244,23 @@
           <div
             class="flex justify-end border-t border-slate-200 bg-slate-50 px-6 py-5"
           >
-            <div class="text-right">
-              <p class="text-sm font-medium text-slate-500">
-                Order Total
-              </p>
-
-              <p class="mt-1 text-2xl font-bold text-slate-900">
-                {{ currency(order.total) }}
-              </p>
+            <div class="w-full max-w-sm space-y-2">
+              <div class="flex items-center justify-between text-sm text-slate-600">
+                <span>Subtotal</span>
+                <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0))) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm text-slate-600">
+                <span>Delivery</span>
+                <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm text-slate-600">
+                <span>GST included (10%)</span>
+                <span>{{ currency(Number(order.total || 0) / 11) }}</span>
+              </div>
+              <div class="flex items-center justify-between border-t border-slate-300 pt-3">
+                <span class="font-semibold text-slate-700">Order Total</span>
+                <span class="text-2xl font-bold text-slate-900">{{ currency(order.total) }}</span>
+              </div>
             </div>
           </div>
         </section>
