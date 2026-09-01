@@ -367,9 +367,25 @@
 
                   <figcaption
                     v-if="section.caption"
-                    class="mt-2 text-center text-sm text-gray-500"
+                    class="mx-auto mt-2 w-fit max-w-full rounded-md px-3 py-1.5 text-center text-sm"
+                    :style="{
+                      color: section.captionColor || '#64748b',
+                      backgroundColor: section.captionBackgroundColor || 'transparent',
+                    }"
                   >
-                    {{ section.caption }}
+                    <span
+                      v-if="section.captionHtml"
+                      v-html="sanitiseCaptionHtml(section.captionHtml)"
+                    ></span>
+                    <span
+                      v-else
+                      :class="[
+                        captionFontSizeClass(section.captionFontSize),
+                        section.captionBold ? 'font-bold' : 'font-normal',
+                      ]"
+                    >
+                      {{ section.caption }}
+                    </span>
                   </figcaption>
                 </figure>
 
@@ -580,6 +596,37 @@ const parseBoldText = (text = "") => {
 | Description Image Width
 |--------------------------------------------------------------------------
 */
+
+const sanitiseCaptionHtml = (html = '') => {
+  if (!html) return '';
+
+  return String(html)
+    .replace(/<(?!\/?(?:strong|b|span|br)\b)[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/style\s*=\s*["']([^"']*)["']/gi, (_match, styleValue) => {
+      const safeStyles = String(styleValue)
+        .split(';')
+        .map((rule) => rule.trim())
+        .filter((rule) => /^(font-size|color|background-color)\s*:/i.test(rule))
+        .filter((rule) => !/url\s*\(|expression\s*\(|javascript:/i.test(rule))
+        .join(';');
+
+      return safeStyles ? `style="${safeStyles}"` : '';
+    });
+};
+
+const captionFontSizeClass = (size) => {
+  const sizes = {
+    xs: "text-xs",
+    sm: "text-sm",
+    base: "text-base",
+    lg: "text-lg",
+    xl: "text-xl",
+    "2xl": "text-2xl",
+  };
+
+  return sizes[size || "sm"] || "text-sm";
+};
 
 const descriptionImageClass = (width) => {
   if (width === "small") {

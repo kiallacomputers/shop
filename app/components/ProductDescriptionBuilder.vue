@@ -263,16 +263,85 @@
               </label>
             </div>
 
-            <label>
-              <span class="field-label">Caption</span>
+            <div class="space-y-3">
+              <div>
+                <span class="field-label">Caption</span>
 
-              <input
-                v-model="block.caption"
-                type="text"
-                class="input"
-                placeholder="Optional caption displayed underneath the image"
-              />
-            </label>
+                <div class="rounded-lg border border-slate-300 bg-white">
+                  <div class="flex flex-wrap items-end gap-2 border-b border-slate-200 bg-slate-50 p-2">
+                    <button
+                      type="button"
+                      class="caption-tool-button font-bold"
+                      title="Bold selected text"
+                      @mousedown.prevent="applyCaptionCommand(block, 'bold')"
+                    >
+                      B
+                    </button>
+
+                    <label class="min-w-36">
+                      <span class="caption-tool-label">Font size</span>
+                      <select
+                        v-model="block.captionFontSize"
+                        class="caption-tool-select"
+                        @mousedown="rememberCaptionSelection(block)"
+                        @change="applyCaptionFontSize(block)"
+                      >
+                        <option value="xs">Extra Small</option>
+                        <option value="sm">Small</option>
+                        <option value="base">Normal</option>
+                        <option value="lg">Large</option>
+                        <option value="xl">Extra Large</option>
+                        <option value="2xl">2X Large</option>
+                      </select>
+                    </label>
+
+                    <div class="mx-1 hidden h-8 w-px bg-slate-300 sm:block"></div>
+
+                    <label>
+                      <span class="caption-tool-label">Caption text colour</span>
+                      <input
+                        v-model="block.captionColor"
+                        type="color"
+                        class="caption-colour-input"
+                        title="Set the default text colour for the whole caption box"
+                      />
+                    </label>
+
+                    <label>
+                      <span class="caption-tool-label">Caption background</span>
+                      <input
+                        v-model="block.captionBackgroundColor"
+                        type="color"
+                        class="caption-colour-input"
+                        title="Set the background colour for the whole caption box"
+                      />
+                    </label>
+
+                    <span class="pb-2 text-xs text-slate-500">
+                      Select text only for Bold or Font size. Colours apply to the whole caption box.
+                    </span>
+                  </div>
+
+                  <div
+                    :data-caption-editor="block._key"
+                    class="caption-editor"
+                    contenteditable="true"
+                    role="textbox"
+                    aria-multiline="true"
+                    data-placeholder="Optional caption displayed underneath the image"
+                    v-html="block.captionHtml || ''"
+                    :style="{
+                      color: block.captionColor || '#64748b',
+                      backgroundColor: block.captionBackgroundColor || '#ffffff',
+                    }"
+                    @input="updateCaptionFromEditor(block, $event)"
+                    @mouseup="rememberCaptionSelection(block)"
+                    @keyup="rememberCaptionSelection(block)"
+                    @focus="rememberCaptionSelection(block)"
+                  ></div>
+                </div>
+              </div>
+            </div>
 
             <label>
               <span class="field-label">Image URL</span>
@@ -505,6 +574,11 @@ type DescriptionBlock = {
   path?: string;
   alt?: string;
   caption?: string;
+  captionHtml?: string;
+  captionBold?: boolean;
+  captionFontSize?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl";
+  captionColor?: string;
+  captionBackgroundColor?: string;
   width?: "small" | "medium" | "large" | "full";
 };
 
@@ -531,6 +605,118 @@ const makeKey = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 // ========================================
+// CAPTION RICH-TEXT EDITOR
+// ========================================
+
+const captionSelections = new Map<string, Range>();
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+const legacyCaptionHtml = (block: DescriptionBlock) => {
+  if (!block.caption) return "";
+
+  const text = escapeHtml(block.caption);
+  return block.captionBold ? `<strong>${text}</strong>` : text;
+};
+
+const getCaptionEditor = (block: DescriptionBlock) =>
+  document.querySelector<HTMLElement>(`[data-caption-editor="${block._key}"]`);
+
+const rememberCaptionSelection = (block: DescriptionBlock) => {
+  if (typeof window === "undefined") return;
+
+  const selection = window.getSelection();
+  const editor = getCaptionEditor(block);
+  if (!selection || !editor || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+  if (editor.contains(range.commonAncestorContainer)) {
+    captionSelections.set(block._key, range.cloneRange());
+  }
+};
+
+const restoreCaptionSelection = (block: DescriptionBlock) => {
+  if (typeof window === "undefined") return false;
+
+  const range = captionSelections.get(block._key);
+  const selection = window.getSelection();
+  const editor = getCaptionEditor(block);
+  if (!range || !selection || !editor) return false;
+
+  editor.focus();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
+};
+
+const syncCaptionEditor = (block: DescriptionBlock) => {
+  const editor = getCaptionEditor(block);
+  if (!editor) return;
+
+  block.captionHtml = editor.innerHTML;
+  block.caption = editor.innerText.trim();
+  rememberCaptionSelection(block);
+};
+
+const updateCaptionFromEditor = (block: DescriptionBlock, event: Event) => {
+  const editor = event.currentTarget as HTMLElement;
+  block.captionHtml = editor.innerHTML;
+  block.caption = editor.innerText.trim();
+  rememberCaptionSelection(block);
+};
+
+const applyCaptionCommand = (block: DescriptionBlock, command: string, value?: string) => {
+  if (typeof document === "undefined" || !restoreCaptionSelection(block)) return;
+  document.execCommand(command, false, value);
+  syncCaptionEditor(block);
+};
+
+const captionFontSizes: Record<string, string> = {
+  xs: "0.75rem",
+  sm: "0.875rem",
+  base: "1rem",
+  lg: "1.125rem",
+  xl: "1.25rem",
+  "2xl": "1.5rem",
+};
+
+const applyCaptionInlineStyle = (
+  block: DescriptionBlock,
+  property: "fontSize" | "color" | "backgroundColor",
+  value: string,
+) => {
+  if (typeof document === "undefined" || !restoreCaptionSelection(block)) return;
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+  const range = selection.getRangeAt(0);
+  const span = document.createElement("span");
+  span.style[property] = value;
+  span.appendChild(range.extractContents());
+  range.insertNode(span);
+
+  const updatedRange = document.createRange();
+  updatedRange.selectNodeContents(span);
+  selection.removeAllRanges();
+  selection.addRange(updatedRange);
+  captionSelections.set(block._key, updatedRange.cloneRange());
+
+  syncCaptionEditor(block);
+};
+
+const applyCaptionFontSize = (block: DescriptionBlock) => {
+  const size = captionFontSizes[block.captionFontSize || "sm"] || captionFontSizes.sm;
+  applyCaptionInlineStyle(block, "fontSize", size);
+};
+
+// ========================================
 // NORMALISE BLOCK
 // ========================================
 
@@ -551,6 +737,11 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.path = input?.path || "";
     base.alt = input?.alt || "";
     base.caption = input?.caption || "";
+    base.captionBold = Boolean(input?.captionBold);
+    base.captionFontSize = input?.captionFontSize || "sm";
+    base.captionColor = input?.captionColor || "#64748b";
+    base.captionBackgroundColor = input?.captionBackgroundColor || "#ffffff";
+    base.captionHtml = input?.captionHtml || legacyCaptionHtml(base);
     base.width = input?.width || "full";
   } else if (type === "list") {
     base.style = input?.style || "bullet";
@@ -668,6 +859,11 @@ const createBlock = (type: string): DescriptionBlock => {
       path: "",
       alt: "",
       caption: "",
+      captionHtml: "",
+      captionBold: false,
+      captionFontSize: "sm",
+      captionColor: "#64748b",
+      captionBackgroundColor: "#ffffff",
       width: "full",
     });
   }
@@ -934,4 +1130,63 @@ const jsonPreview = computed(() =>
 .remove-small:hover {
   background: rgb(254 242 242);
 }
+
+.caption-tool-button {
+  height: 2.5rem;
+  min-width: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(203 213 225);
+  background: white;
+  color: rgb(30 41 59);
+}
+
+.caption-tool-button:hover {
+  background: rgb(241 245 249);
+}
+
+.caption-tool-label {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgb(71 85 105);
+}
+
+.caption-tool-select {
+  height: 2.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(203 213 225);
+  background: white;
+  padding: 0 0.6rem;
+  color: rgb(15 23 42);
+}
+
+.caption-colour-input {
+  height: 2.5rem;
+  width: 3rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(203 213 225);
+  background: white;
+  padding: 0.2rem;
+}
+
+.caption-editor {
+  min-height: 3rem;
+  padding: 0.75rem;
+  color: rgb(51 65 85);
+  outline: none;
+}
+
+.caption-editor:focus {
+  box-shadow: inset 0 0 0 2px rgb(147 197 253);
+}
+
+.caption-editor:empty::before {
+  content: attr(data-placeholder);
+  color: rgb(148 163 184);
+  pointer-events: none;
+}
+
 </style>
