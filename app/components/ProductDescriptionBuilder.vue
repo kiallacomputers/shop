@@ -116,7 +116,7 @@
         <!-- ======================================== -->
 
         <template v-if="block.type === 'heading'">
-          <div class="grid gap-4 sm:grid-cols-[150px_1fr_180px]">
+          <div class="grid gap-4 sm:grid-cols-[150px_1fr]">
             <label>
               <span class="field-label">Heading Size</span>
 
@@ -138,23 +138,6 @@
               />
             </label>
 
-            <label>
-              <span class="field-label">Font Colour</span>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model="block.headingColor"
-                  type="color"
-                  class="h-11 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1"
-                  title="Choose heading font colour"
-                />
-                <input
-                  v-model="block.headingColor"
-                  type="text"
-                  class="input min-w-0"
-                  placeholder="#566C9D"
-                />
-              </div>
-            </label>
           </div>
         </template>
 
@@ -345,6 +328,16 @@
                       />
                     </label>
 
+                    <label class="min-w-32">
+                      <span class="caption-tool-label">Alignment</span>
+                      <select v-model="block.textAlign" class="caption-tool-select">
+                        <option value="left">Left</option>
+                        <option value="center">Centre</option>
+                        <option value="right">Right</option>
+                        <option value="justify">Justify</option>
+                      </select>
+                    </label>
+
                     <span class="pb-2 text-xs text-slate-500">
                       Select text only for Bold or Font size. Colours apply to the whole caption box.
                     </span>
@@ -361,6 +354,7 @@
                     :style="{
                       color: block.captionColor || '#64748b',
                       backgroundColor: block.captionBackgroundColor || '#ffffff',
+                      textAlign: block.textAlign || 'left',
                     }"
                     @input="updateCaptionFromEditor(block, $event)"
                     @keydown="handleCaptionKeydown(block, $event)"
@@ -572,6 +566,57 @@
             <hr class="border-slate-300" />
           </div>
         </template>
+
+        <!-- Shared styling for every text-based description block. -->
+        <div
+          v-if="block.type !== 'divider' && block.type !== 'image'"
+          class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4"
+        >
+          <div class="mb-3">
+            <p class="text-sm font-bold text-slate-800">Block Style</p>
+            <p class="mt-1 text-xs text-slate-500">
+              These settings apply to the whole {{ blockLabel(block.type).toLowerCase() }} block.
+            </p>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label>
+              <span class="field-label">Font Colour</span>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="block.fontColor"
+                  type="color"
+                  class="h-11 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1"
+                  title="Choose font colour"
+                />
+                <input v-model="block.fontColor" type="text" class="input min-w-0" placeholder="#374151" />
+              </div>
+            </label>
+
+            <label>
+              <span class="field-label">Background Colour</span>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="block.backgroundColor"
+                  type="color"
+                  class="h-11 w-12 cursor-pointer rounded border border-slate-300 bg-white p-1"
+                  title="Choose background colour"
+                />
+                <input v-model="block.backgroundColor" type="text" class="input min-w-0" placeholder="#FFFFFF" />
+              </div>
+            </label>
+
+            <label>
+              <span class="field-label">Alignment</span>
+              <select v-model="block.textAlign" class="input">
+                <option value="left">Left</option>
+                <option value="center">Centre</option>
+                <option value="right">Right</option>
+                <option value="justify">Justify</option>
+              </select>
+            </label>
+          </div>
+        </div>
       </div>
     </article>
 
@@ -596,6 +641,9 @@ type DescriptionBlock = {
   text?: string;
   level?: number;
   headingColor?: string;
+  fontColor?: string;
+  backgroundColor?: string;
+  textAlign?: "left" | "center" | "right" | "justify";
   style?: string;
   items?: string[];
   headers?: string[];
@@ -807,10 +855,28 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     type,
   };
 
+  const styleDefaults: Record<string, { fontColor: string; backgroundColor: string; textAlign: DescriptionBlock["textAlign"] }> = {
+    heading: { fontColor: "#566C9D", backgroundColor: "#ffffff", textAlign: "center" },
+    paragraph: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
+    quote: { fontColor: "#4b5563", backgroundColor: "#ffffff", textAlign: "left" },
+    warning: { fontColor: "#854d0e", backgroundColor: "#fefce8", textAlign: "left" },
+    info: { fontColor: "#1e3a8a", backgroundColor: "#eff6ff", textAlign: "left" },
+    list: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
+    table: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
+    image: { fontColor: "#64748b", backgroundColor: "#ffffff", textAlign: "left" },
+  };
+
+  const defaults = styleDefaults[type] || styleDefaults.paragraph;
+  base.fontColor = input?.fontColor || (type === "heading" ? input?.headingColor : "") || defaults.fontColor;
+  base.backgroundColor = input?.backgroundColor || defaults.backgroundColor;
+  base.textAlign = ["left", "center", "right", "justify"].includes(input?.textAlign)
+    ? input.textAlign
+    : defaults.textAlign;
+
   if (type === "heading") {
     base.text = input?.text || "";
     base.level = Number(input?.level || 2);
-    base.headingColor = input?.headingColor || "#566C9D";
+    base.headingColor = base.fontColor;
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -818,9 +884,10 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.caption = input?.caption || "";
     base.captionBold = Boolean(input?.captionBold);
     base.captionFontSize = input?.captionFontSize || "sm";
-    base.captionColor = input?.captionColor || "#64748b";
-    base.captionBackgroundColor = input?.captionBackgroundColor || "#ffffff";
+    base.captionColor = input?.captionColor || input?.fontColor || "#64748b";
+    base.captionBackgroundColor = input?.captionBackgroundColor || input?.backgroundColor || "#ffffff";
     base.captionPosition = input?.captionPosition === "above" ? "above" : "below";
+    base.textAlign = ["left", "center", "right", "justify"].includes(input?.textAlign) ? input.textAlign : "left";
     base.captionHtml = input?.captionHtml || legacyCaptionHtml(base);
     base.width = input?.width || "full";
   } else if (type === "list") {
@@ -945,6 +1012,7 @@ const createBlock = (type: string): DescriptionBlock => {
       captionFontSize: "sm",
       captionColor: "#64748b",
       captionBackgroundColor: "#ffffff",
+      textAlign: "left",
       width: "full",
     });
   }

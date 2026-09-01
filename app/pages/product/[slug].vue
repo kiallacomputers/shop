@@ -268,10 +268,14 @@
                   :is="section.level === 4 ? 'h4' : section.level === 3 ? 'h3' : 'h2'"
                   v-if="section.type === 'heading'"
                   :class="[
-                    'font-semibold text-center mb-4',
+                    'font-semibold mb-4 rounded-lg px-3 py-2',
                     section.level === 4 ? 'text-lg' : section.level === 3 ? 'text-xl' : 'text-2xl'
                   ]"
-                  :style="{ color: section.headingColor || '#566C9D' }"
+                  :style="{
+                    color: section.fontColor || section.headingColor || '#566C9D',
+                    backgroundColor: section.backgroundColor || '#ffffff',
+                    textAlign: section.textAlign || 'center',
+                  }"
                 >
                   {{ section.text }}
                 </component>
@@ -279,7 +283,8 @@
                 <!-- Paragraph -->
                 <p
                   v-else-if="section.type === 'paragraph'"
-                  class="text-gray-700 leading-7 mb-4 whitespace-pre-line"
+                  class="leading-7 mb-4 whitespace-pre-line rounded-lg px-3 py-2"
+                  :style="descriptionTextBlockStyle(section, '#374151', '#ffffff', 'left')"
                 >
                   <template
                     v-for="(part, partIndex) in parseBoldText(section.text)"
@@ -293,7 +298,8 @@
                 <!-- Quote -->
                 <blockquote
                   v-else-if="section.type === 'quote'"
-                  class="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4"
+                  class="border-l-4 border-blue-500 px-4 py-3 italic mb-4 rounded-r-lg whitespace-pre-line"
+                  :style="descriptionTextBlockStyle(section, '#4b5563', '#ffffff', 'left')"
                 >
                   {{ section.text }}
                 </blockquote>
@@ -301,7 +307,8 @@
                 <!-- List -->
                 <ol
                   v-else-if="section.type === 'list' && section.style === 'number'"
-                  class="list-decimal pl-6 space-y-2 text-gray-700"
+                  class="list-decimal list-inside space-y-2 rounded-lg p-4"
+                  :style="descriptionTextBlockStyle(section, '#374151', '#ffffff', 'left')"
                 >
                   <li v-for="(item, i) in section.items" :key="i">
                     <template
@@ -316,9 +323,10 @@
 
                 <ul
                   v-else-if="section.type === 'list'"
-                  :class="section.style === 'check' ? 'space-y-2 text-gray-700' : 'list-disc pl-6 space-y-2 text-gray-700'"
+                  :class="section.style === 'check' ? 'space-y-2 rounded-lg p-4' : 'list-disc list-inside space-y-2 rounded-lg p-4'"
+                  :style="descriptionTextBlockStyle(section, '#374151', '#ffffff', 'left')"
                 >
-                  <li v-for="(item, i) in section.items" :key="i" :class="section.style === 'check' ? 'flex gap-2' : ''">
+                  <li v-for="(item, i) in section.items" :key="i" :class="section.style === 'check' ? ['flex gap-2', descriptionFlexAlignClass(section.textAlign)] : ''">
                     <span v-if="section.style === 'check'" class="font-bold text-green-600">✓</span>
                     <span>
                       <template
@@ -335,7 +343,8 @@
                 <!-- Warning -->
                 <div
                   v-else-if="section.type === 'warning'"
-                  class="bg-yellow-50 border border-yellow-300 text-yellow-800 p-4 rounded-lg whitespace-pre-line"
+                  class="border border-yellow-300 p-4 rounded-lg whitespace-pre-line"
+                  :style="descriptionTextBlockStyle(section, '#854d0e', '#fefce8', 'left')"
                 >
                   <template
                     v-for="(part, partIndex) in parseBoldText(section.text)"
@@ -349,7 +358,8 @@
                 <!-- Info -->
                 <div
                   v-else-if="section.type === 'info'"
-                  class="bg-blue-50 border border-blue-200 text-blue-900 p-4 rounded-lg"
+                  class="border border-blue-200 p-4 rounded-lg whitespace-pre-line"
+                  :style="descriptionTextBlockStyle(section, '#1e3a8a', '#eff6ff', 'left')"
                 >
                   {{ section.text }}
                 </div>
@@ -361,10 +371,11 @@
                 >
                   <figcaption
                     v-if="section.caption && section.captionPosition === 'above'"
-                    class="mx-auto mb-2 w-fit max-w-full rounded-md px-3 py-1.5 text-center text-sm"
+                    class="mx-auto mb-2 w-fit max-w-full rounded-md px-3 py-1.5 text-sm"
                     :style="{
                       color: section.captionColor || '#64748b',
                       backgroundColor: section.captionBackgroundColor || 'transparent',
+                      textAlign: section.textAlign || 'left',
                     }"
                   >
                     <span v-if="section.captionHtml" v-html="sanitiseCaptionHtml(section.captionHtml)"></span>
@@ -380,10 +391,11 @@
 
                   <figcaption
                     v-if="section.caption && section.captionPosition !== 'above'"
-                    class="mx-auto mt-2 w-fit max-w-full rounded-md px-3 py-1.5 text-center text-sm"
+                    class="mx-auto mt-2 w-fit max-w-full rounded-md px-3 py-1.5 text-sm"
                     :style="{
                       color: section.captionColor || '#64748b',
                       backgroundColor: section.captionBackgroundColor || 'transparent',
+                      textAlign: section.textAlign || 'left',
                     }"
                   >
                     <span v-if="section.captionHtml" v-html="sanitiseCaptionHtml(section.captionHtml)"></span>
@@ -398,14 +410,19 @@
                 <div
                   v-else-if="section.type === 'table'"
                   class="overflow-hidden rounded-lg border border-gray-200"
+                  :style="{ backgroundColor: section.backgroundColor || '#ffffff' }"
                 >
-                  <table class="w-full">
-                    <thead class="bg-gray-100">
+                  <table
+                    class="w-full"
+                    :style="{ color: section.fontColor || '#374151', backgroundColor: section.backgroundColor || '#ffffff' }"
+                  >
+                    <thead>
                       <tr>
                         <th
                           v-for="header in section.headers"
                           :key="header"
-                          class="p-3 text-left font-semibold"
+                          class="border-b border-gray-200 p-3 font-semibold"
+                          :style="{ textAlign: section.textAlign || 'left' }"
                         >
                           {{ header }}
                         </th>
@@ -418,7 +435,12 @@
                         :key="r"
                         class="border-t"
                       >
-                        <td v-for="(cell, c) in row" :key="c" class="p-3">
+                        <td
+                          v-for="(cell, c) in row"
+                          :key="c"
+                          class="p-3"
+                          :style="{ textAlign: section.textAlign || 'left' }"
+                        >
                           {{ cell }}
                         </td>
                       </tr>
@@ -591,6 +613,23 @@ const parseBoldText = (text = "") => {
   }
 
   return parts.length ? parts : [{ text, bold: false }];
+};
+
+const descriptionTextBlockStyle = (
+  section,
+  defaultFontColor = '#374151',
+  defaultBackgroundColor = '#ffffff',
+  defaultAlign = 'left',
+) => ({
+  color: section?.fontColor || defaultFontColor,
+  backgroundColor: section?.backgroundColor || defaultBackgroundColor,
+  textAlign: section?.textAlign || defaultAlign,
+});
+
+const descriptionFlexAlignClass = (align = 'left') => {
+  if (align === 'center') return 'justify-center';
+  if (align === 'right') return 'justify-end';
+  return 'justify-start';
 };
 
 /*
