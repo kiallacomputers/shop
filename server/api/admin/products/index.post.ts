@@ -8,37 +8,38 @@ const cleanSlug = (value: unknown) =>
     .replace(/^-+|-+$/g, "");
 
 const normaliseImages = (value: unknown) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
   return [];
 };
 
+const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
-
   const body = await readBody(event);
 
   const name = String(body?.name || "").trim();
   const slug = cleanSlug(body?.slug || name);
-  const price = Number(body?.price);
+  const buyPriceExGst = Number(body?.buy_price_ex_gst);
+  const sellMarkupPercent = Number(body?.sell_markup_percent);
+  const rrpMarkupPercent = Number(body?.rrp_markup_percent);
   const stock = Number(body?.stock);
   const weightKg = Number(body?.weight_kg);
   const lengthCm = Number(body?.length_cm);
   const widthCm = Number(body?.width_cm);
   const heightCm = Number(body?.height_cm);
 
-  if (!name) {
-    throw createError({ statusCode: 400, statusMessage: "Product name is required" });
-  }
+  if (!name) throw createError({ statusCode: 400, statusMessage: "Product name is required" });
+  if (!slug) throw createError({ statusCode: 400, statusMessage: "Product slug is required" });
 
-  if (!slug) {
-    throw createError({ statusCode: 400, statusMessage: "Product slug is required" });
-  }
-
-  if (!Number.isFinite(price) || price < 0) {
-    throw createError({ statusCode: 400, statusMessage: "Price must be a valid number" });
+  for (const [label, value] of [
+    ["Buy price ex GST", buyPriceExGst],
+    ["Sell markup", sellMarkupPercent],
+    ["RRP markup", rrpMarkupPercent],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw createError({ statusCode: 400, statusMessage: `${label} must be a valid number of 0 or more` });
+    }
   }
 
   if (!Number.isInteger(stock) || stock < 0) {
@@ -46,32 +47,26 @@ export default defineEventHandler(async (event) => {
   }
 
   for (const [label, value] of [
-    ["Weight", weightKg],
-    ["Length", lengthCm],
-    ["Width", widthCm],
-    ["Height", heightCm],
+    ["Weight", weightKg], ["Length", lengthCm], ["Width", widthCm], ["Height", heightCm],
   ] as const) {
     if (!Number.isFinite(value) || value <= 0) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `${label} must be greater than 0`,
-      });
+      throw createError({ statusCode: 400, statusMessage: `${label} must be greater than 0` });
     }
   }
 
-  const oldPrice = body?.oldPrice === "" || body?.oldPrice == null
-    ? null
-    : Number(body.oldPrice);
-
-  if (oldPrice !== null && (!Number.isFinite(oldPrice) || oldPrice < 0)) {
-    throw createError({ statusCode: 400, statusMessage: "Old price must be a valid number" });
-  }
+  const sellExGst = roundMoney(buyPriceExGst * (1 + sellMarkupPercent / 100));
+  const rrpExGst = roundMoney(buyPriceExGst * (1 + rrpMarkupPercent / 100));
+  const price = roundMoney(sellExGst * 1.1);
+  const oldPrice = roundMoney(rrpExGst * 1.1);
 
   const product = {
     name,
     slug,
     blurb: String(body?.blurb || "").trim() || null,
     description: body?.description ?? [],
+    buy_price_ex_gst: roundMoney(buyPriceExGst),
+    sell_markup_percent: sellMarkupPercent,
+    rrp_markup_percent: rrpMarkupPercent,
     price,
     oldPrice,
     stock,
@@ -87,27 +82,14 @@ export default defineEventHandler(async (event) => {
   };
 
   const supabase = getAdminSupabase();
-
-  const { data, error } = await supabase
-    .from("products")
-    .insert(product)
-    .select("*")
-    .single();
+  const { data, error } = await supabase.from("products").insert(product).select("*").single();
 
   if (error) {
     console.error("ADMIN CREATE PRODUCT ERROR:", error);
-
     if (error.code === "23505") {
-      throw createError({
-        statusCode: 409,
-        statusMessage: "A product with this slug already exists",
-      });
+      throw createError({ statusCode: 409, statusMessage: "A product with this slug already exists" });
     }
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message || "Unable to create product",
-    });
+    throw createError({ statusCode: 500, statusMessage: error.message || "Unable to create product" });
   }
 
   return data;

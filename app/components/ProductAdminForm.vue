@@ -55,20 +55,32 @@
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Pricing & Stock</h2>
 
-        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <p class="mt-1 text-sm text-slate-500">
+          Enter your supplier buy price excluding GST, then set the markup percentages. The website calculates the GST-inclusive Sell Price and RRP automatically.
+        </p>
+
+        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <label>
-            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Price *</span>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Buy Price ex GST *</span>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-              <input v-model="form.price" required min="0" step="0.01" type="number" class="input pl-7" />
+              <input v-model="form.buy_price_ex_gst" required min="0" step="0.01" type="number" class="input pl-7" />
             </div>
           </label>
 
           <label>
-            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Old Price</span>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Sell Markup % *</span>
             <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-              <input v-model="form.oldPrice" min="0" step="0.01" type="number" class="input pl-7" />
+              <input v-model="form.sell_markup_percent" required min="0" step="0.01" type="number" class="input pr-9" />
+              <span class="absolute right-3 top-2.5 text-slate-500">%</span>
+            </div>
+          </label>
+
+          <label>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">RRP Markup % *</span>
+            <div class="relative">
+              <input v-model="form.rrp_markup_percent" required min="0" step="0.01" type="number" class="input pr-9" />
+              <span class="absolute right-3 top-2.5 text-slate-500">%</span>
             </div>
           </label>
 
@@ -77,6 +89,24 @@
             <input v-model="form.stock" required min="0" step="1" type="number" class="input" />
           </label>
         </div>
+
+        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Calculated Sell Price</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
+            <p class="mt-1 text-xs text-slate-600">GST inclusive · {{ currency(calculatedSellPriceExGst) }} ex GST</p>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Calculated RRP</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedRrpPrice) }}</p>
+            <p class="mt-1 text-xs text-slate-600">GST inclusive · {{ currency(calculatedRrpPriceExGst) }} ex GST</p>
+          </div>
+        </div>
+
+        <p v-if="rrpBelowSell" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          RRP is currently lower than the Sell Price. Increase the RRP markup percentage if you want the RRP shown as a higher comparison price.
+        </p>
 
         <div class="mt-5 flex flex-wrap gap-5">
           <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
@@ -278,8 +308,9 @@ const form = reactive({
   slug: "",
   category_id: "",
   blurb: "",
-  price: "0.00",
-  oldPrice: "",
+  buy_price_ex_gst: "",
+  sell_markup_percent: "",
+  rrp_markup_percent: "",
   stock: "0",
   weight_kg: "1.000",
   length_cm: "30.0",
@@ -289,6 +320,25 @@ const form = reactive({
   featured: false,
   refurbished: false,
 });
+
+
+const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const numeric = (value: string) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const calculatedSellPriceExGst = computed(() =>
+  roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.sell_markup_percent) / 100)),
+);
+const calculatedSellPrice = computed(() => roundMoney(calculatedSellPriceExGst.value * 1.1));
+const calculatedRrpPriceExGst = computed(() =>
+  roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.rrp_markup_percent) / 100)),
+);
+const calculatedRrpPrice = computed(() => roundMoney(calculatedRrpPriceExGst.value * 1.1));
+const rrpBelowSell = computed(() => calculatedRrpPrice.value > 0 && calculatedRrpPrice.value < calculatedSellPrice.value);
+const currency = (value: number) =>
+  new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(value || 0);
 
 const slugify = (value: string) =>
   value
@@ -363,8 +413,9 @@ const loadForm = async () => {
       form.slug = product.slug || "";
       form.category_id = product.category_id == null ? "" : String(product.category_id);
       form.blurb = product.blurb || "";
-      form.price = product.price == null ? "0.00" : String(product.price);
-      form.oldPrice = product.oldPrice == null ? "" : String(product.oldPrice);
+      form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
+      form.sell_markup_percent = product.sell_markup_percent == null ? "" : String(product.sell_markup_percent);
+      form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
       form.stock = product.stock == null ? "0" : String(product.stock);
       form.weight_kg = product.weight_kg == null ? "1.000" : String(product.weight_kg);
       form.length_cm = product.length_cm == null ? "30.0" : String(product.length_cm);
@@ -409,8 +460,9 @@ const saveProduct = async () => {
     const payload = {
       ...form,
       category_id: form.category_id || null,
-      price: Number(form.price),
-      oldPrice: form.oldPrice === "" ? null : Number(form.oldPrice),
+      buy_price_ex_gst: Number(form.buy_price_ex_gst),
+      sell_markup_percent: Number(form.sell_markup_percent),
+      rrp_markup_percent: Number(form.rrp_markup_percent),
       stock: Number(form.stock),
       weight_kg: Number(form.weight_kg),
       length_cm: Number(form.length_cm),
