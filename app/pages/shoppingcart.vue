@@ -272,6 +272,7 @@ type FreightRate = {
 
 const cart = useCartStore();
 const supabase = useSupabaseClient();
+const requestFetch = useRequestFetch();
 
 const loading = ref(false);
 const quoting = ref(false);
@@ -279,6 +280,21 @@ const postcode = ref("");
 const freightError = ref("");
 const freightRates = ref<FreightRate[]>([]);
 const selectedServiceCode = ref("");
+
+async function loadPrimaryDeliveryPostcode() {
+  if (postcode.value) return;
+
+  try {
+    const addresses = await requestFetch<any[]>("/api/account/addresses");
+    const primary = addresses?.find((address: any) => address.is_primary);
+
+    if (primary?.postcode && /^\d{4}$/.test(String(primary.postcode))) {
+      postcode.value = String(primary.postcode);
+    }
+  } catch (error) {
+    console.warn("Unable to load primary delivery address:", error);
+  }
+}
 
 const selectedRate = computed(
   () =>
@@ -412,6 +428,8 @@ function imageError(item: any) {
     item.image,
   );
 }
+
+onMounted(loadPrimaryDeliveryPostcode);
 
 async function checkout() {
   if (
