@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
-import { sendOrderConfirmationEmail } from "~~/server/utils/orderEmail";
+import { sendOrderEmails } from "~~/server/utils/orderEmail";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -182,6 +182,31 @@ export default defineEventHandler(async (event) => {
   const customerName =
     session.customer_details?.name ||
     null;
+
+  // Stripe has used both `shipping_details` and
+  // `collected_information.shipping_details` across API versions.
+  // Fall back to the billing/customer address if needed.
+  const stripeSession: any = session as any;
+  const shippingDetails =
+    stripeSession.shipping_details ||
+    stripeSession.collected_information?.shipping_details ||
+    null;
+  const shippingAddressSource =
+    shippingDetails?.address ||
+    session.customer_details?.address ||
+    null;
+
+  const shippingAddress = shippingAddressSource
+    ? {
+        name: shippingDetails?.name || customerName || null,
+        line1: shippingAddressSource.line1 || null,
+        line2: shippingAddressSource.line2 || null,
+        city: shippingAddressSource.city || null,
+        state: shippingAddressSource.state || null,
+        postal_code: shippingAddressSource.postal_code || session.metadata?.shipping_postcode || null,
+        country: shippingAddressSource.country || "AU",
+      }
+    : null;
 
   const total =
     Number(session.amount_total || 0) / 100;
@@ -406,7 +431,7 @@ export default defineEventHandler(async (event) => {
         throw savedItemsError;
       }
 
-      await sendOrderConfirmationEmail({
+      const emailResult = await sendOrderEmails({
         id: order.id,
         customer_email: customerEmail,
         customer_name: customerName,
@@ -414,6 +439,8 @@ export default defineEventHandler(async (event) => {
         shipping_method: session.metadata?.shipping_method || null,
         shipping_postcode: session.metadata?.shipping_postcode || null,
         shipping_cost: Number(session.metadata?.shipping_cost || 0),
+        shipping_address: shippingAddress,
+        paid_at: new Date(),
         items: (savedItems || []).map((item: any) => ({
           product_name: item.product_name || "Product",
           quantity: Number(item.quantity || 0),
@@ -421,8 +448,9 @@ export default defineEventHandler(async (event) => {
         })),
       });
 
-      confirmationEmailSent = true;
-      console.log("✅ ORDER CONFIRMATION EMAIL SENT:", customerEmail);
+      confirmationEmailSent = emailResult.customerSent;
+      console.log("✅ CUSTOMER ORDER EMAIL SENT:", customerEmail);
+      console.log("✅ SELLER ORDER EMAIL SENT:", emailResult.sellerSent);
     } catch (emailError: any) {
       // The order/payment must remain successful even if email delivery fails.
       // Logging the error avoids Stripe repeatedly re-processing a paid order.

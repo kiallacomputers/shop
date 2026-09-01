@@ -3,11 +3,18 @@ type EmailRecipient = {
   name?: string | null;
 };
 
+type EmailAttachment = {
+  name: string;
+  contentType: string;
+  content: Buffer | Uint8Array | string;
+};
+
 type SendDomainEmailOptions = {
   to: EmailRecipient | EmailRecipient[];
   subject: string;
   html: string;
   replyTo?: EmailRecipient[];
+  attachments?: EmailAttachment[];
 };
 
 const escapeHtml = (value: unknown) =>
@@ -128,6 +135,19 @@ export async function sendDomainEmail(options: SendDomainEmailOptions) {
               name: senderName,
             },
           },
+          ...(options.attachments?.length
+            ? {
+                attachments: options.attachments.map((attachment) => ({
+                  "@odata.type": "#microsoft.graph.fileAttachment",
+                  name: attachment.name,
+                  contentType: attachment.contentType,
+                  contentBytes:
+                    typeof attachment.content === "string"
+                      ? attachment.content
+                      : Buffer.from(attachment.content).toString("base64"),
+                })),
+              }
+            : {}),
         },
         saveToSentItems: true,
       }),
