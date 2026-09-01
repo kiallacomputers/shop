@@ -357,12 +357,13 @@
                     role="textbox"
                     aria-multiline="true"
                     data-placeholder="Optional image caption"
-                    v-html="block.captionHtml || ''"
+                    v-caption-html="block.captionHtml || ''"
                     :style="{
                       color: block.captionColor || '#64748b',
                       backgroundColor: block.captionBackgroundColor || '#ffffff',
                     }"
                     @input="updateCaptionFromEditor(block, $event)"
+                    @keydown="handleCaptionKeydown(block, $event)"
                     @mouseup="rememberCaptionSelection(block)"
                     @keyup="rememberCaptionSelection(block)"
                     @focus="rememberCaptionSelection(block)"
@@ -640,6 +641,26 @@ const makeKey = () =>
 
 const captionSelections = new Map<string, Range>();
 
+// Keep the contenteditable DOM under the browser's control while the user is
+// typing. Re-applying innerHTML on every reactive update resets the caret to
+// the beginning, which makes newly typed text appear backwards.
+const vCaptionHtml = {
+  mounted(el: HTMLElement, binding: { value?: string }) {
+    el.innerHTML = binding.value || "";
+  },
+  updated(el: HTMLElement, binding: { value?: string }) {
+    // Never replace the editor HTML while it has focus; doing so destroys the
+    // current selection/caret. We still refresh it when data is loaded or
+    // changed externally and the editor is not being edited.
+    if (typeof document !== "undefined" && document.activeElement === el) return;
+
+    const html = binding.value || "";
+    if (el.innerHTML !== html) {
+      el.innerHTML = html;
+    }
+  },
+};
+
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, "&amp;")
@@ -699,6 +720,33 @@ const updateCaptionFromEditor = (block: DescriptionBlock, event: Event) => {
   block.captionHtml = editor.innerHTML;
   block.caption = editor.innerText.trim();
   rememberCaptionSelection(block);
+};
+
+// Keep caption line breaks predictable. Browsers often create <div> elements when
+// Enter is pressed inside contenteditable, but the storefront sanitiser deliberately
+// allows <br> instead. Insert an explicit <br> so new lines are saved and displayed.
+const handleCaptionKeydown = (block: DescriptionBlock, event: KeyboardEvent) => {
+  if (event.key !== "Enter") return;
+
+  event.preventDefault();
+
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+
+  const br = document.createElement("br");
+  range.insertNode(br);
+
+  // Put the caret immediately after the new line so typing can continue normally.
+  range.setStartAfter(br);
+  range.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  captionSelections.set(block._key, range.cloneRange());
+  syncCaptionEditor(block);
 };
 
 const applyCaptionCommand = (block: DescriptionBlock, command: string, value?: string) => {
