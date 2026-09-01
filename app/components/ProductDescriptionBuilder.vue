@@ -283,7 +283,17 @@
 
             <div class="space-y-3">
               <div>
-                <span class="field-label">Caption</span>
+                <div class="mb-2 flex flex-wrap items-end justify-between gap-3">
+                  <span class="field-label">Caption</span>
+
+                  <label class="min-w-40">
+                    <span class="caption-tool-label">Caption position</span>
+                    <select v-model="block.captionPosition" class="caption-tool-select">
+                      <option value="below">Below image (Default)</option>
+                      <option value="above">Above image</option>
+                    </select>
+                  </label>
+                </div>
 
                 <div class="rounded-lg border border-slate-300 bg-white">
                   <div class="flex flex-wrap items-end gap-2 border-b border-slate-200 bg-slate-50 p-2">
@@ -346,7 +356,7 @@
                     contenteditable="true"
                     role="textbox"
                     aria-multiline="true"
-                    data-placeholder="Optional caption displayed underneath the image"
+                    data-placeholder="Optional image caption"
                     v-html="block.captionHtml || ''"
                     :style="{
                       color: block.captionColor || '#64748b',
@@ -598,6 +608,7 @@ type DescriptionBlock = {
   captionFontSize?: "xs" | "sm" | "base" | "lg" | "xl" | "2xl";
   captionColor?: string;
   captionBackgroundColor?: string;
+  captionPosition?: "above" | "below";
   width?: "small" | "medium" | "large" | "full";
 };
 
@@ -761,6 +772,7 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.captionFontSize = input?.captionFontSize || "sm";
     base.captionColor = input?.captionColor || "#64748b";
     base.captionBackgroundColor = input?.captionBackgroundColor || "#ffffff";
+    base.captionPosition = input?.captionPosition === "above" ? "above" : "below";
     base.captionHtml = input?.captionHtml || legacyCaptionHtml(base);
     base.width = input?.width || "full";
   } else if (type === "list") {

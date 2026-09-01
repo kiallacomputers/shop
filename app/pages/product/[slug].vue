@@ -359,6 +359,18 @@
                   v-else-if="section.type === 'image' && section.url"
                   class="my-8"
                 >
+                  <figcaption
+                    v-if="section.caption && section.captionPosition === 'above'"
+                    class="mx-auto mb-2 w-fit max-w-full rounded-md px-3 py-1.5 text-center text-sm"
+                    :style="{
+                      color: section.captionColor || '#64748b',
+                      backgroundColor: section.captionBackgroundColor || 'transparent',
+                    }"
+                  >
+                    <span v-if="section.captionHtml" v-html="sanitiseCaptionHtml(section.captionHtml)"></span>
+                    <span v-else :class="[captionFontSizeClass(section.captionFontSize), section.captionBold ? 'font-bold' : 'font-normal']">{{ section.caption }}</span>
+                  </figcaption>
+
                   <img
                     :src="section.url"
                     :alt="section.alt || product.name"
@@ -367,26 +379,15 @@
                   />
 
                   <figcaption
-                    v-if="section.caption"
+                    v-if="section.caption && section.captionPosition !== 'above'"
                     class="mx-auto mt-2 w-fit max-w-full rounded-md px-3 py-1.5 text-center text-sm"
                     :style="{
                       color: section.captionColor || '#64748b',
                       backgroundColor: section.captionBackgroundColor || 'transparent',
                     }"
                   >
-                    <span
-                      v-if="section.captionHtml"
-                      v-html="sanitiseCaptionHtml(section.captionHtml)"
-                    ></span>
-                    <span
-                      v-else
-                      :class="[
-                        captionFontSizeClass(section.captionFontSize),
-                        section.captionBold ? 'font-bold' : 'font-normal',
-                      ]"
-                    >
-                      {{ section.caption }}
-                    </span>
+                    <span v-if="section.captionHtml" v-html="sanitiseCaptionHtml(section.captionHtml)"></span>
+                    <span v-else :class="[captionFontSizeClass(section.captionFontSize), section.captionBold ? 'font-bold' : 'font-normal']">{{ section.caption }}</span>
                   </figcaption>
                 </figure>
 
