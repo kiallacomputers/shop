@@ -69,7 +69,7 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Buy Price ex GST *</span>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-slate-500">$</span>
-              <input v-model="form.buy_price_ex_gst" required min="0" step="0.01" type="number" class="input pl-7" />
+              <input v-model="form.buy_price_ex_gst" required min="0" step="0.01" type="number" class="input !pl-7" />
             </div>
           </label>
 
