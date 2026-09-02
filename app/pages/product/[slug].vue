@@ -1,263 +1,187 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <!-- Advertisement -->
     <Ads />
 
-    <!-- Sidebar + Product -->
     <div class="flex flex-col md:flex-row gap-6">
-      <!-- Sidebar -->
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
       </aside>
 
-      <!-- Product -->
-      <main class="flex-1">
-        <div
-          class="bg-white rounded-xl transition-all duration-300 overflow-hidden group"
-        >
-          <!-- ========================= -->
-          <!-- PRODUCT IMAGE GALLERY -->
-          <!-- ========================= -->
+      <main class="min-w-0 flex-1">
+        <div class="space-y-6">
+          <!-- Product hero -->
+          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+              <!-- Gallery -->
+              <div class="min-w-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
+                <div class="relative bg-slate-50">
+                  <span
+                    v-if="product.featured"
+                    class="absolute left-4 top-4 z-20 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm"
+                  >
+                    Featured
+                  </span>
 
-          <div class="relative overflow-hidden bg-gray-100">
-            <!-- Featured Badge -->
-            <span
-              v-if="product.featured"
-              class="absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-20"
-            >
-              Featured
-            </span>
+                  <span
+                    v-if="product.refurbished"
+                    class="absolute right-4 top-4 z-20 rounded-full bg-green-600 px-3 py-1 text-xs font-semibold text-white shadow-sm"
+                  >
+                    Refurbished
+                  </span>
 
-            <!-- Refurbished Badge -->
-            <span
-              v-if="product.refurbished"
-              class="absolute top-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full z-20"
-            >
-              Refurbished
-            </span>
+                  <div
+                    class="flex h-[360px] w-full cursor-zoom-in items-center justify-center sm:h-[440px] lg:h-[520px]"
+                    @click="openLightbox"
+                  >
+                    <img
+                      v-if="currentImage"
+                      :src="currentImage"
+                      :alt="product.name"
+                      class="h-full w-full object-contain p-6 sm:p-8 lg:p-10 transition-transform duration-300 hover:scale-[1.025]"
+                    />
+                    <div v-else class="text-slate-400">No Image Available</div>
+                  </div>
 
-            <!-- ========================= -->
-            <!-- MAIN IMAGE -->
-            <!-- ========================= -->
+                  <button
+                    v-if="images.length > 1"
+                    type="button"
+                    @click.stop.prevent="previousImage"
+                    class="absolute left-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
+                    aria-label="Previous image"
+                  >
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                  </button>
 
-            <div
-              class="w-full h-96 flex items-center justify-center cursor-zoom-in"
-              @click="openLightbox"
-            >
-              <img
-                v-if="currentImage"
-                :src="currentImage"
-                :alt="product.name"
-                class="w-full h-96 object-contain p-6 transition-transform duration-300 group-hover:scale-105"
-              />
+                  <button
+                    v-if="images.length > 1"
+                    type="button"
+                    @click.stop.prevent="nextImage"
+                    class="absolute right-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
+                    aria-label="Next image"
+                  >
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                  </button>
 
-              <!-- No image -->
-              <div
-                v-else
-                class="flex items-center justify-center h-96 text-gray-400"
-              >
-                No Image Available
-              </div>
-            </div>
+                  <div
+                    v-if="images.length > 1"
+                    class="absolute left-1/2 top-4 z-20 -translate-x-1/2 rounded-full bg-slate-900/70 px-3 py-1 text-xs font-semibold text-white"
+                  >
+                    {{ currentImageIndex + 1 }} / {{ images.length }}
+                  </div>
 
-            <!-- ========================= -->
-            <!-- PREVIOUS BUTTON -->
-            <!-- ========================= -->
+                  <div
+                    v-if="currentImage"
+                    class="pointer-events-none absolute bottom-4 right-4 hidden rounded-full bg-slate-900/70 px-3 py-1.5 text-xs text-white sm:block"
+                  >
+                    Click image to enlarge
+                  </div>
+                </div>
 
-            <button
-              v-if="images.length > 1"
-              type="button"
-              @click.stop.prevent="previousImage"
-              class="absolute left-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition"
-              aria-label="Previous image"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-
-            <!-- ========================= -->
-            <!-- NEXT BUTTON -->
-            <!-- ========================= -->
-
-            <button
-              v-if="images.length > 1"
-              type="button"
-              @click.stop.prevent="nextImage"
-              class="absolute right-4 top-1/2 -translate-y-1/2 z-30 bg-white/90 hover:bg-white text-gray-700 rounded-full w-11 h-11 flex items-center justify-center shadow-lg transition"
-              aria-label="Next image"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-
-            <!-- ========================= -->
-            <!-- IMAGE COUNTER -->
-            <!-- ========================= -->
-
-            <div
-              v-if="images.length > 1"
-              class="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1 rounded-full z-20"
-            >
-              {{ currentImageIndex + 1 }} / {{ images.length }}
-            </div>
-
-            <!-- ========================= -->
-            <!-- IMAGE DOTS -->
-            <!-- ========================= -->
-
-            <div
-              v-if="images.length > 1"
-              class="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20"
-            >
-              <button
-                v-for="(image, index) in images"
-                :key="index"
-                type="button"
-                @click.stop.prevent="goToImage(index)"
-                class="w-3 h-3 rounded-full transition-all duration-200"
-                :class="
-                  index === currentImageIndex
-                    ? 'bg-blue-600 scale-125'
-                    : 'bg-gray-300 hover:bg-gray-400'
-                "
-                :aria-label="`View image ${index + 1}`"
-              />
-            </div>
-
-            <!-- ========================= -->
-            <!-- ZOOM INDICATOR -->
-            <!-- ========================= -->
-
-            <div
-              v-if="currentImage"
-              class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1.5 rounded-full z-20 pointer-events-none"
-            >
-              Click image to enlarge
-            </div>
-          </div>
-
-          <!-- ========================= -->
-          <!-- THUMBNAIL IMAGES -->
-          <!-- ========================= -->
-
-          <div
-            v-if="images.length > 1"
-            class="flex justify-center gap-3 px-5 py-4 bg-white border-b overflow-x-auto"
-          >
-            <button
-              v-for="(image, index) in images"
-              :key="index"
-              type="button"
-              @click="goToImage(index)"
-              class="w-20 h-20 shrink-0 rounded-lg overflow-hidden border-2 transition"
-              :class="
-                index === currentImageIndex
-                  ? 'border-blue-600'
-                  : 'border-gray-200 hover:border-gray-400'
-              "
-            >
-              <img
-                :src="image"
-                :alt="`${product.name} image ${index + 1}`"
-                class="w-full h-full object-contain p-1"
-              />
-            </button>
-          </div>
-
-          <!-- ========================= -->
-          <!-- PRODUCT DETAILS -->
-          <!-- ========================= -->
-
-          <div class="p-5">
-            <!-- Category -->
-            <NuxtLink
-              :to="`/category/${product.categories.slug}`"
-              class="text-lg text-[#2CB6D5] font-medium hover:text-[#566C9D]"
-            >
-              {{ product.categories.name }}
-            </NuxtLink>
-
-            <!-- Product Name -->
-            <h3 class="text-base font-semibold text-[#566C9D] line-clamp-2">
-              {{ product.name }}
-            </h3>
-
-            <!-- ========================= -->
-            <!-- PRICE -->
-            <!-- ========================= -->
-
-            <div class="flex items-center justify-between mt-5">
-              <div>
-                <p class="text-3xl font-bold text-[#2CB6D5]">
-                  ${{ product.price }}
-                </p>
-
-                <p
-                  v-if="product.oldPrice"
-                  class="text-[#566C9D] line-through text-sm"
+                <div
+                  v-if="images.length > 1"
+                  class="flex gap-3 overflow-x-auto border-t border-slate-200 bg-white p-4"
                 >
-                  ${{ product.oldPrice }}
-                </p>
+                  <button
+                    v-for="(image, index) in images"
+                    :key="index"
+                    type="button"
+                    @click="goToImage(index)"
+                    class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition"
+                    :class="index === currentImageIndex ? 'border-sky-500 ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-400'"
+                  >
+                    <img :src="image" :alt="`${product.name} image ${index + 1}`" class="h-full w-full object-contain p-1.5" />
+                  </button>
+                </div>
               </div>
 
-              <!-- Add Cart -->
-              <button
-                v-if="product.stock > 0"
-                @click="cart.addToCart(product)"
-                class="bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg transition"
-              >
-                Add to Cart
-              </button>
+              <!-- Purchase panel -->
+              <div class="flex flex-col p-6 sm:p-8 lg:p-9">
+                <div>
+                  <NuxtLink
+                    :to="`/category/${product.categories.slug}`"
+                    class="text-sm font-bold uppercase tracking-wide text-sky-600 hover:text-sky-700"
+                  >
+                    {{ product.categories.name }}
+                  </NuxtLink>
+
+                  <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
+                    {{ product.name }}
+                  </h1>
+
+                  <div class="mt-6 border-y border-slate-200 py-5">
+                    <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
+                      <span class="text-4xl font-extrabold tracking-tight text-sky-600">
+                        ${{ product.price }}
+                      </span>
+                      <span
+                        v-if="product.oldPrice"
+                        class="pb-1 text-base text-slate-400 line-through"
+                      >
+                        ${{ product.oldPrice }}
+                      </span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Price includes GST</p>
+                  </div>
+
+                  <div class="mt-5">
+                    <div
+                      v-if="product.stock > 0"
+                      class="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 ring-1 ring-inset ring-green-200"
+                    >
+                      <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                      {{ product.stock }} in stock
+                    </div>
+                    <div
+                      v-else
+                      class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200"
+                    >
+                      <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                      Backorder — please call
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-8 lg:mt-auto lg:pt-10">
+                  <button
+                    v-if="product.stock > 0"
+                    type="button"
+                    @click="cart.addToCart(product)"
+                    class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                  >
+                    Add to Cart
+                  </button>
+
+                  <div
+                    v-else
+                    class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+                  >
+                    This item is currently on backorder. Please contact us for availability and an estimated delivery time.
+                  </div>
+
+                  <div class="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <div class="rounded-xl bg-slate-50 p-3">
+                      <p class="font-semibold text-slate-800">Secure checkout</p>
+                      <p class="mt-1 text-xs">Pay securely through our online checkout.</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 p-3">
+                      <p class="font-semibold text-slate-800">Australian delivery</p>
+                      <p class="mt-1 text-xs">Delivery calculated from your selected address.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          </section>
 
-            <!-- ========================= -->
-            <!-- AVAILABILITY -->
-            <!-- ========================= -->
-
-            <div class="flex items-center mt-3">
-              <span class="font-semibold text-[#566C9D]"> Availability : </span>
-
-              <span
-                v-if="product.stock > 0"
-                class="ml-2 text-sm font-semibold text-[#00C409]"
-              >
-                {{ product.stock }} in stock
-              </span>
-
-              <span v-else class="ml-2 text-sm font-semibold text-red-800">
-                Backorder please call.
-              </span>
+          <!-- Product description -->
+          <section
+            v-if="product.description?.length"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
+          >
+            <div class="mb-5 border-b border-slate-200 pb-4">
+              <h2 class="text-xl font-bold text-slate-900">Product Details</h2>
             </div>
-
-            <!-- ========================= -->
-            <!-- DESCRIPTION -->
-            <!-- ========================= -->
-
-            <div class="text-[#566C9D] text-sm mt-6">
+              <div class="text-[#566C9D] text-sm">
               <div
                 v-for="(section, index) in product.description"
                 :key="index"
@@ -449,7 +373,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>
