@@ -1,12 +1,20 @@
 <template>
   <main class="max-w-4xl mx-auto px-4 py-8">
     <div class="mb-8">
-      <NuxtLink
-        to="/admin/categories"
-        class="text-sm font-semibold text-blue-600 hover:text-blue-700"
-      >
-        ← Back to Categories
-      </NuxtLink>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <NuxtLink
+          to="/admin"
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+        >
+          ← Admin Dashboard
+        </NuxtLink>
+        <NuxtLink
+          to="/admin/categories"
+          class="text-sm font-semibold text-slate-600 hover:text-slate-900"
+        >
+          Manage Categories
+        </NuxtLink>
+      </div>
 
       <h1 class="mt-3 text-3xl font-bold text-slate-900">
         Add Category

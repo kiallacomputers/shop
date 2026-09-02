@@ -3,7 +3,13 @@
     <div class="max-w-7xl mx-auto px-4 py-8">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <div>
-          <h1 class="text-3xl font-bold text-slate-900">Manage Products</h1>
+          <NuxtLink
+            to="/admin"
+            class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+          >
+            ← Admin Dashboard
+          </NuxtLink>
+          <h1 class="mt-3 text-3xl font-bold text-slate-900">Manage Products</h1>
           <p class="mt-1 text-slate-500">Add, edit and manage products in your store.</p>
         </div>
 

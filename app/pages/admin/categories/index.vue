@@ -2,7 +2,13 @@
   <main class="max-w-7xl mx-auto px-4 py-8">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">
+        <NuxtLink
+          to="/admin"
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+        >
+          ← Admin Dashboard
+        </NuxtLink>
+        <p class="mt-3 text-sm font-semibold uppercase tracking-wider text-blue-600">
           Administration
         </p>
         <h1 class="mt-1 text-3xl font-bold text-slate-900">Manage Categories</h1>

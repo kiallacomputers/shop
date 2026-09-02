@@ -5,12 +5,20 @@
       <!-- BACK -->
       <!-- ========================================= -->
 
-      <NuxtLink
-        to="/admin/orders"
-        class="text-sm font-semibold text-blue-600 hover:text-blue-700"
-      >
-        ← Back to Orders
-      </NuxtLink>
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <NuxtLink
+          to="/admin"
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+        >
+          ← Admin Dashboard
+        </NuxtLink>
+        <NuxtLink
+          to="/admin/orders"
+          class="text-sm font-semibold text-slate-600 hover:text-slate-900"
+        >
+          Manage Orders
+        </NuxtLink>
+      </div>
 
       <!-- ========================================= -->
       <!-- ERROR -->

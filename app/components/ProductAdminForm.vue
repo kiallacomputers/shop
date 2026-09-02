@@ -1,10 +1,15 @@
 <template>
   <main class="max-w-5xl mx-auto px-4 py-8">
     <div class="mb-7">
-      <NuxtLink to="/admin/products" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
-        ← Manage Products
-      </NuxtLink>
-      <h1 class="text-3xl font-bold text-slate-900 mt-2">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          ← Admin Dashboard
+        </NuxtLink>
+        <NuxtLink to="/admin/products" class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+          Manage Products
+        </NuxtLink>
+      </div>
+      <h1 class="text-3xl font-bold text-slate-900 mt-3">
         {{ mode === "create" ? "Add Product" : "Edit Product" }}
       </h1>
       <p class="text-slate-500 mt-1">
