@@ -185,15 +185,15 @@
               <div
                 v-for="(section, index) in product.description"
                 :key="index"
-                class="mb-6"
+                :class="section.type === 'heading' ? 'mb-2' : 'mb-6'"
               >
                 <!-- Heading -->
                 <component
                   :is="section.level === 4 ? 'h4' : section.level === 3 ? 'h3' : 'h2'"
                   v-if="section.type === 'heading'"
                   :class="[
-                    'font-semibold mb-4 rounded-lg px-3 py-2',
-                    section.level === 4 ? 'text-lg' : section.level === 3 ? 'text-xl' : 'text-2xl'
+                    'font-semibold mb-1 rounded-lg px-3 py-1',
+                    section.level === 4 ? 'text-3xl' : section.level === 3 ? 'text-4xl' : 'text-5xl'
                   ]"
                   :style="{
                     color: section.fontColor || section.headingColor || '#566C9D',
