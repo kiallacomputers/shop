@@ -119,6 +119,59 @@
       </div>
 
       <!-- ================================= -->
+      <!-- PARCEL TRACKING -->
+      <!-- ================================= -->
+
+      <div
+        v-if="order.tracking_number"
+        class="bg-white border border-gray-200 rounded-lg p-6 mb-6"
+      >
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-xl font-bold">Parcel Tracking</h2>
+            <p class="mt-1 text-sm text-gray-500">Track this parcel directly with Australia Post using the number below.</p>
+          </div>
+          <span
+            v-if="order.tracking_status"
+            class="w-fit rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700"
+          >
+            {{ order.tracking_status }}
+          </span>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <p class="text-sm text-gray-500">Carrier</p>
+            <p class="mt-1 font-semibold">{{ order.carrier || "Australia Post" }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Tracking Number</p>
+            <p class="mt-1 break-all font-mono font-semibold">{{ order.tracking_number }}</p>
+            <a
+              :href="trackingUrl(order.tracking_number)"
+              target="_blank"
+              rel="noopener"
+              class="mt-3 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              Track on Australia Post ↗
+            </a>
+          </div>
+        </div>
+
+        <div v-if="Array.isArray(order.tracking_events) && order.tracking_events.length" class="mt-5 border-t pt-5">
+          <h3 class="font-bold">Tracking History</h3>
+          <div class="mt-3 space-y-3">
+            <div v-for="(event, index) in order.tracking_events" :key="`${event.date || 'event'}-${index}`" class="rounded-lg bg-gray-50 p-4">
+              <p class="font-semibold">{{ event.description || "Tracking update" }}</p>
+              <p class="mt-1 text-sm text-gray-500">
+                {{ [event.location, event.date ? formatTrackingDate(event.date) : null].filter(Boolean).join(" • ") }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================= -->
       <!-- ORDER ITEMS -->
       <!-- ================================= -->
 
@@ -386,6 +439,23 @@ function formatDate(date: string) {
   });
 }
 
+function trackingUrl(tracking: string) {
+  return `https://auspost.com.au/mypost/track/#/details/${encodeURIComponent(tracking)}`;
+}
+
+function formatTrackingDate(date: string) {
+  if (!date) return "";
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 // =====================================================
 // STATUS
 // =====================================================
@@ -398,10 +468,10 @@ function statusClass(status: string) {
     case "processing":
       return "bg-blue-100 text-blue-700";
 
-    case "shipped":
+    case "shipping":
       return "bg-purple-100 text-purple-700";
 
-    case "completed":
+    case "delivered":
       return "bg-green-100 text-green-700";
 
     case "cancelled":

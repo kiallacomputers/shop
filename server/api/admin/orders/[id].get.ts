@@ -28,6 +28,21 @@ export default defineEventHandler(async (event) => {
       shipping_method,
       shipping_service_code,
       shipping_cost,
+      shipping_name,
+      shipping_address_line_1,
+      shipping_address_line_2,
+      shipping_suburb,
+      shipping_state,
+      shipping_country,
+      tracking_number,
+      carrier,
+      tracking_status,
+      tracking_last_checked_at,
+      tracking_events,
+      shipped_at,
+      delivered_at,
+      shipped_notified_at,
+      delivered_notified_at,
       created_at
     `)
     .eq("id", id)

@@ -174,3 +174,82 @@ ${totalsHtml(order)}
 
   return result;
 }
+
+export type ShipmentNotificationData = {
+  id: string | number;
+  customer_email: string;
+  customer_name?: string | null;
+  tracking_number: string;
+  shipping_method?: string | null;
+  shipping_name?: string | null;
+  shipping_address_line_1?: string | null;
+  shipping_address_line_2?: string | null;
+  shipping_suburb?: string | null;
+  shipping_state?: string | null;
+  shipping_postcode?: string | null;
+};
+
+const shipmentAddressHtml = (order: ShipmentNotificationData) => {
+  const lines = [
+    order.shipping_name || order.customer_name,
+    order.shipping_address_line_1,
+    order.shipping_address_line_2,
+    [order.shipping_suburb, order.shipping_state, order.shipping_postcode].filter(Boolean).join(" "),
+  ].filter((v): v is string => Boolean(v && String(v).trim()));
+
+  return lines.length
+    ? `<div style="margin-top:18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+        <div style="font-weight:700;margin-bottom:8px;">Delivery address</div>
+        ${lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}
+      </div>`
+    : "";
+};
+
+export async function sendShippingNotification(order: ShipmentNotificationData) {
+  const name = order.customer_name?.trim() || "Customer";
+  const trackingUrl = `https://auspost.com.au/mypost/track/#/details/${encodeURIComponent(order.tracking_number)}`;
+  const html = `<!doctype html>
+<html><body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<div style="max-width:680px;margin:0 auto;padding:32px 16px;">
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+<div style="padding:28px;background:#0f172a;color:#fff;"><h1 style="margin:0;font-size:24px;">Your order has shipped</h1><p style="margin:8px 0 0;color:#cbd5e1;">Kialla Computers order #${escapeHtml(order.id)}</p></div>
+<div style="padding:28px;">
+<p>Hi ${escapeHtml(name)},</p>
+<p>Your order has been prepared and lodged for delivery with Australia Post.</p>
+<p><strong>Tracking number:</strong> ${escapeHtml(order.tracking_number)}</p>
+${order.shipping_method ? `<p><strong>Delivery service:</strong> ${escapeHtml(order.shipping_method)}</p>` : ""}
+<p style="margin:22px 0;"><a href="${trackingUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Track your parcel</a></p>
+${shipmentAddressHtml(order)}
+<p style="margin-top:24px;">You can use the tracking link above to follow the parcel directly with Australia Post.</p>
+<p style="margin-bottom:0;">Regards,<br><strong>Kialla Computers</strong></p>
+</div></div></div></body></html>`;
+
+  return await sendDomainEmail({
+    to: { address: order.customer_email, name: order.customer_name },
+    subject: `Kialla Computers - Order #${order.id} has shipped`,
+    html,
+  });
+}
+
+export async function sendDeliveredNotification(order: ShipmentNotificationData) {
+  const name = order.customer_name?.trim() || "Customer";
+  const html = `<!doctype html>
+<html><body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+<div style="max-width:680px;margin:0 auto;padding:32px 16px;">
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+<div style="padding:28px;background:#166534;color:#fff;"><h1 style="margin:0;font-size:24px;">Your order has been delivered</h1><p style="margin:8px 0 0;color:#dcfce7;">Kialla Computers order #${escapeHtml(order.id)}</p></div>
+<div style="padding:28px;">
+<p>Hi ${escapeHtml(name)},</p>
+<p>Your parcel has been marked as delivered.</p>
+<p><strong>Tracking number:</strong> ${escapeHtml(order.tracking_number)}</p>
+${shipmentAddressHtml(order)}
+<p style="margin-top:24px;">Thank you for shopping with Kialla Computers.</p>
+<p style="margin-bottom:0;">Regards,<br><strong>Kialla Computers</strong></p>
+</div></div></div></body></html>`;
+
+  return await sendDomainEmail({
+    to: { address: order.customer_email, name: order.customer_name },
+    subject: `Kialla Computers - Order #${order.id} delivered`,
+    html,
+  });
+}
