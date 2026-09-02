@@ -199,6 +199,7 @@
                     color: section.fontColor || section.headingColor || '#566C9D',
                     backgroundColor: section.backgroundColor || '#ffffff',
                     textAlign: section.textAlign || 'center',
+                    textDecoration: section.underline === true ? 'underline' : 'none',
                   }"
                 >
                   {{ section.text }}

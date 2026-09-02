@@ -138,6 +138,21 @@
               />
             </label>
 
+            <label class="sm:col-span-2">
+              <span class="field-label">Underline</span>
+              <span class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <input
+                  v-model="block.underline"
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-sm font-medium text-slate-700">Underline this heading</span>
+                <span class="ml-auto text-xs font-semibold text-slate-500">
+                  {{ block.underline ? "On" : "Off" }}
+                </span>
+              </span>
+            </label>
+
           </div>
         </template>
 
@@ -641,6 +656,7 @@ type DescriptionBlock = {
   text?: string;
   level?: number;
   headingColor?: string;
+  underline?: boolean;
   fontColor?: string;
   backgroundColor?: string;
   textAlign?: "left" | "center" | "right" | "justify";
@@ -877,6 +893,7 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.text = input?.text || "";
     base.level = Number(input?.level || 2);
     base.headingColor = base.fontColor;
+    base.underline = input?.underline === true;
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -990,6 +1007,7 @@ const createBlock = (type: string): DescriptionBlock => {
       text: "",
       level: 2,
       headingColor: "#566C9D",
+      underline: false,
     });
   }
 
