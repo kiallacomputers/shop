@@ -8,9 +8,6 @@
         >
           ← Admin Dashboard
         </NuxtLink>
-       <p class="mt-3 text-sm font-semibold uppercase tracking-wider text-blue-600">
-           
-        </p>
         <h1 class="mt-1 text-3xl font-bold text-slate-900">Manage Categories</h1>
         <p class="mt-2 text-slate-500">
           Create and organise the categories used by your online store.
