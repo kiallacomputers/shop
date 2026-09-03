@@ -15,12 +15,23 @@
 
         <div class="relative">
           <div class="rounded-[1.5rem] border border-white/15 bg-white/10 p-3 shadow-2xl backdrop-blur">
-            <div class="overflow-hidden rounded-[1.1rem] bg-white">
-              <Transition name="slide">
-                <NuxtLink :to="displayAds[currentAd].link" :key="currentAd" class="block aspect-[16/9]">
-                  <img :src="displayAds[currentAd].image" :alt="displayAds[currentAd].title" class="h-full w-full object-cover" />
-                </NuxtLink>
-              </Transition>
+            <div class="hero-ad-frame relative overflow-hidden rounded-[1.1rem] bg-white">
+              <NuxtLink
+                v-for="(ad, index) in displayAds"
+                :key="`${index}-${ad.image}`"
+                :to="ad.link"
+                class="hero-ad-slide absolute inset-0 block h-full w-full"
+                :class="heroSlideClass(index)"
+                :aria-hidden="index !== currentAd"
+                :tabindex="index === currentAd ? 0 : -1"
+              >
+                <img
+                  :src="ad.image"
+                  :alt="ad.title"
+                  class="block h-full w-full object-cover"
+                  draggable="false"
+                />
+              </NuxtLink>
             </div>
           </div>
           <div class="absolute -bottom-5 -left-4 rounded-xl bg-white px-4 py-3 text-[#0b1f3a] shadow-xl hidden sm:block">
@@ -122,16 +133,50 @@ const displayAds = computed(() => {
 });
 
 const currentAd = ref(0);
+const previousAd = ref(0);
+const heroAnimating = ref(false);
 let timer;
+let heroAnimationTimer;
+
+const heroSlideClass = (index) => {
+  if (!heroAnimating.value) {
+    return index === currentAd.value
+      ? "hero-ad-current"
+      : "hero-ad-hidden-right";
+  }
+
+  if (index === currentAd.value) return "hero-ad-entering";
+  if (index === previousAd.value) return "hero-ad-leaving";
+  return "hero-ad-hidden-right";
+};
+
+const nextHeroAd = () => {
+  if (displayAds.value.length <= 1 || heroAnimating.value) return;
+
+  previousAd.value = currentAd.value;
+  currentAd.value = (currentAd.value + 1) % displayAds.value.length;
+  heroAnimating.value = true;
+
+  if (heroAnimationTimer) window.clearTimeout(heroAnimationTimer);
+  heroAnimationTimer = window.setTimeout(() => {
+    heroAnimating.value = false;
+  }, 900);
+};
+
 watch(displayAds, () => {
   if (currentAd.value >= displayAds.value.length) currentAd.value = 0;
+  previousAd.value = currentAd.value;
+  heroAnimating.value = false;
 });
+
 onMounted(() => {
-  timer = window.setInterval(() => {
-    if (displayAds.value.length > 1) currentAd.value = (currentAd.value + 1) % displayAds.value.length;
-  }, 10000);
+  timer = window.setInterval(nextHeroAd, 10000);
 });
-onBeforeUnmount(() => { if (timer) window.clearInterval(timer); });
+
+onBeforeUnmount(() => {
+  if (timer) window.clearInterval(timer);
+  if (heroAnimationTimer) window.clearTimeout(heroAnimationTimer);
+});
 
 const benefits = [
   { title: "Local support", text: "Friendly, practical help", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2"/></svg>' },
@@ -141,7 +186,42 @@ const benefits = [
 </script>
 
 <style scoped>
-.slide-enter-active,.slide-leave-active { transition:opacity .45s ease,transform .45s ease; }
-.slide-enter-from { opacity:0; transform:translateX(20px); }
-.slide-leave-to { opacity:0; transform:translateX(-20px); }
+.hero-ad-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  contain: layout paint;
+}
+
+.hero-ad-slide {
+  transform: translate3d(100%, 0, 0);
+  transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.hero-ad-current {
+  z-index: 2;
+  transform: translate3d(0, 0, 0);
+}
+
+.hero-ad-entering {
+  z-index: 3;
+  transform: translate3d(0, 0, 0);
+}
+
+.hero-ad-leaving {
+  z-index: 2;
+  transform: translate3d(-100%, 0, 0);
+}
+
+.hero-ad-hidden-right {
+  z-index: 1;
+  transform: translate3d(100%, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ad-slide {
+    transition-duration: 1ms;
+  }
+}
 </style>
