@@ -26,6 +26,16 @@
         {{ errorMessage }}
       </div>
 
+      <div v-if="mode === 'edit'" class="flex justify-end">
+        <button
+          type="submit"
+          :disabled="saving"
+          class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ saving ? "Saving..." : "Save Changes" }}
+        </button>
+      </div>
+
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Product Details</h2>
 
