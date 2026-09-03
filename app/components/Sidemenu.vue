@@ -31,11 +31,39 @@
 const supabase = useSupabaseClient();
 const mobileOpen = ref(false); const openMenu = ref(null);
 const toggle = (id) => { openMenu.value = openMenu.value === id ? null : id; };
-const { data } = await useAsyncData("categories", async () => {
-  const { data, error } = await supabase.from("categories").select("*").eq("active", true).order("sort_order", { ascending:true }).order("name", { ascending:true });
-  if (error) throw error; return data || [];
+const { data, error: categoriesError } = await useAsyncData("categories", async () => {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,slug,parent_id,active")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("CATEGORY LOAD ERROR:", error);
+    throw error;
+  }
+
+  return data || [];
 });
-const categories = computed(() => (data.value || []).filter(c => c.parent_id === null).map(parent => ({ ...parent, items:(data.value || []).filter(child => child.parent_id === parent.id).sort((a,b) => a.name.localeCompare(b.name)) })));
+
+const visibleCategoryData = computed(() =>
+  (data.value || []).filter((category) => category.active !== false),
+);
+
+const isTopLevel = (category) =>
+  category.parent_id === null ||
+  category.parent_id === undefined ||
+  category.parent_id === "";
+
+const categories = computed(() =>
+  visibleCategoryData.value
+    .filter(isTopLevel)
+    .map((parent) => ({
+      ...parent,
+      items: visibleCategoryData.value
+        .filter((child) => String(child.parent_id ?? "") === String(parent.id))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    })),
+);
 </script>
 <style scoped>
 .submenu-enter-active,.submenu-leave-active { transition:all .22s ease; overflow:hidden; }

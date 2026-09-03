@@ -80,12 +80,30 @@ const { data: featuredProducts } = await useAsyncData("featured-products", async
 });
 
 const { data: categoryData } = await useAsyncData("homepage-categories", async () => {
-  const { data, error } = await supabase.from("categories").select("id,name,slug,parent_id,active,sort_order").eq("active", true).order("sort_order", { ascending: true }).order("name", { ascending: true });
-  if (error) throw error;
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id,name,slug,parent_id,active")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("HOMEPAGE CATEGORY LOAD ERROR:", error);
+    throw error;
+  }
+
   return data || [];
 });
 
-const shopCategories = computed(() => (categoryData.value || []).filter((c) => c.slug).slice(0, 6));
+const shopCategories = computed(() =>
+  (categoryData.value || [])
+    .filter((category) => category.active !== false && category.slug)
+    .filter(
+      (category) =>
+        category.parent_id === null ||
+        category.parent_id === undefined ||
+        category.parent_id === "",
+    )
+    .slice(0, 6),
+);
 const currentAd = ref(0);
 let timer;
 onMounted(() => { timer = window.setInterval(() => { currentAd.value = (currentAd.value + 1) % ads.length; }, 10000); });
