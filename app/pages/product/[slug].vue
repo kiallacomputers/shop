@@ -1,8 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 py-8 space-y-7">
-    <Ads />
-
-    <div class="flex flex-col md:flex-row gap-6">
+<div class="flex flex-col md:flex-row gap-6">
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
       </aside>

@@ -1,8 +1,6 @@
 <template>
   <main class="max-w-7xl mx-auto px-4 py-8 md:py-10">
-    <Ads />
-
-    <div class="mt-8 grid gap-7 lg:grid-cols-[240px_1fr] items-start">
+<div class="mt-8 grid gap-7 lg:grid-cols-[240px_1fr] items-start">
       <aside class="lg:sticky lg:top-28">
         <Sidemenu />
       </aside>
