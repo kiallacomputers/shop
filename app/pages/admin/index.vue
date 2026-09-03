@@ -67,6 +67,19 @@
         </NuxtLink>
 
         <NuxtLink
+          to="/admin/storage-cleanup"
+          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-amber-300 hover:shadow-md transition"
+        >
+          <p class="font-bold text-slate-900 group-hover:text-amber-700">
+            Storage Cleanup
+          </p>
+
+          <p class="text-sm text-slate-500 mt-1">
+            Find unused product images and safely remove them from storage.
+          </p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/categories"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition"
         >
