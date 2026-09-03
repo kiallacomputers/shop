@@ -18,7 +18,10 @@
             </div>
             <Transition name="submenu">
               <ul v-if="openMenu === category.id" class="ml-3 border-l border-slate-200 pl-3 pb-2">
-                <li v-for="item in category.items" :key="item.id"><NuxtLink :to="`/category/${item.slug}`" class="block rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600">{{ item.name }}</NuxtLink></li>
+                <li v-for="item in category.items" :key="item.id" class="relative">
+                  <span class="absolute -left-3 top-1/2 h-px w-3 bg-slate-200" aria-hidden="true"></span>
+                  <NuxtLink :to="`/category/${item.slug}`" class="block rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600">{{ item.name }}</NuxtLink>
+                </li>
               </ul>
             </Transition>
           </li>
