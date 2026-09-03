@@ -93,6 +93,19 @@
         </NuxtLink>
 
         <NuxtLink
+          to="/admin/ads"
+          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
+        >
+          <p class="font-bold text-slate-900 group-hover:text-cyan-700">
+            Manage Advertisements
+          </p>
+
+          <p class="text-sm text-slate-500 mt-1">
+            Upload, order and enable storefront banner advertisements.
+          </p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/freight"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
         >

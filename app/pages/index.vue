@@ -17,8 +17,8 @@
           <div class="rounded-[1.5rem] border border-white/15 bg-white/10 p-3 shadow-2xl backdrop-blur">
             <div class="overflow-hidden rounded-[1.1rem] bg-white">
               <Transition name="slide">
-                <NuxtLink :to="ads[currentAd].link" :key="currentAd" class="block aspect-[16/9]">
-                  <img :src="ads[currentAd].image" :alt="ads[currentAd].title" class="h-full w-full object-cover" />
+                <NuxtLink :to="displayAds[currentAd].link" :key="currentAd" class="block aspect-[16/9]">
+                  <img :src="displayAds[currentAd].image" :alt="displayAds[currentAd].title" class="h-full w-full object-cover" />
                 </NuxtLink>
               </Transition>
             </div>
@@ -104,16 +104,34 @@ const shopCategories = computed(() =>
     )
     .slice(0, 6),
 );
-const currentAd = ref(0);
-let timer;
-onMounted(() => { timer = window.setInterval(() => { currentAd.value = (currentAd.value + 1) % ads.length; }, 10000); });
-onBeforeUnmount(() => { if (timer) window.clearInterval(timer); });
-
 const loadads = import.meta.glob("~/assets/images/ads/*", { eager: true, import: "default" });
-const ads = [
+const fallbackAds = [
   { title: "Computer Builds", image: loadads["/assets/images/ads/computers.png"], link: "#shop" },
   { title: "Avast Antivirus", image: loadads["/assets/images/ads/avast.png"], link: "#shop" },
 ];
+
+const { data: databaseAds } = await useFetch("/api/ads", { default: () => [] });
+const displayAds = computed(() => {
+  const rows = Array.isArray(databaseAds.value) ? databaseAds.value : [];
+  if (!rows.length) return fallbackAds;
+  return rows.map((ad) => ({
+    title: ad.title || "Kialla Computers",
+    image: ad.image_url,
+    link: ad.link_url || "#shop",
+  }));
+});
+
+const currentAd = ref(0);
+let timer;
+watch(displayAds, () => {
+  if (currentAd.value >= displayAds.value.length) currentAd.value = 0;
+});
+onMounted(() => {
+  timer = window.setInterval(() => {
+    if (displayAds.value.length > 1) currentAd.value = (currentAd.value + 1) % displayAds.value.length;
+  }, 10000);
+});
+onBeforeUnmount(() => { if (timer) window.clearInterval(timer); });
 
 const benefits = [
   { title: "Local support", text: "Friendly, practical help", icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2"/></svg>' },
