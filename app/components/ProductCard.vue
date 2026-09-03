@@ -6,10 +6,8 @@
         <div v-else class="w-full h-full flex items-center justify-center text-sm text-slate-400">No image available</div>
       </NuxtLink>
 
-      <div class="absolute top-3 left-3 flex flex-wrap gap-2">
-        <span v-if="product.featured" class="rounded-full bg-[#2367d1] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Featured</span>
-        <span v-if="product.refurbished" class="rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Refurbished</span>
-      </div>
+      <span v-if="product.featured" class="absolute top-3 left-3 rounded-full bg-[#2367d1] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Featured</span>
+      <span v-if="product.refurbished" class="absolute top-3 right-3 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Refurbished</span>
 
       <template v-if="images.length > 1">
         <button type="button" @click.prevent.stop="previousImage" class="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-slate-200 bg-white/95 shadow-sm text-slate-700 opacity-0 group-hover:opacity-100 transition" aria-label="Previous image">‹</button>
