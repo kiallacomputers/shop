@@ -34,9 +34,11 @@
               </NuxtLink>
             </div>
           </div>
-          <div class="absolute -bottom-5 -left-4 rounded-xl bg-white px-4 py-3 text-[#0b1f3a] shadow-xl hidden sm:block">
-            <p class="text-xs font-black uppercase tracking-wide text-cyan-600">Local support</p>
-            <p class="mt-1 text-sm font-bold">Real help when you need it.</p>
+          <div class="mt-4 flex justify-end">
+            <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-[#0b1f3a] shadow-sm hidden sm:block">
+              <p class="text-xs font-black uppercase tracking-wide text-cyan-600">Local support</p>
+              <p class="mt-1 text-sm font-bold">Real help when you need it.</p>
+            </div>
           </div>
         </div>
       </div>
