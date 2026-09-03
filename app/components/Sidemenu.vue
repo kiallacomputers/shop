@@ -17,8 +17,13 @@
               <button v-if="category.items.length" @click="toggle(category.id)" class="h-9 w-9 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" :aria-label="`Toggle ${category.name}`">{{ openMenu === category.id ? '−' : '+' }}</button>
             </div>
             <Transition name="submenu">
-              <ul v-if="openMenu === category.id" class="ml-3 border-l border-slate-200 pl-3 pb-2">
-                <li v-for="item in category.items" :key="item.id" class="relative">
+              <ul v-if="openMenu === category.id" class="ml-3 pl-3 pb-2">
+                <li v-for="(item, itemIndex) in category.items" :key="item.id" class="relative">
+                  <span
+                    class="absolute -left-3 top-0 w-px bg-slate-200"
+                    :style="{ bottom: itemIndex === category.items.length - 1 ? '50%' : '0' }"
+                    aria-hidden="true"
+                  ></span>
                   <span class="absolute -left-3 top-1/2 h-px w-3 bg-slate-200" aria-hidden="true"></span>
                   <NuxtLink :to="`/category/${item.slug}`" class="block rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600">{{ item.name }}</NuxtLink>
                 </li>
