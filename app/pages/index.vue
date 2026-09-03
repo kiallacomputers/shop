@@ -188,7 +188,7 @@ const benefits = [
 <style scoped>
 .hero-ad-frame {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 2243 / 701;
   contain: layout paint;
 }
 
