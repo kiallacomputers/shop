@@ -1,9 +1,18 @@
 <template>
   <section class="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="relative aspect-[16/5] min-h-[140px] overflow-hidden">
-      <Transition name="slide">
-        <NuxtLink :to="displayAds[currentAd].link" :key="`${currentAd}-${displayAds[currentAd].image}`" class="absolute inset-0">
-          <img :src="displayAds[currentAd].image" :alt="displayAds[currentAd].title" class="h-full w-full object-cover" />
+      <Transition :name="transitionName">
+        <NuxtLink
+          :to="displayAds[currentAd].link"
+          :key="`${currentAd}-${displayAds[currentAd].image}`"
+          class="absolute inset-0 block will-change-transform"
+        >
+          <img
+            :src="displayAds[currentAd].image"
+            :alt="displayAds[currentAd].title"
+            class="h-full w-full object-cover"
+            draggable="false"
+          />
         </NuxtLink>
       </Transition>
     </div>
@@ -29,16 +38,21 @@ const displayAds = computed(() => {
 });
 
 const currentAd = ref(0);
+const transitionName = ref("slide-left");
 let timer;
+
+const nextAd = () => {
+  if (displayAds.value.length <= 1) return;
+  transitionName.value = "slide-left";
+  currentAd.value = (currentAd.value + 1) % displayAds.value.length;
+};
 
 watch(displayAds, () => {
   if (currentAd.value >= displayAds.value.length) currentAd.value = 0;
 });
 
 onMounted(() => {
-  timer = window.setInterval(() => {
-    if (displayAds.value.length > 1) currentAd.value = (currentAd.value + 1) % displayAds.value.length;
-  }, 10000);
+  timer = window.setInterval(nextAd, 10000);
 });
 
 onBeforeUnmount(() => {
@@ -47,5 +61,29 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.slide-enter-active,.slide-leave-active{transition:opacity .45s ease,transform .45s ease}.slide-enter-from{opacity:0;transform:translateX(18px)}.slide-leave-to{opacity:0;transform:translateX(-18px)}
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.slide-left-enter-from {
+  transform: translate3d(100%, 0, 0);
+}
+
+.slide-left-enter-to,
+.slide-left-leave-from {
+  transform: translate3d(0, 0, 0);
+}
+
+.slide-left-leave-to {
+  transform: translate3d(-100%, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-left-enter-active,
+  .slide-left-leave-active {
+    transition-duration: 1ms;
+  }
+}
 </style>
