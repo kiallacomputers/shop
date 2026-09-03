@@ -8,9 +8,9 @@
     </div>
 
     <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-      <div class="max-w-7xl mx-auto px-4 h-[82px] flex items-center gap-5">
+      <div class="max-w-7xl mx-auto px-4 h-[96px] flex items-center gap-5">
         <NuxtLink to="/" class="flex items-center shrink-0" aria-label="Kialla Computers home">
-          <img src="~/assets/images/logos/kc_logo.png" alt="Kialla Computers" class="h-14 w-auto" />
+          <img src="/kialla-computers-logo.webp" alt="Kialla Computers" class="h-[86px] w-auto object-contain" />
         </NuxtLink>
 
         <nav class="hidden md:flex items-center gap-1 ml-5">
