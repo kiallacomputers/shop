@@ -5,7 +5,7 @@
       <div class="relative max-w-7xl mx-auto px-4 py-14 md:py-20 grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
         <div>
          <!-- <p class="text-cyan-300 text-sm font-black uppercase tracking-[.2em]">Kialla Computers</p> -->
-          <h1 class="mt-4 max-w-3xl text-4xl md:text-6xl font-black tracking-tight leading-[1.03]">IT without the hassle.</h1>
+          <h1 class="mt-4 max-w-3xl text-4xl md:text-5xl font-black tracking-tight leading-[1.03]">Your IT without the hassle.</h1>
           <p class="mt-5 max-w-2xl text-base md:text-lg leading-8 text-slate-300">Quality computers, components, upgrades and practical support from a local independent business. Straightforward advice, secure checkout and Australian delivery.</p>
           <div class="mt-8 flex flex-wrap gap-3">
             <a href="#shop" class="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-6 py-3.5 font-black text-[#0b1f3a] hover:bg-cyan-300 transition">Shop products</a>
