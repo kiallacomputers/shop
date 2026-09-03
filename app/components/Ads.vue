@@ -1,20 +1,24 @@
 <template>
   <section class="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div class="ad-frame relative overflow-hidden">
-      <Transition :name="transitionName">
+      <div class="absolute inset-0">
         <NuxtLink
-          :to="displayAds[currentAd].link"
-          :key="`${currentAd}-${displayAds[currentAd].image}`"
-          class="absolute inset-0 block h-full w-full will-change-transform"
+          v-for="(ad, index) in displayAds"
+          :key="`${index}-${ad.image}`"
+          :to="ad.link"
+          class="ad-slide absolute inset-0 block h-full w-full"
+          :class="slideClass(index)"
+          :aria-hidden="index !== currentAd"
+          :tabindex="index === currentAd ? 0 : -1"
         >
           <img
-            :src="displayAds[currentAd].image"
-            :alt="displayAds[currentAd].title"
+            :src="ad.image"
+            :alt="ad.title"
             class="block h-full w-full object-cover"
             draggable="false"
           />
         </NuxtLink>
-      </Transition>
+      </div>
     </div>
   </section>
 </template>
@@ -38,17 +42,40 @@ const displayAds = computed(() => {
 });
 
 const currentAd = ref(0);
-const transitionName = ref("slide-left");
+const previousAd = ref(0);
+const isAnimating = ref(false);
 let timer;
+let animationTimer;
+
+const slideClass = (index) => {
+  if (!isAnimating.value) {
+    return index === currentAd.value
+      ? "ad-slide-current"
+      : "ad-slide-hidden-right";
+  }
+
+  if (index === currentAd.value) return "ad-slide-entering";
+  if (index === previousAd.value) return "ad-slide-leaving";
+  return "ad-slide-hidden-right";
+};
 
 const nextAd = () => {
-  if (displayAds.value.length <= 1) return;
-  transitionName.value = "slide-left";
+  if (displayAds.value.length <= 1 || isAnimating.value) return;
+
+  previousAd.value = currentAd.value;
   currentAd.value = (currentAd.value + 1) % displayAds.value.length;
+  isAnimating.value = true;
+
+  if (animationTimer) window.clearTimeout(animationTimer);
+  animationTimer = window.setTimeout(() => {
+    isAnimating.value = false;
+  }, 900);
 };
 
 watch(displayAds, () => {
   if (currentAd.value >= displayAds.value.length) currentAd.value = 0;
+  previousAd.value = currentAd.value;
+  isAnimating.value = false;
 });
 
 onMounted(() => {
@@ -57,6 +84,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (timer) window.clearInterval(timer);
+  if (animationTimer) window.clearTimeout(animationTimer);
 });
 </script>
 
@@ -77,28 +105,35 @@ onBeforeUnmount(() => {
 }
 
 
-.slide-left-enter-active,
-.slide-left-leave-active {
+.ad-slide {
+  transform: translate3d(100%, 0, 0);
   transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+  backface-visibility: hidden;
 }
 
-.slide-left-enter-from {
-  transform: translate3d(100%, 0, 0);
-}
-
-.slide-left-enter-to,
-.slide-left-leave-from {
+.ad-slide-current {
+  z-index: 2;
   transform: translate3d(0, 0, 0);
 }
 
-.slide-left-leave-to {
+.ad-slide-entering {
+  z-index: 3;
+  transform: translate3d(0, 0, 0);
+}
+
+.ad-slide-leaving {
+  z-index: 2;
   transform: translate3d(-100%, 0, 0);
 }
 
+.ad-slide-hidden-right {
+  z-index: 1;
+  transform: translate3d(100%, 0, 0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .slide-left-enter-active,
-  .slide-left-leave-active {
+  .ad-slide {
     transition-duration: 1ms;
   }
 }
