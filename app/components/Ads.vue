@@ -1,16 +1,16 @@
 <template>
   <section class="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div class="relative aspect-[16/5] min-h-[140px] overflow-hidden">
+    <div class="ad-frame relative overflow-hidden">
       <Transition :name="transitionName">
         <NuxtLink
           :to="displayAds[currentAd].link"
           :key="`${currentAd}-${displayAds[currentAd].image}`"
-          class="absolute inset-0 block will-change-transform"
+          class="absolute inset-0 block h-full w-full will-change-transform"
         >
           <img
             :src="displayAds[currentAd].image"
             :alt="displayAds[currentAd].title"
-            class="h-full w-full object-cover"
+            class="block h-full w-full object-cover"
             draggable="false"
           />
         </NuxtLink>
@@ -61,6 +61,22 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.ad-frame {
+  width: 100%;
+  aspect-ratio: 16 / 5;
+  min-height: 140px;
+  max-height: 500px;
+  contain: layout paint;
+}
+
+@media (max-width: 640px) {
+  .ad-frame {
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+  }
+}
+
+
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
