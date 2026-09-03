@@ -2,6 +2,16 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
+  app: {
+    head: {
+      title: "Kialla Computers",
+      link: [
+        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+        { rel: "icon", type: "image/png", sizes: "512x512", href: "/favicon.png" },
+        { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      ],
+    },
+  },
   css: ["~/assets/css/main.css"],
   modules: [
     "@nuxtjs/tailwindcss",
