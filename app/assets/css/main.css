@@ -1,0 +1,28 @@
+:root {
+  --kc-navy: #0b1f3a;
+  --kc-navy-2: #132b4f;
+  --kc-blue: #2367d1;
+  --kc-cyan: #27b6d6;
+  --kc-ink: #17233a;
+  --kc-muted: #64748b;
+  --kc-surface: #ffffff;
+  --kc-bg: #f5f8fc;
+  --kc-line: #e2e8f0;
+}
+html { scroll-behavior: smooth; }
+body { margin:0; background:var(--kc-bg); color:var(--kc-ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+::selection { background:rgba(39,182,214,.22); }
+a { text-underline-offset:3px; }
+button,input,select,textarea { font:inherit; }
+input,select,textarea { background-color:#fff; }
+.kc-page { width:100%; max-width:1280px; margin:0 auto; padding:2rem 1rem 4rem; }
+.kc-panel { background:#fff; border:1px solid var(--kc-line); border-radius:1rem; box-shadow:0 12px 35px rgba(15,35,64,.06); }
+.kc-eyebrow { color:var(--kc-cyan); font-size:.75rem; line-height:1rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+.kc-title { color:var(--kc-navy); font-weight:800; letter-spacing:-.03em; }
+.kc-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; background:var(--kc-blue); color:white; font-weight:800; padding:.8rem 1.1rem; transition:.2s ease; box-shadow:0 8px 20px rgba(35,103,209,.18); }
+.kc-btn-primary:hover { background:#194fa8; transform:translateY(-1px); }
+.kc-btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border-radius:.75rem; border:1px solid #cbd5e1; background:#fff; color:var(--kc-navy); font-weight:800; padding:.8rem 1.1rem; transition:.2s ease; }
+.kc-btn-secondary:hover { border-color:#94a3b8; background:#f8fafc; }
+main input:not([type="checkbox"]):not([type="radio"]), main select, main textarea { border-color:#cbd5e1; border-radius:.7rem; transition:border-color .18s ease,box-shadow .18s ease; }
+main input:not([type="checkbox"]):not([type="radio"]):focus, main select:focus, main textarea:focus { outline:none; border-color:#4d91e8; box-shadow:0 0 0 3px rgba(35,103,209,.12); }
+@media (min-width:768px) { .kc-page { padding-left:1.5rem; padding-right:1.5rem; } }

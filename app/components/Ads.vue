@@ -1,79 +1,24 @@
 <template>
-  <!-- Advertisement -->
-  <section class="w-full flex justify-center overflow-hidden">
-    <div
-      class="relative w-[400px] md:w-full md:max-w-[800px] h-[120px] md:h-[240px] overflow-hidden rounded-lg"
-    >
+  <section class="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="relative aspect-[16/5] min-h-[140px] overflow-hidden">
       <Transition name="slide">
-        <NuxtLink
-          :to="ads[currentAd].link"
-          :key="currentAd"
-          class="absolute inset-0"
-        >
-          <img
-            :src="ads[currentAd].image"
-            :alt="ads[currentAd].title"
-            class="w-full h-full object-cover"
-          />
+        <NuxtLink :to="ads[currentAd].link" :key="currentAd" class="absolute inset-0">
+          <img :src="ads[currentAd].image" :alt="ads[currentAd].title" class="w-full h-full object-cover" />
         </NuxtLink>
       </Transition>
     </div>
   </section>
 </template>
-
 <script setup>
-const currentAd = ref(0);
-
-onMounted(() => {
-  setInterval(() => {
-    currentAd.value++;
-
-    if (currentAd.value >= ads.length) {
-      currentAd.value = 0;
-    }
-  }, 10000);
-});
-
-const images = import.meta.glob("~/assets/images/products/*", {
-  eager: true,
-  import: "default",
-});
-
-const loadads = import.meta.glob("~/assets/images/ads/*", {
-  eager: true,
-  import: "default",
-});
-
-const ads = [
-  {
-    title: "Computer Builds",
-    image: loadads["/assets/images/ads/computers.png"],
-    link: "#",
-  },
-  {
-    title: "Avast Antivirus",
-    image: loadads["/assets/images/ads/avast.png"],
-    link: "#",
-  },
+const currentAd = ref(0); let timer;
+onMounted(() => { timer = window.setInterval(() => { currentAd.value=(currentAd.value+1)%ads.length; },10000); });
+onBeforeUnmount(() => { if (timer) window.clearInterval(timer); });
+const loadads=import.meta.glob("~/assets/images/ads/*",{eager:true,import:"default"});
+const ads=[
+  {title:"Computer Builds",image:loadads["/assets/images/ads/computers.png"],link:"/#shop"},
+  {title:"Avast Antivirus",image:loadads["/assets/images/ads/avast.png"],link:"/#shop"},
 ];
 </script>
-
 <style scoped>
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.8s ease;
-}
-
-.slide-enter-from {
-  transform: translateX(100%);
-}
-
-.slide-leave-to {
-  transform: translateX(-100%);
-}
-
-.slide-enter-to,
-.slide-leave-from {
-  transform: translateX(0);
-}
+.slide-enter-active,.slide-leave-active{transition:opacity .45s ease,transform .45s ease}.slide-enter-from{opacity:0;transform:translateX(18px)}.slide-leave-to{opacity:0;transform:translateX(-18px)}
 </style>

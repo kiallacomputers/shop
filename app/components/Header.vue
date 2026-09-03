@@ -1,314 +1,70 @@
 <template>
-  <header class="bg-white relative z-50">
-    <!-- ========================================= -->
-    <!-- HEADER -->
-    <!-- ========================================= -->
+  <div>
+    <div class="bg-[#0b1f3a] text-slate-200">
+      <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4 text-xs sm:text-sm">
+        <p class="font-semibold">Local computer sales, parts & support</p>
+        <p class="hidden sm:block text-slate-400">Australian owned & operated</p>
+      </div>
+    </div>
 
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center">
-      <!-- ======================================= -->
-      <!-- LOGO -->
-      <!-- ======================================= -->
-
-      <NuxtLink to="/" class="flex items-center shrink-0">
-        <img
-          src="~/assets/images/logos/kc_logo.png"
-          alt="Kialla Computers"
-          class="w-20"
-        />
-      </NuxtLink>
-
-      <!-- ======================================= -->
-      <!-- RIGHT SIDE -->
-      <!-- ======================================= -->
-
-      <div class="ml-auto flex items-center gap-6">
-        <!-- ===================================== -->
-        <!-- DESKTOP MENU -->
-        <!-- ===================================== -->
-
-        <nav class="hidden md:flex items-center gap-6">
-          <!-- Signup / Login -->
-          <NuxtLink
-            v-if="!user"
-            to="/auth/signin"
-            class="text-[#566C9D] hover:text-[#2CB6D5] font-bold transition"
-          >
-            Signup/Login
-          </NuxtLink>
-
-          <!-- Welcome -->
-          <p v-if="user" class="text-[#566C9D] font-bold whitespace-nowrap">
-            Welcome {{ firstName }}
-          </p>
-
-          <!-- My Account -->
-          <NuxtLink
-            v-if="user"
-            to="/account"
-            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition whitespace-nowrap"
-          >
-            My Account
-          </NuxtLink>
-
-          <!-- =================================== -->
-          <!-- ADMIN -->
-          <!-- =================================== -->
-
-          <NuxtLink
-            v-if="user && isAdmin"
-            to="/admin"
-            class="text-[#404E71] hover:text-[#2CB6D5] font-bold transition"
-          >
-            Admin
-          </NuxtLink>
-        </nav>
-
-        <!-- ===================================== -->
-        <!-- SHOPPING CART -->
-        <!-- ===================================== -->
-
-        <NuxtLink
-          to="/shoppingcart"
-          class="relative p-1"
-          aria-label="Shopping Cart"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-7 h-7 text-[#404E71] hover:text-[#2CB6D5] transition"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M2.25 3h1.386c.51 0 .955.343 1.087.835L5.61 6.75m0 0h14.64c.66 0 1.155.604.996 1.245l-1.5 6A1.125 1.125 0 0118.65 14.85H8.13a1.125 1.125 0 01-1.087-.835L5.61 6.75zm2.52 11.1a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0zm9 0a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0z"
-            />
-          </svg>
-
-          <!-- Cart Count -->
-          <span
-            v-if="cart.count > 0"
-            class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"
-          >
-            {{ cart.count }}
-          </span>
+    <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
+      <div class="max-w-7xl mx-auto px-4 h-[82px] flex items-center gap-5">
+        <NuxtLink to="/" class="flex items-center shrink-0" aria-label="Kialla Computers home">
+          <img src="~/assets/images/logos/kc_logo.png" alt="Kialla Computers" class="h-14 w-auto" />
         </NuxtLink>
 
-        <!-- ===================================== -->
-        <!-- DESKTOP LOGOUT ICON -->
-        <!-- ===================================== -->
+        <nav class="hidden md:flex items-center gap-1 ml-5">
+          <NuxtLink to="/" class="desktop-nav">Home</NuxtLink>
+          <NuxtLink to="/#shop" class="desktop-nav">Shop</NuxtLink>
+          <NuxtLink to="/#featured" class="desktop-nav">Featured</NuxtLink>
+        </nav>
 
-        <button
-          v-if="user"
-          type="button"
-          @click="logout"
-          class="hidden md:flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white hover:bg-red-700 transition"
-          title="Sign Out"
-          aria-label="Sign Out"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-            />
-          </svg>
-        </button>
-
-        <!-- ===================================== -->
-        <!-- MOBILE MENU BUTTON -->
-        <!-- ===================================== -->
-
-        <button
-          type="button"
-          class="md:hidden p-2 text-[#404E71]"
-          @click="mobileMenuOpen = !mobileMenuOpen"
-          aria-label="Toggle Menu"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-7 h-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- ========================================= -->
-    <!-- MOBILE MENU -->
-    <!-- ========================================= -->
-
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
-    >
-      <div
-        v-if="mobileMenuOpen"
-        class="md:hidden absolute top-full left-0 right-0 bg-white border-t border-gray-200 shadow-xl"
-      >
-        <nav class="max-w-7xl mx-auto px-4 py-3">
-          <!-- =================================== -->
-          <!-- SIGNUP / LOGIN -->
-          <!-- =================================== -->
-
-          <NuxtLink
-            v-if="!user"
-            to="/auth/signin"
-            class="mobile-menu-item"
-            @click="closeMobileMenu"
-          >
-            <span>Signup / Login</span>
-
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a8.25 8.25 0 0115 0"
-              />
-            </svg>
-          </NuxtLink>
-
-          <!-- =================================== -->
-          <!-- WELCOME -->
-          <!-- =================================== -->
-
-          <div v-if="user" class="px-4 py-4 border-b border-gray-200">
-            <p class="text-[#566C9D] font-bold">
-              Welcome {{ firstName }}
-            </p>
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+          <div v-if="user" class="hidden lg:block text-right mr-2">
+            <p class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Signed in as</p>
+            <p class="text-sm font-bold text-[#0b1f3a]">{{ firstName }}</p>
           </div>
 
-          <!-- =================================== -->
-          <!-- MY ACCOUNT -->
-          <!-- =================================== -->
+          <NuxtLink v-if="!user" to="/auth/signin" class="hidden md:inline-flex kc-btn-secondary !py-2.5 !px-4">Sign in</NuxtLink>
+          <NuxtLink v-if="user" to="/account" class="hidden md:inline-flex kc-btn-secondary !py-2.5 !px-4">My Account</NuxtLink>
+          <NuxtLink v-if="user && isAdmin" to="/admin" class="hidden md:inline-flex rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-extrabold text-white hover:bg-[#132b4f] transition">Admin</NuxtLink>
 
-          <NuxtLink
-            v-if="user"
-            to="/account"
-            class="mobile-menu-item"
-            @click="closeMobileMenu"
-          >
-            <span>My Account</span>
-
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003a6.375 6.375 0 00-12.75 0v.003m15.75-6.376a4.125 4.125 0 01-8.25 0 4.125 4.125 0 018.25 0z"
-              />
-            </svg>
+          <NuxtLink to="/shoppingcart" class="relative flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] hover:border-cyan-300 hover:text-cyan-600 transition" aria-label="Shopping cart">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 3h1.386c.51 0 .955.343 1.087.835L5.61 6.75m0 0h14.64c.66 0 1.155.604.996 1.245l-1.5 6A1.125 1.125 0 0118.65 14.85H8.13a1.125 1.125 0 01-1.087-.835L5.61 6.75zm2.52 11.1a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0zm9 0a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0z" /></svg>
+            <span v-if="cart.count > 0" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-[11px] font-black rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">{{ cart.count }}</span>
           </NuxtLink>
 
-          <!-- =================================== -->
-          <!-- ADMIN -->
-          <!-- =================================== -->
-
-          <NuxtLink
-            v-if="user && isAdmin"
-            to="/admin"
-            class="mobile-menu-item"
-            @click="closeMobileMenu"
-          >
-            <span>Admin</span>
-
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10.5 6h3m-6 12h9m-10.5-6h12M6.75 3h10.5A2.25 2.25 0 0119.5 5.25v13.5A2.25 2.25 0 0117.25 21H6.75a2.25 2.25 0 01-2.25-2.25V5.25A2.25 2.25 0 016.75 3z"
-              />
-            </svg>
-          </NuxtLink>
-
-          <!-- =================================== -->
-          <!-- LOGOUT -->
-          <!-- =================================== -->
-
-          <button
-            v-if="user"
-            type="button"
-            class="mobile-menu-item w-full text-left text-red-600 hover:text-red-700"
-            @click="logout"
-          >
-            <span>Sign Out</span>
-
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-              />
-            </svg>
+          <button v-if="user" type="button" @click="logout" class="hidden md:flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition" title="Sign Out" aria-label="Sign Out">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
           </button>
-        </nav>
+
+          <button type="button" class="md:hidden flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-[#0b1f3a]" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Toggle menu">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+        </div>
+      </div>
+
+      <Transition enter-active-class="transition duration-200" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-150" leave-to-class="opacity-0 -translate-y-2">
+        <div v-if="mobileMenuOpen" class="md:hidden border-t border-slate-200 bg-white shadow-xl">
+          <nav class="max-w-7xl mx-auto px-4 py-3 grid gap-1">
+            <NuxtLink to="/" class="mobile-menu-item" @click="closeMobileMenu">Home</NuxtLink>
+            <NuxtLink to="/#shop" class="mobile-menu-item" @click="closeMobileMenu">Shop</NuxtLink>
+            <NuxtLink to="/#featured" class="mobile-menu-item" @click="closeMobileMenu">Featured</NuxtLink>
+            <NuxtLink v-if="!user" to="/auth/signin" class="mobile-menu-item" @click="closeMobileMenu">Signup / Login</NuxtLink>
+            <NuxtLink v-if="user" to="/account" class="mobile-menu-item" @click="closeMobileMenu">My Account</NuxtLink>
+            <NuxtLink v-if="user && isAdmin" to="/admin" class="mobile-menu-item" @click="closeMobileMenu">Admin</NuxtLink>
+            <button v-if="user" type="button" class="mobile-menu-item text-left text-red-600" @click="logout">Sign Out</button>
+          </nav>
+        </div>
+      </Transition>
+    </header>
+
+    <Transition name="toast">
+      <div v-if="cart.notification" class="fixed top-28 right-5 z-[9999] rounded-xl bg-emerald-600 px-5 py-4 text-white shadow-xl flex items-center gap-3">
+        <span class="text-xl">✓</span><span class="font-semibold">{{ cart.notification }}</span>
       </div>
     </Transition>
-  </header>
-
-  <!-- ========================================= -->
-  <!-- CART NOTIFICATION -->
-  <!-- ========================================= -->
-
-  <Transition name="toast">
-    <div
-      v-if="cart.notification"
-      class="fixed top-20 right-5 z-[9999] bg-green-600 text-white px-5 py-4 rounded-lg shadow-lg flex items-center gap-3"
-    >
-      <span class="text-xl">✓</span>
-
-      <span>{{ cart.notification }}</span>
-    </div>
-  </Transition>
+  </div>
 </template>
 
 <script setup>
@@ -425,24 +181,8 @@ const logout = async () => {
 </script>
 
 <style scoped>
-.mobile-menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-  color: #404e71;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.mobile-menu-item:hover {
-  background-color: #f8fafc;
-  color: #2cb6d5;
-}
-
-.mobile-menu-item:last-child {
-  border-bottom: none;
-}
+.desktop-nav { padding:.7rem .85rem; border-radius:.65rem; color:#334155; font-weight:800; font-size:.9rem; transition:.18s ease; }
+.desktop-nav:hover { color:#2367d1; background:#f1f5f9; }
+.mobile-menu-item { display:flex; align-items:center; width:100%; padding:.85rem 1rem; border-radius:.7rem; color:#0b1f3a; font-weight:800; transition:.18s ease; }
+.mobile-menu-item:hover { background:#f1f5f9; color:#2367d1; }
 </style>

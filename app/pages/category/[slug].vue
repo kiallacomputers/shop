@@ -1,80 +1,35 @@
 <template>
-	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-		<!-- Advertisement -->
-		<Ads />
-
-		<!-- Sidebar -->
-		<div class="flex flex-col md:flex-row gap-6">
-			<!-- Sidebar -->
-			<aside class="w-full md:w-64 shrink-0">
-				<Sidemenu />
-			</aside>
-
-			<!-- Products -->
-			<main class="flex-1">
-				<div class="max-w-7xl mx-auto px-4 py-8">
-					<h1 class="text-3xl font-bold mb-8">
-						{{ category?.name }}
-					</h1>
-					<div
-						v-if="products?.length"
-						class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
-					>
-						<ProductCard 
-							v-for="product in products"
-							:key="product.id"
-							:product="product"
-						/>
-					</div>
-					<div v-else class="text-center py-16 text-gray-500">
-						No products found in this category.
-					</div>
-				</div>
-			</main>
-		</div>
-	</div>
+  <main class="max-w-7xl mx-auto px-4 py-8 md:py-10">
+    <Ads />
+    <div class="mt-8 grid gap-7 lg:grid-cols-[240px_1fr] items-start">
+      <aside class="lg:sticky lg:top-28"><Sidemenu /></aside>
+      <section class="min-w-0">
+        <div class="mb-6 rounded-2xl bg-[#0b1f3a] px-6 py-7 text-white shadow-sm">
+          <p class="text-xs font-black uppercase tracking-[.16em] text-cyan-300">Shop category</p>
+          <h1 class="mt-2 text-3xl font-black tracking-tight">{{ category?.name }}</h1>
+          <p class="mt-2 text-sm text-slate-300">Browse our current products in {{ category?.name }}.</p>
+        </div>
+        <div v-if="products?.length" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <ProductCard v-for="product in products" :key="product.id" :product="product" />
+        </div>
+        <div v-else class="kc-panel p-12 text-center text-slate-500">No products found in this category.</div>
+      </section>
+    </div>
+  </main>
 </template>
 
 <script setup>
 const supabase = useSupabaseClient();
 const route = useRoute();
-
 const slug = route.params.slug;
-
-const { data: category } = await useAsyncData(
-  `category-${slug}`,
-  async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("slug", slug)
-      .single();
-
-    return data;
-  }
-);  
-  
-// Get the products
+const { data: category } = await useAsyncData(`category-${slug}`, async () => {
+  const { data, error } = await supabase.from("categories").select("*").eq("slug", slug).single();
+  if (error) throw error; return data;
+});
 const { data: products } = await useAsyncData(`products-${slug}`, async () => {
   if (!category.value) return [];
-
-  const { data, error } = await supabase
-    .from("products")
-          .select(`
-      *,
-      categories (
-        name
-      )
-      `)
-    .eq("category_id", category.value.id)
-    .order("price");
-
+  const { data, error } = await supabase.from("products").select(`*, categories (name)`).eq("category_id", category.value.id).eq("active", true).order("price");
   if (error) throw error;
-
-  // Replace the category ID with the category name
-  return data.map(product => ({
-    ...product,
-    categoryName: category.value.name,
-  }));
+  return (data || []).map(product => ({ ...product, categoryName: category.value.name }));
 });
 </script>

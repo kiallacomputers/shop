@@ -51,8 +51,8 @@ const signUp = async () => {
 </script>
 
 <template>
-  <div class="max-w-md mx-auto bg-white rounded-lg p-6">
-    <h1 class="text-2xl font-bold mb-6">
+  <div class="kc-panel w-full p-6 sm:p-8">
+    <h1 class="kc-title text-3xl mb-6">
       Create Account
     </h1>
 
@@ -92,7 +92,7 @@ const signUp = async () => {
       <button
         type="submit"
         :disabled="loading"
-        class="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700"
+        class="w-full rounded-xl bg-[#2367d1] text-white py-3 font-extrabold hover:bg-[#194fa8] transition"
       >
         {{ loading ? 'Creating Account...' : 'Create Account' }}
       </button>

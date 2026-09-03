@@ -1,16 +1,16 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-6">
+  <div class="kc-page">
     <main class="w-full">
       <div v-if="!cart.items.length" class="text-center py-16">
-        <h1 class="text-3xl font-bold mb-4">Your Cart is Empty</h1>
+        <h1 class="kc-title text-3xl mb-4">Your Cart is Empty</h1>
         <p class="text-gray-500 mb-6">There are no items in your shopping cart.</p>
-        <NuxtLink to="/" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
+        <NuxtLink to="/" class="kc-btn-primary">
           Continue Shopping
         </NuxtLink>
       </div>
 
       <div v-else>
-        <h1 class="text-3xl font-bold mb-6">Shopping Cart</h1>
+        <div class="mb-6"><p class="kc-eyebrow">Checkout</p><h1 class="kc-title mt-1 text-3xl">Shopping Cart</h1></div>
 
         <div v-for="item in cart.items" :key="item.id" class="flex items-center gap-4 border-b py-4">
           <div class="w-20 h-20 shrink-0 flex items-center justify-center">
@@ -37,7 +37,7 @@
         </div>
 
         <!-- DELIVERY ADDRESS -->
-        <section class="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section class="mt-8 kc-panel p-5 sm:p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 class="text-lg font-bold text-slate-900">Delivery Address</h2>

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <div class="max-w-7xl mx-auto px-4 py-8 space-y-7">
     <Ads />
 
     <div class="flex flex-col md:flex-row gap-6">
@@ -10,7 +10,7 @@
       <main class="min-w-0 flex-1">
         <div class="space-y-6">
           <!-- Product hero -->
-          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_45px_rgba(15,35,64,.08)]">
             <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
               <!-- Gallery -->
               <div class="min-w-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
@@ -99,7 +99,7 @@
                 <div>
                   <NuxtLink
                     :to="`/category/${product.categories.slug}`"
-                    class="text-sm font-bold uppercase tracking-wide text-sky-600 hover:text-sky-700"
+                    class="text-sm font-bold uppercase tracking-wide text-cyan-600 hover:text-cyan-700"
                   >
                     {{ product.categories.name }}
                   </NuxtLink>
@@ -110,7 +110,7 @@
 
                   <div class="mt-6 border-y border-slate-200 py-5">
                     <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
-                      <span class="text-4xl font-extrabold tracking-tight text-sky-600">
+                      <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">
                         ${{ product.price }}
                       </span>
                       <span
@@ -120,7 +120,7 @@
                         ${{ product.oldPrice }}
                       </span>
                     </div>
-                    <p class="mt-1 text-xs text-slate-500">Price includes GST</p>
+                    <p class="mt-1 text-xs text-slate-500">GST inclusive</p>
                   </div>
 
                   <div class="mt-5">

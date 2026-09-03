@@ -1,7 +1,9 @@
 <template>
-  <div class="flex items-center justify-center mt-20">
-    <div class="w-full max-w-md bg-white rounded-lg">
-      <h1 class="text-3xl font-bold mb-6">Sign In</h1>
+  <div class="w-full">
+    <div class="kc-panel w-full p-6 sm:p-8">
+      <h1 class="kc-title text-3xl mb-2">Sign In</h1>
+
+      <p class="mb-7 text-sm text-slate-500">Sign in to manage your account, delivery addresses and orders.</p>
 
       <form @submit.prevent="login" class="space-y-4">
         <div>
@@ -27,7 +29,7 @@
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg py-3"
+          class="w-full rounded-xl bg-[#2367d1] hover:bg-[#194fa8] disabled:bg-slate-400 text-white font-extrabold py-3 transition"
         >
           {{ loading ? "Signing In..." : "Sign In" }}
         </button>

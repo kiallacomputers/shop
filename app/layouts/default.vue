@@ -1,15 +1,7 @@
 <template>
-  <div class="max-w-[1200px] mx-auto px-4">
+  <div class="min-h-screen bg-[#f5f8fc] flex flex-col">
     <Header />
-    <slot />
+    <div class="flex-1"><slot /></div>
+    <Footer />
   </div>
 </template>
-
-<script setup>
-const props = defineProps({
-  isLoggedIn: {
-    type: Boolean,
-    default: false,
-  },
-});
-</script>

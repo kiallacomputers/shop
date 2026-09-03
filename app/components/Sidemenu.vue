@@ -1,151 +1,44 @@
 <template>
   <div>
-    <!-- Mobile Category Button -->
-    <button
-      @click="mobileOpen = !mobileOpen"
-      class="md:hidden w-full flex items-center justify-between bg-white rounded-lg shadow px-4 py-3 mb-4 text-[#404E71] font-semibold"
-    >
-      <span>Categories</span>
-
-      <svg
-        class="w-5 h-5 transition-transform"
-        :class="{ 'rotate-180': mobileOpen }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
+    <button @click="mobileOpen = !mobileOpen" class="md:hidden w-full flex items-center justify-between kc-panel px-4 py-3 mb-4 text-[#0b1f3a] font-extrabold">
+      <span>Browse Categories</span><span class="text-lg">{{ mobileOpen ? '−' : '+' }}</span>
     </button>
-
-    <!-- Sidebar -->
-    <aside
-      class="w-full md:w-64 bg-white rounded-lg p-5"
-      :class="[mobileOpen ? 'block' : 'hidden', 'md:block']"
-    >
-      <h2 class="hidden md:block text-xl font-bold mb-4 text-[#404E71]">
-        Categories
-      </h2>
-
-      <!-- If no categories -->
-      <div v-if="categories.length === 0" class="text-sm text-[#404E71]">
-        No categories found.
+    <aside class="w-full kc-panel overflow-hidden" :class="[mobileOpen ? 'block' : 'hidden', 'md:block']">
+      <div class="bg-[#0b1f3a] px-5 py-4">
+        <p class="text-xs font-black uppercase tracking-[.16em] text-cyan-300">Browse</p>
+        <h2 class="mt-1 text-lg font-black text-white">Categories</h2>
       </div>
-
-      <ul v-else class="space-y-2">
-        <li v-for="category in categories" :key="category.id">
-          <!-- Parent -->
-          <button
-            @click="category.items.length ? toggle(category.id) : null"
-            class="flex items-center gap-1 text-[#404E71] w-full text-left py-1 hover:text-[#2CB6D5]"
-          >
-            <span
-              v-if="category.items.length"
-              class="w-5 h-5 flex items-center justify-center border rounded text-sm"
-            >
-              {{ openMenu === category.id ? "−" : "+" }}
-            </span>
-
-            <span v-else class="w-5"></span>
-
-            <span class="font-medium">
-              {{ category.name }}
-            </span>
-          </button>
-
-          <!-- Children -->
-          <Transition name="submenu">
-            <ul
-              v-if="openMenu === category.id"
-              class="ml-8 mt-2 space-y-2 pl-4"
-            >
-              <li v-for="item in category.items" :key="item.id">
-                <NuxtLink
-                  :to="`/category/${item.slug}`"
-                  class="block text-sm text-slate-600 hover:text-blue-600"
-                >
-                  {{ item.name }}
-                </NuxtLink>
-              </li>
-            </ul>
-          </Transition>
-        </li>
-      </ul>
+      <div class="p-3">
+        <div v-if="categories.length === 0" class="p-3 text-sm text-slate-500">No categories found.</div>
+        <ul v-else class="space-y-1">
+          <li v-for="category in categories" :key="category.id">
+            <div class="flex items-center gap-1">
+              <NuxtLink :to="`/category/${category.slug}`" class="flex-1 rounded-lg px-3 py-2.5 text-sm font-extrabold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition">{{ category.name }}</NuxtLink>
+              <button v-if="category.items.length" @click="toggle(category.id)" class="h-9 w-9 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" :aria-label="`Toggle ${category.name}`">{{ openMenu === category.id ? '−' : '+' }}</button>
+            </div>
+            <Transition name="submenu">
+              <ul v-if="openMenu === category.id" class="ml-3 border-l border-slate-200 pl-3 pb-2">
+                <li v-for="item in category.items" :key="item.id"><NuxtLink :to="`/category/${item.slug}`" class="block rounded-md px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600">{{ item.name }}</NuxtLink></li>
+              </ul>
+            </Transition>
+          </li>
+        </ul>
+      </div>
     </aside>
   </div>
 </template>
-
 <script setup>
 const supabase = useSupabaseClient();
-
-const mobileOpen = ref(false);
-const openMenu = ref(null);
-
-const toggle = (id) => {
-  openMenu.value = openMenu.value === id ? null : id;
-};
-
-// Fetch categories
-const { data, error } = await useAsyncData("categories", async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .order("name", { ascending: true });
-
-  if (error) {
-    console.error("Supabase Error:", error);
-    throw error;
-  }
-
-  // console.log("Supabase returned:", data);
-
-  return data;
+const mobileOpen = ref(false); const openMenu = ref(null);
+const toggle = (id) => { openMenu.value = openMenu.value === id ? null : id; };
+const { data } = await useAsyncData("categories", async () => {
+  const { data, error } = await supabase.from("categories").select("*").eq("active", true).order("sort_order", { ascending:true }).order("name", { ascending:true });
+  if (error) throw error; return data || [];
 });
-
-// Build parent/child structure
-const categories = computed(() => {
-  if (!data.value) return [];
-
-  const parents = data.value
-    .filter((c) => c.parent_id === null)
-    .map((parent) => ({
-      ...parent,
-      items: data.value
-        .filter((child) => child.parent_id === parent.id)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    }));
-
-  return parents;
-});
-
-// Debug output
-// watchEffect(() => {
-//   console.log("Computed categories:", categories.value);
-//   console.log("Data:", data.value);
-// });
+const categories = computed(() => (data.value || []).filter(c => c.parent_id === null).map(parent => ({ ...parent, items:(data.value || []).filter(child => child.parent_id === parent.id).sort((a,b) => a.name.localeCompare(b.name)) })));
 </script>
-
 <style scoped>
-.submenu-enter-active,
-.submenu-leave-active {
-  transition: all 0.25s ease;
-  overflow: hidden;
-}
-
-.submenu-enter-from,
-.submenu-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-
-.submenu-enter-to,
-.submenu-leave-from {
-  opacity: 1;
-  max-height: 300px;
-}
+.submenu-enter-active,.submenu-leave-active { transition:all .22s ease; overflow:hidden; }
+.submenu-enter-from,.submenu-leave-to { opacity:0; max-height:0; }
+.submenu-enter-to,.submenu-leave-from { opacity:1; max-height:400px; }
 </style>

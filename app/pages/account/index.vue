@@ -1,7 +1,8 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="kc-page">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-900">My Account</h1>
+      <p class="kc-eyebrow">Customer account</p>
+      <h1 class="kc-title mt-1 text-3xl">My Account</h1>
       <p v-if="user" class="text-slate-600 mt-2">Welcome, {{ user.email }}</p>
     </div>
 
@@ -23,7 +24,7 @@
         {{ addressError }}
       </div>
 
-      <section class="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm">
+      <section class="kc-panel p-6 mb-8">
         <h2 class="text-xl font-bold mb-4 text-slate-900">Account Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -38,7 +39,7 @@
       </section>
 
       <!-- ADDRESS BOOK -->
-      <section class="bg-white border border-slate-200 rounded-xl mb-8 shadow-sm overflow-hidden">
+      <section class="kc-panel mb-8 overflow-hidden">
         <div class="p-6 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Delivery Addresses</h2>
