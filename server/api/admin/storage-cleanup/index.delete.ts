@@ -43,6 +43,37 @@ const collectImageReferences = (products: any[]) => {
     if (path) references.add(path);
   };
 
+  // Product descriptions are JSON content blocks. Image blocks store their
+  // image URL in fields such as `url`, so recursively inspect every string in
+  // the description rather than only the main product gallery.
+  const scanDescription = (value: unknown) => {
+    if (value == null) return;
+
+    if (typeof value === "string") {
+      add(value);
+
+      // Some older rows may contain the description as a JSON string.
+      const trimmed = value.trim();
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        try {
+          scanDescription(JSON.parse(trimmed));
+        } catch {
+          // Normal description text is not JSON; nothing else to inspect.
+        }
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach(scanDescription);
+      return;
+    }
+
+    if (typeof value === "object") {
+      Object.values(value as Record<string, unknown>).forEach(scanDescription);
+    }
+  };
+
   for (const product of products || []) {
     const images = product?.images;
 
@@ -58,6 +89,9 @@ const collectImageReferences = (products: any[]) => {
       }
     }
 
+    // Protect images embedded in Product Description Builder blocks.
+    scanDescription(product?.description);
+
     // Be defensive if an older product row has a single-image field.
     add(product?.image_url);
     add(product?.image);
@@ -65,7 +99,6 @@ const collectImageReferences = (products: any[]) => {
 
   return references;
 };
-
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
@@ -112,7 +145,7 @@ export default defineEventHandler(async (event) => {
   // if an image was attached to a product after the page loaded, deletion stops.
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id,images");
+    .select("id,images,description");
 
   const { data: variants, error: variantError } = await supabase
     .from("product_variants")
