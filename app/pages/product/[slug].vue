@@ -147,26 +147,26 @@
                       class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200"
                     >
                       <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                      Backorder — please call
+                      On back order — due 3–4 days
                     </div>
                   </div>
                 </div>
 
                 <div class="mt-8 lg:mt-auto lg:pt-10">
                   <button
-                    v-if="effectiveStock > 0"
+                    v-if="!product.has_variants || activeVariants.length"
                     type="button"
                     @click="addCurrentToCart"
                     class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
                   >
-                    Add to Cart
+                    {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
                   </button>
 
                   <div
-                    v-else
-                    class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+                    v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)"
+                    class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"
                   >
-                    This item is currently on backorder. Please contact us for availability and an estimated delivery time.
+                    This item is on back order and is normally due within 3–4 days. You can still purchase it now.
                   </div>
 
                   <div class="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">

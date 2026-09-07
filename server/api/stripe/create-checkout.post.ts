@@ -101,10 +101,20 @@ export default defineEventHandler(async (event) => {
     if (!product.has_variants && item.variantId) throw createError({ statusCode: 400, statusMessage: `Invalid option for ${product.name}` });
 
     const sellable: any = variant || product;
-    const stock = Number(sellable.stock), price = Number(sellable.price);
+    const stock = Number(sellable.stock);
+    // Variant price is an override. NULL/blank/0 inherits the current base product price.
+    // Treating 0 as inherited also repairs variants saved by the earlier blank->0 bug.
+    const variantPrice = variant?.price == null || variant?.price === "" ? NaN : Number(variant.price);
+    const price = Number(
+      variant && Number.isFinite(variantPrice) && variantPrice > 0
+        ? variantPrice
+        : product.price
+    );
     if (product.active === false || variant?.active === false) throw createError({ statusCode: 400, statusMessage: `${product.name} is no longer available` });
     if (!Number.isFinite(price) || price <= 0) throw createError({ statusCode: 400, statusMessage: `Invalid price for ${product.name}` });
-    if (quantity > stock) throw createError({ statusCode: 400, statusMessage: stock === 0 ? `${product.name}${variant ? ` - ${variant.name}` : ""} is out of stock` : `Only ${stock} of ${product.name}${variant ? ` - ${variant.name}` : ""} is available` });
+    // Back orders are allowed. Stock may be zero or lower than the requested
+    // quantity; the paid order is still accepted and stock is clamped to zero
+    // by the webhook after purchase.
 
     lineItems.push({
       price_data: {

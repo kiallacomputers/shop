@@ -309,16 +309,8 @@ export const calculateFreightOptions = async ({
       });
     }
 
-    if (
-      item.quantity >
-      Number(product.stock || 0)
-    ) {
-      throw createError({
-        statusCode: 400,
-        statusMessage:
-          `Not enough stock is available for ${product.name}.`,
-      });
-    }
+    // Back orders are allowed, so freight must still be calculated when the
+    // requested quantity is greater than the current on-hand stock.
 
     const weight = positiveNumber(
       product.weight_kg,

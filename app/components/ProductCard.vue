@@ -29,9 +29,9 @@
             <p class="text-[11px] font-semibold text-slate-400">GST inclusive</p>
           </div>
           <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
-          <span v-else-if="product.has_variants" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Backorder</span>
+          <span v-else-if="product.has_variants" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>
           <span v-else-if="Number(product.stock) > 0" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">In stock</span>
-          <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Backorder</span>
+          <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>
         </div>
         <NuxtLink :to="`/product/${product.slug}`" class="mt-4 flex w-full items-center justify-center rounded-xl bg-[#2367d1] px-4 py-3 text-sm font-black text-white hover:bg-[#194fa8] transition">View product</NuxtLink>
       </div>
