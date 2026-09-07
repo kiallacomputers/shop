@@ -25,10 +25,12 @@
       <div class="mt-auto pt-5">
         <div class="flex items-end justify-between gap-3">
           <div>
-            <p class="text-2xl font-black tracking-tight text-[#0b1f3a]">${{ Number(product.price).toFixed(2) }}</p>
+            <p class="text-2xl font-black tracking-tight text-[#0b1f3a]"><span v-if="product.has_variants" class="mr-1 text-xs font-bold text-slate-500">From</span>${{ displayPrice.toFixed(2) }}</p>
             <p class="text-[11px] font-semibold text-slate-400">GST inclusive</p>
           </div>
-          <span v-if="Number(product.stock) > 0" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">In stock</span>
+          <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
+          <span v-else-if="product.has_variants" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Backorder</span>
+          <span v-else-if="Number(product.stock) > 0" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">In stock</span>
           <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">Backorder</span>
         </div>
         <NuxtLink :to="`/product/${product.slug}`" class="mt-4 flex w-full items-center justify-center rounded-xl bg-[#2367d1] px-4 py-3 text-sm font-black text-white hover:bg-[#194fa8] transition">View product</NuxtLink>
@@ -40,6 +42,13 @@
 <script setup>
 const props = defineProps({ product: { type:Object, required:true } });
 const currentImageIndex = ref(0);
+const variantRows = computed(() => Array.isArray(props.product?.product_variants) ? props.product.product_variants.filter((v) => v?.active !== false) : []);
+const displayPrice = computed(() => {
+  if (!props.product?.has_variants || !variantRows.value.length) return Number(props.product?.price || 0);
+  const prices = variantRows.value.map((v) => Number(v.price)).filter((v) => Number.isFinite(v) && v >= 0);
+  return prices.length ? Math.min(...prices) : Number(props.product?.price || 0);
+});
+const variantStock = computed(() => variantRows.value.reduce((sum, v) => sum + Math.max(0, Number(v.stock || 0)), 0));
 const images = computed(() => {
   if (!props.product?.images) return [];
   if (Array.isArray(props.product.images)) return props.product.images.filter(Boolean);

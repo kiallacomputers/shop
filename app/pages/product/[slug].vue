@@ -109,25 +109,38 @@
                   <div class="mt-6 border-y border-slate-200 py-5">
                     <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
                       <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">
-                        ${{ product.price }}
+                        ${{ effectivePrice.toFixed(2) }}
                       </span>
                       <span
-                        v-if="product.oldPrice"
+                        v-if="effectiveOldPrice"
                         class="pb-1 text-base text-slate-400 line-through"
                       >
-                        ${{ product.oldPrice }}
+                        ${{ effectiveOldPrice.toFixed(2) }}
                       </span>
                     </div>
                     <p class="mt-1 text-xs text-slate-500">GST inclusive</p>
                   </div>
 
+                  <div v-if="product.has_variants" class="mt-5">
+                    <label class="mb-2 block text-sm font-bold text-slate-800">Choose option</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <button v-for="variant in activeVariants" :key="variant.id" type="button" @click="selectedVariantId = Number(variant.id)" class="rounded-lg border px-3 py-2.5 text-left text-sm transition" :class="selectedVariantId === Number(variant.id) ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-400'">
+                        <span class="block font-bold text-slate-900">{{ variant.name }}</span>
+                        <span class="mt-0.5 block text-xs text-slate-500">Code: {{ variant.product_code }}</span>
+                      </button>
+                    </div>
+                    <p v-if="!activeVariants.length" class="mt-2 text-sm text-amber-700">No variants are currently available.</p>
+                  </div>
+
+                  <div v-else-if="product.product_code" class="mt-5 text-sm text-slate-500">Product code: <strong class="text-slate-700">{{ product.product_code }}</strong></div>
+
                   <div class="mt-5">
                     <div
-                      v-if="product.stock > 0"
+                      v-if="effectiveStock > 0"
                       class="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 ring-1 ring-inset ring-green-200"
                     >
                       <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                      {{ product.stock }} in stock
+                      {{ effectiveStock }} in stock
                     </div>
                     <div
                       v-else
@@ -141,9 +154,9 @@
 
                 <div class="mt-8 lg:mt-auto lg:pt-10">
                   <button
-                    v-if="product.stock > 0"
+                    v-if="effectiveStock > 0"
                     type="button"
-                    @click="cart.addToCart(product)"
+                    @click="addCurrentToCart"
                     class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
                   >
                     Add to Cart
@@ -509,6 +522,22 @@ const supabase = useSupabaseClient();
 const route = useRoute();
 
 const cart = useCartStore();
+const selectedVariantId = ref(null);
+const activeVariants = computed(() => (product.value?.product_variants || []).filter((v) => v.active !== false));
+const selectedVariant = computed(() => activeVariants.value.find((v) => Number(v.id) === Number(selectedVariantId.value)) || null);
+const effectivePrice = computed(() => Number(selectedVariant.value?.price ?? product.value?.price ?? 0));
+const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.oldPrice ?? 0));
+const effectiveStock = computed(() => Number(selectedVariant.value?.stock ?? product.value?.stock ?? 0));
+const addCurrentToCart = () => {
+  if (product.value?.has_variants && !selectedVariant.value) return;
+  cart.addToCart({
+    ...product.value,
+    price: effectivePrice.value,
+    stock: effectiveStock.value,
+    images: images.value,
+    selectedVariant: selectedVariant.value ? { id: selectedVariant.value.id, name: selectedVariant.value.name, product_code: selectedVariant.value.product_code } : null,
+  });
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -625,7 +654,8 @@ const { data: product } = await useAsyncData(
         categories (
           name,
           slug
-        )
+        ),
+        product_variants (*)
         `,
       )
       .eq("slug", route.params.slug)
@@ -639,6 +669,12 @@ const { data: product } = await useAsyncData(
   },
 );
 
+watchEffect(() => {
+  if (product.value?.has_variants && selectedVariantId.value == null && activeVariants.value.length) {
+    selectedVariantId.value = Number(activeVariants.value[0].id);
+  }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Current Image
@@ -647,6 +683,8 @@ const { data: product } = await useAsyncData(
 
 const currentImageIndex = ref(0);
 
+watch(selectedVariantId, () => { currentImageIndex.value = 0; });
+
 /*
 |--------------------------------------------------------------------------
 | Convert Images Into An Array
@@ -654,28 +692,21 @@ const currentImageIndex = ref(0);
 */
 
 const images = computed(() => {
-  if (!product.value?.images) {
-    return [];
-  }
+  const variantImages = selectedVariant.value?.images;
+  const source = Array.isArray(variantImages) && variantImages.length
+    ? variantImages
+    : product.value?.images;
 
-  // Already an array
-  if (Array.isArray(product.value.images)) {
-    return product.value.images.filter(Boolean);
-  }
-
-  // JSON string
-  if (typeof product.value.images === "string") {
+  if (!source) return [];
+  if (Array.isArray(source)) return source.filter(Boolean);
+  if (typeof source === "string") {
     try {
-      const parsed = JSON.parse(product.value.images);
-
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean);
-      }
+      const parsed = JSON.parse(source);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
     } catch (error) {
       console.error("PRODUCT IMAGE JSON ERROR:", error);
     }
   }
-
   return [];
 });
 

@@ -20,13 +20,19 @@ export const useCartStore = defineStore(
     function addToCart(product: any) {
       console.log("ADD TO CART:", product);
 
-      const existing = items.value.find((item) => item.id === product.id);
+      const variantId = product.selectedVariant?.id ? Number(product.selectedVariant.id) : null;
+      const cartKey = `${product.id}:${variantId ?? "base"}`;
+      const existing = items.value.find((item) => item.cartKey === cartKey);
 
       if (existing) {
         existing.quantity++;
       } else {
         items.value.push({
           id: product.id,
+          cartKey,
+          variantId,
+          variantName: product.selectedVariant?.name || null,
+          productCode: product.selectedVariant?.product_code || product.product_code || null,
           name: product.name,
           slug: product.slug,
           price: Number(product.price),
@@ -43,27 +49,27 @@ export const useCartStore = defineStore(
       console.log("CART ITEMS:", items.value);
     }
 
-    function removeFromCart(id: number) {
-      items.value = items.value.filter((item) => item.id !== id);
+    function removeFromCart(key: string | number) {
+      items.value = items.value.filter((item) => (item.cartKey || item.id) !== key);
     }
 
-    function increase(id: number) {
-      const item = items.value.find((item) => item.id === id);
+    function increase(key: string | number) {
+      const item = items.value.find((item) => (item.cartKey || item.id) === key);
 
       if (item) {
         item.quantity++;
       }
     }
 
-    function decrease(id: number) {
-      const item = items.value.find((item) => item.id === id);
+    function decrease(key: string | number) {
+      const item = items.value.find((item) => (item.cartKey || item.id) === key);
 
       if (!item) return;
 
       item.quantity--;
 
       if (item.quantity <= 0) {
-        removeFromCart(id);
+        removeFromCart(key);
       }
     }
 

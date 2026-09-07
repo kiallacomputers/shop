@@ -172,7 +172,7 @@ const { data: products } = await useAsyncData(
 
     const { data, error } = await supabase
       .from("products")
-      .select(`*, categories (name)`)
+      .select(`*, categories (name), product_variants (id,name,price,stock,active)`)
       .in("category_id", [...categoryIds])
       .eq("active", true)
       .order("price");

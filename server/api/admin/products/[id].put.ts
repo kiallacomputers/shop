@@ -26,6 +26,8 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const name = String(body?.name || "").trim();
   const slug = cleanSlug(body?.slug || name);
+  const productCode = String(body?.product_code || "").trim();
+  const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const sellMarkupPercent = Number(body?.sell_markup_percent);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
@@ -37,6 +39,7 @@ export default defineEventHandler(async (event) => {
 
   if (!name) throw createError({ statusCode: 400, statusMessage: "Product name is required" });
   if (!slug) throw createError({ statusCode: 400, statusMessage: "Product slug is required" });
+  if (!hasVariants && !productCode) throw createError({ statusCode: 400, statusMessage: "Product code is required for a product without variants" });
 
   for (const [label, value] of [
     ["Buy price ex GST", buyPriceExGst],
@@ -68,6 +71,8 @@ export default defineEventHandler(async (event) => {
   const updates = {
     name,
     slug,
+    product_code: productCode || null,
+    has_variants: hasVariants,
     blurb: String(body?.blurb || "").trim() || null,
     description: body?.description ?? [],
     buy_price_ex_gst: roundMoney(buyPriceExGst),
@@ -88,6 +93,10 @@ export default defineEventHandler(async (event) => {
   };
 
   const supabase = getAdminSupabase();
+  if (productCode) {
+    const { data: codeVariant } = await supabase.from("product_variants").select("id").ilike("product_code", productCode).limit(1).maybeSingle();
+    if (codeVariant) throw createError({ statusCode: 409, statusMessage: "That product code is already used by a variant" });
+  }
   const { data, error } = await supabase.from("products").update(updates).eq("id", id).select("*").maybeSingle();
 
   if (error) {

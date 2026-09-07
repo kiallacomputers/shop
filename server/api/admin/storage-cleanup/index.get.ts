@@ -152,7 +152,11 @@ export default defineEventHandler(async (event) => {
     .from("products")
     .select("id,images");
 
-  if (productError) {
+  const { data: variants, error: variantError } = await supabase
+    .from("product_variants")
+    .select("id,images");
+
+  if (productError || variantError) {
     console.error("STORAGE CLEANUP PRODUCT LOOKUP ERROR:", productError);
     throw createError({
       statusCode: 500,
@@ -160,7 +164,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const referenced = collectImageReferences(products || []);
+  const referenced = collectImageReferences([...(products || []), ...(variants || [])]);
 
   let files;
   try {

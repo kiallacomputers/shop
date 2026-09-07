@@ -114,14 +114,18 @@ export default defineEventHandler(async (event) => {
     .from("products")
     .select("id,images");
 
-  if (productError) {
+  const { data: variants, error: variantError } = await supabase
+    .from("product_variants")
+    .select("id,images");
+
+  if (productError || variantError) {
     throw createError({
       statusCode: 500,
       statusMessage: "Unable to re-check product image references.",
     });
   }
 
-  const referenced = collectImageReferences(products || []);
+  const referenced = collectImageReferences([...(products || []), ...(variants || [])]);
   const nowUsed = paths.filter((path) => referenced.has(path));
 
   if (nowUsed.length) {

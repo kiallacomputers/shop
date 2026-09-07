@@ -28,16 +28,18 @@ export default defineEventHandler(async (event) => {
 
   const requestedItems = body.items.map((item: any) => ({
     id: Number(item?.id),
+    variantId: item?.variantId == null ? null : Number(item.variantId),
     quantity: Number(item?.quantity),
   }));
 
-  if (requestedItems.some((item: any) => !Number.isInteger(item.id) || item.id <= 0 || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+  if (requestedItems.some((item: any) => !Number.isInteger(item.id) || item.id <= 0 || (item.variantId !== null && (!Number.isInteger(item.variantId) || item.variantId <= 0)) || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid cart item" });
   }
 
-  const quantities = new Map<number, number>();
+  const quantities = new Map<string, number>();
   for (const item of requestedItems) {
-    quantities.set(item.id, (quantities.get(item.id) || 0) + item.quantity);
+    const key = `${item.id}:${item.variantId ?? "base"}`;
+    quantities.set(key, (quantities.get(key) || 0) + item.quantity);
   }
 
   const supabase = getAdminSupabase();
@@ -64,10 +66,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "The selected delivery address has an invalid postcode." });
   }
 
-  const productIds = [...quantities.keys()];
+  const productIds = [...new Set(requestedItems.map((item: any) => item.id))];
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id, name, price, stock, active")
+    .select("id, name, price, stock, active, has_variants, product_code")
     .in("id", productIds);
 
   if (productError) {
@@ -80,30 +82,36 @@ export default defineEventHandler(async (event) => {
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
-  for (const product of products) {
-    const quantity = quantities.get(Number(product.id)) || 0;
-    const stock = Number(product.stock);
-    const price = Number(product.price);
+  const variantIds = requestedItems.map((item: any) => item.variantId).filter((id: any) => Number.isInteger(id));
+  const { data: variants, error: variantError } = variantIds.length
+    ? await supabase.from("product_variants").select("id,product_id,name,product_code,price,stock,active").in("id", variantIds)
+    : { data: [], error: null };
+  if (variantError) throw createError({ statusCode: 500, statusMessage: variantError.message });
+  const variantMap = new Map((variants || []).map((v: any) => [Number(v.id), v]));
 
-    if (product.active === false) {
-      throw createError({ statusCode: 400, statusMessage: `${product.name} is no longer available` });
+  for (const item of requestedItems) {
+    const product: any = products.find((p: any) => Number(p.id) === item.id);
+    if (!product) throw createError({ statusCode: 400, statusMessage: "A product in your cart no longer exists" });
+    const quantity = quantities.get(`${item.id}:${item.variantId ?? "base"}`) || 0;
+    const variant: any = item.variantId ? variantMap.get(Number(item.variantId)) : null;
+
+    if (product.has_variants && (!variant || Number(variant.product_id) !== Number(product.id))) {
+      throw createError({ statusCode: 400, statusMessage: `Please choose a valid option for ${product.name}` });
     }
-    if (!Number.isFinite(price) || price <= 0) {
-      throw createError({ statusCode: 400, statusMessage: `Invalid price for ${product.name}` });
-    }
-    if (quantity > stock) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: stock === 0 ? `${product.name} is out of stock` : `Only ${stock} of ${product.name} is available`,
-      });
-    }
+    if (!product.has_variants && item.variantId) throw createError({ statusCode: 400, statusMessage: `Invalid option for ${product.name}` });
+
+    const sellable: any = variant || product;
+    const stock = Number(sellable.stock), price = Number(sellable.price);
+    if (product.active === false || variant?.active === false) throw createError({ statusCode: 400, statusMessage: `${product.name} is no longer available` });
+    if (!Number.isFinite(price) || price <= 0) throw createError({ statusCode: 400, statusMessage: `Invalid price for ${product.name}` });
+    if (quantity > stock) throw createError({ statusCode: 400, statusMessage: stock === 0 ? `${product.name}${variant ? ` - ${variant.name}` : ""} is out of stock` : `Only ${stock} of ${product.name}${variant ? ` - ${variant.name}` : ""} is available` });
 
     lineItems.push({
       price_data: {
         currency: "aud",
         product_data: {
-          name: product.name,
-          metadata: { product_id: String(product.id) },
+          name: variant ? `${product.name} - ${variant.name}` : product.name,
+          metadata: { product_id: String(product.id), variant_id: variant ? String(variant.id) : "", product_code: variant?.product_code || product.product_code || "" },
         },
         unit_amount: Math.round(price * 100),
       },

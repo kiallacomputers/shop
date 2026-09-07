@@ -17,7 +17,7 @@
         </h1>
         <p class="mt-2 max-w-3xl text-slate-500">
           Images shown here exist in the Supabase <strong>products</strong>
-          storage bucket but are not referenced by any current product.
+          storage bucket but are not referenced by any current product or product variant.
           Advertisement files are excluded automatically.
         </p>
       </div>

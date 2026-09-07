@@ -133,6 +133,10 @@ export default defineEventHandler(async (event) => {
 
     slug: newSlug,
 
+    // Product codes must be unique. The duplicate is intentionally left
+    // without a code so the administrator assigns the new SKU before use.
+    product_code: null,
+
     // Safer default:
     // make duplicate inactive until it is reviewed.
     active: false,

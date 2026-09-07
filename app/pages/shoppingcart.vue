@@ -12,7 +12,7 @@
       <div v-else>
         <div class="mb-6"><p class="kc-eyebrow">Checkout</p><h1 class="kc-title mt-1 text-3xl">Shopping Cart</h1></div>
 
-        <div v-for="item in cart.items" :key="item.id" class="flex items-center gap-4 border-b py-4">
+        <div v-for="item in cart.items" :key="item.cartKey || item.id" class="flex items-center gap-4 border-b py-4">
           <div class="w-20 h-20 shrink-0 flex items-center justify-center">
             <img
               v-if="getProductImage(item.image)"
@@ -25,14 +25,14 @@
           </div>
 
           <div class="flex flex-1 items-center gap-4 min-w-0">
-            <div class="flex-1 min-w-0"><h3 class="truncate font-medium">{{ item.name }}</h3></div>
+            <div class="flex-1 min-w-0"><h3 class="truncate font-medium">{{ item.name }}</h3><p v-if="item.variantName" class="mt-1 text-xs font-semibold text-blue-600">{{ item.variantName }}</p><p v-if="item.productCode" class="text-xs text-slate-400">Code: {{ item.productCode }}</p></div>
             <div class="w-24 text-right shrink-0"><p class="font-semibold">${{ Number(item.price).toFixed(2) }}</p></div>
           </div>
 
           <div class="flex items-center gap-2 shrink-0">
-            <button type="button" @click="cart.decrease(item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">−</button>
+            <button type="button" @click="cart.decrease(item.cartKey || item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">−</button>
             <span class="w-6 text-center">{{ item.quantity }}</span>
-            <button type="button" @click="cart.increase(item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">+</button>
+            <button type="button" @click="cart.increase(item.cartKey || item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">+</button>
           </div>
         </div>
 
@@ -308,7 +308,7 @@ watch(
 );
 
 watch(
-  () => cart.items.map((item: any) => ({ id: item.id, quantity: item.quantity })),
+  () => cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
   async () => {
     resetFreight();
     if (selectedAddress.value && cart.items.length) {
@@ -329,7 +329,7 @@ async function getFreightQuote() {
     const response = await $fetch<{ rates: FreightRate[] }>("/api/freight/quote", {
       method: "POST",
       body: {
-        items: cart.items.map((item: any) => ({ id: item.id, quantity: item.quantity })),
+        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
         postcode: selectedAddress.value.postcode,
       },
     });
@@ -371,7 +371,7 @@ async function checkout() {
     const response = await authenticatedFetch<{ url: string; sessionId: string }>("/api/stripe/create-checkout", {
       method: "POST",
       body: {
-        items: cart.items.map((item: any) => ({ id: item.id, quantity: item.quantity })),
+        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
         addressId: selectedAddress.value.id,
         shippingServiceCode: selectedRate.value.code,
       },

@@ -128,6 +128,7 @@
                         <div class="min-w-0">
                           <p class="font-semibold text-slate-900 truncate" :title="product.name">{{ product.name }}</p>
                           <p v-if="product.slug" class="mt-1 text-xs text-slate-400 truncate">/{{ product.slug }}</p>
+                          <p v-if="product.product_code" class="mt-1 text-xs font-semibold text-slate-500">Code: {{ product.product_code }}</p>
                           <div class="mt-2 flex flex-wrap gap-1.5">
                             <span v-if="product.featured"
                               class="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">Featured</span>
@@ -145,8 +146,8 @@
                       {{ currency(product.price) }}
                     </td>
                     <td class="px-5 py-4 text-center">
-                      <span class="inline-flex min-w-12 justify-center rounded-full px-2.5 py-1 text-xs font-bold"
-                        :class="stockClass(product.stock)">
+                      <span v-if="product.has_variants" class="inline-flex justify-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">Variants</span>
+                      <span v-else class="inline-flex min-w-12 justify-center rounded-full px-2.5 py-1 text-xs font-bold" :class="stockClass(product.stock)">
                         {{ Number(product.stock || 0) }}
                       </span>
                     </td>
@@ -308,7 +309,7 @@ const filteredProducts = computed(() => {
     const main = mainCategoryFor(category);
 
     if (term) {
-      const text = [product.name, product.slug, category?.name, main?.name]
+      const text = [product.name, product.slug, product.product_code, category?.name, main?.name]
         .filter(Boolean).join(" ").toLowerCase();
       if (!text.includes(term)) return false;
     }
@@ -327,6 +328,7 @@ const filteredProducts = computed(() => {
     }
 
     const stock = Number(product.stock || 0);
+    if (product.has_variants && stockFilter.value) return true;
     if (stockFilter.value === "in-stock" && stock <= 5) return false;
     if (stockFilter.value === "low-stock" && (stock <= 0 || stock > 5)) return false;
     if (stockFilter.value === "out-of-stock" && stock > 0) return false;

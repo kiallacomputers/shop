@@ -60,10 +60,34 @@
             </select>
           </label>
 
+
+          <label>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Product Code / SKU {{ form.has_variants ? "(optional base code)" : "*" }}</span>
+            <input v-model="form.product_code" :required="!form.has_variants" type="text" class="input uppercase" placeholder="e.g. KC-1001" />
+          </label>
+
+          <label class="flex items-end pb-2">
+            <span class="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <input v-model="form.has_variants" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600" />
+              This product has variants / options
+            </span>
+          </label>
+
           <label class="md:col-span-2">
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Short Description</span>
             <textarea v-model="form.blurb" rows="3" class="input" placeholder="Short description shown on product cards"></textarea>
           </label>
+        </div>
+      </section>
+
+      <section v-if="form.has_variants" class="rounded-xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Product Variants</h2>
+            <p class="mt-1 text-sm text-slate-600">Each colour or option gets its own product code, price and stock level.</p>
+          </div>
+          <NuxtLink v-if="mode === 'edit' && productId" :to="`/admin/products/${productId}/variants`" class="rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-800">Manage Variants</NuxtLink>
+          <span v-else class="text-sm font-semibold text-cyan-800">Create the product first, then add its variants.</span>
         </div>
       </section>
 
@@ -72,6 +96,10 @@
 
         <p class="mt-1 text-sm text-slate-500">
           Enter your supplier buy price excluding GST, then set the markup percentages. The website calculates the GST-inclusive Sell Price and RRP automatically and rounds each final price to the nearest $5.
+        </p>
+
+        <p v-if="form.has_variants" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          This is a variant product. The base price is used for catalogue display/fallback only; each variant has its own sell price, RRP, product code and stock level in Manage Variants.
         </p>
 
         <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -323,6 +351,8 @@ const form = reactive({
   slug: "",
   category_id: "",
   blurb: "",
+  product_code: "",
+  has_variants: false,
   buy_price_ex_gst: "",
   sell_markup_percent: "",
   rrp_markup_percent: "",
@@ -432,6 +462,8 @@ const loadForm = async () => {
       form.slug = product.slug || "";
       form.category_id = product.category_id == null ? "" : String(product.category_id);
       form.blurb = product.blurb || "";
+      form.product_code = product.product_code || "";
+      form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.sell_markup_percent = product.sell_markup_percent == null ? "" : String(product.sell_markup_percent);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);

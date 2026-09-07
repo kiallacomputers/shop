@@ -1,0 +1,2 @@
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+export default defineEventHandler(async (event) => { await requireAdmin(event); const productId=Number(getRouterParam(event,"id")), variantId=Number(getRouterParam(event,"variantId")); const supabase=getAdminSupabase(); const {error}=await supabase.from("product_variants").delete().eq("id",variantId).eq("product_id",productId); if(error) throw createError({statusCode:500,statusMessage:error.message}); return {ok:true}; });

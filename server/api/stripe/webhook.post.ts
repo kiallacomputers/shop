@@ -312,6 +312,8 @@ export default defineEventHandler(async (event) => {
 
     const productId =
       stripeProduct.metadata?.product_id;
+    const variantId = stripeProduct.metadata?.variant_id || null;
+    const productCode = stripeProduct.metadata?.product_code || null;
 
     if (!productId) {
       console.error(
@@ -347,6 +349,9 @@ export default defineEventHandler(async (event) => {
         order_id: order.id,
         product_id: Number(productId),
         product_name: productName,
+        variant_id: variantId ? Number(variantId) : null,
+        variant_name: variantId ? productName.split(" - ").slice(1).join(" - ") || null : null,
+        product_code: productCode,
         quantity,
         price,
       });
@@ -363,62 +368,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Read current stock.
-    const {
-      data: productData,
-      error: productError,
-    } = await supabase
-      .from("products")
-      .select("id, name, stock")
-      .eq("id", Number(productId))
-      .single();
-
-    if (productError || !productData) {
-      console.error(
-        "❌ PRODUCT LOOKUP ERROR:",
-        productError,
-      );
-
-      throw createError({
-        statusCode: 500,
-        statusMessage:
-          productError?.message ||
-          `Product ${productId} was not found`,
-      });
-    }
-
-    const currentStock =
-      Number(productData.stock || 0);
-
-    const newStock = Math.max(
-      0,
-      currentStock - quantity,
-    );
-
-    const {
-      error: stockError,
-    } = await supabase
-      .from("products")
-      .update({
-        stock: newStock,
-      })
-      .eq("id", Number(productId));
-
-    if (stockError) {
-      console.error(
-        "❌ STOCK UPDATE ERROR:",
-        stockError,
-      );
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: stockError.message,
-      });
-    }
-
-    console.log(
-      `✅ STOCK UPDATED: ${productData.name}: ${currentStock} -> ${newStock}`,
-    );
+    // Update stock on the selected variant, or on the base product when there are no variants.
+    const stockTable = variantId ? "product_variants" : "products";
+    const stockId = variantId ? Number(variantId) : Number(productId);
+    const { data: stockRow, error: productError } = await supabase.from(stockTable).select("id, name, stock").eq("id", stockId).single();
+    if (productError || !stockRow) throw createError({ statusCode: 500, statusMessage: productError?.message || `Stock item ${stockId} was not found` });
+    const currentStock = Number(stockRow.stock || 0);
+    const newStock = Math.max(0, currentStock - quantity);
+    const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
+    if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
+    console.log(`✅ STOCK UPDATED: ${stockRow.name}: ${currentStock} -> ${newStock}`);
   }
 
   // ========================================
