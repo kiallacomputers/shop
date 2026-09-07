@@ -259,11 +259,19 @@
 
                 <ul
                   v-else-if="section.type === 'list'"
-                  :class="section.style === 'check' ? 'space-y-2 rounded-lg p-4' : 'list-disc list-inside space-y-2 rounded-lg p-4'"
+                  class="space-y-2 rounded-lg p-4"
                   :style="descriptionTextBlockStyle(section, '#374151', '#ffffff', 'left')"
                 >
-                  <li v-for="(item, i) in section.items" :key="i" :class="section.style === 'check' ? ['flex gap-2', descriptionFlexAlignClass(section.textAlign)] : ''">
-                    <span v-if="section.style === 'check'" class="font-bold text-green-600">✓</span>
+                  <li
+                    v-for="(item, i) in section.items"
+                    :key="i"
+                    :class="['flex gap-2', descriptionFlexAlignClass(section.textAlign)]"
+                  >
+                    <span
+                      class="shrink-0 font-bold"
+                      :class="section.style === 'check' ? 'text-green-600' : ''"
+                      aria-hidden="true"
+                    >{{ listPointer(section.style) }}</span>
                     <span>
                       <template
                         v-for="(part, partIndex) in parseBoldText(item)"
@@ -600,6 +608,19 @@ const descriptionFlexAlignClass = (align = 'left') => {
   if (align === 'right') return 'justify-end';
   return 'justify-start';
 };
+
+const listPointer = (style = 'bullet') => ({
+  bullet: '•',
+  circle: '○',
+  square: '■',
+  dash: '–',
+  arrow: '→',
+  chevron: '›',
+  check: '✓',
+  star: '★',
+  diamond: '◆',
+  plus: '+',
+}[style] || '•');
 
 /*
 |--------------------------------------------------------------------------

@@ -440,9 +440,17 @@
               <span class="field-label">List Style</span>
 
               <select v-model="block.style" class="input">
-                <option value="bullet">Bullet</option>
-                <option value="check">Check Marks</option>
-                <option value="number">Numbered</option>
+                <option value="bullet">• Bullet</option>
+                <option value="circle">○ Circle</option>
+                <option value="square">■ Square</option>
+                <option value="dash">– Dash</option>
+                <option value="arrow">→ Arrow</option>
+                <option value="chevron">› Chevron</option>
+                <option value="check">✓ Check Mark</option>
+                <option value="star">★ Star</option>
+                <option value="diamond">◆ Diamond</option>
+                <option value="plus">+ Plus</option>
+                <option value="number">1. Numbered</option>
               </select>
             </label>
 
