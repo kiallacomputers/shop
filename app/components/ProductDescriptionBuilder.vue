@@ -410,6 +410,11 @@
               {{ blockLabel(block.type) }} Text
             </span>
 
+            <p v-if="block.type === 'info'" class="mb-2 text-xs text-slate-500">
+              Bold selected words by placing <strong>**double asterisks**</strong> around them,
+              for example: Free <strong>**12 month warranty**</strong> included.
+            </p>
+
             <textarea
               v-model="block.text"
               rows="3"
@@ -417,7 +422,9 @@
               :placeholder="
                 block.type === 'warning'
                   ? 'Important information for the customer...'
-                  : 'Enter text...'
+                  : block.type === 'info'
+                    ? 'Enter info text — use **text** for bold...'
+                    : 'Enter text...'
               "
             ></textarea>
           </label>

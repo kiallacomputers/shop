@@ -297,7 +297,13 @@
                   class="border border-blue-200 p-4 rounded-lg whitespace-pre-line"
                   :style="descriptionTextBlockStyle(section, '#1e3a8a', '#eff6ff', 'left')"
                 >
-                  {{ section.text }}
+                  <template
+                    v-for="(part, partIndex) in parseBoldText(section.text)"
+                    :key="partIndex"
+                  >
+                    <strong v-if="part.bold">{{ part.text }}</strong>
+                    <span v-else>{{ part.text }}</span>
+                  </template>
                 </div>
 
                 <!-- Image -->
@@ -525,8 +531,19 @@ const cart = useCartStore();
 const selectedVariantId = ref(null);
 const activeVariants = computed(() => (product.value?.product_variants || []).filter((v) => v.active !== false));
 const selectedVariant = computed(() => activeVariants.value.find((v) => Number(v.id) === Number(selectedVariantId.value)) || null);
-const effectivePrice = computed(() => Number(selectedVariant.value?.price ?? product.value?.price ?? 0));
-const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.oldPrice ?? 0));
+const effectivePrice = computed(() => {
+  const variantPrice = selectedVariant.value?.price;
+  const parsedVariantPrice = variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
+
+  // Variant prices are overrides. NULL/blank/0 means use the current base product price.
+  // Zero is also treated as inherited because zero-dollar variants are not sellable at checkout.
+  if (selectedVariant.value && Number.isFinite(parsedVariantPrice) && parsedVariantPrice > 0) {
+    return parsedVariantPrice;
+  }
+
+  return Number(product.value?.price ?? 0);
+});
+const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
 const effectiveStock = computed(() => Number(selectedVariant.value?.stock ?? product.value?.stock ?? 0));
 const addCurrentToCart = () => {
   if (product.value?.has_variants && !selectedVariant.value) return;
