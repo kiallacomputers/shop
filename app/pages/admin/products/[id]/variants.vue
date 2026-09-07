@@ -41,6 +41,7 @@
   </main>
 </template>
 <script setup lang="ts">
+// Sibling route note: the product edit page lives at [id]/index.vue so this page renders at /admin/products/:id/variants.
 definePageMeta({ middleware: 'admin' });
 const route=useRoute(); const productId=String(route.params.id); const {adminFetch}=useAdminFetch();
 const variants=ref<any[]>([]), loading=ref(true), errorMessage=ref('');
