@@ -106,6 +106,25 @@
         </NuxtLink>
 
         <NuxtLink
+          to="/admin/analytics"
+          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition"
+        >
+          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m6 10V5m6 14v-7m4 7H2" />
+            </svg>
+          </div>
+
+          <p class="font-bold text-slate-900 group-hover:text-emerald-700">
+            Traffic Analytics
+          </p>
+
+          <p class="text-sm text-slate-500 mt-1">
+            View visits, popular products, categories and traffic sources.
+          </p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/ads"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
         >
