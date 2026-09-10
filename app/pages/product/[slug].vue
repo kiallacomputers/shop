@@ -758,6 +758,68 @@ const currentImage = computed(() => {
   return images.value[currentImageIndex.value] || "";
 });
 
+const absoluteProductImage = computed(() => {
+  const image = images.value[0] || "";
+  if (!image) {
+    return "https://shop.kiallacomputers.com.au/kialla-computers-logo.png";
+  }
+
+  if (/^https?:\/\//i.test(image)) {
+    return image;
+  }
+
+  return `https://shop.kiallacomputers.com.au${image.startsWith("/") ? "" : "/"}${image}`;
+});
+
+const productPageUrl = computed(() =>
+  `https://shop.kiallacomputers.com.au/product/${encodeURIComponent(
+    String(product.value?.slug || route.params.slug || ""),
+  )}`,
+);
+
+const productSeoDescription = computed(() => {
+  const name = product.value?.name || "Product";
+  const price = Number(product.value?.price || 0);
+  const formattedPrice =
+    Number.isFinite(price) && price > 0
+      ? new Intl.NumberFormat("en-AU", {
+          style: "currency",
+          currency: "AUD",
+        }).format(price)
+      : "";
+  const category = product.value?.categories?.name
+    ? ` in ${product.value.categories.name}`
+    : "";
+
+  return `${name}${category}${formattedPrice ? ` — ${formattedPrice}` : ""}. Available from Kialla Computers.`;
+});
+
+useSeoMeta({
+  title: () =>
+    product.value?.name
+      ? `${product.value.name} | Kialla Computers`
+      : "Kialla Computers",
+  description: () => productSeoDescription.value,
+  ogTitle: () => product.value?.name || "Kialla Computers",
+  ogDescription: () => productSeoDescription.value,
+  ogType: "product",
+  ogUrl: () => productPageUrl.value,
+  ogImage: () => absoluteProductImage.value,
+  twitterCard: "summary_large_image",
+  twitterTitle: () => product.value?.name || "Kialla Computers",
+  twitterDescription: () => productSeoDescription.value,
+  twitterImage: () => absoluteProductImage.value,
+});
+
+useHead({
+  link: [
+    {
+      rel: "canonical",
+      href: () => productPageUrl.value,
+    },
+  ],
+});
+
 /*
 |--------------------------------------------------------------------------
 | Next Image
