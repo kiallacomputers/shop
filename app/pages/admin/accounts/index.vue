@@ -19,7 +19,7 @@
           </h1>
 
           <p class="mt-1 text-slate-500">
-            SuperAdmin-only user and administrator management.
+            SuperAdmin-only user, administrator and customer pricing management.
           </p>
         </div>
 
@@ -157,16 +157,9 @@
                 >
                   Joined
                 </th>
-                <th
-                  class="w-[12%] px-4 py-3 text-center"
-                >
-                  Role
-                </th>
-                <th
-                  class="w-[24%] px-4 py-3 text-right"
-                >
-                  Actions
-                </th>
+                <th class="w-[12%] px-4 py-3 text-center">Role</th>
+                <th class="w-[18%] px-4 py-3">Pricing Level</th>
+                <th class="w-[18%] px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
 
@@ -218,16 +211,27 @@
                 >
                   <span
                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold"
-                    :class="
-                      roleClass(account.role)
-                    "
+                    :class="roleClass(account.role)"
                   >
-                    {{
-                      roleLabel(
-                        account.role,
-                      )
-                    }}
+                    {{ roleLabel(account.role) }}
                   </span>
+                </td>
+
+                <td class="px-4 py-4">
+                  <select
+                    :value="account.pricing_level_key"
+                    :disabled="pricingChangingId === account.id"
+                    class="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                    @change="changePricingLevel(account, $event)"
+                  >
+                    <option
+                      v-for="level in account.pricing_levels"
+                      :key="level.key"
+                      :value="level.key"
+                    >
+                      {{ level.name }} ({{ level.markup_percent }}%)
+                    </option>
+                  </select>
                 </td>
 
                 <td
@@ -328,6 +332,10 @@ type Account = {
     | string
     | null;
   is_current_user: boolean;
+  pricing_level_key: string;
+  pricing_level_name: string;
+  pricing_markup_percent: number;
+  pricing_levels: Array<{ key: string; name: string; markup_percent: number }>;
 };
 
 const { adminFetch } =
@@ -344,6 +352,7 @@ const changingId =
 
 const resettingId =
   ref<string | null>(null);
+const pricingChangingId = ref<string | null>(null);
 
 const search = ref("");
 const roleFilter = ref("");
@@ -494,6 +503,35 @@ const loadAccounts =
       loading.value = false;
     }
   };
+
+const changePricingLevel = async (account: Account, event: Event) => {
+  const pricingLevelKey = String((event.target as HTMLSelectElement)?.value || "");
+  if (!pricingLevelKey || pricingLevelKey === account.pricing_level_key) return;
+
+  const level = account.pricing_levels.find((item) => item.key === pricingLevelKey);
+  if (!level) return;
+
+  pricingChangingId.value = account.id;
+  errorMessage.value = "";
+  successMessage.value = "";
+
+  try {
+    const result = await adminFetch<any>(`/api/admin/accounts/${account.id}/pricing`, {
+      method: "PUT",
+      body: { pricing_level_key: pricingLevelKey },
+    });
+
+    account.pricing_level_key = result.pricing_level_key;
+    account.pricing_level_name = result.pricing_level_name;
+    account.pricing_markup_percent = result.markup_percent;
+    successMessage.value = `${account.display_name || account.email} pricing level changed to ${result.pricing_level_name}.`;
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to change pricing level.";
+    await loadAccounts();
+  } finally {
+    pricingChangingId.value = null;
+  }
+};
 
 const changeRole = async (
   account: Account,

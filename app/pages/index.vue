@@ -89,7 +89,7 @@ const supabase = useSupabaseClient();
 const { data: featuredProducts } = await useAsyncData("featured-products", async () => {
   const { data, error } = await supabase
     .from("products")
-    .select(`*, categories (name), product_variants (id,name,price,stock,active)`)
+    .select(`id,name,slug,product_code,has_variants,blurb,price,oldPrice,stock,active,featured,refurbished,images,category_id,categories(name),product_variants(id,product_id,name,product_code,price,old_price,stock,active,images)`)
     .eq("featured", true)
     .or("active.eq.true,active.is.null")
     .order("name", { ascending: true });
@@ -97,6 +97,14 @@ const { data: featuredProducts } = await useAsyncData("featured-products", async
   if (error) throw error;
 
   return data || [];
+});
+
+const { applyToProducts } = useCustomerPricing();
+
+onMounted(async () => {
+  if (featuredProducts.value?.length) {
+    await applyToProducts(featuredProducts.value);
+  }
 });
 
 const { data: categoryData } = await useAsyncData("homepage-categories", async () => {

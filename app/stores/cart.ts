@@ -73,6 +73,14 @@ export const useCartStore = defineStore(
       }
     }
 
+    function setPrice(key: string | number, price: number) {
+      const item = items.value.find((row) => (row.cartKey || row.id) === key);
+      const numericPrice = Number(price);
+      if (item && Number.isFinite(numericPrice) && numericPrice > 0) {
+        item.price = numericPrice;
+      }
+    }
+
     function clearCart() {
       items.value = [];
     }
@@ -86,6 +94,7 @@ export const useCartStore = defineStore(
       removeFromCart,
       increase,
       decrease,
+      setPrice,
       clearCart,
     };
   },

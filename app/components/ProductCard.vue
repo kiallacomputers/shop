@@ -44,9 +44,12 @@ const props = defineProps({ product: { type:Object, required:true } });
 const currentImageIndex = ref(0);
 const variantRows = computed(() => Array.isArray(props.product?.product_variants) ? props.product.product_variants.filter((v) => v?.active !== false) : []);
 const displayPrice = computed(() => {
-  if (!props.product?.has_variants || !variantRows.value.length) return Number(props.product?.price || 0);
-  const prices = variantRows.value.map((v) => Number(v.price)).filter((v) => Number.isFinite(v) && v >= 0);
-  return prices.length ? Math.min(...prices) : Number(props.product?.price || 0);
+  const basePrice = Number(props.product?.customer_price ?? props.product?.price ?? 0);
+  if (!props.product?.has_variants || !variantRows.value.length) return basePrice;
+  const prices = variantRows.value
+    .map((v) => Number(v.customer_price ?? v.price))
+    .filter((v) => Number.isFinite(v) && v > 0);
+  return prices.length ? Math.min(...prices) : basePrice;
 });
 const variantStock = computed(() => variantRows.value.reduce((sum, v) => sum + Math.max(0, Number(v.stock || 0)), 0));
 const images = computed(() => {

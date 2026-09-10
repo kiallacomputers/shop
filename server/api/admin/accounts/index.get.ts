@@ -82,6 +82,38 @@ export default defineEventHandler(
         ),
       );
 
+    const { data: pricingLevels, error: pricingLevelsError } = await supabase
+      .from("customer_pricing_levels")
+      .select("key,name,markup_percent,sort_order,active")
+      .eq("active", true)
+      .order("sort_order");
+
+    if (pricingLevelsError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: pricingLevelsError.message || "Unable to load pricing levels.",
+      });
+    }
+
+    const { data: pricingAssignments, error: pricingAssignmentsError } = await supabase
+      .from("customer_pricing_assignments")
+      .select("user_id,pricing_level_key");
+
+    if (pricingAssignmentsError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: pricingAssignmentsError.message || "Unable to load customer pricing assignments.",
+      });
+    }
+
+    const pricingLevelMap = new Map(
+      (pricingLevels ?? []).map((level: any) => [String(level.key), level]),
+    );
+    const pricingAssignmentMap = new Map(
+      (pricingAssignments ?? []).map((assignment: any) => [String(assignment.user_id), String(assignment.pricing_level_key)]),
+    );
+    const standardLevel = pricingLevelMap.get("standard") || { key: "standard", name: "Standard", markup_percent: 20 };
+
     const currentUserId =
       (currentUser as any)?.id ||
       (currentUser as any)?.sub ||
@@ -130,6 +162,18 @@ export default defineEventHandler(
           is_current_user:
             String(user.id) ===
             String(currentUserId),
+          pricing_level_key:
+            pricingAssignmentMap.get(String(user.id)) || String(standardLevel.key),
+          pricing_level_name:
+            (pricingLevelMap.get(pricingAssignmentMap.get(String(user.id)) || "standard") || standardLevel).name,
+          pricing_markup_percent:
+            Number((pricingLevelMap.get(pricingAssignmentMap.get(String(user.id)) || "standard") || standardLevel).markup_percent),
+          pricing_levels:
+            (pricingLevels ?? []).map((level: any) => ({
+              key: String(level.key),
+              name: String(level.name),
+              markup_percent: Number(level.markup_percent),
+            })),
         };
       })
       .sort(

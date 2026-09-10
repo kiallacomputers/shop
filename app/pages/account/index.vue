@@ -26,7 +26,7 @@
 
       <section class="kc-panel p-6 mb-8">
         <h2 class="text-xl font-bold mb-4 text-slate-900">Account Information</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <p class="text-sm text-slate-500">Email</p>
             <p class="font-semibold mt-1">{{ user?.email }}</p>
@@ -34,6 +34,10 @@
           <div>
             <p class="text-sm text-slate-500">Customer ID</p>
             <p class="font-mono text-sm mt-1 break-all">{{ user?.id }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-slate-500">Pricing Level</p>
+            <p class="font-semibold mt-1 text-blue-700">{{ pricingLevelName }}</p>
           </div>
         </div>
       </section>
@@ -218,6 +222,7 @@ const loading = ref(true);
 const errorMessage = ref("");
 const addressError = ref("");
 const successMessage = ref("");
+const pricingLevelName = ref("Standard");
 
 const showAddressForm = ref(false);
 const editingAddressId = ref<string | null>(null);
@@ -377,12 +382,14 @@ async function loadAccount() {
     }
     user.value = currentUser;
 
-    const [addressResult, orderResult] = await Promise.all([
+    const [addressResult, orderResult, pricingResult] = await Promise.all([
       accountFetch<any[]>("/api/account/addresses"),
       supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+      accountFetch<any>("/api/account/pricing"),
     ]);
 
     addresses.value = addressResult || [];
+    pricingLevelName.value = pricingResult?.pricingLevel?.name || "Standard";
     if (orderResult.error) throw orderResult.error;
     orders.value = orderResult.data || [];
   } catch (error: any) {

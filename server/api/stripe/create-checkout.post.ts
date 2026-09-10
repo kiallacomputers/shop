@@ -2,6 +2,11 @@ import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { calculateFreightOptions } from "~~/server/utils/freight";
+import {
+  calculateBaseCustomerPrice,
+  calculateVariantCustomerPrice,
+  getPricingLevelForUser,
+} from "~~/server/utils/customerPricing";
 
 const text = (value: unknown) => String(value ?? "").trim();
 
@@ -69,7 +74,7 @@ export default defineEventHandler(async (event) => {
   const productIds = [...new Set(requestedItems.map((item: any) => item.id))];
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id, name, price, stock, active, has_variants, product_code")
+    .select("id, name, price, buy_price_ex_gst, stock, active, has_variants, product_code")
     .in("id", productIds);
 
   if (productError) {
@@ -79,6 +84,8 @@ export default defineEventHandler(async (event) => {
   if (!products || products.length !== productIds.length) {
     throw createError({ statusCode: 400, statusMessage: "One or more products in your cart no longer exist" });
   }
+
+  const pricingLevel = await getPricingLevelForUser(userId);
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
@@ -102,14 +109,21 @@ export default defineEventHandler(async (event) => {
 
     const sellable: any = variant || product;
     const stock = Number(sellable.stock);
-    // Variant price is an override. NULL/blank/0 inherits the current base product price.
-    // Treating 0 as inherited also repairs variants saved by the earlier blank->0 bug.
-    const variantPrice = variant?.price == null || variant?.price === "" ? NaN : Number(variant.price);
-    const price = Number(
-      variant && Number.isFinite(variantPrice) && variantPrice > 0
-        ? variantPrice
-        : product.price
+
+    // Customer pricing is always recalculated server-side. The browser/cart
+    // cannot choose or submit its own price.
+    const baseCustomerPrice = calculateBaseCustomerPrice(
+      product.buy_price_ex_gst,
+      pricingLevel.markupPercent,
+      product.price,
     );
+    const price = variant
+      ? calculateVariantCustomerPrice({
+          baseCustomerPrice,
+          storedBasePrice: product.price,
+          variantPrice: variant.price,
+        })
+      : baseCustomerPrice;
     if (product.active === false || variant?.active === false) throw createError({ statusCode: 400, statusMessage: `${product.name} is no longer available` });
     if (!Number.isFinite(price) || price <= 0) throw createError({ statusCode: 400, statusMessage: `Invalid price for ${product.name}` });
     // Back orders are allowed. Stock may be zero or lower than the requested
@@ -178,6 +192,8 @@ export default defineEventHandler(async (event) => {
       shipping_service_code: selectedRate.code,
       shipping_method: selectedRate.name,
       shipping_cost: selectedRate.price.toFixed(2),
+      pricing_level: pricingLevel.key,
+      pricing_level_name: pricingLevel.name,
     },
     customer_email: user.email || undefined,
     success_url: `${requestUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

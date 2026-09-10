@@ -153,6 +153,7 @@
 
         <!-- TOTALS -->
         <div class="ml-auto mt-6 max-w-sm space-y-2 text-right">
+          <div class="flex items-center justify-between text-slate-600"><span>Pricing Level</span><span class="font-semibold text-blue-700">{{ pricingLevelName }}</span></div>
           <div class="flex items-center justify-between text-slate-600"><span>Subtotal</span><span>{{ currency(cart.total) }}</span></div>
           <div class="flex items-center justify-between text-slate-600">
             <span>Delivery</span>
@@ -200,6 +201,7 @@ type CustomerAddress = {
 
 const cart = useCartStore();
 const supabase = useSupabaseClient();
+const { quote, pricingLevelName } = useCustomerPricing();
 
 const loading = ref(false);
 const quoting = ref(false);
@@ -318,6 +320,29 @@ watch(
   { deep: true },
 );
 
+async function refreshCustomerPrices() {
+  if (!cart.items.length) return;
+  try {
+    const result = await quote(
+      cart.items.map((item: any) => ({
+        productId: item.id,
+        variantId: item.variantId || null,
+      })),
+    );
+
+    for (const item of cart.items) {
+      const price = item.variantId
+        ? result.variants[String(item.variantId)] ?? result.products[String(item.id)]
+        : result.products[String(item.id)];
+      if (Number.isFinite(Number(price)) && Number(price) > 0) {
+        cart.setPrice(item.cartKey || item.id, Number(price));
+      }
+    }
+  } catch (error) {
+    console.error("CUSTOMER PRICING REFRESH ERROR:", error);
+  }
+}
+
 async function getFreightQuote() {
   if (!selectedAddress.value) return;
   quoting.value = true;
@@ -386,5 +411,8 @@ async function checkout() {
   }
 }
 
-onMounted(() => loadAddresses());
+onMounted(async () => {
+  await refreshCustomerPrices();
+  await loadAddresses();
+});
 </script>

@@ -146,6 +146,8 @@ const openSubcategory = async (event) => {
   await router.push(`/category/${selectedSlug}`);
 };
 
+const { applyToProducts } = useCustomerPricing();
+
 const { data: products } = await useAsyncData(
   () => `products-${slug.value}`,
   async () => {
@@ -172,7 +174,7 @@ const { data: products } = await useAsyncData(
 
     const { data, error } = await supabase
       .from("products")
-      .select(`*, categories (name), product_variants (id,name,price,stock,active)`)
+      .select(`id,name,slug,product_code,has_variants,blurb,price,oldPrice,stock,active,featured,refurbished,images,category_id,categories(name),product_variants(id,product_id,name,product_code,price,old_price,stock,active,images)`)
       .in("category_id", [...categoryIds])
       .eq("active", true)
       .order("price");
@@ -188,5 +190,13 @@ const { data: products } = await useAsyncData(
     }));
   },
   { watch: [slug, category, visibleCategories] },
+);
+
+watch(
+  products,
+  async (value) => {
+    if (import.meta.client && value?.length) await applyToProducts(value);
+  },
+  { immediate: true },
 );
 </script>

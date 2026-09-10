@@ -118,7 +118,10 @@
                         ${{ effectiveOldPrice.toFixed(2) }}
                       </span>
                     </div>
-                    <p class="mt-1 text-xs text-slate-500">GST inclusive</p>
+                    <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>GST inclusive</span>
+                      <span v-if="pricingLevelName" class="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">Pricing Level: {{ pricingLevelName }}</span>
+                    </div>
                   </div>
 
                   <div v-if="product.has_variants" class="mt-5">
@@ -555,19 +558,22 @@ const supabase = useSupabaseClient();
 const route = useRoute();
 
 const cart = useCartStore();
+const { applyToProducts, pricingLevelName } = useCustomerPricing();
 const selectedVariantId = ref(null);
 const activeVariants = computed(() => (product.value?.product_variants || []).filter((v) => v.active !== false));
 const selectedVariant = computed(() => activeVariants.value.find((v) => Number(v.id) === Number(selectedVariantId.value)) || null);
 const effectivePrice = computed(() => {
-  const variantPrice = selectedVariant.value?.price;
-  const parsedVariantPrice = variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
+  if (selectedVariant.value) {
+    const customerVariantPrice = Number(selectedVariant.value?.customer_price);
+    if (Number.isFinite(customerVariantPrice) && customerVariantPrice > 0) return customerVariantPrice;
 
-  // Variant prices are overrides. NULL/blank/0 means use the current base product price.
-  // Zero is also treated as inherited because zero-dollar variants are not sellable at checkout.
-  if (selectedVariant.value && Number.isFinite(parsedVariantPrice) && parsedVariantPrice > 0) {
-    return parsedVariantPrice;
+    const variantPrice = selectedVariant.value?.price;
+    const parsedVariantPrice = variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
+    if (Number.isFinite(parsedVariantPrice) && parsedVariantPrice > 0) return parsedVariantPrice;
   }
 
+  const customerBasePrice = Number(product.value?.customer_price);
+  if (Number.isFinite(customerBasePrice) && customerBasePrice > 0) return customerBasePrice;
   return Number(product.value?.price ?? 0);
 });
 const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
@@ -707,12 +713,10 @@ const { data: product } = await useAsyncData(
       .from("products")
       .select(
         `
-        *,
-        categories (
-          name,
-          slug
-        ),
-        product_variants (*)
+        id, name, slug, product_code, has_variants, blurb, description,
+        price, oldPrice, stock, active, featured, refurbished, images, category_id,
+        categories (name, slug),
+        product_variants (id, product_id, name, product_code, price, old_price, stock, active, images)
         `,
       )
       .eq("slug", route.params.slug)
@@ -730,6 +734,10 @@ watchEffect(() => {
   if (product.value?.has_variants && selectedVariantId.value == null && activeVariants.value.length) {
     selectedVariantId.value = Number(activeVariants.value[0].id);
   }
+});
+
+onMounted(async () => {
+  if (product.value) await applyToProducts([product.value]);
 });
 
 /*
@@ -800,7 +808,8 @@ const shareCopied = ref(false);
 
 const shareText = computed(() => {
   const name = product.value?.name || "Product";
-  const price = Number(effectivePrice.value || 0);
+  // Shared posts use the public/base product price, not a customer's private pricing-level price.
+  const price = Number(product.value?.price || 0);
   const formattedPrice = Number.isFinite(price) && price > 0
     ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(price)
     : "";
