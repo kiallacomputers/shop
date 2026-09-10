@@ -3,6 +3,7 @@ import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
   getPricingLevelForEvent,
+  getStandardPricingLevel,
 } from "~~/server/utils/customerPricing";
 
 type QuoteItem = { productId?: number | string; variantId?: number | string | null };
@@ -18,7 +19,10 @@ export default defineEventHandler(async (event) => {
     requested.map((item) => Number(item?.variantId)).filter((id) => Number.isInteger(id) && id > 0),
   )];
 
-  const level = await getPricingLevelForEvent(event);
+  const [level, standardLevel] = await Promise.all([
+    getPricingLevelForEvent(event),
+    getStandardPricingLevel(),
+  ]);
   if (!productIds.length) {
     return { pricingLevel: { key: level.key, name: level.name }, products: {}, variants: {} };
   }
@@ -40,6 +44,7 @@ export default defineEventHandler(async (event) => {
       product.buy_price_ex_gst,
       level.markupPercent,
       product.price,
+      standardLevel.markupPercent,
     );
   }
 

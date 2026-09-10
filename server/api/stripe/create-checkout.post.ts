@@ -6,6 +6,7 @@ import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
+  getStandardPricingLevel,
 } from "~~/server/utils/customerPricing";
 
 const text = (value: unknown) => String(value ?? "").trim();
@@ -85,7 +86,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "One or more products in your cart no longer exist" });
   }
 
-  const pricingLevel = await getPricingLevelForUser(userId);
+  const [pricingLevel, standardPricingLevel] = await Promise.all([
+    getPricingLevelForUser(userId),
+    getStandardPricingLevel(),
+  ]);
 
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
@@ -116,6 +120,7 @@ export default defineEventHandler(async (event) => {
       product.buy_price_ex_gst,
       pricingLevel.markupPercent,
       product.price,
+      standardPricingLevel.markupPercent,
     );
     const price = variant
       ? calculateVariantCustomerPrice({

@@ -26,6 +26,7 @@ export const calculateBaseCustomerPrice = (
   buyPriceExGst: unknown,
   markupPercent: number,
   fallbackPrice: unknown,
+  standardMarkupPercent = STANDARD_PRICING_LEVEL.markupPercent,
 ) => {
   const publicStandardPrice = Number(fallbackPrice);
 
@@ -39,12 +40,12 @@ export const calculateBaseCustomerPrice = (
   //   Family (10%): 450 / 1.20 * 1.10 = 412.50 -> $415
   //   Good Customer (15%): 450 / 1.20 * 1.15 = 431.25 -> $430
   if (Number.isFinite(publicStandardPrice) && publicStandardPrice > 0) {
-    if (markupPercent === STANDARD_PRICING_LEVEL.markupPercent) {
+    if (markupPercent === standardMarkupPercent) {
       return roundMoney(publicStandardPrice);
     }
 
     const standardMultiplier =
-      1 + STANDARD_PRICING_LEVEL.markupPercent / 100;
+      1 + standardMarkupPercent / 100;
     const customerMultiplier = 1 + markupPercent / 100;
 
     return roundToNearestFive(
@@ -84,6 +85,34 @@ export const calculateVariantCustomerPrice = ({
   const pricingRatio = baseCustomerPrice / baseStored;
   return roundToNearestFive(override * pricingRatio);
 };
+
+export async function getStandardPricingLevel(): Promise<PricingLevel> {
+  const supabase = getAdminSupabase();
+  const { data: level, error } = await supabase
+    .from("customer_pricing_levels")
+    .select("key,name,markup_percent,active")
+    .eq("key", "standard")
+    .eq("active", true)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code !== "42P01") {
+      console.error("STANDARD CUSTOMER PRICING LEVEL ERROR:", error);
+    }
+    return STANDARD_PRICING_LEVEL;
+  }
+
+  if (!level) return STANDARD_PRICING_LEVEL;
+
+  const markupPercent = Number(level.markup_percent);
+  return {
+    key: String(level.key),
+    name: String(level.name),
+    markupPercent: Number.isFinite(markupPercent)
+      ? markupPercent
+      : STANDARD_PRICING_LEVEL.markupPercent,
+  };
+}
 
 export async function getPricingLevelForUser(userId?: string | null): Promise<PricingLevel> {
   const supabase = getAdminSupabase();
