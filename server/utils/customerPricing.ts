@@ -27,29 +27,34 @@ export const calculateBaseCustomerPrice = (
   markupPercent: number,
   fallbackPrice: unknown,
 ) => {
-  const buy = Number(buyPriceExGst);
-  const fallback = Number(fallbackPrice);
+  const publicStandardPrice = Number(fallbackPrice);
 
-  // The stored/public sell price represents the Standard pricing level
-  // (20% markup). If an older product has no Buy Price ex GST saved, derive
-  // the underlying cost from that Standard price so Family/Good Customer
-  // pricing still changes correctly instead of simply returning the full
-  // public price.
-  if (!Number.isFinite(buy) || buy <= 0) {
-    if (!Number.isFinite(fallback) || fallback <= 0) return 0;
-
+  // Customer pricing is based on the product's current public Sell Price.
+  // The stored Sell Price is the Standard (20%) customer price. This keeps
+  // the displayed storefront price as the source of truth even when an older
+  // Buy Price / Sell Markup combination no longer matches the saved price.
+  //
+  // Example:
+  //   Standard public price: $450 (20%)
+  //   Family (10%): 450 / 1.20 * 1.10 = 412.50 -> $415
+  //   Good Customer (15%): 450 / 1.20 * 1.15 = 431.25 -> $430
+  if (Number.isFinite(publicStandardPrice) && publicStandardPrice > 0) {
     if (markupPercent === STANDARD_PRICING_LEVEL.markupPercent) {
-      return roundMoney(fallback);
+      return roundMoney(publicStandardPrice);
     }
 
     const standardMultiplier =
       1 + STANDARD_PRICING_LEVEL.markupPercent / 100;
     const customerMultiplier = 1 + markupPercent / 100;
-    const derivedCustomerPrice =
-      (fallback / standardMultiplier) * customerMultiplier;
 
-    return roundToNearestFive(derivedCustomerPrice);
+    return roundToNearestFive(
+      (publicStandardPrice / standardMultiplier) * customerMultiplier,
+    );
   }
+
+  // Fallback only for records without a saved public Sell Price.
+  const buy = Number(buyPriceExGst);
+  if (!Number.isFinite(buy) || buy <= 0) return 0;
 
   const exGst = buy * (1 + markupPercent / 100);
   return roundToNearestFive(exGst * 1.1);
@@ -64,17 +69,20 @@ export const calculateVariantCustomerPrice = ({
   storedBasePrice: unknown;
   variantPrice: unknown;
 }) => {
-  const override = variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
+  const override =
+    variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
   if (!Number.isFinite(override) || override <= 0) return baseCustomerPrice;
 
   const baseStored = Number(storedBasePrice);
-  if (!Number.isFinite(baseStored) || baseStored <= 0) return roundToNearestFive(override);
+  if (!Number.isFinite(baseStored) || baseStored <= 0) {
+    return roundToNearestFive(override);
+  }
 
-  // Variant overrides are treated as a fixed GST-inclusive surcharge/discount
-  // from the base product. The customer's pricing level applies to the base
-  // product and the variant difference is then preserved.
-  const variantDifference = override - baseStored;
-  return roundToNearestFive(baseCustomerPrice + variantDifference);
+  // A variant's saved price is also a Standard-level public price. Apply the
+  // same customer-price ratio used for the base product rather than preserving
+  // the full Standard-price variant difference.
+  const pricingRatio = baseCustomerPrice / baseStored;
+  return roundToNearestFive(override * pricingRatio);
 };
 
 export async function getPricingLevelForUser(userId?: string | null): Promise<PricingLevel> {
