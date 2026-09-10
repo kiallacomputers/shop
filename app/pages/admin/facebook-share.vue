@@ -8,7 +8,7 @@
           </NuxtLink>
           <h1 class="mt-3 text-3xl font-bold text-slate-900">Facebook Product Share</h1>
           <p class="mt-2 max-w-3xl text-slate-500">
-            Choose a product, prepare the post text, then open Facebook to share the product link to the Kialla Computers Page.
+            Choose a product, prepare the post text, then publish it directly to your connected Kialla Computers Facebook Page.
           </p>
         </div>
       </div>
@@ -82,14 +82,36 @@
               </p>
             </div>
 
+            <div class="mt-5 rounded-xl border p-4"
+              :class="facebookStatus?.configured ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="font-bold" :class="facebookStatus?.configured ? 'text-green-800' : 'text-amber-900'">
+                    {{ facebookStatus?.configured ? `Connected: ${facebookStatus.pageName}` : "Facebook Page not connected" }}
+                  </p>
+                  <p class="mt-1 text-sm" :class="facebookStatus?.configured ? 'text-green-700' : 'text-amber-800'">
+                    {{ facebookStatus?.message || "Checking Facebook Page connection…" }}
+                  </p>
+                </div>
+                <button type="button" class="text-sm font-semibold text-blue-700 hover:underline" @click="loadFacebookStatus">
+                  Check
+                </button>
+              </div>
+            </div>
+
+            <div v-if="publishSuccess" class="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">
+              {{ publishSuccess }}
+            </div>
+
             <div class="mt-5 flex flex-wrap gap-3">
               <button
                 type="button"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1877F2] px-5 py-3 text-sm font-bold text-white transition hover:brightness-95"
-                @click="shareOnFacebook"
+                :disabled="publishing || !facebookStatus?.configured"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1877F2] px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+                @click="publishToFacebook"
               >
                 <span class="text-lg font-black">f</span>
-                Share on Facebook
+                {{ publishing ? "Posting…" : "Post to Kialla Computers Page" }}
               </button>
 
               <button
@@ -111,7 +133,7 @@
             </div>
 
             <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-              When Facebook opens, choose the option to share to a Page you manage and select your Kialla Computers company Page. The post text is copied automatically so you can paste it into Facebook.
+              Direct publishing uses your Facebook Page access token on the server. The token is never sent to the browser. Facebook will build the link card from the product page, including the product image.
             </div>
           </template>
 
@@ -204,6 +226,9 @@ const errorMessage = ref("");
 const postStyle = ref("standard");
 const message = ref("");
 const copied = ref(false);
+const publishing = ref(false);
+const publishSuccess = ref("");
+const facebookStatus = ref<any>(null);
 
 const selectedProduct = computed(() =>
   products.value.find((product) => String(product.id) === selectedProductId.value) || null,
@@ -271,22 +296,45 @@ const copyPost = async () => {
   }
 };
 
-const shareOnFacebook = async () => {
-  if (!selectedProduct.value || !productUrl.value) return;
-
-  // Facebook's standard Share Dialog takes the public URL. The custom text is
-  // copied separately because Facebook does not allow sites to pre-fill a
-  // user's/page's post message through the share dialog.
+const loadFacebookStatus = async () => {
   try {
-    await navigator.clipboard.writeText(message.value);
-    copied.value = true;
-    window.setTimeout(() => (copied.value = false), 1800);
-  } catch {
-    // Continue opening Facebook even when clipboard access is unavailable.
+    facebookStatus.value = await adminFetch<any>("/api/admin/facebook/status");
+  } catch (error: any) {
+    facebookStatus.value = {
+      configured: false,
+      message: error?.data?.statusMessage || error?.message || "Unable to check Facebook Page connection.",
+    };
   }
+};
 
-  const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl.value)}`;
-  window.open(shareUrl, "facebook-share", "width=720,height=720,resizable=yes,scrollbars=yes");
+const publishToFacebook = async () => {
+  if (!selectedProduct.value || !productUrl.value || publishing.value) return;
+
+  publishing.value = true;
+  publishSuccess.value = "";
+  errorMessage.value = "";
+
+  try {
+    const result = await adminFetch<any>("/api/admin/facebook/publish", {
+      method: "POST",
+      body: {
+        productId: selectedProduct.value.id,
+        message: message.value,
+        productUrl: productUrl.value,
+        imageUrl: firstImage(selectedProduct.value),
+      },
+    });
+
+    publishSuccess.value = result?.message || "Product posted to Facebook successfully.";
+  } catch (error: any) {
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Facebook could not publish the product.";
+  } finally {
+    publishing.value = false;
+  }
 };
 
 const loadProducts = async () => {
@@ -310,5 +358,7 @@ const loadProducts = async () => {
   }
 };
 
-onMounted(loadProducts);
+onMounted(async () => {
+  await Promise.all([loadProducts(), loadFacebookStatus()]);
+});
 </script>

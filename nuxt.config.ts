@@ -34,6 +34,10 @@ export default defineNuxtConfig({
 
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 
+    facebookPageId: process.env.FACEBOOK_PAGE_ID,
+    facebookPageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
+    facebookGraphVersion: process.env.FACEBOOK_GRAPH_VERSION || "v24.0",
+
     public: {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
