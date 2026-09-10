@@ -179,6 +179,25 @@
                       <p class="mt-1 text-xs">Delivery calculated from your selected address.</p>
                     </div>
                   </div>
+                  <div class="mt-5 border-t border-slate-200 pt-5">
+                    <div class="flex items-center justify-between gap-3">
+                      <div>
+                        <p class="text-sm font-bold text-slate-800">Share this product</p>
+                        <p class="mt-0.5 text-xs text-slate-500">Share with any supported app or use one of the quick options.</p>
+                      </div>
+                      <span v-if="shareCopied" class="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-200">Link copied</span>
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <button type="button" @click="shareProduct" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12v7a2 2 0 002 2h6a2 2 0 002-2v-7M12 16V3m0 0L8 7m4-4l4 4" /></svg>
+                        Share
+                      </button>
+                      <a :href="facebookShareUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Facebook</a>
+                      <a :href="whatsAppShareUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">WhatsApp</a>
+                      <a :href="emailShareUrl" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Email</a>
+                      <button type="button" @click="copyProductLink" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Copy link</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -776,6 +795,61 @@ const productPageUrl = computed(() =>
     String(product.value?.slug || route.params.slug || ""),
   )}`,
 );
+
+const shareCopied = ref(false);
+
+const shareText = computed(() => {
+  const name = product.value?.name || "Product";
+  const price = Number(effectivePrice.value || 0);
+  const formattedPrice = Number.isFinite(price) && price > 0
+    ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(price)
+    : "";
+
+  return `${name}${formattedPrice ? ` — ${formattedPrice}` : ""} at Kialla Computers`;
+});
+
+const facebookShareUrl = computed(() =>
+  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productPageUrl.value)}`,
+);
+
+const whatsAppShareUrl = computed(() =>
+  `https://wa.me/?text=${encodeURIComponent(`${shareText.value}\n${productPageUrl.value}`)}`,
+);
+
+const emailShareUrl = computed(() =>
+  `mailto:?subject=${encodeURIComponent(product.value?.name || "Kialla Computers product")}&body=${encodeURIComponent(`${shareText.value}\n\n${productPageUrl.value}`)}`,
+);
+
+const copyProductLink = async () => {
+  try {
+    await navigator.clipboard.writeText(productPageUrl.value);
+    shareCopied.value = true;
+    window.setTimeout(() => { shareCopied.value = false; }, 1800);
+  } catch {
+    // Clipboard may be unavailable in older browsers.
+  }
+};
+
+const shareProduct = async () => {
+  if (!import.meta.client) return;
+
+  const shareData = {
+    title: product.value?.name || "Kialla Computers",
+    text: shareText.value,
+    url: productPageUrl.value,
+  };
+
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+    }
+  }
+
+  await copyProductLink();
+};
 
 const productSeoDescription = computed(() => {
   const name = product.value?.name || "Product";
