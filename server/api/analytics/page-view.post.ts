@@ -28,6 +28,65 @@ const isBot = (userAgent: string) =>
     userAgent,
   );
 
+
+const countryFromRequest = (event: any) => {
+  const normaliseCode = (value: unknown) => {
+    const code = String(value ?? "").trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(code) ? code : null;
+  };
+
+  const countryNameFromCode = (code: string | null) => {
+    if (!code) return null;
+    try {
+      return new Intl.DisplayNames(["en"], { type: "region" }).of(code) || code;
+    } catch {
+      return code;
+    }
+  };
+
+  const contextGeo =
+    event?.context?.geo ||
+    event?.context?.netlify?.geo ||
+    event?.context?.clientContext?.geo ||
+    null;
+
+  let code =
+    normaliseCode(contextGeo?.country?.code) ||
+    normaliseCode(contextGeo?.country_code) ||
+    normaliseCode(contextGeo?.countryCode);
+
+  let name =
+    cleanText(contextGeo?.country?.name || contextGeo?.country_name || contextGeo?.countryName, 100) ||
+    null;
+
+  const nfGeo = cleanText(getHeader(event, "x-nf-geo"), 2000);
+  if ((!code || !name) && nfGeo) {
+    try {
+      const parsed = JSON.parse(nfGeo);
+      code =
+        code ||
+        normaliseCode(parsed?.country?.code) ||
+        normaliseCode(parsed?.country_code) ||
+        normaliseCode(parsed?.countryCode);
+      name =
+        name ||
+        cleanText(parsed?.country?.name || parsed?.country_name || parsed?.countryName, 100) ||
+        null;
+    } catch {
+      // Ignore malformed geo metadata.
+    }
+  }
+
+  code =
+    code ||
+    normaliseCode(getHeader(event, "x-country-code")) ||
+    normaliseCode(getHeader(event, "cf-ipcountry"));
+
+  if (!name && code) name = countryNameFromCode(code);
+
+  return { countryCode: code, countryName: name };
+};
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
@@ -68,6 +127,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { pageType, contentSlug } = classifyPath(path);
+  const { countryCode, countryName } = countryFromRequest(event);
   const supabase = getAdminSupabase();
 
   const { error } = await supabase.from("site_analytics_events").insert({
@@ -78,6 +138,8 @@ export default defineEventHandler(async (event) => {
     content_slug: contentSlug,
     referrer_host: referrerHost,
     device_type: deviceType(userAgent),
+    country_code: countryCode,
+    country_name: countryName,
   });
 
   if (error) {

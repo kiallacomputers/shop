@@ -9,6 +9,8 @@ type AnalyticsEvent = {
   content_slug: string | null;
   referrer_host: string | null;
   device_type: string;
+  country_code: string | null;
+  country_name: string | null;
   created_at: string;
 };
 
@@ -81,7 +83,7 @@ export default defineEventHandler(async (event) => {
     const { data, error } = await supabase
       .from("site_analytics_events")
       .select(
-        "id,session_id,path,page_title,page_type,content_slug,referrer_host,device_type,created_at",
+        "id,session_id,path,page_title,page_type,content_slug,referrer_host,device_type,country_code,country_name,created_at",
       )
       .gte("created_at", since)
       .order("created_at", { ascending: false })
@@ -218,6 +220,11 @@ export default defineEventHandler(async (event) => {
 
   const devices = countBy(all, (row) => row.device_type);
 
+  const countries = countBy(
+    all,
+    (row) => row.country_name || row.country_code || "Unknown",
+  ).slice(0, 20);
+
   return {
     rangeDays: days,
     truncated: all.length >= maxRows,
@@ -234,6 +241,7 @@ export default defineEventHandler(async (event) => {
     topCategories,
     referrers,
     devices,
+    countries,
     recent: all.slice(0, 40).map((row) => ({
       id: row.id,
       path: row.path,
@@ -241,6 +249,8 @@ export default defineEventHandler(async (event) => {
       pageType: row.page_type,
       referrer: row.referrer_host,
       device: row.device_type,
+      country: row.country_name || row.country_code || null,
+      countryCode: row.country_code,
       createdAt: row.created_at,
     })),
   };

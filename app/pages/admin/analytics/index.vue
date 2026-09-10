@@ -255,6 +255,31 @@
               <p v-else class="p-6 text-center text-sm text-slate-500">No device data yet.</p>
             </div>
           </div>
+
+          <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+            <div class="border-b border-slate-200 px-5 py-4">
+              <h2 class="font-bold text-slate-900">Visitors by Country</h2>
+              <p class="mt-1 text-sm text-slate-500">Approximate country from server-side network location — no raw IP address stored</p>
+            </div>
+
+            <div v-if="analytics.countries.length" class="divide-y divide-slate-100">
+              <div v-for="country in analytics.countries" :key="country.label" class="px-5 py-3.5">
+                <div class="flex items-center justify-between gap-4">
+                  <span class="text-sm font-semibold text-slate-700">{{ country.label }}</span>
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400">{{ countryPercent(country.views) }}%</span>
+                    <span class="text-xs font-bold text-slate-500">{{ number(country.views) }}</span>
+                  </div>
+                </div>
+                <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div class="h-full rounded-full bg-slate-600" :style="{ width: `${countryPercent(country.views)}%` }" />
+                </div>
+              </div>
+            </div>
+            <p v-else class="p-8 text-center text-sm text-slate-500">
+              No country data yet. New visits will start recording after the migration and deployment.
+            </p>
+          </div>
         </section>
 
         <section class="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -270,6 +295,7 @@
                   <th class="px-5 py-3">Page</th>
                   <th class="px-5 py-3">Type</th>
                   <th class="px-5 py-3">Device</th>
+                  <th class="px-5 py-3">Country</th>
                   <th class="px-5 py-3">Source</th>
                   <th class="px-5 py-3 text-right">Time</th>
                 </tr>
@@ -282,6 +308,7 @@
                   </td>
                   <td class="px-5 py-3 capitalize text-slate-600">{{ event.pageType }}</td>
                   <td class="px-5 py-3 capitalize text-slate-600">{{ event.device }}</td>
+                  <td class="px-5 py-3 text-slate-600">{{ event.country || "Unknown" }}</td>
                   <td class="px-5 py-3 text-slate-600">{{ event.referrer || "Direct / Internal" }}</td>
                   <td class="whitespace-nowrap px-5 py-3 text-right text-slate-500">{{ dateTime(event.createdAt) }}</td>
                 </tr>
@@ -316,6 +343,7 @@ type AnalyticsData = {
   topCategories: Array<{ slug: string; title: string; views: number }>;
   referrers: Array<{ label: string; views: number }>;
   devices: Array<{ label: string; views: number }>;
+  countries: Array<{ label: string; views: number }>;
   recent: Array<{
     id: number;
     path: string;
@@ -323,6 +351,8 @@ type AnalyticsData = {
     pageType: string;
     referrer: string | null;
     device: string;
+    country: string | null;
+    countryCode: string | null;
     createdAt: string;
   }>;
 };
@@ -354,8 +384,17 @@ const totalDeviceViews = computed(() =>
   (analytics.value?.devices || []).reduce((sum, item) => sum + Number(item.views || 0), 0),
 );
 
+const totalCountryViews = computed(() =>
+  (analytics.value?.countries || []).reduce((sum, item) => sum + Number(item.views || 0), 0),
+);
+
 const barHeight = (views: number) =>
   Math.max(2, Math.round((Number(views || 0) / maxTimelineViews.value) * 88));
+
+const countryPercent = (views: number) =>
+  totalCountryViews.value
+    ? Math.round((Number(views || 0) / totalCountryViews.value) * 100)
+    : 0;
 
 const devicePercent = (views: number) =>
   totalDeviceViews.value

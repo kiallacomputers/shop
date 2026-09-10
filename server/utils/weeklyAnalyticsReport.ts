@@ -8,6 +8,8 @@ type AnalyticsEvent = {
   content_slug: string | null;
   referrer_host: string | null;
   device_type: string;
+  country_code: string | null;
+  country_name: string | null;
   created_at: string;
 };
 
@@ -206,7 +208,7 @@ const loadEvents = async (fromIso: string, toIso: string) => {
   for (let from = 0; from < maxRows; from += pageSize) {
     const { data, error } = await supabase
       .from("site_analytics_events")
-      .select("session_id,path,page_title,page_type,content_slug,referrer_host,device_type,created_at")
+      .select("session_id,path,page_title,page_type,content_slug,referrer_host,device_type,country_code,country_name,created_at")
       .gte("created_at", fromIso)
       .lt("created_at", toIso)
       .order("created_at", { ascending: false })
@@ -323,6 +325,11 @@ export async function sendWeeklyAnalyticsReport(options?: { recipient?: string }
 
   const devices = countBy(current, (row) => row.device_type).slice(0, 5);
 
+  const countries = countBy(
+    current,
+    (row) => row.country_name || row.country_code || "Unknown",
+  ).slice(0, 10);
+
   const days = new Map<string, { views: number; sessions: Set<string> }>();
   for (const event of current) {
     const key = melbourneDay(event.created_at);
@@ -395,6 +402,10 @@ export async function sendWeeklyAnalyticsReport(options?: { recipient?: string }
 
       <h2 style="margin:24px 0 8px;font-size:19px">Popular Categories</h2>
       <table width="100%" style="border-collapse:collapse;border:1px solid #e2e8f0"><tbody>${rankedRows(categoryCounts, "No category views recorded this week.")}</tbody></table>
+
+      <h2 style="margin:24px 0 8px;font-size:19px">Visitors by Country</h2>
+      <p style="margin:0 0 10px;color:#64748b;font-size:13px">Country is derived from coarse server-side network location. No raw IP address is stored.</p>
+      <table width="100%" style="border-collapse:collapse;border:1px solid #e2e8f0"><tbody>${rankedRows(countries, "No country data recorded this week.")}</tbody></table>
 
       <div style="display:flex;gap:16px;margin-top:24px">
         <div style="flex:1">
