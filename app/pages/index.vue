@@ -99,13 +99,41 @@ const { data: featuredProducts } = await useAsyncData("featured-products", async
   return data || [];
 });
 
+const customerUser = useSupabaseUser();
 const { applyToProducts } = useCustomerPricing();
 
-onMounted(async () => {
-  if (featuredProducts.value?.length) {
+const refreshFeaturedPricing = async () => {
+  if (!import.meta.client || !featuredProducts.value?.length) return;
+
+  try {
     await applyToProducts(featuredProducts.value);
+
+    // Replace the array reference after applying quoted prices so every
+    // ProductCard immediately re-renders with customer_price.
+    featuredProducts.value = featuredProducts.value.map((product) => ({
+      ...product,
+      product_variants: Array.isArray(product.product_variants)
+        ? product.product_variants.map((variant) => ({ ...variant }))
+        : product.product_variants,
+    }));
+  } catch (error) {
+    console.error("FEATURED PRODUCT PRICING ERROR:", error);
   }
-});
+};
+
+// Supabase can restore the signed-in user after the homepage has mounted.
+// Re-quote featured products whenever the authenticated user changes so a
+// Family/Good Customer account cannot remain on the initial Standard price.
+watch(
+  [() => customerUser.value?.id, () => featuredProducts.value?.length],
+  async ([, productCount]) => {
+    if (!productCount || !import.meta.client) return;
+    await refreshFeaturedPricing();
+  },
+  { immediate: true },
+);
+
+onMounted(refreshFeaturedPricing);
 
 const { data: categoryData } = await useAsyncData("homepage-categories", async () => {
   const { data, error } = await supabase
