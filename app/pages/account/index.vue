@@ -89,8 +89,9 @@
           <div v-for="quote in quoteRequests.slice(0, 5)" :key="quote.id" class="py-4">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p class="font-bold">Quote #{{ quote.id }}</p>
+                <p class="font-bold">{{ quote.quote_number || `Quote #${quote.id}` }}</p>
                 <p class="text-xs text-slate-500">{{ formatDate(quote.created_at) }} · {{ quote.customer_quote_request_items?.length || 0 }} item(s)</p>
+                <p v-if="quote.expires_at && quote.status === 'quoted'" class="mt-1 text-xs font-semibold" :class="quoteExpired(quote) ? 'text-amber-700' : 'text-slate-500'">{{ quoteExpired(quote) ? 'Expired' : 'Valid until' }} {{ formatDate(quote.expires_at) }}</p>
                 <div v-if="quote.customer_quote_request_items?.length" class="mt-3 space-y-1">
                   <p v-for="item in quote.customer_quote_request_items" :key="item.id" class="text-sm text-slate-600">
                     {{ item.quantity }} × {{ item.product_name }}<span v-if="item.variant_name"> — {{ item.variant_name }}</span>
@@ -99,10 +100,11 @@
                 </div>
               </div>
               <div class="sm:text-right">
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{{ quote.status }}</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{{ quoteExpired(quote) ? 'Expired' : quote.status }}</span>
                 <p v-if="quote.quoted_total != null" class="mt-2 text-lg font-black text-slate-900">{{ currency(quote.quoted_total) }}</p>
+                <a v-if="['quoted','accepted','closed'].includes(quote.status)" :href="`/api/account/quotes/${quote.id}/pdf`" class="mt-2 inline-block text-sm font-bold text-blue-600 hover:text-blue-700">Download PDF Quote</a>
                 <button
-                  v-if="quote.status === 'quoted' && Number(quote.quoted_total) > 0"
+                  v-if="quote.status === 'quoted' && !quoteExpired(quote) && Number(quote.quoted_total) > 0"
                   type="button"
                   class="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
                   :disabled="payingQuoteId === Number(quote.id)"
@@ -477,6 +479,8 @@ async function deleteAddress(address: any) {
 
 const currency = (value: unknown) =>
   new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
+
+const quoteExpired = (quote: any) => Boolean(quote?.status === "quoted" && quote?.expires_at && new Date(quote.expires_at).getTime() < Date.now());
 
 async function payQuote(quote: any) {
   errorMessage.value = "";

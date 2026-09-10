@@ -100,7 +100,7 @@
           <div v-if="customer.quotes.length" class="mt-4 space-y-4">
             <article v-for="quote in customer.quotes" :key="quote.id" class="rounded-xl border border-slate-200 p-5">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div><p class="font-black">Quote #{{ quote.id }}</p><p class="text-xs text-slate-500">{{ formatDate(quote.created_at) }}</p></div>
+                <div><p class="font-black">{{ quote.quote_number || `Quote #${quote.id}` }}</p><p class="text-xs text-slate-500">{{ formatDate(quote.created_at) }}</p><p v-if="quote.expires_at" class="mt-1 text-xs" :class="quoteExpired(quote) ? 'font-bold text-amber-700' : 'text-slate-500'">{{ quoteExpired(quote) ? 'Expired' : 'Valid until' }} {{ formatDate(quote.expires_at) }}</p></div>
                 <select v-model="quote.status" class="input max-w-44"><option value="requested">Requested</option><option value="reviewing">Reviewing</option><option value="quoted">Quoted</option><option value="accepted">Accepted</option><option value="declined">Declined</option><option value="closed">Closed</option></select>
               </div>
               <div class="mt-4 divide-y divide-slate-100 rounded-lg border border-slate-200">
@@ -123,11 +123,16 @@
                   </label>
                 </div>
               </div>
-              <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <label><span class="field-label">Quoted Total</span><input v-model="quote.quoted_total" type="number" min="0" step="0.01" class="input" /></label>
+                <label><span class="field-label">Valid Until</span><input v-model="quote.expires_local" type="date" class="input" /></label>
                 <label><span class="field-label">Admin Notes</span><textarea v-model="quote.admin_notes" rows="3" class="input"></textarea></label>
               </div>
-              <div class="mt-4 text-right"><button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700" @click="saveQuote(quote)">Save Quote</button></div>
+              <div class="mt-4 flex flex-wrap justify-end gap-2">
+                <a :href="`/api/admin/quotes/${quote.id}.pdf`" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Download PDF</a>
+                <button v-if="quote.status === 'quoted'" class="rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50" @click="resendQuote(quote)">Resend Quote</button>
+                <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700" @click="saveQuote(quote)">Save Quote</button>
+              </div>
             </article>
           </div>
           <p v-else class="mt-3 text-sm text-slate-500">No quote requests.</p>
@@ -159,6 +164,10 @@ async function loadCustomer() {
   errorMessage.value = "";
   try {
     customer.value = await adminFetch<any>(`/api/admin/accounts/${route.params.id}/profile`);
+    customer.value.quotes = (customer.value.quotes || []).map((quote: any) => ({
+      ...quote,
+      expires_local: quote.expires_at ? new Date(quote.expires_at).toISOString().slice(0, 10) : "",
+    }));
     Object.assign(form, customer.value.profile || {});
     tagsText.value = (customer.value.profile?.tags || []).join(", ");
     selectedPricingLevel.value = customer.value.pricingLevel?.key || "standard";
@@ -209,6 +218,19 @@ async function saveProfile() {
   }
 }
 
+const quoteExpired = (quote: any) => Boolean(quote?.status === "quoted" && quote?.expires_at && new Date(quote.expires_at).getTime() < Date.now());
+
+async function resendQuote(quote: any) {
+  successMessage.value = ""; errorMessage.value = "";
+  try {
+    const result = await adminFetch<any>(`/api/admin/accounts/${route.params.id}/quotes/${quote.id}/resend`, { method: "POST" });
+    quote.sent_at = result.sent_at;
+    successMessage.value = `${quote.quote_number || `Quote #${quote.id}`} emailed again.`;
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to resend quote.";
+  }
+}
+
 async function saveQuote(quote: any) {
   successMessage.value = "";
   errorMessage.value = "";
@@ -219,11 +241,13 @@ async function saveQuote(quote: any) {
         status: quote.status,
         quoted_total: quote.quoted_total,
         admin_notes: quote.admin_notes,
+        expires_at: quote.expires_local ? new Date(`${quote.expires_local}T23:59:59+10:00`).toISOString() : null,
         items: quote.customer_quote_request_items || [],
       },
     });
     Object.assign(quote, saved);
-    successMessage.value = `Quote #${quote.id} updated.`;
+    quote.expires_local = saved.expires_at ? new Date(saved.expires_at).toISOString().slice(0, 10) : "";
+    successMessage.value = `${quote.quote_number || `Quote #${quote.id}`} updated.`;
   } catch (error: any) {
     errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to update quote.";
   }

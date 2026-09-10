@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getAdminSupabase();
   const { data: quote, error: quoteError } = await supabase
     .from("customer_quote_requests")
-    .select("id,user_id,status,quoted_total,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)")
+    .select("id,quote_number,user_id,status,quoted_total,expires_at,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)")
     .eq("id", quoteId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -28,6 +28,9 @@ export default defineEventHandler(async (event) => {
   if (!quote) throw createError({ statusCode: 404, statusMessage: "Quote not found." });
   if (quote.status !== "quoted") {
     throw createError({ statusCode: 400, statusMessage: "This quote is not ready for payment." });
+  }
+  if (quote.expires_at && new Date(quote.expires_at).getTime() < Date.now()) {
+    throw createError({ statusCode: 400, statusMessage: "This quote has expired. Please request an updated quote." });
   }
 
   const total = Number(quote.quoted_total || 0);
@@ -77,7 +80,7 @@ export default defineEventHandler(async (event) => {
       price_data: {
         currency: "aud",
         product_data: {
-          name: `Kialla Computers Quote #${quote.id}`,
+          name: `Kialla Computers ${quote.quote_number || `Quote #${quote.id}`}`,
           description: `${items.length} quoted item${items.length === 1 ? "" : "s"}`,
         },
         unit_amount: Math.round(total * 100),
@@ -89,6 +92,7 @@ export default defineEventHandler(async (event) => {
     metadata: {
       user_id: String(user.id),
       quote_id: String(quote.id),
+      quote_number: String(quote.quote_number || ""),
       quote_payment: "true",
       shipping_address_id: String(address.id),
       shipping_label: text(address.label),

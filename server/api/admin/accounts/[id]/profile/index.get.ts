@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     supabase.from("customer_addresses").select("id,label,full_name,address_line_1,address_line_2,suburb,state,postcode,country,phone,is_primary").eq("user_id", userId).order("is_primary", { ascending: false }),
     supabase.from("orders").select("id,total,status,customer_name,customer_email,tracking_number,carrier,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.from("customer_wishlist").select("product_id,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("customer_quote_requests").select(`id,status,customer_message,admin_notes,quoted_total,created_at,updated_at,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)`).eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase.from("customer_quote_requests").select(`id,quote_number,status,customer_message,admin_notes,quoted_total,expires_at,quoted_at,sent_at,created_at,updated_at,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)`).eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.from("customer_pricing_assignments").select("pricing_level_key").eq("user_id", userId).maybeSingle(),
   ]);
 

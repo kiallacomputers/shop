@@ -94,6 +94,14 @@ export default defineEventHandler(async (event) => {
 
   if (quoteError) throw createError({ statusCode: 500, statusMessage: quoteError.message });
 
+  const quoteNumber = `KCQ-${new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()).replaceAll("-", "")}-${String(quote.id).padStart(6, "0")}`;
+  const { error: quoteNumberError } = await supabase
+    .from("customer_quote_requests")
+    .update({ quote_number: quoteNumber })
+    .eq("id", quote.id);
+  if (quoteNumberError) throw createError({ statusCode: 500, statusMessage: quoteNumberError.message });
+  quote.quote_number = quoteNumber;
+
   const { error: itemError } = await supabase
     .from("customer_quote_request_items")
     .insert(items.map((item) => ({ ...item, quote_request_id: quote.id })));
@@ -108,6 +116,8 @@ export default defineEventHandler(async (event) => {
   try {
     await sendQuoteRequestEmails({
       id: quote.id,
+      quote_number: quote.quote_number,
+      created_at: quote.created_at,
       customer_email: String(user.email || ""),
       customer_name: String(user.user_metadata?.display_name || user.user_metadata?.full_name || ""),
       customer_message: String(body?.message || "").trim() || null,

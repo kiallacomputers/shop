@@ -106,6 +106,18 @@
         </NuxtLink>
 
         <NuxtLink
+          v-if="isSuperAdmin"
+          to="/admin/quotes"
+          class="group rounded-xl border border-violet-200 bg-white p-5 shadow-sm hover:border-violet-400 hover:shadow-md transition"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <p class="font-bold text-slate-900 group-hover:text-violet-700">Quote Management</p>
+            <span class="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase text-violet-700">SuperAdmin</span>
+          </div>
+          <p class="text-sm text-slate-500 mt-1">Manage all quotes, expiry dates, PDFs and resend customer quotes.</p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/analytics"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition"
         >
