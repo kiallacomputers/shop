@@ -111,12 +111,10 @@
                       <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">
                         ${{ effectivePrice.toFixed(2) }}
                       </span>
-                      <span
-                        v-if="effectiveOldPrice"
-                        class="pb-1 text-base text-slate-400 line-through"
-                      >
-                        ${{ effectiveOldPrice.toFixed(2) }}
-                      </span>
+                      <div v-if="effectiveOldPrice" class="pb-1 text-slate-400">
+                        <p class="text-[10px] font-bold uppercase tracking-wide">RRP</p>
+                        <p class="text-base line-through">${{ effectiveOldPrice.toFixed(2) }}</p>
+                      </div>
                     </div>
                     <p v-if="hasCustomerDiscount" class="mt-1 text-sm text-slate-500">
                       Standard price <span class="line-through">${{ effectiveStandardPrice.toFixed(2) }}</span>

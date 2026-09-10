@@ -38,6 +38,10 @@
             <p v-if="hasCustomerDiscount" class="text-[11px] font-bold uppercase tracking-wide text-blue-600">Your {{ pricingLevelName }} price</p>
             <p class="text-2xl font-black tracking-tight text-[#0b1f3a]"><span v-if="product.has_variants" class="mr-1 text-xs font-bold text-slate-500">From</span>${{ displayPrice.toFixed(2) }}</p>
             <p v-if="hasCustomerDiscount" class="text-xs text-slate-400">Standard <span class="line-through">${{ standardDisplayPrice.toFixed(2) }}</span></p>
+            <div v-if="displayRrp > displayPrice" class="mt-1 text-slate-400">
+              <p class="text-[10px] font-bold uppercase tracking-wide">RRP</p>
+              <p class="text-xs line-through">${{ displayRrp.toFixed(2) }}</p>
+            </div>
             <p class="text-[11px] font-semibold text-slate-400">GST inclusive</p>
           </div>
           <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
@@ -67,6 +71,14 @@ const displayPrice = computed(() => {
     .map((v) => Number(v.customer_price ?? v.price))
     .filter((v) => Number.isFinite(v) && v > 0);
   return prices.length ? Math.min(...prices) : basePrice;
+});
+const displayRrp = computed(() => {
+  const baseRrp = Number(props.product?.oldPrice ?? props.product?.old_price ?? 0);
+  if (!props.product?.has_variants || !variantRows.value.length) return baseRrp;
+  const prices = variantRows.value
+    .map((v) => Number(v.old_price ?? baseRrp))
+    .filter((v) => Number.isFinite(v) && v > 0);
+  return prices.length ? Math.min(...prices) : baseRrp;
 });
 const standardDisplayPrice = computed(() => {
   const basePrice = Number(props.product?.price || 0);
