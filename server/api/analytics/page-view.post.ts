@@ -44,6 +44,13 @@ const countryFromRequest = (event: any) => {
     }
   };
 
+  // Netlify's geo object is not exposed directly on Nuxt/H3 events.
+  // A small Netlify Edge Function adds the country to trusted internal
+  // request headers before this Nitro API route runs.
+  const edgeCountryCode = normaliseCode(getHeader(event, "x-kc-country-code"));
+  const edgeCountryName =
+    cleanText(getHeader(event, "x-kc-country-name"), 100) || null;
+
   const contextGeo =
     event?.context?.geo ||
     event?.context?.netlify?.geo ||
@@ -51,11 +58,13 @@ const countryFromRequest = (event: any) => {
     null;
 
   let code =
+    edgeCountryCode ||
     normaliseCode(contextGeo?.country?.code) ||
     normaliseCode(contextGeo?.country_code) ||
     normaliseCode(contextGeo?.countryCode);
 
   let name =
+    edgeCountryName ||
     cleanText(contextGeo?.country?.name || contextGeo?.country_name || contextGeo?.countryName, 100) ||
     null;
 
