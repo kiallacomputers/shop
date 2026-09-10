@@ -166,7 +166,22 @@
           <div class="flex items-center justify-between border-t pt-3 text-2xl font-bold"><span>Total</span><span>{{ currency(grandTotal) }}</span></div>
         </div>
 
-        <div class="text-right mt-6">
+        <div v-if="quoteSuccess" class="mt-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {{ quoteSuccess }}
+        </div>
+        <div v-if="quoteError" class="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ quoteError }}
+        </div>
+
+        <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+          <button
+            type="button"
+            :disabled="requestingQuote || !cart.items.length"
+            class="rounded-lg border border-blue-300 bg-white px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+            @click="requestQuote"
+          >
+            {{ requestingQuote ? "Requesting..." : "Request a Quote" }}
+          </button>
           <button
             type="button"
             @click="checkout"
@@ -205,6 +220,9 @@ const { quote, pricingLevelName } = useCustomerPricing();
 
 const loading = ref(false);
 const quoting = ref(false);
+const requestingQuote = ref(false);
+const quoteSuccess = ref("");
+const quoteError = ref("");
 const freightError = ref("");
 const freightRates = ref<FreightRate[]>([]);
 const selectedServiceCode = ref("");
@@ -380,6 +398,30 @@ function getProductImage(image: any): string {
 }
 
 function imageError(item: any) { console.error("PRODUCT IMAGE FAILED:", item.name, item.image); }
+
+async function requestQuote() {
+  if (!cart.items.length) return;
+  requestingQuote.value = true;
+  quoteSuccess.value = "";
+  quoteError.value = "";
+  try {
+    const result = await authenticatedFetch<any>("/api/account/quotes", {
+      method: "POST",
+      body: {
+        items: cart.items.map((item: any) => ({
+          id: item.id,
+          variantId: item.variantId || null,
+          quantity: item.quantity,
+        })),
+      },
+    });
+    quoteSuccess.value = `Quote request #${result.id} has been sent. You can follow it from My Account.`;
+  } catch (error: any) {
+    quoteError.value = error?.data?.statusMessage || error?.message || "Unable to request a quote.";
+  } finally {
+    requestingQuote.value = false;
+  }
+}
 
 async function checkout() {
   if (!cart.items.length || !selectedAddress.value || !selectedRate.value) return;

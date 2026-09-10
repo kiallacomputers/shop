@@ -118,6 +118,9 @@
                         ${{ effectiveOldPrice.toFixed(2) }}
                       </span>
                     </div>
+                    <p v-if="hasCustomerDiscount" class="mt-1 text-sm text-slate-500">
+                      Standard price <span class="line-through">${{ effectiveStandardPrice.toFixed(2) }}</span>
+                    </p>
                     <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span>GST inclusive</span>
                       <span v-if="pricingLevelName" class="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">Pricing Level: {{ pricingLevelName }}</span>
@@ -156,14 +159,23 @@
                 </div>
 
                 <div class="mt-8 lg:mt-auto lg:pt-10">
-                  <button
-                    v-if="!product.has_variants || activeVariants.length"
-                    type="button"
-                    @click="addCurrentToCart"
-                    class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
-                  >
-                    {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
-                  </button>
+                  <div v-if="!product.has_variants || activeVariants.length" class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                    <button
+                      type="button"
+                      @click="addCurrentToCart"
+                      class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                    >
+                      {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-xl border border-slate-300 bg-white px-5 py-3.5 font-bold transition hover:border-rose-300 hover:bg-rose-50"
+                      :class="wishlistSaved ? 'text-rose-600' : 'text-slate-700'"
+                      @click="toggleWishlist"
+                    >
+                      {{ wishlistSaved ? '♥ Saved' : '♡ Save' }}
+                    </button>
+                  </div>
 
                   <div
                     v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)"
@@ -559,6 +571,9 @@ const route = useRoute();
 
 const cart = useCartStore();
 const customerUser = useSupabaseUser();
+const { isSaved, toggle: toggleWishlistProduct, load: loadWishlist } = useWishlist();
+const wishlistSaved = computed(() => isSaved(product.value?.id));
+const toggleWishlist = async () => { await toggleWishlistProduct(product.value?.id); };
 const { quote, pricingLevelName } = useCustomerPricing();
 
 const quotedProductPrice = ref(null);
@@ -590,6 +605,20 @@ const effectivePrice = computed(() => {
 
   return Number(product.value?.price ?? 0);
 });
+const effectiveStandardPrice = computed(() => {
+  if (selectedVariant.value) {
+    const variantPrice = Number(selectedVariant.value?.price);
+    if (Number.isFinite(variantPrice) && variantPrice > 0) return variantPrice;
+  }
+  return Number(product.value?.price || 0);
+});
+
+const hasCustomerDiscount = computed(() =>
+  pricingLevelName.value !== "Standard" &&
+  effectivePrice.value > 0 &&
+  effectiveStandardPrice.value > effectivePrice.value
+);
+
 const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
 const effectiveStock = computed(() => Number(selectedVariant.value?.stock ?? product.value?.stock ?? 0));
 const addCurrentToCart = () => {
@@ -788,7 +817,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(refreshCustomerPrice);
+onMounted(async () => { await Promise.all([refreshCustomerPrice(), loadWishlist()]); });
 
 /*
 |--------------------------------------------------------------------------

@@ -51,6 +51,16 @@
 
           <h1 class="text-3xl font-bold">#{{ order.id }}</h1>
 
+          <button
+            v-if="orderItems.length"
+            type="button"
+            :disabled="buyingAgain"
+            class="mt-3 rounded-lg border border-blue-300 bg-white px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+            @click="buyAgain"
+          >
+            {{ buyingAgain ? "Adding..." : "Buy Again" }}
+          </button>
+
           <p v-if="order.created_at" class="text-gray-500 mt-2">
             {{ formatDate(order.created_at) }}
           </p>
@@ -277,6 +287,8 @@ const route = useRoute();
 // =====================================================
 
 const loading = ref(true);
+const buyingAgain = ref(false);
+const cart = useCartStore();
 
 const errorMessage = ref("");
 
@@ -420,6 +432,47 @@ async function loadOrder() {
     errorMessage.value = error?.message || "Unable to load order.";
   } finally {
     loading.value = false;
+  }
+}
+
+async function buyAgain() {
+  if (!orderItems.value.length) return;
+  buyingAgain.value = true;
+  try {
+    const ids = [...new Set(orderItems.value.map((item: any) => Number(item.product_id)).filter(Number.isInteger))];
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id,name,slug,product_code,price,images,active,product_variants(id,name,product_code,price,active)")
+      .in("id", ids);
+    if (error) throw error;
+
+    const productMap = new Map((products || []).map((product: any) => [Number(product.id), product]));
+    let added = 0;
+
+    for (const item of orderItems.value) {
+      const product: any = productMap.get(Number(item.product_id));
+      if (!product || product.active === false) continue;
+
+      const variant = item.variant_id
+        ? (product.product_variants || []).find((row: any) => Number(row.id) === Number(item.variant_id) && row.active !== false)
+        : null;
+
+      for (let i = 0; i < Math.max(1, Number(item.quantity || 1)); i++) {
+        cart.addToCart({
+          ...product,
+          selectedVariant: variant || null,
+          price: Number(variant?.price || product.price || item.price || 0),
+        });
+        added++;
+      }
+    }
+
+    if (!added) throw new Error("None of the products from this order are currently available.");
+    await navigateTo("/shoppingcart");
+  } catch (error: any) {
+    alert(error?.message || "Unable to add this order to your cart.");
+  } finally {
+    buyingAgain.value = false;
   }
 }
 

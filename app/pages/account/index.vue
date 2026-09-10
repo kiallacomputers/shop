@@ -24,6 +24,76 @@
         {{ addressError }}
       </div>
 
+      <section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Orders</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.orders }}</p></div>
+        <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Open Orders</p><p class="mt-2 text-3xl font-black text-blue-700">{{ dashboardStats.openOrders }}</p></div>
+        <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Total Spent</p><p class="mt-2 text-2xl font-black text-slate-900">{{ currency(dashboardStats.totalSpent) }}</p></div>
+        <NuxtLink to="/account/wishlist" class="kc-panel p-5 transition hover:border-rose-300"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Wishlist</p><p class="mt-2 text-3xl font-black text-rose-600">{{ dashboardStats.wishlist }}</p></NuxtLink>
+        <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Quote Requests</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.quotes }}</p></div>
+      </section>
+
+      <section class="kc-panel p-6 mb-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Customer Profile</h2>
+            <p class="mt-1 text-sm text-slate-500">Keep your contact details and notification preferences up to date.</p>
+          </div>
+          <button type="button" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700" @click="showProfileForm = !showProfileForm">
+            {{ showProfileForm ? 'Close' : 'Edit Profile' }}
+          </button>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div><p class="text-xs font-bold uppercase text-slate-400">Name</p><p class="mt-1 font-semibold">{{ customerProfile.display_name || '—' }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-slate-400">Business</p><p class="mt-1 font-semibold">{{ customerProfile.business_name || '—' }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-slate-400">Phone</p><p class="mt-1 font-semibold">{{ customerProfile.phone || '—' }}</p></div>
+          <div><p class="text-xs font-bold uppercase text-slate-400">Preferred Contact</p><p class="mt-1 font-semibold capitalize">{{ customerProfile.preferred_contact || 'email' }}</p></div>
+        </div>
+
+        <div v-if="showProfileForm" class="mt-6 border-t border-slate-200 pt-6">
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label><span class="mb-1.5 block text-sm font-semibold">Name</span><input v-model="profileForm.display_name" class="w-full rounded-lg border border-slate-300 px-3 py-2.5" /></label>
+            <label><span class="mb-1.5 block text-sm font-semibold">Business Name</span><input v-model="profileForm.business_name" class="w-full rounded-lg border border-slate-300 px-3 py-2.5" /></label>
+            <label><span class="mb-1.5 block text-sm font-semibold">Phone</span><input v-model="profileForm.phone" type="tel" class="w-full rounded-lg border border-slate-300 px-3 py-2.5" /></label>
+            <label><span class="mb-1.5 block text-sm font-semibold">Preferred Contact</span><select v-model="profileForm.preferred_contact" class="w-full rounded-lg border border-slate-300 px-3 py-2.5"><option value="email">Email</option><option value="phone">Phone</option></select></label>
+          </div>
+          <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label class="flex items-center gap-2 text-sm"><input v-model="profileForm.order_updates" type="checkbox" /> Order updates</label>
+            <label class="flex items-center gap-2 text-sm"><input v-model="profileForm.back_in_stock_updates" type="checkbox" /> Back-in-stock notices</label>
+            <label class="flex items-center gap-2 text-sm"><input v-model="profileForm.marketing_updates" type="checkbox" /> Specials and new products</label>
+          </div>
+          <div class="mt-5 text-right"><button type="button" :disabled="savingProfile" class="rounded-lg bg-blue-600 px-5 py-2.5 font-bold text-white disabled:opacity-50" @click="saveProfile">{{ savingProfile ? 'Saving...' : 'Save Profile' }}</button></div>
+        </div>
+      </section>
+
+      <section class="kc-panel p-6 mb-8">
+        <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-xl font-bold text-slate-900">Wishlist</h2><p class="mt-1 text-sm text-slate-500">Keep products handy while you decide.</p></div>
+          <NuxtLink to="/account/wishlist" class="text-sm font-bold text-blue-600 hover:text-blue-700">View Wishlist →</NuxtLink>
+        </div>
+        <div v-if="wishlistPreview.length" class="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <NuxtLink v-for="item in wishlistPreview" :key="item.id" :to="`/product/${item.slug}`" class="rounded-xl border border-slate-200 p-4 hover:border-blue-300">
+            <p class="font-bold text-slate-900 line-clamp-2">{{ item.name }}</p>
+            <p class="mt-2 text-sm text-blue-700">View product →</p>
+          </NuxtLink>
+        </div>
+        <p v-else class="mt-4 text-sm text-slate-500">No saved products yet.</p>
+      </section>
+
+      <section class="kc-panel p-6 mb-8">
+        <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-xl font-bold text-slate-900">Quote Requests</h2><p class="mt-1 text-sm text-slate-500">Quotes requested from your shopping cart.</p></div>
+          <NuxtLink to="/shoppingcart" class="text-sm font-bold text-blue-600 hover:text-blue-700">Request a Quote →</NuxtLink>
+        </div>
+        <div v-if="quoteRequests.length" class="mt-5 divide-y divide-slate-100">
+          <div v-for="quote in quoteRequests.slice(0, 5)" :key="quote.id" class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><p class="font-bold">Quote #{{ quote.id }}</p><p class="text-xs text-slate-500">{{ formatDate(quote.created_at) }} · {{ quote.customer_quote_request_items?.length || 0 }} item(s)</p></div>
+            <div class="sm:text-right"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{{ quote.status }}</span><p v-if="quote.quoted_total != null" class="mt-1 font-bold">{{ currency(quote.quoted_total) }}</p></div>
+          </div>
+        </div>
+        <p v-else class="mt-4 text-sm text-slate-500">No quote requests yet.</p>
+      </section>
+
       <section class="kc-panel p-6 mb-8">
         <h2 class="text-xl font-bold mb-4 text-slate-900">Account Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -197,6 +267,7 @@
               </div>
               <div><span class="inline-block px-3 py-1 rounded-full text-sm font-semibold" :class="statusClass(order.status)">{{ order.status || 'Pending' }}</span></div>
               <div class="md:text-right"><p class="text-sm text-slate-500">Total</p><p class="text-xl font-bold">${{ Number(order.total || 0).toFixed(2) }}</p></div>
+              <div v-if="order.tracking_number" class="text-sm"><p class="text-slate-500">Tracking</p><p class="font-semibold text-slate-800">{{ order.carrier || 'Carrier' }} · {{ order.tracking_number }}</p></div>
               <div>
                 <NuxtLink :to="`/account/orders/${order.id}`" title="View Invoice" aria-label="View Invoice" class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14.25h6M9 10.5h6M9 6.75h6M6.75 3.75h10.5A2.25 2.25 0 0 1 19.5 6v12a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 18V6a2.25 2.25 0 0 1 2.25-2.25Z" /></svg>
@@ -223,6 +294,16 @@ const errorMessage = ref("");
 const addressError = ref("");
 const successMessage = ref("");
 const pricingLevelName = ref("Standard");
+const dashboardStats = reactive({ orders: 0, totalSpent: 0, openOrders: 0, wishlist: 0, quotes: 0 });
+const customerProfile = reactive<any>({
+  display_name: "", business_name: "", phone: "", preferred_contact: "email",
+  order_updates: true, back_in_stock_updates: true, marketing_updates: false,
+});
+const profileForm = reactive<any>({ ...customerProfile });
+const showProfileForm = ref(false);
+const savingProfile = ref(false);
+const wishlistPreview = ref<any[]>([]);
+const quoteRequests = ref<any[]>([]);
 
 const showAddressForm = ref(false);
 const editingAddressId = ref<string | null>(null);
@@ -370,6 +451,26 @@ async function deleteAddress(address: any) {
   }
 }
 
+const currency = (value: unknown) =>
+  new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
+
+async function saveProfile() {
+  savingProfile.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+  try {
+    const saved = await accountFetch<any>("/api/account/profile", { method: "PUT", body: profileForm });
+    Object.assign(customerProfile, saved);
+    Object.assign(profileForm, saved);
+    successMessage.value = "Customer profile updated.";
+    showProfileForm.value = false;
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to save your profile.";
+  } finally {
+    savingProfile.value = false;
+  }
+}
+
 async function loadAccount() {
   loading.value = true;
   errorMessage.value = "";
@@ -382,14 +483,23 @@ async function loadAccount() {
     }
     user.value = currentUser;
 
-    const [addressResult, orderResult, pricingResult] = await Promise.all([
+    const [addressResult, orderResult, pricingResult, profileResult, dashboardResult, wishlistResult, quotesResult] = await Promise.all([
       accountFetch<any[]>("/api/account/addresses"),
-      supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
+      supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,tracking_number,carrier,tracking_status,shipped_at,delivered_at,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
       accountFetch<any>("/api/account/pricing"),
+      accountFetch<any>("/api/account/profile"),
+      accountFetch<any>("/api/account/dashboard"),
+      accountFetch<any>("/api/account/wishlist"),
+      accountFetch<any[]>("/api/account/quotes"),
     ]);
 
     addresses.value = addressResult || [];
     pricingLevelName.value = pricingResult?.pricingLevel?.name || "Standard";
+    Object.assign(customerProfile, profileResult || {});
+    Object.assign(profileForm, customerProfile);
+    Object.assign(dashboardStats, dashboardResult?.stats || {});
+    wishlistPreview.value = (wishlistResult?.products || []).slice(0, 3);
+    quoteRequests.value = quotesResult || [];
     if (orderResult.error) throw orderResult.error;
     orders.value = orderResult.data || [];
   } catch (error: any) {

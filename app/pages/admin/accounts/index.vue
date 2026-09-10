@@ -238,6 +238,13 @@
                   class="px-4 py-4 text-right"
                 >
                   <div class="flex flex-wrap justify-end gap-2">
+                    <NuxtLink
+                      :to="`/admin/accounts/${account.id}`"
+                      class="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      View Profile
+                    </NuxtLink>
+
                     <button
                       type="button"
                       :disabled="resettingId === account.id"

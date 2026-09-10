@@ -8,6 +8,16 @@
 
       <span v-if="product.featured" class="absolute top-3 left-3 rounded-full bg-[#2367d1] px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Featured</span>
       <span v-if="product.refurbished" class="absolute top-3 right-3 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-white">Refurbished</span>
+      <button
+        type="button"
+        class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-xl shadow-sm transition hover:scale-105"
+        :class="wishlistSaved ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'"
+        :title="wishlistSaved ? 'Remove from wishlist' : 'Save to wishlist'"
+        :aria-label="wishlistSaved ? 'Remove from wishlist' : 'Save to wishlist'"
+        @click.prevent.stop="toggleWishlist"
+      >
+        {{ wishlistSaved ? '♥' : '♡' }}
+      </button>
 
       <template v-if="images.length > 1">
         <button type="button" @click.prevent.stop="previousImage" class="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full border border-slate-200 bg-white/95 shadow-sm text-slate-700 opacity-0 group-hover:opacity-100 transition" aria-label="Previous image">‹</button>
@@ -25,7 +35,9 @@
       <div class="mt-auto pt-5">
         <div class="flex items-end justify-between gap-3">
           <div>
+            <p v-if="hasCustomerDiscount" class="text-[11px] font-bold uppercase tracking-wide text-blue-600">Your {{ pricingLevelName }} price</p>
             <p class="text-2xl font-black tracking-tight text-[#0b1f3a]"><span v-if="product.has_variants" class="mr-1 text-xs font-bold text-slate-500">From</span>${{ displayPrice.toFixed(2) }}</p>
+            <p v-if="hasCustomerDiscount" class="text-xs text-slate-400">Standard <span class="line-through">${{ standardDisplayPrice.toFixed(2) }}</span></p>
             <p class="text-[11px] font-semibold text-slate-400">GST inclusive</p>
           </div>
           <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
@@ -42,6 +54,11 @@
 <script setup>
 const props = defineProps({ product: { type:Object, required:true } });
 const currentImageIndex = ref(0);
+const { pricingLevelName } = useCustomerPricing();
+const { isSaved, toggle, load: loadWishlist } = useWishlist();
+const wishlistSaved = computed(() => isSaved(props.product?.id));
+onMounted(() => loadWishlist());
+const toggleWishlist = async () => { await toggle(props.product?.id); };
 const variantRows = computed(() => Array.isArray(props.product?.product_variants) ? props.product.product_variants.filter((v) => v?.active !== false) : []);
 const displayPrice = computed(() => {
   const basePrice = Number(props.product?.customer_price ?? props.product?.price ?? 0);
@@ -51,6 +68,19 @@ const displayPrice = computed(() => {
     .filter((v) => Number.isFinite(v) && v > 0);
   return prices.length ? Math.min(...prices) : basePrice;
 });
+const standardDisplayPrice = computed(() => {
+  const basePrice = Number(props.product?.price || 0);
+  if (!props.product?.has_variants || !variantRows.value.length) return basePrice;
+  const prices = variantRows.value
+    .map((v) => Number(v.price || basePrice))
+    .filter((v) => Number.isFinite(v) && v > 0);
+  return prices.length ? Math.min(...prices) : basePrice;
+});
+const hasCustomerDiscount = computed(() =>
+  pricingLevelName.value !== "Standard" &&
+  displayPrice.value > 0 &&
+  standardDisplayPrice.value > displayPrice.value
+);
 const variantStock = computed(() => variantRows.value.reduce((sum, v) => sum + Math.max(0, Number(v.stock || 0)), 0));
 const images = computed(() => {
   if (!props.product?.images) return [];
