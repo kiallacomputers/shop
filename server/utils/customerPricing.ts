@@ -28,37 +28,43 @@ export const calculateBaseCustomerPrice = (
   fallbackPrice: unknown,
   standardMarkupPercent = STANDARD_PRICING_LEVEL.markupPercent,
 ) => {
-  const publicStandardPrice = Number(fallbackPrice);
+  const buy = Number(buyPriceExGst);
 
-  // Customer pricing is based on the product's current public Sell Price.
-  // The stored Sell Price is the Standard (20%) customer price. This keeps
-  // the displayed storefront price as the source of truth even when an older
-  // Buy Price / Sell Markup combination no longer matches the saved price.
+  // Customer pricing is calculated directly from the supplier Buy Price ex GST:
+  //
+  //   Buy Price ex GST
+  //   + customer markup
+  //   + 10% GST
+  //   rounded to the nearest $5
   //
   // Example:
-  //   Standard public price: $450 (20%)
-  //   Family (10%): 450 / 1.20 * 1.10 = 412.50 -> $415
-  //   Good Customer (15%): 450 / 1.20 * 1.15 = 431.25 -> $430
-  if (Number.isFinite(publicStandardPrice) && publicStandardPrice > 0) {
-    if (markupPercent === standardMarkupPercent) {
-      return roundMoney(publicStandardPrice);
-    }
-
-    const standardMultiplier =
-      1 + standardMarkupPercent / 100;
-    const customerMultiplier = 1 + markupPercent / 100;
-
-    return roundToNearestFive(
-      (publicStandardPrice / standardMultiplier) * customerMultiplier,
-    );
+  //   Buy Price ex GST: $302
+  //   Family markup: 10%
+  //   $302 x 1.10 x 1.10 = $365.42
+  //   rounded to nearest $5 = $365
+  if (Number.isFinite(buy) && buy > 0) {
+    const exGstWithMarkup = buy * (1 + markupPercent / 100);
+    return roundToNearestFive(exGstWithMarkup * 1.1);
   }
 
-  // Fallback only for records without a saved public Sell Price.
-  const buy = Number(buyPriceExGst);
-  if (!Number.isFinite(buy) || buy <= 0) return 0;
+  // Older products that do not yet have a Buy Price ex GST fall back to the
+  // stored public Sell Price. The saved Sell Price is treated as the Standard
+  // pricing level so customer pricing still works until the Buy Price is added.
+  const publicStandardPrice = Number(fallbackPrice);
+  if (!Number.isFinite(publicStandardPrice) || publicStandardPrice <= 0) {
+    return 0;
+  }
 
-  const exGst = buy * (1 + markupPercent / 100);
-  return roundToNearestFive(exGst * 1.1);
+  if (markupPercent === standardMarkupPercent) {
+    return roundMoney(publicStandardPrice);
+  }
+
+  const standardMultiplier = 1 + standardMarkupPercent / 100;
+  const customerMultiplier = 1 + markupPercent / 100;
+
+  return roundToNearestFive(
+    (publicStandardPrice / standardMultiplier) * customerMultiplier,
+  );
 };
 
 export const calculateVariantCustomerPrice = ({
