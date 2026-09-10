@@ -219,7 +219,7 @@ const loadEvents = async (fromIso: string, toIso: string) => {
     if (rows.length < pageSize) break;
   }
 
-  return all;
+  return { events: all, supabase };
 };
 
 export async function sendWeeklyAnalyticsReport(options?: { recipient?: string }) {
@@ -235,9 +235,55 @@ export async function sendWeeklyAnalyticsReport(options?: { recipient?: string }
   const currentStart = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
   const previousStart = new Date(end.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  const all = await loadEvents(previousStart.toISOString(), end.toISOString());
+  const { events: all, supabase } = await loadEvents(previousStart.toISOString(), end.toISOString());
   const current = all.filter((row) => new Date(row.created_at) >= currentStart);
   const previous = all.filter((row) => new Date(row.created_at) < currentStart);
+
+  const productSlugs = [...new Set(current.filter((row) => row.page_type === "product").map((row) => row.content_slug).filter(Boolean))] as string[];
+  const categorySlugs = [...new Set(current.filter((row) => row.page_type === "category").map((row) => row.content_slug).filter(Boolean))] as string[];
+
+  const productNames = new Map<string, string>();
+  const categoryNames = new Map<string, string>();
+
+  if (productSlugs.length) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("slug,name")
+      .in("slug", productSlugs);
+
+    if (error) {
+      console.warn("WEEKLY ANALYTICS PRODUCT NAME LOOKUP ERROR:", error);
+    } else {
+      for (const row of data || []) {
+        if (row?.slug && row?.name) productNames.set(String(row.slug), String(row.name));
+      }
+    }
+  }
+
+  if (categorySlugs.length) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("slug,name")
+      .in("slug", categorySlugs);
+
+    if (error) {
+      console.warn("WEEKLY ANALYTICS CATEGORY NAME LOOKUP ERROR:", error);
+    } else {
+      for (const row of data || []) {
+        if (row?.slug && row?.name) categoryNames.set(String(row.slug), String(row.name));
+      }
+    }
+  }
+
+  const resolvedPageLabel = (row: AnalyticsEvent) => {
+    if (row.page_type === "product" && row.content_slug) {
+      return productNames.get(row.content_slug) || pageLabel(row);
+    }
+    if (row.page_type === "category" && row.content_slug) {
+      return categoryNames.get(row.content_slug) || pageLabel(row);
+    }
+    return pageLabel(row);
+  };
 
   const currentSessions = new Set(current.map((row) => row.session_id)).size;
   const previousSessions = new Set(previous.map((row) => row.session_id)).size;
@@ -249,20 +295,26 @@ export async function sendWeeklyAnalyticsReport(options?: { recipient?: string }
     (row) => row.content_slug,
   )
     .slice(0, 15)
-    .map((item) => ({ label: productLabel(current, item.label), views: item.views }));
+    .map((item) => ({
+      label: productNames.get(item.label) || productLabel(current, item.label),
+      views: item.views,
+    }));
 
   const categoryCounts = countBy(
     current.filter((row) => row.page_type === "category"),
     (row) => row.content_slug,
   )
     .slice(0, 10)
-    .map((item) => ({ label: categoryLabel(current, item.label), views: item.views }));
+    .map((item) => ({
+      label: categoryNames.get(item.label) || categoryLabel(current, item.label),
+      views: item.views,
+    }));
 
   const topPages = countBy(current, (row) => row.path)
     .slice(0, 10)
     .map((item) => {
       const sample = current.find((row) => row.path === item.label);
-      return { label: sample ? pageLabel(sample) : item.label, views: item.views };
+      return { label: sample ? resolvedPageLabel(sample) : item.label, views: item.views };
     });
 
   const referrers = countBy(current, (row) => row.referrer_host)

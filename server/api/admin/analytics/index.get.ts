@@ -100,6 +100,52 @@ export default defineEventHandler(async (event) => {
     if (rows.length < pageSize) break;
   }
 
+  const productSlugs = [...new Set(all.filter((row) => row.page_type === "product").map((row) => row.content_slug).filter(Boolean))] as string[];
+  const categorySlugs = [...new Set(all.filter((row) => row.page_type === "category").map((row) => row.content_slug).filter(Boolean))] as string[];
+
+  const productNames = new Map<string, string>();
+  const categoryNames = new Map<string, string>();
+
+  if (productSlugs.length) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("slug,name")
+      .in("slug", productSlugs);
+
+    if (error) {
+      console.warn("ADMIN ANALYTICS PRODUCT NAME LOOKUP ERROR:", error);
+    } else {
+      for (const row of data || []) {
+        if (row?.slug && row?.name) productNames.set(String(row.slug), String(row.name));
+      }
+    }
+  }
+
+  if (categorySlugs.length) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("slug,name")
+      .in("slug", categorySlugs);
+
+    if (error) {
+      console.warn("ADMIN ANALYTICS CATEGORY NAME LOOKUP ERROR:", error);
+    } else {
+      for (const row of data || []) {
+        if (row?.slug && row?.name) categoryNames.set(String(row.slug), String(row.name));
+      }
+    }
+  }
+
+  const resolvedPageLabel = (row: AnalyticsEvent) => {
+    if (row.page_type === "product" && row.content_slug) {
+      return productNames.get(row.content_slug) || pageLabel(row);
+    }
+    if (row.page_type === "category" && row.content_slug) {
+      return categoryNames.get(row.content_slug) || pageLabel(row);
+    }
+    return pageLabel(row);
+  };
+
   const sessions = new Set(all.map((row) => row.session_id)).size;
   const todayKey = melbourneDay(new Date());
   const todayEvents = all.filter((row) => melbourneDay(row.created_at) === todayKey);
@@ -129,7 +175,7 @@ export default defineEventHandler(async (event) => {
       const sample = all.find((row) => row.path === entry.label);
       return {
         path: entry.label,
-        title: sample ? pageLabel(sample) : entry.label,
+        title: sample ? resolvedPageLabel(sample) : entry.label,
         views: entry.views,
       };
     });
@@ -145,7 +191,7 @@ export default defineEventHandler(async (event) => {
       );
       return {
         slug: entry.label,
-        title: sample ? pageLabel(sample) : entry.label,
+        title: sample ? resolvedPageLabel(sample) : entry.label,
         views: entry.views,
       };
     });
@@ -161,7 +207,7 @@ export default defineEventHandler(async (event) => {
       );
       return {
         slug: entry.label,
-        title: sample ? pageLabel(sample) : entry.label,
+        title: sample ? resolvedPageLabel(sample) : entry.label,
         views: entry.views,
       };
     });
@@ -191,7 +237,7 @@ export default defineEventHandler(async (event) => {
     recent: all.slice(0, 40).map((row) => ({
       id: row.id,
       path: row.path,
-      title: pageLabel(row),
+      title: resolvedPageLabel(row),
       pageType: row.page_type,
       referrer: row.referrer_host,
       device: row.device_type,
