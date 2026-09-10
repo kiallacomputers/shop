@@ -3,9 +3,10 @@
     <main class="w-full">
       <div v-if="!cart.items.length" class="text-center py-16">
         <h1 class="kc-title text-3xl mb-4">Your Cart is Empty</h1>
-        <p class="text-gray-500 mb-6">There are no items in your shopping cart.</p>
+        <p class="text-gray-500 mb-2">There are no items in your shopping cart.</p>
+        <p class="text-sm text-gray-500 mb-6">Add the products you would like quoted, then return here and choose <strong>Request a Quote</strong>.</p>
         <NuxtLink to="/" class="kc-btn-primary">
-          Continue Shopping
+          Browse Products
         </NuxtLink>
       </div>
 
@@ -197,7 +198,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["auth", "cart"] });
+definePageMeta({ middleware: ["auth"] });
 
 type FreightRate = { code: string; name: string; price: number; free: boolean };
 type CustomerAddress = {
