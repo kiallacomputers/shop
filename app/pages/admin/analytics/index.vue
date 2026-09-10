@@ -35,6 +35,15 @@
 
           <button
             type="button"
+            :disabled="sendingReport"
+            class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            @click="sendWeeklyReport"
+          >
+            {{ sendingReport ? "Sending..." : "Send Weekly Report Now" }}
+          </button>
+
+          <button
+            type="button"
             :disabled="loading"
             class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             @click="loadAnalytics"
@@ -42,6 +51,13 @@
             {{ loading ? "Loading..." : "Refresh" }}
           </button>
         </div>
+      </div>
+
+      <div
+        v-if="reportMessage"
+        class="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800"
+      >
+        {{ reportMessage }}
       </div>
 
       <div
@@ -315,7 +331,9 @@ const ranges = [1, 7, 30, 90];
 const days = ref(30);
 const analytics = ref<AnalyticsData | null>(null);
 const loading = ref(true);
+const sendingReport = ref(false);
 const errorMessage = ref("");
+const reportMessage = ref("");
 const { adminFetch } = useAdminFetch();
 
 const number = (value: unknown) =>
@@ -366,6 +384,32 @@ async function loadAnalytics() {
 async function changeRange(value: number) {
   days.value = value;
   await loadAnalytics();
+}
+
+async function sendWeeklyReport() {
+  sendingReport.value = true;
+  reportMessage.value = "";
+  errorMessage.value = "";
+
+  try {
+    const result = await adminFetch<{
+      sent: boolean;
+      recipient: string;
+      range: string;
+    }>("/api/admin/analytics/send-weekly-report", {
+      method: "POST",
+    });
+
+    reportMessage.value = `Weekly traffic report sent to ${result.recipient}.`;
+  } catch (error: any) {
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to send the weekly traffic report.";
+  } finally {
+    sendingReport.value = false;
+  }
 }
 
 onMounted(loadAnalytics);
