@@ -1,4 +1,5 @@
 import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { sendQuoteReadyEmail } from "~~/server/utils/quoteEmail";
 
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
@@ -17,7 +18,7 @@ export default defineEventHandler(async (event) => {
   // Verify the quote belongs to the selected customer.
   const { data: existing, error: existingError } = await supabase
     .from("customer_quote_requests")
-    .select("id")
+    .select("id,status,customer_message")
     .eq("id", quoteId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -83,6 +84,40 @@ export default defineEventHandler(async (event) => {
 
   if (error) throw createError({ statusCode: 500, statusMessage: error.message });
   if (!data) throw createError({ statusCode: 404, statusMessage: "Quote request not found." });
+
+  // Send the completed quote when it first moves into Quoted status.
+  // Saving later admin notes while it remains quoted will not repeatedly email the customer.
+  if (status === "quoted" && existing.status !== "quoted") {
+    try {
+      const [{ data: quoteItems, error: quoteItemsError }, authResult] = await Promise.all([
+        supabase
+          .from("customer_quote_request_items")
+          .select("id,product_name,variant_name,product_code,quantity,requested_price,quoted_price")
+          .eq("quote_request_id", quoteId)
+          .order("id", { ascending: true }),
+        supabase.auth.admin.getUserById(userId),
+      ]);
+      if (quoteItemsError) throw quoteItemsError;
+      if (authResult.error) throw authResult.error;
+
+      const customer = authResult.data.user;
+      const customerEmail = String(customer?.email || "").trim();
+      if (customerEmail) {
+        const requestUrl = getRequestURL(event);
+        await sendQuoteReadyEmail({
+          id: quoteId,
+          customer_email: customerEmail,
+          customer_name: String(customer?.user_metadata?.display_name || customer?.user_metadata?.full_name || ""),
+          customer_message: existing.customer_message || null,
+          quoted_total: quotedTotal,
+          items: quoteItems || [],
+          accountUrl: `${requestUrl.origin}/account?quote=${quoteId}`,
+        });
+      }
+    } catch (emailError: any) {
+      console.error("QUOTE READY EMAIL ERROR:", emailError?.message || emailError);
+    }
+  }
 
   return data;
 });

@@ -1,5 +1,6 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
+import { sendQuoteRequestEmails } from "~~/server/utils/quoteEmail";
 import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
@@ -100,6 +101,20 @@ export default defineEventHandler(async (event) => {
   if (itemError) {
     await supabase.from("customer_quote_requests").delete().eq("id", quote.id);
     throw createError({ statusCode: 500, statusMessage: itemError.message });
+  }
+
+  // Email both the customer and Kialla Computers. Email delivery is deliberately
+  // non-fatal so a valid quote request is never lost because Graph is unavailable.
+  try {
+    await sendQuoteRequestEmails({
+      id: quote.id,
+      customer_email: String(user.email || ""),
+      customer_name: String(user.user_metadata?.display_name || user.user_metadata?.full_name || ""),
+      customer_message: String(body?.message || "").trim() || null,
+      items,
+    });
+  } catch (emailError: any) {
+    console.error("QUOTE REQUEST EMAIL ERROR:", emailError?.message || emailError);
   }
 
   return quote;

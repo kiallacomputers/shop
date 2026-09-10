@@ -294,90 +294,148 @@ export default defineEventHandler(async (event) => {
   // SAVE ITEMS + UPDATE STOCK
   // ========================================
 
-  for (const lineItem of lineItems.data) {
-    const stripeProduct =
-      lineItem.price?.product;
+  const paidQuoteId = Number(session.metadata?.quote_id || 0);
 
-    if (
-      !stripeProduct ||
-      typeof stripeProduct === "string"
-    ) {
-      console.error(
-        "❌ STRIPE PRODUCT WAS NOT EXPANDED:",
-        lineItem.id,
-      );
+  if (Number.isInteger(paidQuoteId) && paidQuoteId > 0) {
+    const { data: paidQuote, error: paidQuoteError } = await supabase
+      .from("customer_quote_requests")
+      .select("id,user_id,status,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)")
+      .eq("id", paidQuoteId)
+      .eq("user_id", userId)
+      .maybeSingle();
 
-      continue;
-    }
+    if (paidQuoteError) throw createError({ statusCode: 500, statusMessage: paidQuoteError.message });
+    if (!paidQuote) throw createError({ statusCode: 500, statusMessage: "Paid quote could not be found." });
 
-    const productId =
-      stripeProduct.metadata?.product_id;
-    const variantId = stripeProduct.metadata?.variant_id || null;
-    const productCode = stripeProduct.metadata?.product_code || null;
+    const quoteItems = Array.isArray(paidQuote.customer_quote_request_items)
+      ? paidQuote.customer_quote_request_items
+      : [];
 
-    if (!productId) {
-      console.error(
-        "❌ PRODUCT ID MISSING FROM STRIPE PRODUCT METADATA:",
-        stripeProduct.id,
-      );
+    for (const item of quoteItems) {
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const price = Number(item.quoted_price ?? item.requested_price ?? 0);
+      const productId = Number(item.product_id);
+      const variantId = item.variant_id ? Number(item.variant_id) : null;
 
-      continue;
-    }
-
-    const quantity =
-      Number(lineItem.quantity || 1);
-
-    const productName =
-      stripeProduct.name ||
-      lineItem.description ||
-      "Product";
-
-    const price =
-      Number(lineItem.price?.unit_amount || 0) /
-      100;
-
-    console.log(
-      `PROCESSING PRODUCT ${productId}: ${productName} x ${quantity}`,
-    );
-
-    // Save order item.
-    const {
-      error: orderItemError,
-    } = await supabase
-      .from("order_items")
-      .insert({
+      const { error: orderItemError } = await supabase.from("order_items").insert({
         order_id: order.id,
-        product_id: Number(productId),
-        product_name: productName,
-        variant_id: variantId ? Number(variantId) : null,
-        variant_name: variantId ? productName.split(" - ").slice(1).join(" - ") || null : null,
-        product_code: productCode,
+        product_id: productId,
+        product_name: item.variant_name ? `${item.product_name} - ${item.variant_name}` : item.product_name,
+        variant_id: variantId,
+        variant_name: item.variant_name || null,
+        product_code: item.product_code || null,
         quantity,
         price,
       });
+      if (orderItemError) throw createError({ statusCode: 500, statusMessage: orderItemError.message });
 
-    if (orderItemError) {
-      console.error(
-        "❌ ORDER ITEM INSERT ERROR:",
-        orderItemError,
-      );
-
-      throw createError({
-        statusCode: 500,
-        statusMessage: orderItemError.message,
-      });
+      const stockTable = variantId ? "product_variants" : "products";
+      const stockId = variantId || productId;
+      const { data: stockRow, error: stockReadError } = await supabase
+        .from(stockTable)
+        .select("id,name,stock")
+        .eq("id", stockId)
+        .single();
+      if (stockReadError || !stockRow) throw createError({ statusCode: 500, statusMessage: stockReadError?.message || `Stock item ${stockId} was not found` });
+      const newStock = Math.max(0, Number(stockRow.stock || 0) - quantity);
+      const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
+      if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
     }
 
-    // Update stock on the selected variant, or on the base product when there are no variants.
-    const stockTable = variantId ? "product_variants" : "products";
-    const stockId = variantId ? Number(variantId) : Number(productId);
-    const { data: stockRow, error: productError } = await supabase.from(stockTable).select("id, name, stock").eq("id", stockId).single();
-    if (productError || !stockRow) throw createError({ statusCode: 500, statusMessage: productError?.message || `Stock item ${stockId} was not found` });
-    const currentStock = Number(stockRow.stock || 0);
-    const newStock = Math.max(0, currentStock - quantity);
-    const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
-    if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
-    console.log(`✅ STOCK UPDATED: ${stockRow.name}: ${currentStock} -> ${newStock}`);
+    await supabase
+      .from("customer_quote_requests")
+      .update({ status: "accepted", updated_at: new Date().toISOString() })
+      .eq("id", paidQuoteId)
+      .eq("user_id", userId);
+
+    console.log("✅ PAID QUOTE CONVERTED TO ORDER:", paidQuoteId);
+  } else {
+    for (const lineItem of lineItems.data) {
+      const stripeProduct =
+        lineItem.price?.product;
+
+      if (
+        !stripeProduct ||
+        typeof stripeProduct === "string"
+      ) {
+        console.error(
+          "❌ STRIPE PRODUCT WAS NOT EXPANDED:",
+          lineItem.id,
+        );
+
+        continue;
+      }
+
+      const productId =
+        stripeProduct.metadata?.product_id;
+      const variantId = stripeProduct.metadata?.variant_id || null;
+      const productCode = stripeProduct.metadata?.product_code || null;
+
+      if (!productId) {
+        console.error(
+          "❌ PRODUCT ID MISSING FROM STRIPE PRODUCT METADATA:",
+          stripeProduct.id,
+        );
+
+        continue;
+      }
+
+      const quantity =
+        Number(lineItem.quantity || 1);
+
+      const productName =
+        stripeProduct.name ||
+        lineItem.description ||
+        "Product";
+
+      const price =
+        Number(lineItem.price?.unit_amount || 0) /
+        100;
+
+      console.log(
+        `PROCESSING PRODUCT ${productId}: ${productName} x ${quantity}`,
+      );
+
+      // Save order item.
+      const {
+        error: orderItemError,
+      } = await supabase
+        .from("order_items")
+        .insert({
+          order_id: order.id,
+          product_id: Number(productId),
+          product_name: productName,
+          variant_id: variantId ? Number(variantId) : null,
+          variant_name: variantId ? productName.split(" - ").slice(1).join(" - ") || null : null,
+          product_code: productCode,
+          quantity,
+          price,
+        });
+
+      if (orderItemError) {
+        console.error(
+          "❌ ORDER ITEM INSERT ERROR:",
+          orderItemError,
+        );
+
+        throw createError({
+          statusCode: 500,
+          statusMessage: orderItemError.message,
+        });
+      }
+
+      // Update stock on the selected variant, or on the base product when there are no variants.
+      const stockTable = variantId ? "product_variants" : "products";
+      const stockId = variantId ? Number(variantId) : Number(productId);
+      const { data: stockRow, error: productError } = await supabase.from(stockTable).select("id, name, stock").eq("id", stockId).single();
+      if (productError || !stockRow) throw createError({ statusCode: 500, statusMessage: productError?.message || `Stock item ${stockId} was not found` });
+      const currentStock = Number(stockRow.stock || 0);
+      const newStock = Math.max(0, currentStock - quantity);
+      const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
+      if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
+      console.log(`✅ STOCK UPDATED: ${stockRow.name}: ${currentStock} -> ${newStock}`);
+    }
+
   }
 
   // ========================================
