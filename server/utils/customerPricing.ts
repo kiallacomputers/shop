@@ -28,9 +28,27 @@ export const calculateBaseCustomerPrice = (
   fallbackPrice: unknown,
 ) => {
   const buy = Number(buyPriceExGst);
+  const fallback = Number(fallbackPrice);
+
+  // The stored/public sell price represents the Standard pricing level
+  // (20% markup). If an older product has no Buy Price ex GST saved, derive
+  // the underlying cost from that Standard price so Family/Good Customer
+  // pricing still changes correctly instead of simply returning the full
+  // public price.
   if (!Number.isFinite(buy) || buy <= 0) {
-    const fallback = Number(fallbackPrice);
-    return Number.isFinite(fallback) && fallback > 0 ? roundMoney(fallback) : 0;
+    if (!Number.isFinite(fallback) || fallback <= 0) return 0;
+
+    if (markupPercent === STANDARD_PRICING_LEVEL.markupPercent) {
+      return roundMoney(fallback);
+    }
+
+    const standardMultiplier =
+      1 + STANDARD_PRICING_LEVEL.markupPercent / 100;
+    const customerMultiplier = 1 + markupPercent / 100;
+    const derivedCustomerPrice =
+      (fallback / standardMultiplier) * customerMultiplier;
+
+    return roundToNearestFive(derivedCustomerPrice);
   }
 
   const exGst = buy * (1 + markupPercent / 100);
