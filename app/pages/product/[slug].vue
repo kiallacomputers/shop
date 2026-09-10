@@ -558,22 +558,36 @@ const supabase = useSupabaseClient();
 const route = useRoute();
 
 const cart = useCartStore();
-const { applyToProducts, pricingLevelName } = useCustomerPricing();
+const customerUser = useSupabaseUser();
+const { quote, pricingLevelName } = useCustomerPricing();
+
+const quotedProductPrice = ref(null);
+const quotedVariantPrices = ref({});
 const selectedVariantId = ref(null);
 const activeVariants = computed(() => (product.value?.product_variants || []).filter((v) => v.active !== false));
 const selectedVariant = computed(() => activeVariants.value.find((v) => Number(v.id) === Number(selectedVariantId.value)) || null);
 const effectivePrice = computed(() => {
   if (selectedVariant.value) {
-    const customerVariantPrice = Number(selectedVariant.value?.customer_price);
-    if (Number.isFinite(customerVariantPrice) && customerVariantPrice > 0) return customerVariantPrice;
+    const quotedVariantPrice = Number(
+      quotedVariantPrices.value[String(selectedVariant.value.id)],
+    );
+    if (Number.isFinite(quotedVariantPrice) && quotedVariantPrice > 0) {
+      return quotedVariantPrice;
+    }
 
     const variantPrice = selectedVariant.value?.price;
-    const parsedVariantPrice = variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
-    if (Number.isFinite(parsedVariantPrice) && parsedVariantPrice > 0) return parsedVariantPrice;
+    const parsedVariantPrice =
+      variantPrice == null || variantPrice === "" ? NaN : Number(variantPrice);
+    if (Number.isFinite(parsedVariantPrice) && parsedVariantPrice > 0) {
+      return parsedVariantPrice;
+    }
   }
 
-  const customerBasePrice = Number(product.value?.customer_price);
-  if (Number.isFinite(customerBasePrice) && customerBasePrice > 0) return customerBasePrice;
+  const quotedBasePrice = Number(quotedProductPrice.value);
+  if (Number.isFinite(quotedBasePrice) && quotedBasePrice > 0) {
+    return quotedBasePrice;
+  }
+
   return Number(product.value?.price ?? 0);
 });
 const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
@@ -736,9 +750,45 @@ watchEffect(() => {
   }
 });
 
-onMounted(async () => {
-  if (product.value) await applyToProducts([product.value]);
-});
+const refreshCustomerPrice = async () => {
+  if (!import.meta.client || !product.value?.id) return;
+
+  try {
+    const items = [
+      { productId: product.value.id },
+      ...(product.value.product_variants || []).map((variant) => ({
+        productId: product.value.id,
+        variantId: variant.id,
+      })),
+    ];
+
+    const result = await quote(items);
+
+    const basePrice = Number(result?.products?.[String(product.value.id)]);
+    quotedProductPrice.value =
+      Number.isFinite(basePrice) && basePrice > 0 ? basePrice : null;
+
+    quotedVariantPrices.value = result?.variants || {};
+  } catch (error) {
+    console.error("CUSTOMER PRODUCT PRICE ERROR:", error);
+    quotedProductPrice.value = null;
+    quotedVariantPrices.value = {};
+  }
+};
+
+// Supabase restores the logged-in user on the client after hydration.
+// Refresh pricing when that happens so the product page cannot get stuck
+// showing the Standard price from its first anonymous render.
+watch(
+  [() => product.value?.id, () => customerUser.value?.id],
+  async ([productId]) => {
+    if (!productId || !import.meta.client) return;
+    await refreshCustomerPrice();
+  },
+  { immediate: true },
+);
+
+onMounted(refreshCustomerPrice);
 
 /*
 |--------------------------------------------------------------------------
