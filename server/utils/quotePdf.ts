@@ -106,14 +106,15 @@ export function createQuotePdf(q: QuotePdfData) {
     text(left + 78, y - 51, info.location);
 
     setFont("F2", 11);
-    text(430, y - 4, continued ? "QUOTE - CONTINUED" : "FORMAL QUOTATION");
+    text(390, y - 4, continued ? "QUOTE - CONTINUED" : "FORMAL QUOTATION");
     setFont("F1", 8);
-    if (info.website) text(430, y - 20, info.website);
-    if (info.email) text(430, y - 32, info.email);
-    if (info.phone) text(430, y - 44, info.phone);
-    if (info.abn) text(430, y - 56, `ABN ${info.abn}`);
+    text(390, y - 20, `Quote: ${quoteNumber(q)}`);
+    text(390, y - 32, `Issued: ${fmtDate(q.created_at) || fmtDate(new Date().toISOString())}`);
+    if (q.expires_at) text(390, y - 44, `Valid Until: ${fmtDate(q.expires_at)}`);
+    if (info.website) text(390, y - 58, info.website);
+    if (info.email) text(390, y - 70, info.email);
 
-    y -= 78;
+    y -= 92;
     line(left, y, right, y);
     y -= 22;
   };
@@ -127,14 +128,6 @@ export function createQuotePdf(q: QuotePdfData) {
   };
 
   header(false);
-
-  setFont("F2", 12);
-  text(left, y, `Quote: ${quoteNumber(q)}`);
-  setFont("F1", 9);
-  text(355, y, `Issued: ${fmtDate(q.created_at) || fmtDate(new Date().toISOString())}`);
-  y -= 17;
-  if (q.expires_at) text(355, y, `Valid Until: ${fmtDate(q.expires_at)}`);
-  y -= 28;
 
   setFont("F2", 10);
   text(left, y, "PREPARED FOR");
@@ -197,12 +190,13 @@ export function createQuotePdf(q: QuotePdfData) {
   y -= 18;
   text(397, y, "GST (10%)");
   text(487, y, money(gstIncluded));
-  y -= 20;
-  line(392, y + 7, right, y + 7);
+  y -= 16;
+  line(392, y, right, y);
+  y -= 18;
   setFont("F2", 12);
   text(397, y, "QUOTE TOTAL");
   text(487, y, money(total));
-  y -= 32;
+  y -= 30;
 
   if (q.customer_message) {
     ensure(70);
