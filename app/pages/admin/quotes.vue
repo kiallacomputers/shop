@@ -40,7 +40,7 @@
           </div>
           <div class="flex flex-wrap gap-2">
             <NuxtLink :to="`/admin/accounts/${quote.user_id}`" class="btn-secondary">Customer Profile</NuxtLink>
-            <a :href="`/api/admin/quotes/${quote.id}.pdf`" class="btn-secondary">Download PDF</a>
+            <a :href="`/api/admin/quotes/${quote.id}/pdf`" class="btn-secondary">Download PDF</a>
             <button v-if="quote.status === 'quoted'" class="btn-secondary" :disabled="busyId === quote.id" @click="resendQuote(quote)">Resend Quote</button>
           </div>
         </div>

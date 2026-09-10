@@ -5,6 +5,9 @@ export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
   const userId = String(getRouterParam(event, "id") || "");
   const quoteId = Number(getRouterParam(event, "quoteId"));
+  if (!Number.isInteger(quoteId) || quoteId <= 0) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid quote ID." });
+  }
   const supabase = getAdminSupabase();
   const [{ data: quote, error }, auth] = await Promise.all([
     supabase.from("customer_quote_requests").select(`id,quote_number,user_id,status,customer_message,quoted_total,expires_at,created_at,customer_quote_request_items(id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)`).eq("id",quoteId).eq("user_id",userId).maybeSingle(),

@@ -5,6 +5,9 @@ export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
   const userId = String(getRouterParam(event, "id") || "");
   const quoteId = Number(getRouterParam(event, "quoteId"));
+  if (!Number.isInteger(quoteId) || quoteId <= 0) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid quote ID." });
+  }
   const body = await readBody(event);
   const statuses = ["requested","reviewing","quoted","accepted","declined","closed"];
   const status = String(body?.status || "requested");

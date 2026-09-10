@@ -129,7 +129,7 @@
                 <label><span class="field-label">Admin Notes</span><textarea v-model="quote.admin_notes" rows="3" class="input"></textarea></label>
               </div>
               <div class="mt-4 flex flex-wrap justify-end gap-2">
-                <a :href="`/api/admin/quotes/${quote.id}.pdf`" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Download PDF</a>
+                <a :href="`/api/admin/quotes/${quote.id}/pdf`" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Download PDF</a>
                 <button v-if="quote.status === 'quoted'" class="rounded-lg border border-blue-300 bg-white px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50" @click="resendQuote(quote)">Resend Quote</button>
                 <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700" @click="saveQuote(quote)">Save Quote</button>
               </div>
