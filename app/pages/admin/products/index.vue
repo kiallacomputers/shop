@@ -202,6 +202,16 @@
 
           <button
             type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+            role="menuitem"
+            @click="shareFacebookFromMenu"
+          >
+            <span class="w-5 text-center text-base font-bold text-blue-700" aria-hidden="true">f</span>
+            <span>Share to Facebook</span>
+          </button>
+
+          <button
+            type="button"
             class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-emerald-700 disabled:opacity-50"
             role="menuitem"
             :disabled="duplicatingId === String(actionsMenuProduct.id)"
@@ -484,6 +494,16 @@ const toggleActionsMenu = (product: Product, event: MouseEvent) => {
   actionsMenuProductId.value = productId;
   actionsMenuProduct.value = product;
   positionActionsMenu(event.currentTarget as HTMLElement);
+};
+
+const shareFacebookFromMenu = async () => {
+  if (!actionsMenuProduct.value) return;
+  const product = actionsMenuProduct.value;
+  closeActionsMenu();
+  await navigateTo({
+    path: "/admin/facebook-share",
+    query: { product: String(product.id) },
+  });
 };
 
 const editFromMenu = async () => {

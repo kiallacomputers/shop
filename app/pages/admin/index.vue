@@ -125,6 +125,25 @@
         </NuxtLink>
 
         <NuxtLink
+          to="/admin/facebook-share"
+          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-400 hover:shadow-md transition"
+        >
+          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+              <path d="M13.5 22v-8h2.8l.42-3.2H13.5V8.75c0-.93.26-1.56 1.62-1.56h1.73V4.33c-.3-.04-1.32-.13-2.51-.13-2.48 0-4.18 1.52-4.18 4.3v2.3H7.35V14h2.81v8h3.34Z"/>
+            </svg>
+          </div>
+
+          <p class="font-bold text-slate-900 group-hover:text-blue-700">
+            Facebook Product Share
+          </p>
+
+          <p class="text-sm text-slate-500 mt-1">
+            Choose a product, build a post and share it to your Facebook Page.
+          </p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/ads"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
         >
