@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getAdminSupabase();
 
   const { data, error } = await supabase
-    .from("customer_profiles")
+    .from("customer_crm_profiles")
     .select("display_name,business_name,phone,preferred_contact,order_updates,back_in_stock_updates,marketing_updates")
     .eq("user_id", user.id)
     .maybeSingle();

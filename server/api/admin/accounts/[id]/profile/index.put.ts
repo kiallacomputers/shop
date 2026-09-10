@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getAdminSupabase();
   const { data, error } = await supabase
-    .from("customer_profiles")
+    .from("customer_crm_profiles")
     .upsert({
       user_id: userId,
       display_name: String(body?.display_name || "").trim().slice(0, 120) || null,

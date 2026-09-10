@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const user = authResult.user;
 
   const [profileResult, addressResult, orderResult, wishlistResult, quoteResult, pricingResult] = await Promise.all([
-    supabase.from("customer_profiles").select("*").eq("user_id", userId).maybeSingle(),
+    supabase.from("customer_crm_profiles").select("*").eq("user_id", userId).maybeSingle(),
     supabase.from("customer_addresses").select("id,label,full_name,address_line_1,address_line_2,suburb,state,postcode,country,phone,is_primary").eq("user_id", userId).order("is_primary", { ascending: false }),
     supabase.from("orders").select("id,total,status,customer_name,customer_email,tracking_number,carrier,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.from("customer_wishlist").select("product_id,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
