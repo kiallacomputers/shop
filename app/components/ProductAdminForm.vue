@@ -95,27 +95,19 @@
         <h2 class="text-lg font-bold text-slate-900">Pricing & Stock</h2>
 
         <p class="mt-1 text-sm text-slate-500">
-          Enter your supplier buy price excluding GST, then set the markup percentages. The website calculates the GST-inclusive Sell Price and RRP automatically and rounds each final price to the nearest $5.
+          Enter your supplier buy price excluding GST. The Standard pricing level is used automatically for the public Sell Price, while RRP keeps its own product-specific markup. Final prices include GST and are rounded to the nearest $5.
         </p>
 
         <p v-if="form.has_variants" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           This is a variant product. The base price is used for catalogue display/fallback only; each variant has its own sell price, RRP, product code and stock level in Manage Variants.
         </p>
 
-        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <label>
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Buy Price ex GST *</span>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-slate-500">$</span>
               <input v-model="form.buy_price_ex_gst" required min="0" step="0.01" type="number" class="input !pl-6" />
-            </div>
-          </label>
-
-          <label>
-            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Sell Markup % *</span>
-            <div class="relative">
-              <input v-model="form.sell_markup_percent" required min="0" step="0.01" type="number" class="input pr-9" />
-              <span class="absolute right-3 top-2.5 text-slate-500">%</span>
             </div>
           </label>
 
@@ -135,9 +127,9 @@
 
         <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Calculated Sell Price</p>
+            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Standard Sell Price</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest $5 · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
+            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} markup {{ standardMarkupPercent }}% · GST inclusive · rounded to nearest $5 · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -345,6 +337,8 @@ const uploadingImages = ref(false);
 const uploadProgress = ref(0);
 const uploadError = ref("");
 const descriptionBlocks = ref<any[]>([]);
+const standardMarkupPercent = ref(20);
+const standardPricingLevelName = ref("Standard");
 
 const form = reactive({
   name: "",
@@ -354,7 +348,6 @@ const form = reactive({
   product_code: "",
   has_variants: false,
   buy_price_ex_gst: "",
-  sell_markup_percent: "",
   rrp_markup_percent: "",
   stock: "0",
   weight_kg: "1.000",
@@ -378,7 +371,7 @@ const numeric = (value: string) => {
 };
 
 const calculatedSellPriceExGst = computed(() =>
-  roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.sell_markup_percent) / 100)),
+  roundMoney(numeric(form.buy_price_ex_gst) * (1 + standardMarkupPercent.value / 100)),
 );
 const calculatedSellPrice = computed(() => roundToNearestFive(calculatedSellPriceExGst.value * 1.1));
 const calculatedRrpPriceExGst = computed(() =>
@@ -453,7 +446,14 @@ const loadForm = async () => {
   errorMessage.value = "";
 
   try {
-    categories.value = await adminFetch("/api/admin/categories");
+    const [categoryRows, standardPricing] = await Promise.all([
+      adminFetch("/api/admin/categories"),
+      adminFetch<{ key: string; name: string; markup_percent: number }>("/api/admin/pricing/standard"),
+    ]);
+    categories.value = categoryRows as Array<{ id: string | number; name: string }>;
+    standardPricingLevelName.value = standardPricing?.name || "Standard";
+    const loadedStandardMarkup = Number(standardPricing?.markup_percent);
+    standardMarkupPercent.value = Number.isFinite(loadedStandardMarkup) ? loadedStandardMarkup : 20;
 
     if (props.mode === "edit") {
       const product: any = await adminFetch(`/api/admin/products/${props.productId}`);
@@ -465,7 +465,6 @@ const loadForm = async () => {
       form.product_code = product.product_code || "";
       form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
-      form.sell_markup_percent = product.sell_markup_percent == null ? "" : String(product.sell_markup_percent);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
       form.stock = product.stock == null ? "0" : String(product.stock);
       form.weight_kg = product.weight_kg == null ? "1.000" : String(product.weight_kg);
@@ -512,7 +511,6 @@ const saveProduct = async () => {
       ...form,
       category_id: form.category_id || null,
       buy_price_ex_gst: Number(form.buy_price_ex_gst),
-      sell_markup_percent: Number(form.sell_markup_percent),
       rrp_markup_percent: Number(form.rrp_markup_percent),
       stock: Number(form.stock),
       weight_kg: Number(form.weight_kg),

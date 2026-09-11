@@ -1,4 +1,5 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { getStandardPricingLevel } from "~~/server/utils/customerPricing";
 
 const cleanSlug = (value: unknown) =>
   String(value || "")
@@ -27,13 +28,14 @@ export default defineEventHandler(async (event) => {
   const productCode = String(body?.product_code || "").trim();
   const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
-  const sellMarkupPercent = Number(body?.sell_markup_percent);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
   const stock = Number(body?.stock);
   const weightKg = Number(body?.weight_kg);
   const lengthCm = Number(body?.length_cm);
   const widthCm = Number(body?.width_cm);
   const heightCm = Number(body?.height_cm);
+  const standardPricingLevel = await getStandardPricingLevel();
+  const sellMarkupPercent = standardPricingLevel.markupPercent;
 
   if (!name) throw createError({ statusCode: 400, statusMessage: "Product name is required" });
   if (!slug) throw createError({ statusCode: 400, statusMessage: "Product slug is required" });
@@ -41,7 +43,6 @@ export default defineEventHandler(async (event) => {
 
   for (const [label, value] of [
     ["Buy price ex GST", buyPriceExGst],
-    ["Sell markup", sellMarkupPercent],
     ["RRP markup", rrpMarkupPercent],
   ] as const) {
     if (!Number.isFinite(value) || value < 0) {
