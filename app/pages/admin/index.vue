@@ -389,6 +389,7 @@ const statusClass = (value: unknown) => {
 
 const toolIcon = (path: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${path}" /></svg>`;
 const tools = [
+  { to: "/admin/reports", title: "Business Reports", description: "Sales, GST, customers, products and CSV exports.", superadmin: true, icon: toolIcon("M4 19V5h16v14H4Zm4-4 3-3 2 2 3-4M8 8h8") },
   { to: "/admin/inventory", title: "Inventory & Low Stock", description: "Low stock, back orders, demand and stock value.", icon: toolIcon("M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z") },
   { to: "/admin/products", title: "Manage Products", description: "Add products, edit pricing and update stock.", icon: toolIcon("M3 6h18M6 6v14h12V6M9 10h6") },
   { to: "/admin/storage-cleanup", title: "Storage Cleanup", description: "Find and remove unused product images.", icon: toolIcon("M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13") },
