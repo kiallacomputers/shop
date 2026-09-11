@@ -118,6 +118,14 @@
         </NuxtLink>
 
         <NuxtLink
+          to="/admin/back-in-stock"
+          class="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition"
+        >
+          <p class="font-bold text-slate-900 group-hover:text-amber-700">Back in Stock</p>
+          <p class="text-sm text-slate-500 mt-1">See waiting customers, product demand and notification history.</p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/analytics"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition"
         >

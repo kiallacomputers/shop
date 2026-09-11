@@ -82,6 +82,25 @@
 
       <section class="kc-panel p-6 mb-8">
         <div class="flex items-center justify-between gap-4">
+          <div><h2 class="text-xl font-bold text-slate-900">Back in Stock Notifications</h2><p class="mt-1 text-sm text-slate-500">Products you have asked us to notify you about.</p></div>
+        </div>
+        <div v-if="backInStockNotifications.length" class="mt-5 divide-y divide-slate-100">
+          <div v-for="notice in backInStockNotifications" :key="notice.id" class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <NuxtLink :to="`/product/${notice.products?.slug}`" class="font-bold text-slate-900 hover:text-blue-600">{{ notice.products?.name }}<span v-if="notice.product_variants?.name"> — {{ notice.product_variants.name }}</span></NuxtLink>
+              <p class="mt-1 text-xs text-slate-500">Requested {{ formatDate(notice.requested_at) }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="rounded-full px-2.5 py-1 text-xs font-bold capitalize" :class="notice.status === 'sent' ? 'bg-emerald-100 text-emerald-700' : notice.status === 'waiting' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'">{{ notice.status }}</span>
+              <button v-if="notice.status === 'waiting'" type="button" :disabled="cancellingBackInStockId === Number(notice.id)" class="text-xs font-bold text-red-600 hover:text-red-700 disabled:opacity-50" @click="cancelBackInStock(notice)">{{ cancellingBackInStockId === Number(notice.id) ? 'Cancelling…' : 'Cancel' }}</button>
+            </div>
+          </div>
+        </div>
+        <p v-else class="mt-4 text-sm text-slate-500">You are not currently waiting for any products.</p>
+      </section>
+
+      <section class="kc-panel p-6 mb-8">
+        <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Quote Requests</h2><p class="mt-1 text-sm text-slate-500">Quotes requested from your shopping cart.</p></div>
           <NuxtLink to="/shoppingcart" class="text-sm font-bold text-blue-600 hover:text-blue-700">Request a Quote →</NuxtLink>
         </div>
@@ -330,6 +349,8 @@ const savingProfile = ref(false);
 const wishlistPreview = ref<any[]>([]);
 const quoteRequests = ref<any[]>([]);
 const payingQuoteId = ref<number | null>(null);
+const backInStockNotifications = ref<any[]>([]);
+const cancellingBackInStockId = ref<number | null>(null);
 
 const showAddressForm = ref(false);
 const editingAddressId = ref<string | null>(null);
@@ -500,6 +521,21 @@ async function payQuote(quote: any) {
   }
 }
 
+async function cancelBackInStock(notice: any) {
+  cancellingBackInStockId.value = Number(notice.id);
+  successMessage.value = "";
+  errorMessage.value = "";
+  try {
+    await accountFetch(`/api/account/back-in-stock/${notice.id}`, { method: "DELETE" });
+    backInStockNotifications.value = backInStockNotifications.value.map((item) => Number(item.id) === Number(notice.id) ? { ...item, status: "cancelled" } : item);
+    successMessage.value = "Back-in-stock notification cancelled.";
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to cancel notification.";
+  } finally {
+    cancellingBackInStockId.value = null;
+  }
+}
+
 async function saveProfile() {
   savingProfile.value = true;
   errorMessage.value = "";
@@ -529,7 +565,7 @@ async function loadAccount() {
     }
     user.value = currentUser;
 
-    const [addressResult, orderResult, pricingResult, profileResult, dashboardResult, wishlistResult, quotesResult] = await Promise.all([
+    const [addressResult, orderResult, pricingResult, profileResult, dashboardResult, wishlistResult, quotesResult, backInStockResult] = await Promise.all([
       accountFetch<any[]>("/api/account/addresses"),
       supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,tracking_number,carrier,tracking_status,shipped_at,delivered_at,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
       accountFetch<any>("/api/account/pricing"),
@@ -537,6 +573,7 @@ async function loadAccount() {
       accountFetch<any>("/api/account/dashboard"),
       accountFetch<any>("/api/account/wishlist"),
       accountFetch<any[]>("/api/account/quotes"),
+      accountFetch<any[]>("/api/account/back-in-stock"),
     ]);
 
     addresses.value = addressResult || [];
@@ -546,6 +583,7 @@ async function loadAccount() {
     Object.assign(dashboardStats, dashboardResult?.stats || {});
     wishlistPreview.value = (wishlistResult?.products || []).slice(0, 3);
     quoteRequests.value = quotesResult || [];
+    backInStockNotifications.value = backInStockResult || [];
     if (orderResult.error) throw orderResult.error;
     orders.value = orderResult.data || [];
   } catch (error: any) {
