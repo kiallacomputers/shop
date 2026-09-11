@@ -12,6 +12,7 @@ import {
 import { throwInternalError } from "~~/server/utils/internalError";
 
 const text = (value: unknown) => String(value ?? "").trim();
+const PROCESSING_FEE = 2;
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -198,6 +199,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  lineItems.push({
+    price_data: {
+      currency: "aud",
+      product_data: { name: "Processing Fee" },
+      unit_amount: Math.round(PROCESSING_FEE * 100),
+    },
+    quantity: 1,
+  });
+
   const siteOrigin = getSiteOrigin(event);
 
   // Snapshot the chosen address into Stripe metadata so the paid order retains
@@ -229,6 +239,7 @@ export default defineEventHandler(async (event) => {
       shipping_service_code: selectedRate.code,
       shipping_method: selectedRate.name,
       shipping_cost: selectedRate.price.toFixed(2),
+      processing_fee: PROCESSING_FEE.toFixed(2),
       pricing_level: pricingLevel.key,
       pricing_level_name: pricingLevel.name,
     },

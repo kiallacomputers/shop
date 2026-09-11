@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
       shipping_method,
       shipping_service_code,
       shipping_cost,
+      processing_fee,
       shipping_name,
       shipping_address_line_1,
       shipping_address_line_2,

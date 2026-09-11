@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
       shipping_method,
       shipping_service_code,
       shipping_cost,
+      processing_fee,
       created_at
     `)
     .eq("stripe_session_id", sessionId)

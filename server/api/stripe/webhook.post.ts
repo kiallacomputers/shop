@@ -271,6 +271,8 @@ export default defineEventHandler(async (event) => {
         session.metadata?.shipping_service_code || null,
       shipping_cost:
         Number(session.metadata?.shipping_cost || 0),
+      processing_fee:
+        Number(session.metadata?.processing_fee || 0),
     })
     .select("*")
     .single();
@@ -466,6 +468,7 @@ export default defineEventHandler(async (event) => {
         shipping_service_code: session.metadata?.shipping_service_code || null,
         shipping_postcode: session.metadata?.shipping_postcode || null,
         shipping_cost: Number(session.metadata?.shipping_cost || 0),
+        processing_fee: Number(session.metadata?.processing_fee || 0),
         shipping_address: shippingAddress,
         paid_at: new Date(),
         items: (savedItems || []).map((item: any) => ({

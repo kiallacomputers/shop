@@ -4,6 +4,7 @@ import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
 
 const text = (value: unknown) => String(value ?? "").trim();
+const PROCESSING_FEE = 2;
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -87,6 +88,13 @@ export default defineEventHandler(async (event) => {
         unit_amount: Math.round(total * 100),
       },
       quantity: 1,
+    }, {
+      price_data: {
+        currency: "aud",
+        product_data: { name: "Processing Fee" },
+        unit_amount: Math.round(PROCESSING_FEE * 100),
+      },
+      quantity: 1,
     }],
     client_reference_id: String(user.id),
     customer_email: user.email || undefined,
@@ -108,6 +116,7 @@ export default defineEventHandler(async (event) => {
       shipping_method: "Quoted order",
       shipping_service_code: "quote",
       shipping_cost: "0.00",
+      processing_fee: PROCESSING_FEE.toFixed(2),
     },
     success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteOrigin}/account?quote=${quote.id}`,
