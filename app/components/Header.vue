@@ -71,7 +71,7 @@
             <span v-if="cart.count > 0" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-[11px] font-black rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">{{ cart.count }}</span>
           </NuxtLink>
 
-          <div v-if="user" class="relative hidden md:block">
+          <div v-if="user" ref="desktopAccountMenuRef" class="relative hidden md:block">
             <button
               type="button"
               class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] transition hover:border-cyan-300 hover:bg-slate-50 hover:text-cyan-600"
@@ -261,6 +261,7 @@ const closeSearchSoon = () => {
 
 const mobileMenuOpen = ref(false);
 const desktopAccountMenuOpen = ref(false);
+const desktopAccountMenuRef = ref(null);
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false;
@@ -269,6 +270,22 @@ const closeMobileMenu = () => {
 const closeDesktopAccountMenu = () => {
   desktopAccountMenuOpen.value = false;
 };
+
+const handleDesktopAccountOutsideClick = (event) => {
+  if (!desktopAccountMenuOpen.value) return;
+  const menu = desktopAccountMenuRef.value;
+  if (menu && !menu.contains(event.target)) {
+    closeDesktopAccountMenu();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("pointerdown", handleDesktopAccountOutsideClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("pointerdown", handleDesktopAccountOutsideClick);
+});
 
 // ========================================
 // FIRST NAME
