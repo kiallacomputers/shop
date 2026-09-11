@@ -35,7 +35,7 @@
                   </span>
 
                   <div
-                    class="flex h-[300px] w-full cursor-zoom-in items-center justify-center sm:h-[440px] lg:h-[520px]"
+                    class="flex h-[300px] w-full cursor-zoom-in items-center justify-center sm:h-[420px] lg:h-[460px]"
                     @click="openLightbox"
                   >
                     <img
@@ -100,131 +100,113 @@
               </div>
 
               <!-- Purchase panel -->
-              <div class="flex flex-col p-5 sm:p-8 lg:p-9">
-                <div>
-                  <NuxtLink
-                    :to="`/category/${product.categories.slug}`"
-                    class="text-sm font-bold uppercase tracking-wide text-cyan-600 hover:text-cyan-700"
-                  >
-                    {{ product.categories.name }}
-                  </NuxtLink>
+              <div class="p-5 sm:p-7 lg:p-8">
+                <NuxtLink
+                  :to="`/category/${product.categories.slug}`"
+                  class="text-sm font-bold uppercase tracking-wide text-cyan-600 hover:text-cyan-700"
+                >
+                  {{ product.categories.name }}
+                </NuxtLink>
 
-                  <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl break-words">
-                    {{ product.name }}
-                  </h1>
+                <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl break-words">
+                  {{ product.name }}
+                </h1>
 
-                  <div class="mt-6 border-y border-slate-200 py-5">
-                    <div v-if="effectiveOldPrice" class="mb-1 text-slate-400">
-                      <p class="text-[11px] font-black uppercase tracking-[.12em]">RRP <span class="ml-1 text-sm font-semibold normal-case tracking-normal line-through">${{ effectiveOldPrice.toFixed(2) }}</span></p>
-                    </div>
-                    <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
-                      <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">
-                        ${{ effectivePrice.toFixed(2) }}
-                      </span>
-                    </div>
-                    <p v-if="hasCustomerDiscount" class="mt-1 text-sm text-slate-500">
-                      Standard price <span class="line-through">${{ effectiveStandardPrice.toFixed(2) }}</span>
+                <div class="mt-5 border-y border-slate-200 py-4">
+                  <div v-if="effectiveOldPrice" class="mb-1 text-slate-400">
+                    <p class="text-[11px] font-black uppercase tracking-[.12em]">
+                      RRP
+                      <span class="ml-1 text-sm font-semibold normal-case tracking-normal line-through">${{ effectiveOldPrice.toFixed(2) }}</span>
                     </p>
-                    <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span>GST inclusive</span>
-                      <span v-if="pricingLevelName" class="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">Pricing Level: {{ pricingLevelName }}</span>
-                    </div>
                   </div>
-
-                  <div v-if="product.has_variants" class="mt-5">
-                    <label class="mb-2 block text-sm font-bold text-slate-800">Choose option</label>
-                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      <button v-for="variant in activeVariants" :key="variant.id" type="button" @click="selectedVariantId = Number(variant.id)" class="rounded-lg border px-3 py-2.5 text-left text-sm transition" :class="selectedVariantId === Number(variant.id) ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-400'">
-                        <span class="block font-bold text-slate-900">{{ variant.name }}</span>
-                        <span class="mt-0.5 block text-xs text-slate-500">Code: {{ variant.product_code }}</span>
-                      </button>
-                    </div>
-                    <p v-if="!activeVariants.length" class="mt-2 text-sm text-amber-700">No variants are currently available.</p>
+                  <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
+                    <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">${{ effectivePrice.toFixed(2) }}</span>
                   </div>
-
-                  <div v-else-if="product.product_code" class="mt-5 text-sm text-slate-500">Product code: <strong class="text-slate-700">{{ product.product_code }}</strong></div>
-
-                  <div class="mt-5">
-                    <div
-                      v-if="effectiveStock > 0"
-                      class="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 ring-1 ring-inset ring-green-200"
-                    >
-                      <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                      {{ effectiveStock }} in stock
-                    </div>
-                    <div
-                      v-else
-                      class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200"
-                    >
-                      <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                      On back order — due 3–4 days
-                    </div>
+                  <p v-if="hasCustomerDiscount" class="mt-1 text-sm text-slate-500">
+                    Standard price <span class="line-through">${{ effectiveStandardPrice.toFixed(2) }}</span>
+                  </p>
+                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span>GST inclusive</span>
+                    <span v-if="pricingLevelName" class="rounded-full bg-blue-50 px-2 py-0.5 font-semibold text-blue-700">Pricing Level: {{ pricingLevelName }}</span>
                   </div>
                 </div>
 
-                <div class="mt-8 lg:mt-auto lg:pt-10">
-                  <div v-if="!product.has_variants || activeVariants.length" class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                <div v-if="product.has_variants" class="mt-4">
+                  <label class="mb-2 block text-sm font-bold text-slate-800">Choose option</label>
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                     <button
+                      v-for="variant in activeVariants"
+                      :key="variant.id"
                       type="button"
-                      @click="addCurrentToCart"
-                      class="min-h-[50px] w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                      @click="selectedVariantId = Number(variant.id)"
+                      class="rounded-lg border px-3 py-2.5 text-left text-sm transition"
+                      :class="selectedVariantId === Number(variant.id) ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-400'"
                     >
-                      {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
-                    </button>
-                    <button
-                      type="button"
-                      class="min-h-[50px] rounded-xl border border-slate-300 bg-white px-5 py-3.5 font-bold transition hover:border-rose-300 hover:bg-rose-50"
-                      :class="wishlistSaved ? 'text-rose-600' : 'text-slate-700'"
-                      @click="toggleWishlist"
-                    >
-                      {{ wishlistSaved ? '♥ Saved' : '♡ Save' }}
+                      <span class="block font-bold text-slate-900">{{ variant.name }}</span>
+                      <span class="mt-0.5 block text-xs text-slate-500">Code: {{ variant.product_code }}</span>
                     </button>
                   </div>
+                  <p v-if="!activeVariants.length" class="mt-2 text-sm text-amber-700">No variants are currently available.</p>
+                </div>
 
-                  <div v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)" class="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
-                    <p class="font-bold text-slate-900">Prefer to wait for stock?</p>
-                    <p class="mt-1 text-sm text-slate-600">Back-in-stock emails are only sent for products you keep in your wishlist, so you only hear from us about items you are interested in.</p>
-                    <NuxtLink v-if="!customerUser" :to="`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`" class="mt-3 inline-flex min-h-[46px] w-full items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 sm:w-auto text-sm font-bold text-white hover:bg-sky-700">Sign In to Save & Notify</NuxtLink>
-                    <button v-else type="button" :disabled="backInStockBusy" class="mt-3 min-h-[46px] w-full rounded-lg bg-sky-600 px-4 py-2.5 sm:w-auto text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : (wishlistSaved ? 'Notify Me When In Stock' : 'Save to Wishlist & Notify Me') }}</button>
-                    <p v-if="backInStockMessage" class="mt-2 text-sm font-semibold" :class="backInStockError ? 'text-red-600' : 'text-green-700'">{{ backInStockMessage }}</p>
-                  </div>
+                <div v-else-if="product.product_code" class="mt-4 text-sm text-slate-500">
+                  Product code: <strong class="text-slate-700">{{ product.product_code }}</strong>
+                </div>
 
+                <div class="mt-4">
                   <div
-                    v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)"
-                    class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900"
+                    v-if="effectiveStock > 0"
+                    class="inline-flex items-center gap-2 rounded-full bg-green-50 px-3 py-2 text-sm font-semibold text-green-700 ring-1 ring-inset ring-green-200"
                   >
-                    This item is on back order and is normally due within 3–4 days. You can still purchase it now.
+                    <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                    {{ effectiveStock }} in stock
                   </div>
+                  <div
+                    v-else
+                    class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200"
+                  >
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+                    On back order — due 3–4 days
+                  </div>
+                </div>
 
-                  <div class="mt-5 grid grid-cols-1 gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                    <div class="rounded-xl bg-slate-50 p-3">
-                      <p class="font-semibold text-slate-800">Secure checkout</p>
-                      <p class="mt-1 text-xs">Pay securely through our online checkout.</p>
-                    </div>
-                    <div class="rounded-xl bg-slate-50 p-3">
-                      <p class="font-semibold text-slate-800">Australian delivery</p>
-                      <p class="mt-1 text-xs">Delivery calculated from your selected address.</p>
-                    </div>
-                  </div>
-                  <div class="mt-5 border-t border-slate-200 pt-5">
-                    <div class="flex items-center justify-between gap-3">
-                      <div>
-                        <p class="text-sm font-bold text-slate-800">Share this product</p>
-                        <p class="mt-0.5 text-xs text-slate-500">Share with any supported app or use one of the quick options.</p>
-                      </div>
-                      <span v-if="shareCopied" class="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 ring-1 ring-inset ring-green-200">Link copied</span>
-                    </div>
-                    <div class="mt-3 flex flex-wrap gap-2">
-                      <button type="button" @click="shareProduct" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12v7a2 2 0 002 2h6a2 2 0 002-2v-7M12 16V3m0 0L8 7m4-4l4 4" /></svg>
-                        Share
-                      </button>
-                      <a :href="facebookShareUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Facebook</a>
-                      <a :href="whatsAppShareUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">WhatsApp</a>
-                      <a :href="emailShareUrl" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Email</a>
-                      <button type="button" @click="copyProductLink" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Copy link</button>
-                    </div>
-                  </div>
+                <div v-if="!product.has_variants || activeVariants.length" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] lg:grid-cols-1 xl:grid-cols-[1fr_auto]">
+                  <button
+                    type="button"
+                    @click="addCurrentToCart"
+                    class="min-h-[50px] w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                  >
+                    {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="min-h-[50px] rounded-xl border border-slate-300 bg-white px-5 py-3.5 font-bold transition hover:border-rose-300 hover:bg-rose-50"
+                    :class="wishlistSaved ? 'text-rose-600' : 'text-slate-700'"
+                    @click="toggleWishlist"
+                  >
+                    {{ wishlistSaved ? '♥ Saved' : '♡ Save' }}
+                  </button>
+                </div>
+
+                <div v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)" class="mt-4 border-t border-slate-200 pt-4">
+                  <p class="text-sm text-slate-600">You can order now, or wait until stock arrives.</p>
+                  <NuxtLink
+                    v-if="!customerUser"
+                    :to="`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`"
+                    class="mt-2 inline-flex min-h-[42px] items-center justify-center rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-bold text-sky-700 hover:bg-sky-100"
+                  >
+                    Sign In to Save & Notify
+                  </NuxtLink>
+                  <button
+                    v-else
+                    type="button"
+                    :disabled="backInStockBusy"
+                    class="mt-2 min-h-[42px] rounded-lg border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-bold text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+                    @click="subscribeBackInStock"
+                  >
+                    {{ backInStockBusy ? 'Saving…' : (wishlistSaved ? 'Notify Me When In Stock' : 'Save to Wishlist & Notify Me') }}
+                  </button>
+                  <p v-if="backInStockMessage" class="mt-2 text-sm font-semibold" :class="backInStockError ? 'text-red-600' : 'text-green-700'">{{ backInStockMessage }}</p>
                 </div>
               </div>
             </div>
@@ -1097,182 +1079,6 @@ const images = computed(() => {
 const currentImage = computed(() => {
   return images.value[currentImageIndex.value] || "";
 });
-
-const absoluteProductImage = computed(() => {
-  const image = images.value[0] || "";
-  if (!image) {
-    return "https://shop.kiallacomputers.com.au/kialla-computers-logo.png";
-  }
-
-  if (/^https?:\/\//i.test(image)) {
-    return image;
-  }
-
-  return `https://shop.kiallacomputers.com.au${image.startsWith("/") ? "" : "/"}${image}`;
-});
-
-const productPageUrl = computed(() =>
-  `https://shop.kiallacomputers.com.au/product/${encodeURIComponent(
-    String(product.value?.slug || route.params.slug || ""),
-  )}`,
-);
-
-const shareCopied = ref(false);
-
-const shareText = computed(() => {
-  const name = product.value?.name || "Product";
-  // Shared posts use the public/base product price, not a customer's private pricing-level price.
-  const price = Number(product.value?.price || 0);
-  const formattedPrice = Number.isFinite(price) && price > 0
-    ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(price)
-    : "";
-
-  return `${name}${formattedPrice ? ` — ${formattedPrice}` : ""} at Kialla Computers`;
-});
-
-const facebookShareUrl = computed(() =>
-  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productPageUrl.value)}`,
-);
-
-const whatsAppShareUrl = computed(() =>
-  `https://wa.me/?text=${encodeURIComponent(`${shareText.value}\n${productPageUrl.value}`)}`,
-);
-
-const emailShareUrl = computed(() =>
-  `mailto:?subject=${encodeURIComponent(product.value?.name || "Kialla Computers product")}&body=${encodeURIComponent(`${shareText.value}\n\n${productPageUrl.value}`)}`,
-);
-
-const copyProductLink = async () => {
-  try {
-    await navigator.clipboard.writeText(productPageUrl.value);
-    shareCopied.value = true;
-    window.setTimeout(() => { shareCopied.value = false; }, 1800);
-  } catch {
-    // Clipboard may be unavailable in older browsers.
-  }
-};
-
-const shareProduct = async () => {
-  if (!import.meta.client) return;
-
-  const shareData = {
-    title: product.value?.name || "Kialla Computers",
-    text: shareText.value,
-    url: productPageUrl.value,
-  };
-
-  if (typeof navigator.share === "function") {
-    try {
-      await navigator.share(shareData);
-      return;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-    }
-  }
-
-  await copyProductLink();
-};
-
-const productSeoDescription = computed(() => {
-  const name = product.value?.name || "Product";
-  const price = Number(product.value?.price || 0);
-  const formattedPrice =
-    Number.isFinite(price) && price > 0
-      ? new Intl.NumberFormat("en-AU", {
-          style: "currency",
-          currency: "AUD",
-        }).format(price)
-      : "";
-  const category = product.value?.categories?.name
-    ? ` in ${product.value.categories.name}`
-    : "";
-
-  return `${name}${category}${formattedPrice ? ` — ${formattedPrice}` : ""}. Available from Kialla Computers.`;
-});
-
-useSeoMeta({
-  title: () =>
-    product.value?.name
-      ? `${product.value.name} | Kialla Computers`
-      : "Kialla Computers",
-  description: () => productSeoDescription.value,
-  ogTitle: () => product.value?.name || "Kialla Computers",
-  ogDescription: () => productSeoDescription.value,
-  ogType: "product",
-  ogUrl: () => productPageUrl.value,
-  ogImage: () => absoluteProductImage.value,
-  twitterCard: "summary_large_image",
-  twitterTitle: () => product.value?.name || "Kialla Computers",
-  twitterDescription: () => productSeoDescription.value,
-  twitterImage: () => absoluteProductImage.value,
-});
-
-useHead({
-  link: [
-    {
-      rel: "canonical",
-      href: () => productPageUrl.value,
-    },
-  ],
-});
-
-/*
-|--------------------------------------------------------------------------
-| Next Image
-|--------------------------------------------------------------------------
-*/
-
-const nextImage = () => {
-  if (images.value.length <= 1) {
-    return;
-  }
-
-  currentImageIndex.value = (currentImageIndex.value + 1) % images.value.length;
-};
-
-/*
-|--------------------------------------------------------------------------
-| Previous Image
-|--------------------------------------------------------------------------
-*/
-
-const previousImage = () => {
-  if (images.value.length <= 1) {
-    return;
-  }
-
-  currentImageIndex.value =
-    (currentImageIndex.value - 1 + images.value.length) % images.value.length;
-};
-
-/*
-|--------------------------------------------------------------------------
-| Select Image
-|--------------------------------------------------------------------------
-*/
-
-const goToImage = (index) => {
-  currentImageIndex.value = index;
-};
-
-/*
-|--------------------------------------------------------------------------
-| Reset Image When Product Changes
-|--------------------------------------------------------------------------
-*/
-
-watch(
-  () => product.value?.id,
-  () => {
-    currentImageIndex.value = 0;
-  },
-);
-
-/*
-|--------------------------------------------------------------------------
-| IMAGE LIGHTBOX / ZOOM
-|--------------------------------------------------------------------------
-*/
 
 const lightboxOpen = ref(false);
 
