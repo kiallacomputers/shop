@@ -19,7 +19,7 @@ export const roundMoney = (value: number) =>
 
 export const roundToNearestFive = (value: number) => {
   if (!Number.isFinite(value) || value <= 0) return 0;
-  return Math.max(5, Math.round(value / 5) * 5);
+  return Math.max(1, Math.round(value));
 };
 
 export const calculateBaseCustomerPrice = (
@@ -35,13 +35,13 @@ export const calculateBaseCustomerPrice = (
   //   Buy Price ex GST
   //   + customer markup
   //   + 10% GST
-  //   rounded to the nearest $5
+  //   rounded to the nearest dollar
   //
   // Example:
   //   Buy Price ex GST: $302
   //   Family markup: 10%
   //   $302 x 1.10 x 1.10 = $365.42
-  //   rounded to nearest $5 = $365
+  //   rounded to nearest dollar = $365
   if (Number.isFinite(buy) && buy > 0) {
     const exGstWithMarkup = buy * (1 + markupPercent / 100);
     return roundToNearestFive(exGstWithMarkup * 1.1);

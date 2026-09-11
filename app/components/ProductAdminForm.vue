@@ -95,7 +95,7 @@
         <h2 class="text-lg font-bold text-slate-900">Pricing & Stock</h2>
 
         <p class="mt-1 text-sm text-slate-500">
-          Enter your supplier buy price excluding GST. The Standard pricing level is used automatically for the public Sell Price, while RRP keeps its own product-specific markup. Final prices include GST and are rounded to the nearest $5.
+          Enter your supplier buy price excluding GST. The Standard pricing level is used automatically for the public Sell Price, while RRP keeps its own product-specific markup. Final prices include GST and are rounded to the nearest dollar.
         </p>
 
         <p v-if="form.has_variants" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
@@ -129,13 +129,13 @@
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Standard Sell Price</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} markup {{ standardMarkupPercent }}% · GST inclusive · rounded to nearest $5 · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
+            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} markup {{ standardMarkupPercent }}% · GST inclusive · rounded to nearest dollar · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Calculated RRP</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedRrpPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest $5 · {{ currency(calculatedRrpPriceExGst) }} ex GST before rounding</p>
+            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest dollar · {{ currency(calculatedRrpPriceExGst) }} ex GST before rounding</p>
           </div>
         </div>
 
@@ -363,7 +363,7 @@ const form = reactive({
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const roundToNearestFive = (value: number) => {
   if (value <= 0) return 0;
-  return Math.max(5, Math.round(value / 5) * 5);
+  return Math.max(1, Math.round(value));
 };
 const numeric = (value: string) => {
   const parsed = Number(value);

@@ -17,7 +17,7 @@ const normaliseImages = (value: unknown) => {
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const roundToNearestFive = (value: number) => {
   if (value <= 0) return 0;
-  return Math.max(5, Math.round(value / 5) * 5);
+  return Math.max(1, Math.round(value));
 };
 
 export default defineEventHandler(async (event) => {

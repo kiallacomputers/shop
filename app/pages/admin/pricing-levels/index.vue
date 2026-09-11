@@ -32,7 +32,7 @@
       <section class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
         <h2 class="font-bold text-slate-900">How pricing works</h2>
         <p class="mt-1 text-sm leading-6 text-slate-700">
-          The Standard level is the authoritative public Sell Price markup. Product prices are calculated from Buy Price ex GST + the pricing-level markup + GST, then rounded to the nearest $5.
+          The Standard level is the authoritative public Sell Price markup. Product prices are calculated from Buy Price ex GST + the pricing-level markup + GST, then rounded to the nearest dollar.
           Changing the Standard markup also refreshes saved public product prices automatically; other customer levels take effect automatically on storefront pricing and secure Stripe checkout.
         </p>
       </section>
