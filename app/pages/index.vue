@@ -2,14 +2,14 @@
   <main>
     <section class="relative overflow-hidden bg-[#0b1f3a] text-white">
       <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_85%_20%,rgba(39,182,214,.45),transparent_30%),radial-gradient(circle_at_10%_90%,rgba(35,103,209,.45),transparent_35%)]"></div>
-      <div class="relative max-w-7xl mx-auto px-4 py-14 md:py-20 grid gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+      <div class="relative max-w-7xl mx-auto px-4 py-10 sm:py-14 md:py-20 grid gap-8 sm:gap-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
         <div>
           <p class="text-cyan-300 text-xs font-black uppercase tracking-[.2em]">Kialla Computers</p>
-          <h1 class="mt-4 max-w-3xl text-4xl md:text-6xl font-black tracking-tight leading-[1.03]">Computers without the hassle.</h1>
+          <h1 class="mt-3 sm:mt-4 max-w-3xl text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-[1.03]">Computers without the hassle.</h1>
           <p class="mt-5 max-w-2xl text-base md:text-lg leading-8 text-slate-300">Quality computers, components, upgrades and practical support from a local independent business. Straightforward advice, secure checkout and Australian delivery.</p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#shop" class="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-6 py-3.5 font-black text-[#0b1f3a] hover:bg-cyan-300 transition">Shop products</a>
-            <a href="#categories" class="inline-flex items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-black text-white hover:bg-white/15 transition">Browse categories</a>
+          <div class="mt-7 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+            <a href="#shop" class="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-cyan-400 px-6 py-3.5 font-black text-[#0b1f3a] hover:bg-cyan-300 transition">Shop products</a>
+            <a href="#categories" class="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-black text-white hover:bg-white/15 transition">Browse categories</a>
           </div>
         </div>
 
@@ -53,12 +53,12 @@
       </div>
     </section>
 
-    <div class="max-w-7xl mx-auto px-4 py-10 md:py-14">
+    <div class="max-w-7xl mx-auto px-4 py-8 sm:py-10 md:py-14">
       <section id="categories" class="mb-12">
         <div class="flex items-end justify-between gap-4 mb-5">
           <div><p class="kc-eyebrow">Find what you need</p><h2 class="kc-title mt-1 text-2xl md:text-3xl">Shop by category</h2></div>
         </div>
-        <div v-if="shopCategories.length" class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div v-if="shopCategories.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <NuxtLink v-for="category in shopCategories" :key="category.id" :to="`/category/${category.slug}`" class="group kc-panel p-4 min-h-[110px] flex flex-col justify-between hover:-translate-y-1 hover:border-cyan-300 transition duration-200">
             <div class="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-[#2367d1] group-hover:bg-blue-50">⌁</div>
             <p class="mt-4 font-extrabold text-[#0b1f3a] group-hover:text-blue-600 transition">{{ category.name }}</p>

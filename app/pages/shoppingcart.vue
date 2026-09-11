@@ -11,34 +11,54 @@
       </div>
 
       <div v-else>
-        <div class="mb-6"><p class="kc-eyebrow">Checkout</p><h1 class="kc-title mt-1 text-3xl">Shopping Cart</h1></div>
-
-        <div v-for="item in cart.items" :key="item.cartKey || item.id" class="flex items-center gap-4 border-b py-4">
-          <div class="w-20 h-20 shrink-0 flex items-center justify-center">
-            <img
-              v-if="getProductImage(item.image)"
-              :src="getProductImage(item.image)"
-              :alt="item.name"
-              class="w-20 h-20 object-contain"
-              @error="imageError(item)"
-            />
-            <div v-else class="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">No Image</div>
-          </div>
-
-          <div class="flex flex-1 items-center gap-4 min-w-0">
-            <div class="flex-1 min-w-0"><h3 class="truncate font-medium">{{ item.name }}</h3><p v-if="item.variantName" class="mt-1 text-xs font-semibold text-blue-600">{{ item.variantName }}</p><p v-if="item.productCode" class="text-xs text-slate-400">Code: {{ item.productCode }}</p></div>
-            <div class="w-24 text-right shrink-0"><p class="font-semibold">${{ Number(item.price).toFixed(2) }}</p></div>
-          </div>
-
-          <div class="flex items-center gap-2 shrink-0">
-            <button type="button" @click="cart.decrease(item.cartKey || item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">−</button>
-            <span class="w-6 text-center">{{ item.quantity }}</span>
-            <button type="button" @click="cart.increase(item.cartKey || item.id)" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300">+</button>
+        <div class="mb-5 sm:mb-6">
+          <p class="kc-eyebrow">Checkout</p>
+          <h1 class="kc-title mt-1 text-2xl sm:text-3xl">Shopping Cart</h1>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-bold sm:max-w-md sm:text-xs">
+            <div class="rounded-lg bg-blue-600 px-2 py-2 text-white">1. Cart</div>
+            <div class="rounded-lg bg-blue-50 px-2 py-2 text-blue-700">2. Delivery</div>
+            <div class="rounded-lg bg-slate-100 px-2 py-2 text-slate-500">3. Payment</div>
           </div>
         </div>
 
+        <div class="space-y-3">
+          <article v-for="item in cart.items" :key="item.cartKey || item.id" class="kc-panel p-3 sm:p-4">
+            <div class="grid grid-cols-[72px_minmax(0,1fr)] gap-3 sm:grid-cols-[88px_minmax(0,1fr)_auto] sm:items-center sm:gap-4">
+              <div class="flex h-[72px] w-[72px] items-center justify-center rounded-xl bg-slate-50 sm:h-[88px] sm:w-[88px]">
+                <img
+                  v-if="getProductImage(item.image)"
+                  :src="getProductImage(item.image)"
+                  :alt="item.name"
+                  class="h-full w-full object-contain p-2"
+                  @error="imageError(item)"
+                />
+                <div v-else class="text-center text-[11px] text-slate-400">No Image</div>
+              </div>
+
+              <div class="min-w-0">
+                <h3 class="font-bold leading-5 text-slate-900 sm:text-base">{{ item.name }}</h3>
+                <p v-if="item.variantName" class="mt-1 text-xs font-semibold text-blue-600">{{ item.variantName }}</p>
+                <p v-if="item.productCode" class="mt-0.5 text-xs text-slate-400">Code: {{ item.productCode }}</p>
+                <p class="mt-2 text-sm font-black text-[#0b1f3a] sm:hidden">{{ currency(Number(item.price) * item.quantity) }}</p>
+              </div>
+
+              <div class="col-span-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:col-span-1 sm:border-0 sm:pt-0">
+                <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1">
+                  <button type="button" @click="cart.decrease(item.cartKey || item.id)" class="flex h-10 w-10 items-center justify-center rounded-lg text-xl font-bold text-slate-700 hover:bg-white" aria-label="Decrease quantity">−</button>
+                  <span class="w-9 text-center text-sm font-black text-slate-900">{{ item.quantity }}</span>
+                  <button type="button" @click="cart.increase(item.cartKey || item.id)" class="flex h-10 w-10 items-center justify-center rounded-lg text-xl font-bold text-slate-700 hover:bg-white" aria-label="Increase quantity">+</button>
+                </div>
+                <div class="text-right">
+                  <p class="hidden font-black text-slate-900 sm:block">{{ currency(Number(item.price) * item.quantity) }}</p>
+                  <button type="button" class="mt-1 text-xs font-bold text-red-600 hover:text-red-700" @click="cart.removeFromCart(item.cartKey || item.id)">Remove</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+
         <!-- DELIVERY ADDRESS -->
-        <section class="mt-8 kc-panel p-5 sm:p-6">
+        <section class="mt-6 sm:mt-8 kc-panel p-4 sm:p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 class="text-lg font-bold text-slate-900">Delivery Address</h2>
@@ -92,7 +112,7 @@
           </div>
 
           <!-- INLINE NEW ADDRESS -->
-          <div v-if="showNewAddressForm" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <div v-if="showNewAddressForm" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
             <h3 class="font-bold text-slate-900">Add Delivery Address</h3>
             <p class="mt-1 text-sm text-slate-500">This address will also be saved in My Account.</p>
 
@@ -140,7 +160,7 @@
             <div v-if="newAddressError" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ newAddressError }}</div>
 
             <div class="mt-4 flex justify-end">
-              <button type="button" :disabled="savingNewAddress" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50" @click="saveNewAddress">
+              <button type="button" :disabled="savingNewAddress" class="min-h-[48px] w-full rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white sm:w-auto hover:bg-blue-700 disabled:opacity-50" @click="saveNewAddress">
                 {{ savingNewAddress ? "Saving..." : "Save & Use Address" }}
               </button>
             </div>
@@ -153,7 +173,9 @@
         </div>
 
         <!-- TOTALS -->
-        <div class="ml-auto mt-6 max-w-sm space-y-2 text-right">
+        <div class="ml-auto mt-6 max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <h2 class="mb-3 text-left text-base font-black text-slate-900">Order Summary</h2>
+          <div class="space-y-2 text-right">
           <div class="flex items-center justify-between text-slate-600"><span>Pricing Level</span><span class="font-semibold text-blue-700">{{ pricingLevelName }}</span></div>
           <div class="flex items-center justify-between text-slate-600"><span>Subtotal</span><span>{{ currency(cart.total) }}</span></div>
           <div class="flex items-center justify-between text-slate-600">
@@ -164,7 +186,8 @@
             <span>GST (10%)</span>
             <span>{{ currency(gstIncluded) }}</span>
           </div>
-          <div class="flex items-center justify-between border-t pt-3 text-2xl font-bold"><span>Total</span><span>{{ currency(grandTotal) }}</span></div>
+          <div class="flex items-center justify-between border-t pt-3 text-xl font-black sm:text-2xl"><span>Total</span><span>{{ currency(grandTotal) }}</span></div>
+          </div>
         </div>
 
         <div v-if="quoteSuccess" class="mt-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
@@ -174,11 +197,11 @@
           {{ quoteError }}
         </div>
 
-        <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+        <div class="mt-6 grid grid-cols-1 gap-3 sm:flex sm:justify-end">
           <button
             type="button"
             :disabled="requestingQuote || !cart.items.length"
-            class="rounded-lg border border-blue-300 bg-white px-6 py-3 font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+            class="min-h-[50px] w-full rounded-xl border border-blue-300 bg-white px-6 py-3 font-semibold sm:w-auto text-blue-700 hover:bg-blue-50 disabled:opacity-50"
             @click="requestQuote"
           >
             {{ requestingQuote ? "Requesting..." : "Request a Quote" }}
@@ -187,7 +210,7 @@
             type="button"
             @click="checkout"
             :disabled="loading || !cart.items.length || !selectedAddress || !selectedRate"
-            class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="min-h-[50px] w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white sm:w-auto hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading ? "Processing..." : !selectedAddress ? "Choose Delivery Address" : quoting ? "Calculating Delivery..." : selectedRate ? "Checkout" : "Delivery Unavailable" }}
           </button>

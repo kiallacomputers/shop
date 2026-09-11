@@ -2,7 +2,7 @@
   <article class="group kc-panel overflow-hidden flex flex-col h-full hover:-translate-y-1 hover:border-cyan-300 hover:shadow-[0_18px_45px_rgba(15,35,64,.11)] transition duration-200">
     <div class="relative aspect-[4/3] bg-gradient-to-b from-slate-50 to-white overflow-hidden">
       <NuxtLink :to="`/product/${product.slug}`" class="block h-full">
-        <img v-if="currentImage" :src="currentImage" :alt="product.name" class="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
+        <img v-if="currentImage" :src="currentImage" :alt="product.name" class="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
         <div v-else class="w-full h-full flex items-center justify-center text-sm text-slate-400">No image available</div>
       </NuxtLink>
 
@@ -25,7 +25,7 @@
       </template>
     </div>
 
-    <div class="p-5 flex flex-col flex-1">
+    <div class="p-4 sm:p-5 flex flex-col flex-1">
       <p v-if="product.categories?.name" class="text-[11px] font-black uppercase tracking-[.12em] text-cyan-600">{{ product.categories.name }}</p>
       <NuxtLink :to="`/product/${product.slug}`" class="mt-1 block">
         <h3 class="min-h-[48px] font-extrabold leading-6 text-[#0b1f3a] group-hover:text-blue-600 transition line-clamp-2">{{ product.name }}</h3>
@@ -48,7 +48,7 @@
           <span v-else-if="Number(product.stock) > 0" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">In stock</span>
           <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>
         </div>
-        <NuxtLink :to="`/product/${product.slug}`" class="mt-4 flex w-full items-center justify-center rounded-xl bg-[#2367d1] px-4 py-3 text-sm font-black text-white hover:bg-[#194fa8] transition">View product</NuxtLink>
+        <NuxtLink :to="`/product/${product.slug}`" class="mt-4 flex min-h-[46px] w-full items-center justify-center rounded-xl bg-[#2367d1] px-4 py-3 text-sm font-black text-white hover:bg-[#194fa8] transition">View product</NuxtLink>
       </div>
     </div>
   </article>

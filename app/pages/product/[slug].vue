@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-7 md:py-9 space-y-5">
+  <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-7 md:py-9 space-y-4 sm:space-y-5">
     <nav class="kc-breadcrumb" aria-label="Breadcrumb">
       <NuxtLink to="/">Home</NuxtLink><span class="kc-breadcrumb-sep">/</span>
       <NuxtLink to="/#categories">Categories</NuxtLink><span class="kc-breadcrumb-sep">/</span>
@@ -35,14 +35,14 @@
                   </span>
 
                   <div
-                    class="flex h-[360px] w-full cursor-zoom-in items-center justify-center sm:h-[440px] lg:h-[520px]"
+                    class="flex h-[300px] w-full cursor-zoom-in items-center justify-center sm:h-[440px] lg:h-[520px]"
                     @click="openLightbox"
                   >
                     <img
                       v-if="currentImage"
                       :src="currentImage"
                       :alt="product.name"
-                      class="h-full w-full object-contain p-6 sm:p-8 lg:p-10 transition-transform duration-300 hover:scale-[1.025]"
+                      class="h-full w-full object-contain p-4 sm:p-8 lg:p-10 transition-transform duration-300 hover:scale-[1.025]"
                     />
                     <div v-else class="text-slate-400">No Image Available</div>
                   </div>
@@ -51,7 +51,7 @@
                     v-if="images.length > 1"
                     type="button"
                     @click.stop.prevent="previousImage"
-                    class="absolute left-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
+                    class="absolute left-2 sm:left-4 top-1/2 z-30 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
                     aria-label="Previous image"
                   >
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -61,7 +61,7 @@
                     v-if="images.length > 1"
                     type="button"
                     @click.stop.prevent="nextImage"
-                    class="absolute right-4 top-1/2 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
+                    class="absolute right-2 sm:right-4 top-1/2 z-30 flex h-10 w-10 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg transition hover:bg-white"
                     aria-label="Next image"
                   >
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
@@ -84,14 +84,14 @@
 
                 <div
                   v-if="images.length > 1"
-                  class="flex gap-3 overflow-x-auto border-t border-slate-200 bg-white p-4"
+                  class="flex gap-2 sm:gap-3 overflow-x-auto border-t border-slate-200 bg-white p-3 sm:p-4 snap-x"
                 >
                   <button
                     v-for="(image, index) in images"
                     :key="index"
                     type="button"
                     @click="goToImage(index)"
-                    class="h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition"
+                    class="h-16 w-16 sm:h-20 sm:w-20 shrink-0 snap-start overflow-hidden rounded-xl border-2 bg-white transition"
                     :class="index === currentImageIndex ? 'border-sky-500 ring-2 ring-sky-100' : 'border-slate-200 hover:border-slate-400'"
                   >
                     <img :src="image" :alt="`${product.name} image ${index + 1}`" class="h-full w-full object-contain p-1.5" />
@@ -100,7 +100,7 @@
               </div>
 
               <!-- Purchase panel -->
-              <div class="flex flex-col p-6 sm:p-8 lg:p-9">
+              <div class="flex flex-col p-5 sm:p-8 lg:p-9">
                 <div>
                   <NuxtLink
                     :to="`/category/${product.categories.slug}`"
@@ -109,7 +109,7 @@
                     {{ product.categories.name }}
                   </NuxtLink>
 
-                  <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl">
+                  <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl break-words">
                     {{ product.name }}
                   </h1>
 
@@ -133,7 +133,7 @@
 
                   <div v-if="product.has_variants" class="mt-5">
                     <label class="mb-2 block text-sm font-bold text-slate-800">Choose option</label>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <button v-for="variant in activeVariants" :key="variant.id" type="button" @click="selectedVariantId = Number(variant.id)" class="rounded-lg border px-3 py-2.5 text-left text-sm transition" :class="selectedVariantId === Number(variant.id) ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-400'">
                         <span class="block font-bold text-slate-900">{{ variant.name }}</span>
                         <span class="mt-0.5 block text-xs text-slate-500">Code: {{ variant.product_code }}</span>
@@ -167,13 +167,13 @@
                     <button
                       type="button"
                       @click="addCurrentToCart"
-                      class="w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                      class="min-h-[50px] w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
                     >
                       {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
                     </button>
                     <button
                       type="button"
-                      class="rounded-xl border border-slate-300 bg-white px-5 py-3.5 font-bold transition hover:border-rose-300 hover:bg-rose-50"
+                      class="min-h-[50px] rounded-xl border border-slate-300 bg-white px-5 py-3.5 font-bold transition hover:border-rose-300 hover:bg-rose-50"
                       :class="wishlistSaved ? 'text-rose-600' : 'text-slate-700'"
                       @click="toggleWishlist"
                     >
@@ -184,8 +184,8 @@
                   <div v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)" class="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
                     <p class="font-bold text-slate-900">Prefer to wait for stock?</p>
                     <p class="mt-1 text-sm text-slate-600">Back-in-stock emails are only sent for products you keep in your wishlist, so you only hear from us about items you are interested in.</p>
-                    <NuxtLink v-if="!customerUser" :to="`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`" class="mt-3 inline-flex rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700">Sign In to Save & Notify</NuxtLink>
-                    <button v-else type="button" :disabled="backInStockBusy" class="mt-3 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : (wishlistSaved ? 'Notify Me When In Stock' : 'Save to Wishlist & Notify Me') }}</button>
+                    <NuxtLink v-if="!customerUser" :to="`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`" class="mt-3 inline-flex min-h-[46px] w-full items-center justify-center rounded-lg bg-sky-600 px-4 py-2.5 sm:w-auto text-sm font-bold text-white hover:bg-sky-700">Sign In to Save & Notify</NuxtLink>
+                    <button v-else type="button" :disabled="backInStockBusy" class="mt-3 min-h-[46px] w-full rounded-lg bg-sky-600 px-4 py-2.5 sm:w-auto text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : (wishlistSaved ? 'Notify Me When In Stock' : 'Save to Wishlist & Notify Me') }}</button>
                     <p v-if="backInStockMessage" class="mt-2 text-sm font-semibold" :class="backInStockError ? 'text-red-600' : 'text-green-700'">{{ backInStockMessage }}</p>
                   </div>
 

@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-7xl mx-auto px-4 py-7 md:py-10">
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-7 md:py-10">
     <nav class="kc-breadcrumb mb-5" aria-label="Breadcrumb">
       <NuxtLink to="/">Home</NuxtLink><span class="kc-breadcrumb-sep">/</span>
       <NuxtLink to="/#categories">Categories</NuxtLink><span class="kc-breadcrumb-sep">/</span>
@@ -12,7 +12,7 @@
 
       <section class="min-w-0">
         <div
-          class="mb-6 rounded-2xl bg-[#0b1f3a] px-6 py-7 text-white shadow-sm"
+          class="mb-5 sm:mb-6 rounded-2xl bg-[#0b1f3a] px-4 py-5 sm:px-6 sm:py-7 text-white shadow-sm"
         >
           <div
             class="flex flex-col gap-5 md:flex-row md:items-center md:justify-between"
@@ -24,7 +24,7 @@
                 Shop category
               </p>
 
-              <h1 class="mt-2 text-3xl font-black tracking-tight">
+              <h1 class="mt-2 text-2xl sm:text-3xl font-black tracking-tight">
                 {{ category?.name }}
               </h1>
 
@@ -77,9 +77,9 @@
 
         <div v-if="products?.length" class="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-sm font-semibold text-slate-500"><span class="font-black text-slate-800">{{ products.length }}</span> products</p>
-          <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
-            Sort by
-            <select v-model="sortBy" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+          <label class="flex w-full items-center justify-between gap-2 text-sm font-bold text-slate-700 sm:w-auto sm:justify-start">
+            <span>Sort by</span>
+            <select v-model="sortBy" class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 sm:flex-none">
               <option value="price-asc">Price: Low to High</option>
               <option value="price-desc">Price: High to Low</option>
               <option value="name-asc">Name: A to Z</option>
