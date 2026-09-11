@@ -1,5 +1,5 @@
 <template>
-  <article class="group kc-panel overflow-hidden flex flex-col h-full hover:-translate-y-1 hover:border-cyan-300 transition duration-200">
+  <article class="group kc-panel overflow-hidden flex flex-col h-full hover:-translate-y-1 hover:border-cyan-300 hover:shadow-[0_18px_45px_rgba(15,35,64,.11)] transition duration-200">
     <div class="relative aspect-[4/3] bg-gradient-to-b from-slate-50 to-white overflow-hidden">
       <NuxtLink :to="`/product/${product.slug}`" class="block h-full">
         <img v-if="currentImage" :src="currentImage" :alt="product.name" class="w-full h-full object-contain p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
@@ -35,14 +35,13 @@
       <div class="mt-auto pt-5">
         <div class="flex items-end justify-between gap-3">
           <div>
+            <div v-if="displayRrp > displayPrice" class="mb-1 text-slate-400">
+              <p class="text-[10px] font-black uppercase tracking-[.12em]">RRP <span class="ml-1 text-xs font-semibold normal-case tracking-normal line-through">${{ displayRrp.toFixed(2) }}</span></p>
+            </div>
             <p v-if="hasCustomerDiscount" class="text-[11px] font-bold uppercase tracking-wide text-blue-600">Your {{ pricingLevelName }} price</p>
             <p class="text-2xl font-black tracking-tight text-[#0b1f3a]"><span v-if="product.has_variants" class="mr-1 text-xs font-bold text-slate-500">From</span>${{ displayPrice.toFixed(2) }}</p>
             <p v-if="hasCustomerDiscount" class="text-xs text-slate-400">Standard <span class="line-through">${{ standardDisplayPrice.toFixed(2) }}</span></p>
-            <div v-if="displayRrp > displayPrice" class="mt-1 text-slate-400">
-              <p class="text-[10px] font-bold uppercase tracking-wide">RRP</p>
-              <p class="text-xs line-through">${{ displayRrp.toFixed(2) }}</p>
-            </div>
-            <p class="text-[11px] font-semibold text-slate-400">GST inclusive</p>
+            <p class="mt-1 text-[11px] font-semibold text-slate-400">GST inclusive</p>
           </div>
           <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
           <span v-else-if="product.has_variants" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>

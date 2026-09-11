@@ -8,13 +8,14 @@
     </div>
 
     <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-      <div class="max-w-7xl mx-auto px-4 h-[102px] flex items-center gap-5">
+      <div class="max-w-7xl mx-auto px-4 h-[88px] flex items-center gap-5">
         <NuxtLink to="/" class="flex items-center shrink-0" aria-label="Kialla Computers home">
-          <img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-[88px] w-[210px] object-contain object-left sm:w-[230px]" />
+          <img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-[74px] w-[190px] object-contain object-left sm:w-[215px]" />
         </NuxtLink>
 
         <nav class="hidden md:flex items-center gap-1 ml-5">
           <NuxtLink to="/" class="desktop-nav">Home</NuxtLink>
+          <NuxtLink to="/#categories" class="desktop-nav">Categories</NuxtLink>
           <NuxtLink to="/#shop" class="desktop-nav">Shop</NuxtLink>
           <NuxtLink to="/#featured" class="desktop-nav">Featured</NuxtLink>
         </nav>
@@ -48,6 +49,7 @@
         <div v-if="mobileMenuOpen" class="md:hidden border-t border-slate-200 bg-white shadow-xl">
           <nav class="max-w-7xl mx-auto px-4 py-3 grid gap-1">
             <NuxtLink to="/" class="mobile-menu-item" @click="closeMobileMenu">Home</NuxtLink>
+            <NuxtLink to="/#categories" class="mobile-menu-item" @click="closeMobileMenu">Categories</NuxtLink>
             <NuxtLink to="/#shop" class="mobile-menu-item" @click="closeMobileMenu">Shop</NuxtLink>
             <NuxtLink to="/#featured" class="mobile-menu-item" @click="closeMobileMenu">Featured</NuxtLink>
             <NuxtLink v-if="!user" to="/auth/signin" class="mobile-menu-item" @click="closeMobileMenu">Signup / Login</NuxtLink>

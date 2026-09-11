@@ -1,6 +1,11 @@
 <template>
-  <main class="max-w-7xl mx-auto px-4 py-8 md:py-10">
-<div class="mt-8 grid gap-7 lg:grid-cols-[240px_1fr] items-start">
+  <main class="max-w-7xl mx-auto px-4 py-7 md:py-10">
+    <nav class="kc-breadcrumb mb-5" aria-label="Breadcrumb">
+      <NuxtLink to="/">Home</NuxtLink><span class="kc-breadcrumb-sep">/</span>
+      <NuxtLink to="/#categories">Categories</NuxtLink><span class="kc-breadcrumb-sep">/</span>
+      <span class="text-slate-700">{{ category?.name }}</span>
+    </nav>
+<div class="grid gap-7 lg:grid-cols-[240px_1fr] items-start">
       <aside class="lg:sticky lg:top-28">
         <Sidemenu />
       </aside>
@@ -24,7 +29,7 @@
               </h1>
 
               <p class="mt-2 text-sm text-slate-300">
-                Browse our current products in {{ category?.name }}.
+                Browse our current products in {{ category?.name }}. <span v-if="products?.length" class="text-slate-400">{{ products.length }} product{{ products.length === 1 ? "" : "s" }} available.</span>
               </p>
             </div>
 
@@ -70,12 +75,25 @@
           </div>
         </div>
 
+        <div v-if="products?.length" class="mb-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-sm font-semibold text-slate-500"><span class="font-black text-slate-800">{{ products.length }}</span> products</p>
+          <label class="flex items-center gap-2 text-sm font-bold text-slate-700">
+            Sort by
+            <select v-model="sortBy" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A to Z</option>
+              <option value="name-desc">Name: Z to A</option>
+            </select>
+          </label>
+        </div>
+
         <div
           v-if="products?.length"
           class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3"
         >
           <ProductCard
-            v-for="product in products"
+            v-for="product in sortedProducts"
             :key="product.id"
             :product="product"
           />
@@ -191,6 +209,15 @@ const { data: products } = await useAsyncData(
   },
   { watch: [slug, category, visibleCategories] },
 );
+
+const sortBy = ref("price-asc");
+const sortedProducts = computed(() => {
+  const rows = [...(products.value || [])];
+  if (sortBy.value === "price-desc") return rows.sort((a, b) => Number(b.customer_price ?? b.price ?? 0) - Number(a.customer_price ?? a.price ?? 0));
+  if (sortBy.value === "name-asc") return rows.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  if (sortBy.value === "name-desc") return rows.sort((a, b) => String(b.name || "").localeCompare(String(a.name || "")));
+  return rows.sort((a, b) => Number(a.customer_price ?? a.price ?? 0) - Number(b.customer_price ?? b.price ?? 0));
+});
 
 watch(
   products,

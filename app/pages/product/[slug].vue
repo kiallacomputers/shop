@@ -1,5 +1,12 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 py-8 space-y-7">
+  <div class="max-w-7xl mx-auto px-4 py-7 md:py-9 space-y-5">
+    <nav class="kc-breadcrumb" aria-label="Breadcrumb">
+      <NuxtLink to="/">Home</NuxtLink><span class="kc-breadcrumb-sep">/</span>
+      <NuxtLink to="/#categories">Categories</NuxtLink><span class="kc-breadcrumb-sep">/</span>
+      <NuxtLink v-if="product?.categories?.slug" :to="`/category/${product.categories.slug}`">{{ product.categories.name }}</NuxtLink>
+      <span v-if="product?.categories?.slug" class="kc-breadcrumb-sep">/</span>
+      <span class="max-w-[280px] truncate text-slate-700 sm:max-w-md">{{ product?.name }}</span>
+    </nav>
 <div class="flex flex-col md:flex-row gap-6">
       <aside class="w-full md:w-64 shrink-0">
         <Sidemenu />
@@ -107,14 +114,13 @@
                   </h1>
 
                   <div class="mt-6 border-y border-slate-200 py-5">
+                    <div v-if="effectiveOldPrice" class="mb-1 text-slate-400">
+                      <p class="text-[11px] font-black uppercase tracking-[.12em]">RRP <span class="ml-1 text-sm font-semibold normal-case tracking-normal line-through">${{ effectiveOldPrice.toFixed(2) }}</span></p>
+                    </div>
                     <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
                       <span class="text-4xl font-extrabold tracking-tight text-[#2367d1]">
                         ${{ effectivePrice.toFixed(2) }}
                       </span>
-                      <div v-if="effectiveOldPrice" class="pb-1 text-slate-400">
-                        <p class="text-[10px] font-bold uppercase tracking-wide">RRP</p>
-                        <p class="text-base line-through">${{ effectiveOldPrice.toFixed(2) }}</p>
-                      </div>
                     </div>
                     <p v-if="hasCustomerDiscount" class="mt-1 text-sm text-slate-500">
                       Standard price <span class="line-through">${{ effectiveStandardPrice.toFixed(2) }}</span>
