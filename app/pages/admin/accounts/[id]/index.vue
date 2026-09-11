@@ -64,6 +64,43 @@
         </section>
 
         <section class="mb-6 card">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg font-black text-slate-900">Customer Activity</h2>
+              <p class="mt-1 text-sm text-slate-500">Orders, quotes, wishlist and stock notification activity in one timeline.</p>
+            </div>
+            <select v-model="timelineFilter" class="input w-full sm:w-48">
+              <option value="all">All activity</option>
+              <option value="order">Orders</option>
+              <option value="quote">Quotes</option>
+              <option value="wishlist">Wishlist</option>
+              <option value="stock">Stock alerts</option>
+              <option value="email">Emails</option>
+              <option value="profile">Profile</option>
+              <option value="pricing">Pricing</option>
+            </select>
+          </div>
+
+          <div v-if="filteredTimeline.length" class="mt-6">
+            <div v-for="(event, index) in filteredTimeline" :key="event.id" class="relative flex gap-4 pb-6 last:pb-0">
+              <div v-if="index < filteredTimeline.length - 1" class="absolute left-[17px] top-9 h-[calc(100%-1rem)] w-px bg-slate-200"></div>
+              <div class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base" :class="timelineIconClass(event.type)">{{ timelineIcon(event.type) }}</div>
+              <div class="min-w-0 flex-1 pt-0.5">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <NuxtLink v-if="event.href" :to="event.href" class="font-bold text-slate-900 hover:text-blue-600">{{ event.title }}</NuxtLink>
+                    <p v-else class="font-bold text-slate-900">{{ event.title }}</p>
+                    <p v-if="event.detail" class="mt-1 text-sm text-slate-600">{{ event.detail }}</p>
+                  </div>
+                  <time class="shrink-0 text-xs font-medium text-slate-400">{{ formatDateTime(event.at) }}</time>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p v-else class="mt-4 text-sm text-slate-500">No activity matches this filter.</p>
+        </section>
+
+        <section class="mb-6 card">
           <h2 class="text-lg font-black text-slate-900">Delivery Addresses</h2>
           <div v-if="customer.addresses.length" class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div v-for="address in customer.addresses" :key="address.id" class="rounded-xl border border-slate-200 p-4">
@@ -155,9 +192,21 @@ const successMessage = ref("");
 const form = reactive<any>({});
 const tagsText = ref("");
 const selectedPricingLevel = ref("standard");
+const timelineFilter = ref("all");
 
 const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
 const formatDate = (value: string) => value ? new Intl.DateTimeFormat("en-AU", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) : "—";
+const formatDateTime = (value: string) => value ? new Intl.DateTimeFormat("en-AU", { day: "2-digit", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value)) : "—";
+const filteredTimeline = computed(() => {
+  const events = customer.value?.timeline || [];
+  return timelineFilter.value === "all" ? events : events.filter((event: any) => event.type === timelineFilter.value);
+});
+const timelineIcon = (type: string) => ({ order: "🛒", quote: "📄", wishlist: "♥", stock: "📦", email: "✉", profile: "👤", pricing: "$", account: "✓" }[type] || "•");
+const timelineIconClass = (type: string) => ({
+  order: "bg-blue-100 text-blue-700", quote: "bg-violet-100 text-violet-700", wishlist: "bg-rose-100 text-rose-700",
+  stock: "bg-amber-100 text-amber-700", email: "bg-emerald-100 text-emerald-700", profile: "bg-slate-100 text-slate-700",
+  pricing: "bg-cyan-100 text-cyan-700", account: "bg-green-100 text-green-700",
+}[type] || "bg-slate-100 text-slate-700");
 
 async function loadCustomer() {
   loading.value = true;
