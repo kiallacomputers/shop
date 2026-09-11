@@ -54,6 +54,19 @@
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"
       >
         <NuxtLink
+          to="/admin/inventory"
+          class="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition"
+        >
+          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-700 transition group-hover:bg-amber-100">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z" />
+            </svg>
+          </div>
+          <p class="font-bold text-slate-900 group-hover:text-amber-700">Inventory & Low Stock</p>
+          <p class="text-sm text-slate-500 mt-1">Low stock, back orders, customer demand and stock value.</p>
+        </NuxtLink>
+
+        <NuxtLink
           to="/admin/products"
           class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition"
         >
