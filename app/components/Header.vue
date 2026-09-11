@@ -64,23 +64,57 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
-          <div v-if="user" class="hidden lg:block text-right mr-2">
-            <p class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Signed in as</p>
-            <p class="text-sm font-bold text-[#0b1f3a]">{{ firstName }}</p>
-          </div>
-
           <NuxtLink v-if="!user" to="/auth/signin" class="hidden md:inline-flex kc-btn-secondary !py-2.5 !px-4">Sign in</NuxtLink>
-          <NuxtLink v-if="user" to="/account" class="hidden md:inline-flex kc-btn-secondary !py-2.5 !px-4">My Account</NuxtLink>
-          <NuxtLink v-if="user && isAdmin" to="/admin" class="hidden md:inline-flex rounded-xl bg-[#0b1f3a] px-4 py-2.5 text-sm font-extrabold text-white hover:bg-[#132b4f] transition">Admin</NuxtLink>
 
           <NuxtLink to="/shoppingcart" class="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] hover:border-cyan-300 hover:text-cyan-600 transition" aria-label="Shopping cart">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 3h1.386c.51 0 .955.343 1.087.835L5.61 6.75m0 0h14.64c.66 0 1.155.604.996 1.245l-1.5 6A1.125 1.125 0 0118.65 14.85H8.13a1.125 1.125 0 01-1.087-.835L5.61 6.75zm2.52 11.1a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0zm9 0a1.125 1.125 0 102.25 0 1.125 1.125 0 00-2.25 0z" /></svg>
             <span v-if="cart.count > 0" class="absolute -top-2 -right-2 bg-cyan-500 text-white text-[11px] font-black rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center">{{ cart.count }}</span>
           </NuxtLink>
 
-          <button v-if="user" type="button" @click="logout" class="hidden md:flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition" title="Sign Out" aria-label="Sign Out">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
-          </button>
+          <div v-if="user" class="relative hidden md:block">
+            <button
+              type="button"
+              class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] transition hover:border-cyan-300 hover:bg-slate-50 hover:text-cyan-600"
+              :aria-expanded="desktopAccountMenuOpen"
+              aria-label="Open account menu"
+              title="Account menu"
+              @click="desktopAccountMenuOpen = !desktopAccountMenuOpen"
+            >
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0 translate-y-1 scale-95" leave-active-class="transition duration-100" leave-to-class="opacity-0 translate-y-1 scale-95">
+              <div
+                v-if="desktopAccountMenuOpen"
+                class="absolute right-0 top-[calc(100%+.65rem)] z-[90] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              >
+                <div class="border-b border-slate-100 bg-slate-50 px-4 py-3">
+                  <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">Signed in as</p>
+                  <p class="mt-0.5 truncate font-extrabold text-[#0b1f3a]">{{ firstName || user.email }}</p>
+                  <p v-if="firstName && user.email" class="mt-0.5 truncate text-xs font-semibold text-slate-400">{{ user.email }}</p>
+                </div>
+
+                <div class="p-2">
+                  <NuxtLink to="/account" class="desktop-account-item" @click="closeDesktopAccountMenu">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0" /></svg>
+                    <span>My Account</span>
+                  </NuxtLink>
+
+                  <NuxtLink v-if="isAdmin" to="/admin" class="desktop-account-item" @click="closeDesktopAccountMenu">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>Admin</span>
+                  </NuxtLink>
+
+                  <button type="button" class="desktop-account-item w-full text-red-600 hover:!bg-red-50 hover:!text-red-700" @click="logout">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" /></svg>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
           <button type="button" class="md:hidden flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl border border-slate-200 text-[#0b1f3a]" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Toggle menu">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -226,9 +260,14 @@ const closeSearchSoon = () => {
 // ========================================
 
 const mobileMenuOpen = ref(false);
+const desktopAccountMenuOpen = ref(false);
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false;
+};
+
+const closeDesktopAccountMenu = () => {
+  desktopAccountMenuOpen.value = false;
 };
 
 // ========================================
@@ -318,6 +357,7 @@ supabase.auth.onAuthStateChange(async () => {
 
 const logout = async () => {
   closeMobileMenu();
+  closeDesktopAccountMenu();
 
   await supabase.auth.signOut();
 
@@ -332,4 +372,6 @@ const logout = async () => {
 .desktop-nav:hover { color:#2367d1; background:#f1f5f9; }
 .mobile-menu-item { display:flex; align-items:center; width:100%; padding:.85rem 1rem; border-radius:.7rem; color:#0b1f3a; font-weight:800; transition:.18s ease; }
 .mobile-menu-item:hover { background:#f1f5f9; color:#2367d1; }
+.desktop-account-item { display:flex; align-items:center; gap:.7rem; width:100%; padding:.75rem .85rem; border-radius:.75rem; color:#0b1f3a; font-weight:800; font-size:.9rem; transition:.16s ease; }
+.desktop-account-item:hover { background:#f1f5f9; color:#2367d1; }
 </style>
