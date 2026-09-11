@@ -27,6 +27,7 @@ type OrderEmailData = {
   customer_name?: string | null;
   total: number;
   shipping_method?: string | null;
+  shipping_service_code?: string | null;
   shipping_postcode?: string | null;
   shipping_cost?: number | null;
   shipping_address?: ShippingAddress | null;
@@ -39,6 +40,8 @@ const money = (value: unknown) =>
     style: "currency",
     currency: "AUD",
   }).format(Number(value || 0));
+
+const isStorePickup = (order: OrderEmailData) => String(order.shipping_service_code || "").toUpperCase() === "STORE_PICKUP";
 
 const addressHtml = (order: OrderEmailData) => {
   const address = order.shipping_address || {};
@@ -53,11 +56,11 @@ const addressHtml = (order: OrderEmailData) => {
   ].filter((value): value is string => Boolean(value && String(value).trim()));
 
   if (!lines.length) {
-    return `<p style="margin:6px 0;color:#b45309;"><strong>Delivery address:</strong> Address was not supplied by Stripe.</p>`;
+    return `<p style="margin:6px 0;color:#b45309;"><strong>${isStorePickup(order) ? "Pickup location" : "Delivery address"}:</strong> Address is not available.</p>`;
   }
 
   return `<div style="margin-top:18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-    <div style="font-weight:700;margin-bottom:8px;">Delivery address</div>
+    <div style="font-weight:700;margin-bottom:8px;">${isStorePickup(order) ? "Pickup location" : "Delivery address"}</div>
     ${lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}
   </div>`;
 };
@@ -84,7 +87,7 @@ const totalsHtml = (order: OrderEmailData) => {
 
   return `<div style="margin-top:22px;margin-left:auto;max-width:320px;font-size:14px;">
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
-    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Delivery</span><strong>${deliveryCost === 0 ? "FREE" : money(deliveryCost)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>${isStorePickup(order) ? "Pickup" : "Delivery"}</span><strong>${deliveryCost === 0 ? "FREE" : money(deliveryCost)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>GST (10%)</span><strong>${money(gstIncluded)}</strong></div>
     <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;margin-top:6px;padding-top:10px;font-size:20px;"><span><strong>Total</strong></span><strong>${money(total)}</strong></div>
   </div>`;
@@ -94,6 +97,7 @@ const invoiceFor = (order: OrderEmailData) => {
   const invoiceData: InvoiceData = {
     ...order,
     shipping_address: order.shipping_address,
+    shipping_service_code: order.shipping_service_code,
   };
   const pdf = buildInvoicePdf(invoiceData);
   return {
@@ -106,7 +110,7 @@ const invoiceFor = (order: OrderEmailData) => {
 export async function sendOrderEmails(order: OrderEmailData) {
   const rows = itemRows(order);
   const delivery = order.shipping_method
-    ? `<p style="margin:6px 0;"><strong>Delivery:</strong> ${escapeHtml(order.shipping_method)}${order.shipping_cost ? ` - ${money(order.shipping_cost)}` : ""}</p>`
+    ? `<p style="margin:6px 0;"><strong>${isStorePickup(order) ? "Pickup" : "Delivery"}:</strong> ${escapeHtml(order.shipping_method)}${order.shipping_cost ? ` - ${money(order.shipping_cost)}` : ""}</p>`
     : "";
   const customerName = order.customer_name?.trim() || "Customer";
   const attachment = invoiceFor(order);
@@ -199,7 +203,7 @@ const shipmentAddressHtml = (order: ShipmentNotificationData) => {
 
   return lines.length
     ? `<div style="margin-top:18px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
-        <div style="font-weight:700;margin-bottom:8px;">Delivery address</div>
+        <div style="font-weight:700;margin-bottom:8px;">${isStorePickup(order) ? "Pickup location" : "Delivery address"}</div>
         ${lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("")}
       </div>`
     : "";

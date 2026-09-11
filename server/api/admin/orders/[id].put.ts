@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   const { data: existing, error: loadError } = await supabase
     .from("orders")
     .select(`id, user_id, stripe_session_id, customer_email, customer_name, total, status,
-      tracking_number, carrier, tracking_status, shipping_method, shipping_name,
+      tracking_number, carrier, tracking_status, shipping_method, shipping_service_code, shipping_name,
       shipping_address_line_1, shipping_address_line_2, shipping_suburb, shipping_state,
       shipping_postcode, shipped_at, delivered_at, shipped_notified_at, delivered_notified_at,
       created_at`)
@@ -49,14 +49,16 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (status === "shipping" && !existing.tracking_number) {
+  const isStorePickup = String(existing.shipping_service_code || "").toUpperCase() === "STORE_PICKUP";
+
+  if (status === "shipping" && !isStorePickup && !existing.tracking_number) {
     throw createError({
       statusCode: 400,
       statusMessage: "Add the Australia Post tracking number before marking the order as Shipping.",
     });
   }
 
-  if (status === "delivered" && String(existing.status || "").toLowerCase() !== "shipping") {
+  if (status === "delivered" && !isStorePickup && String(existing.status || "").toLowerCase() !== "shipping") {
     throw createError({
       statusCode: 400,
       statusMessage: "Mark the order as Shipping before marking it Delivered.",
@@ -68,13 +70,14 @@ export default defineEventHandler(async (event) => {
 
   if (status === "shipping") {
     update.shipped_at = existing.shipped_at || now;
-    update.carrier = existing.carrier || "Australia Post";
-    update.tracking_status = "Shipped - track with Australia Post";
+    update.carrier = isStorePickup ? "Store Pickup" : (existing.carrier || "Australia Post");
+    update.tracking_status = isStorePickup ? "Ready for pickup" : "Shipped - track with Australia Post";
   }
 
   if (status === "delivered") {
     update.delivered_at = existing.delivered_at || now;
-    update.tracking_status = "Delivered";
+    update.carrier = isStorePickup ? "Store Pickup" : existing.carrier;
+    update.tracking_status = isStorePickup ? "Collected" : "Delivered";
   }
 
   const { data, error } = await supabase

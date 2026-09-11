@@ -400,7 +400,7 @@ const tools = [
   { to: "/admin/analytics", title: "Traffic Analytics", description: "Visits, products, categories and traffic sources.", icon: toolIcon("M4 19V9m6 10V5m6 14v-7m4 7H2") },
   { to: "/admin/facebook-share", title: "Facebook Product Share", description: "Publish product posts to your Facebook Page.", icon: toolIcon("M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8") },
   { to: "/admin/ads", title: "Manage Advertisements", description: "Upload, order and enable storefront banners.", icon: toolIcon("M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5") },
-  { to: "/admin/freight", title: "Manage Freight", description: "Australia Post rates and local delivery.", icon: toolIcon("M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z") },
+  { to: "/admin/freight", title: "Manage Freight", description: "Australia Post, local delivery and store pickup.", icon: toolIcon("M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z") },
   { to: "/admin/pricing-levels", title: "Manage Pricing Levels", description: "Set customer pricing markups and availability.", superadmin: true, icon: toolIcon("M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3") },
   { to: "/admin/accounts", title: "Account Management", description: "Manage customers and administrator roles.", superadmin: true, icon: toolIcon("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87") },
 ];

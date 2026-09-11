@@ -112,7 +112,7 @@
                   </svg>
                 </div>
                 <div>
-                  <h2 class="text-lg font-bold text-slate-900">Delivery to</h2>
+                  <h2 class="text-lg font-bold text-slate-900">{{ isStorePickup ? "Pickup from" : "Delivery to" }}</h2>
                   <div class="mt-3 space-y-0.5 text-slate-600">
                     <p class="font-semibold text-slate-900">{{ order.shipping_name || order.customer_name || "Customer" }}</p>
                     <p v-if="order.shipping_address_line_1">{{ order.shipping_address_line_1 }}</p>
@@ -122,7 +122,7 @@
                   </div>
 
                   <p v-if="order.shipping_method" class="mt-3 text-sm text-slate-500">
-                    Delivery service: <span class="font-semibold text-slate-700">{{ order.shipping_method }}</span>
+                    {{ isStorePickup ? "Pickup method" : "Delivery service" }}: <span class="font-semibold text-slate-700">{{ order.shipping_method }}</span>
                   </p>
                 </div>
               </div>
@@ -142,7 +142,7 @@
                 </div>
 
                 <div class="flex justify-between text-slate-600">
-                  <span>Delivery</span>
+                  <span>{{ isStorePickup ? "Pickup" : "Delivery" }}</span>
                   <span>{{ deliveryCost === 0 ? "FREE" : currency(deliveryCost) }}</span>
                 </div>
 
@@ -224,6 +224,7 @@ const currency = (value: unknown) =>
 
 const deliveryCost = computed(() => Number(order.value?.shipping_cost || 0));
 const subtotal = computed(() => Math.max(0, Number(order.value?.total || 0) - deliveryCost.value));
+const isStorePickup = computed(() => String(order.value?.shipping_service_code || "").toUpperCase() === "STORE_PICKUP");
 const gstAmount = computed(() => Number(order.value?.total || 0) / 11);
 const locationLine = computed(() =>
   [order.value?.shipping_suburb, order.value?.shipping_state, order.value?.shipping_postcode]

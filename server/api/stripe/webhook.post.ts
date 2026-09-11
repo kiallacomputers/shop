@@ -180,6 +180,7 @@ export default defineEventHandler(async (event) => {
     null;
 
   const customerName =
+    session.metadata?.customer_name ||
     session.metadata?.shipping_name ||
     session.customer_details?.name ||
     null;
@@ -462,6 +463,7 @@ export default defineEventHandler(async (event) => {
         customer_name: customerName,
         total,
         shipping_method: session.metadata?.shipping_method || null,
+        shipping_service_code: session.metadata?.shipping_service_code || null,
         shipping_postcode: session.metadata?.shipping_postcode || null,
         shipping_cost: Number(session.metadata?.shipping_cost || 0),
         shipping_address: shippingAddress,

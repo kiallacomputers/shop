@@ -105,11 +105,11 @@
       <!-- ================================= -->
 
       <div v-if="order.shipping_address_line_1 || order.shipping_postcode" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-bold mb-5">Delivery Details</h2>
+        <h2 class="text-xl font-bold mb-5">{{ isStorePickup ? "Pickup Details" : "Delivery Details" }}</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p class="text-sm text-gray-500">Ship To</p>
+            <p class="text-sm text-gray-500">{{ isStorePickup ? "Pickup From" : "Ship To" }}</p>
             <div class="font-semibold mt-1 space-y-0.5">
               <p>{{ order.shipping_name || order.customer_name || "Customer" }}</p>
               <p v-if="order.shipping_address_line_1">{{ order.shipping_address_line_1 }}</p>
@@ -119,10 +119,10 @@
           </div>
 
           <div>
-            <p class="text-sm text-gray-500">Delivery Method</p>
+            <p class="text-sm text-gray-500">{{ isStorePickup ? "Pickup Method" : "Delivery Method" }}</p>
             <p class="font-semibold mt-1">{{ order.shipping_method || "Delivery" }}</p>
             <p v-if="Number(order.shipping_cost || 0) > 0" class="text-sm text-gray-500 mt-1">
-              Delivery: ${{ Number(order.shipping_cost || 0).toFixed(2) }}
+              {{ isStorePickup ? "Pickup" : "Delivery" }}: ${{ Number(order.shipping_cost || 0).toFixed(2) }}
             </p>
           </div>
         </div>
@@ -248,7 +248,7 @@
             <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0))) }}</span>
           </div>
           <div class="flex items-center justify-between text-gray-600">
-            <span>Delivery</span>
+            <span>{{ isStorePickup ? "Pickup" : "Delivery" }}</span>
             <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
           </div>
           <div class="flex items-center justify-between text-gray-600">
@@ -297,6 +297,7 @@ const user = ref<any>(null);
 const order = ref<any>(null);
 
 const orderItems = ref<any[]>([]);
+const isStorePickup = computed(() => String(order.value?.shipping_service_code || "").toUpperCase() === "STORE_PICKUP");
 
 // =====================================================
 // LOAD ORDER

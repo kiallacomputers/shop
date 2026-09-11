@@ -57,8 +57,47 @@
           </article>
         </div>
 
-        <!-- DELIVERY ADDRESS -->
+
+        <!-- FULFILMENT METHOD -->
         <section class="mt-6 sm:mt-8 kc-panel p-4 sm:p-6">
+          <h2 class="text-lg font-bold text-slate-900">How would you like to receive your order?</h2>
+          <p class="mt-1 text-sm text-slate-500">Choose delivery or collect your order from Kialla Computers.</p>
+
+          <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label
+              class="cursor-pointer rounded-xl border p-4 transition"
+              :class="fulfilmentMethod === 'delivery' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-slate-200 hover:border-slate-300'"
+            >
+              <div class="flex items-start gap-3">
+                <input v-model="fulfilmentMethod" type="radio" value="delivery" class="mt-1 h-4 w-4" />
+                <div>
+                  <p class="font-bold text-slate-900">Delivery</p>
+                  <p class="mt-1 text-sm text-slate-500">Local delivery or Australia Post, calculated from your address.</p>
+                </div>
+              </div>
+            </label>
+
+            <label
+              v-if="pickupOption?.enabled"
+              class="cursor-pointer rounded-xl border p-4 transition"
+              :class="fulfilmentMethod === 'pickup' ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-slate-200 hover:border-slate-300'"
+            >
+              <div class="flex items-start gap-3">
+                <input v-model="fulfilmentMethod" type="radio" value="pickup" class="mt-1 h-4 w-4" />
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="font-bold text-slate-900">{{ pickupOption.name }}</p>
+                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">FREE</span>
+                  </div>
+                  <p class="mt-1 text-sm text-slate-500">Collect your order from our store when it is ready.</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- DELIVERY ADDRESS -->
+        <section v-if="fulfilmentMethod === 'delivery'" class="mt-6 kc-panel p-4 sm:p-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 class="text-lg font-bold text-slate-900">Delivery Address</h2>
@@ -167,6 +206,25 @@
           </div>
         </section>
 
+
+        <section v-if="fulfilmentMethod === 'pickup' && pickupOption?.enabled" class="mt-4 kc-panel border-emerald-200 bg-emerald-50/30 p-4 sm:p-6">
+          <div class="flex items-start gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 10V7l2-3h10l2 3v3M5 10v10h14V10M9 20v-6h6v6" />
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Pickup Location</h2>
+              <p class="mt-2 font-bold text-slate-900">{{ pickupOption.name }}</p>
+              <p v-if="pickupOption.addressLine1" class="text-sm text-slate-600">{{ pickupOption.addressLine1 }}</p>
+              <p v-if="pickupOption.addressLine2" class="text-sm text-slate-600">{{ pickupOption.addressLine2 }}</p>
+              <p class="text-sm text-slate-600">{{ [pickupOption.suburb, pickupOption.state, pickupOption.postcode].filter(Boolean).join(' ') }}</p>
+              <p v-if="pickupOption.instructions" class="mt-3 rounded-lg bg-white/80 px-3 py-2 text-sm text-slate-700">{{ pickupOption.instructions }}</p>
+            </div>
+          </div>
+        </section>
+
         <!-- Freight is calculated automatically from the selected delivery address. -->
         <div v-if="freightError" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {{ freightError }}
@@ -179,8 +237,8 @@
           <div class="flex items-center justify-between text-slate-600"><span>Pricing Level</span><span class="font-semibold text-blue-700">{{ pricingLevelName }}</span></div>
           <div class="flex items-center justify-between text-slate-600"><span>Subtotal</span><span>{{ currency(cart.total) }}</span></div>
           <div class="flex items-center justify-between text-slate-600">
-            <span>Delivery</span>
-            <span>{{ quoting ? "Calculating..." : selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
+            <span>{{ fulfilmentMethod === "pickup" ? "Pickup" : "Delivery" }}</span>
+            <span>{{ fulfilmentMethod === "pickup" ? "FREE" : quoting ? "Calculating..." : selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
           </div>
           <div class="flex items-center justify-between text-slate-600">
             <span>GST (10%)</span>
@@ -209,10 +267,10 @@
           <button
             type="button"
             @click="checkout"
-            :disabled="loading || !cart.items.length || !selectedAddress || !selectedRate"
+            :disabled="loading || !cart.items.length || (fulfilmentMethod === 'delivery' && (!selectedAddress || !selectedRate)) || (fulfilmentMethod === 'pickup' && !pickupOption?.enabled)"
             class="min-h-[50px] w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white sm:w-auto hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading ? "Processing..." : !selectedAddress ? "Choose Delivery Address" : quoting ? "Calculating Delivery..." : selectedRate ? "Checkout" : "Delivery Unavailable" }}
+            {{ loading ? "Processing..." : fulfilmentMethod === "pickup" ? "Checkout - Store Pickup" : !selectedAddress ? "Choose Delivery Address" : quoting ? "Calculating Delivery..." : selectedRate ? "Checkout" : "Delivery Unavailable" }}
           </button>
         </div>
       </div>
@@ -224,6 +282,19 @@
 definePageMeta({ middleware: ["auth"] });
 
 type FreightRate = { code: string; name: string; price: number; free: boolean };
+type PickupOption = {
+  enabled: boolean;
+  code: "STORE_PICKUP";
+  name: string;
+  price: 0;
+  free: true;
+  addressLine1: string;
+  addressLine2: string;
+  suburb: string;
+  state: string;
+  postcode: string;
+  instructions: string;
+};
 type CustomerAddress = {
   id: string | number;
   label?: string | null;
@@ -250,6 +321,8 @@ const quoteError = ref("");
 const freightError = ref("");
 const freightRates = ref<FreightRate[]>([]);
 const selectedServiceCode = ref("");
+const fulfilmentMethod = ref<"delivery" | "pickup">("delivery");
+const pickupOption = ref<PickupOption | null>(null);
 
 const addresses = ref<CustomerAddress[]>([]);
 const addressLoading = ref(true);
@@ -282,7 +355,12 @@ async function authenticatedFetch<T = any>(url: string, options: any = {}) {
 }
 
 const selectedAddress = computed(() => addresses.value.find((address) => String(address.id) === selectedAddressId.value) || null);
-const selectedRate = computed(() => freightRates.value.find((rate) => rate.code === selectedServiceCode.value) || null);
+const selectedRate = computed<FreightRate | null>(() => {
+  if (fulfilmentMethod.value === "pickup" && pickupOption.value?.enabled) {
+    return { code: pickupOption.value.code, name: pickupOption.value.name, price: 0, free: true };
+  }
+  return freightRates.value.find((rate) => rate.code === selectedServiceCode.value) || null;
+});
 const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0));
 const gstIncluded = computed(() => grandTotal.value / 11);
 
@@ -342,10 +420,24 @@ async function saveNewAddress() {
 }
 
 watch(
+  fulfilmentMethod,
+  async (method) => {
+    freightError.value = "";
+    if (method === "pickup") {
+      freightRates.value = [];
+      selectedServiceCode.value = "STORE_PICKUP";
+      return;
+    }
+    resetFreight();
+    if (selectedAddress.value && cart.items.length) await getFreightQuote();
+  },
+);
+
+watch(
   selectedAddressId,
   async () => {
     resetFreight();
-    if (selectedAddress.value && cart.items.length) {
+    if (fulfilmentMethod.value === "delivery" && selectedAddress.value && cart.items.length) {
       await getFreightQuote();
     }
   },
@@ -355,7 +447,7 @@ watch(
   () => cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
   async () => {
     resetFreight();
-    if (selectedAddress.value && cart.items.length) {
+    if (fulfilmentMethod.value === "delivery" && selectedAddress.value && cart.items.length) {
       await getFreightQuote();
     }
   },
@@ -386,7 +478,7 @@ async function refreshCustomerPrices() {
 }
 
 async function getFreightQuote() {
-  if (!selectedAddress.value) return;
+  if (fulfilmentMethod.value !== "delivery" || !selectedAddress.value) return;
   quoting.value = true;
   freightError.value = "";
   freightRates.value = [];
@@ -448,7 +540,8 @@ async function requestQuote() {
 }
 
 async function checkout() {
-  if (!cart.items.length || !selectedAddress.value || !selectedRate.value) return;
+  if (!cart.items.length || !selectedRate.value) return;
+  if (fulfilmentMethod.value === "delivery" && !selectedAddress.value) return;
   loading.value = true;
 
   try {
@@ -463,7 +556,8 @@ async function checkout() {
       method: "POST",
       body: {
         items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
-        addressId: selectedAddress.value.id,
+        fulfilmentMethod: fulfilmentMethod.value,
+        addressId: fulfilmentMethod.value === "delivery" ? selectedAddress.value?.id : null,
         shippingServiceCode: selectedRate.value.code,
       },
     });
@@ -479,6 +573,11 @@ async function checkout() {
 
 onMounted(async () => {
   await refreshCustomerPrices();
+  try {
+    pickupOption.value = await authenticatedFetch<PickupOption>("/api/freight/pickup");
+  } catch {
+    pickupOption.value = null;
+  }
   await loadAddresses();
 });
 </script>

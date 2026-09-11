@@ -13,6 +13,48 @@ export type FreightRate = {
   free: boolean;
 };
 
+
+export type StorePickupOption = {
+  enabled: boolean;
+  code: "STORE_PICKUP";
+  name: string;
+  price: 0;
+  free: true;
+  addressLine1: string;
+  addressLine2: string;
+  suburb: string;
+  state: string;
+  postcode: string;
+  instructions: string;
+};
+
+export const getStorePickupOption = async (): Promise<StorePickupOption> => {
+  const supabase = getAdminSupabase();
+  const { data, error } = await supabase
+    .from("freight_settings")
+    .select("pickup_enabled, pickup_name, pickup_address_line_1, pickup_address_line_2, pickup_suburb, pickup_state, pickup_postcode, pickup_instructions")
+    .eq("id", 1)
+    .single();
+
+  if (error || !data) {
+    throw createError({ statusCode: 500, statusMessage: "Pickup settings have not been configured." });
+  }
+
+  return {
+    enabled: data.pickup_enabled === true,
+    code: "STORE_PICKUP",
+    name: String(data.pickup_name || "Pickup in Store").trim() || "Pickup in Store",
+    price: 0,
+    free: true,
+    addressLine1: String(data.pickup_address_line_1 || "").trim(),
+    addressLine2: String(data.pickup_address_line_2 || "").trim(),
+    suburb: String(data.pickup_suburb || "").trim(),
+    state: String(data.pickup_state || "").trim(),
+    postcode: String(data.pickup_postcode || "").trim(),
+    instructions: String(data.pickup_instructions || "").trim(),
+  };
+};
+
 const AUSPOST_SERVICE_URL =
   "https://digitalapi.auspost.com.au/postage/parcel/domestic/service.json";
 

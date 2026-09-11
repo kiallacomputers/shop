@@ -8,7 +8,7 @@
 
         <h1 class="mt-3 text-3xl font-bold text-slate-900">Manage Freight</h1>
         <p class="mt-1 text-slate-500">
-          Configure Australia Post freight and $11 / $16.50 local delivery postcodes.
+          Configure Australia Post freight, local delivery and free pickup in store.
         </p>
       </div>
 
@@ -60,6 +60,67 @@
               @click="saveSettings"
             >
               {{ savingSettings ? "Saving..." : "Save Freight Settings" }}
+            </button>
+          </div>
+        </section>
+
+
+        <section class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Pickup in Store</h2>
+              <p class="mt-1 text-sm text-slate-500">
+                Let customers collect their order from your store at no freight charge.
+              </p>
+            </div>
+            <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3">
+              <input v-model="settings.pickup_enabled" type="checkbox" class="h-4 w-4" />
+              <span class="font-semibold text-slate-700">Enable store pickup</span>
+            </label>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="sm:col-span-2">
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Pickup option name</span>
+              <input v-model="settings.pickup_name" type="text" placeholder="Pickup in Store" class="w-full rounded-lg border border-slate-300 px-4 py-2.5" />
+            </label>
+            <label class="sm:col-span-2">
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Store address</span>
+              <input v-model="settings.pickup_address_line_1" type="text" placeholder="Street address" class="w-full rounded-lg border border-slate-300 px-4 py-2.5" />
+            </label>
+            <label class="sm:col-span-2">
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Address line 2</span>
+              <input v-model="settings.pickup_address_line_2" type="text" placeholder="Optional" class="w-full rounded-lg border border-slate-300 px-4 py-2.5" />
+            </label>
+            <label>
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Suburb / Town</span>
+              <input v-model="settings.pickup_suburb" type="text" class="w-full rounded-lg border border-slate-300 px-4 py-2.5" />
+            </label>
+            <label>
+              <span class="mb-2 block text-sm font-semibold text-slate-700">State</span>
+              <select v-model="settings.pickup_state" class="w-full rounded-lg border border-slate-300 px-4 py-2.5">
+                <option value="">Select state</option>
+                <option v-for="state in australianStates" :key="state" :value="state">{{ state }}</option>
+              </select>
+            </label>
+            <label>
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Postcode</span>
+              <input v-model="settings.pickup_postcode" type="text" inputmode="numeric" maxlength="4" class="w-full rounded-lg border border-slate-300 px-4 py-2.5" />
+            </label>
+            <label class="sm:col-span-2">
+              <span class="mb-2 block text-sm font-semibold text-slate-700">Pickup instructions</span>
+              <textarea v-model="settings.pickup_instructions" rows="3" placeholder="e.g. We will email you when your order is ready for collection." class="w-full rounded-lg border border-slate-300 px-4 py-2.5"></textarea>
+            </label>
+          </div>
+
+          <div class="mt-5 flex justify-end">
+            <button
+              type="button"
+              :disabled="savingSettings"
+              class="rounded-lg bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              @click="saveSettings"
+            >
+              {{ savingSettings ? "Saving..." : "Save Pickup Settings" }}
             </button>
           </div>
         </section>
@@ -210,7 +271,17 @@ const successMessage = ref("");
 const settings = reactive({
   origin_postcode: "",
   enabled: true,
+  pickup_enabled: false,
+  pickup_name: "Pickup in Store",
+  pickup_address_line_1: "",
+  pickup_address_line_2: "",
+  pickup_suburb: "",
+  pickup_state: "VIC",
+  pickup_postcode: "",
+  pickup_instructions: "We will contact you when your order is ready for collection.",
 });
+
+const australianStates = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
 const postcodes = ref<LocalPostcode[]>([]);
 
@@ -239,6 +310,14 @@ const loadFreight = async () => {
 
     settings.origin_postcode = settingsResult?.origin_postcode || "";
     settings.enabled = settingsResult?.enabled !== false;
+    settings.pickup_enabled = settingsResult?.pickup_enabled === true;
+    settings.pickup_name = settingsResult?.pickup_name || "Pickup in Store";
+    settings.pickup_address_line_1 = settingsResult?.pickup_address_line_1 || "";
+    settings.pickup_address_line_2 = settingsResult?.pickup_address_line_2 || "";
+    settings.pickup_suburb = settingsResult?.pickup_suburb || "";
+    settings.pickup_state = settingsResult?.pickup_state || "VIC";
+    settings.pickup_postcode = settingsResult?.pickup_postcode || "";
+    settings.pickup_instructions = settingsResult?.pickup_instructions || "We will contact you when your order is ready for collection.";
     postcodes.value = postcodeResult || [];
   } catch (error: any) {
     errorMessage.value =
@@ -261,6 +340,14 @@ const saveSettings = async () => {
       body: {
         origin_postcode: settings.origin_postcode,
         enabled: settings.enabled,
+        pickup_enabled: settings.pickup_enabled,
+        pickup_name: settings.pickup_name,
+        pickup_address_line_1: settings.pickup_address_line_1,
+        pickup_address_line_2: settings.pickup_address_line_2,
+        pickup_suburb: settings.pickup_suburb,
+        pickup_state: settings.pickup_state,
+        pickup_postcode: settings.pickup_postcode,
+        pickup_instructions: settings.pickup_instructions,
       },
     });
 

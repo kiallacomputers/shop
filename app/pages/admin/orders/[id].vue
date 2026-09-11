@@ -142,8 +142,8 @@
               >
                 <option value="paid">Paid</option>
                 <option value="processing">Processing</option>
-                <option value="shipping">Shipping</option>
-                <option value="delivered">Delivered</option>
+                <option v-if="!isStorePickup" value="shipping">Shipping</option>
+                <option value="delivered">{{ isStorePickup ? "Collected" : "Delivered" }}</option>
                 <option value="cancelled">Cancelled</option>
                 <option value="refunded">Refunded</option>
               </select>
@@ -282,7 +282,7 @@
           class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <h2 class="text-lg font-bold text-slate-900">
-            Delivery Information
+            {{ isStorePickup ? "Pickup Information" : "Delivery Information" }}
           </h2>
 
           <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -297,7 +297,7 @@
 
             <div>
               <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Delivery Method
+                {{ isStorePickup ? "Pickup Method" : "Delivery Method" }}
               </dt>
               <dd class="mt-1 font-semibold text-slate-800">
                 {{ order.shipping_method || "Not available" }}
@@ -306,7 +306,7 @@
 
             <div>
               <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Freight
+                {{ isStorePickup ? "Pickup Fee" : "Freight" }}
               </dt>
               <dd class="mt-1 font-semibold text-slate-800">
                 {{
@@ -351,7 +351,7 @@
             v-if="isLocalDelivery"
             class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
           >
-            This order uses local delivery, so Australia Post fulfilment is not required.
+            {{ isStorePickup ? "This order is being collected in store, so Australia Post fulfilment is not required." : "This order uses local delivery, so Australia Post fulfilment is not required." }}
           </div>
 
           <template v-else>
@@ -595,8 +595,10 @@ const trackingMessage = ref("");
 
 const isLocalDelivery = computed(() => {
   const code = String(order.value?.shipping_service_code || "").toUpperCase();
-  return code.startsWith("LOCAL_") || code === "FREE_DELIVERY";
+  return code.startsWith("LOCAL_") || code === "FREE_DELIVERY" || code === "STORE_PICKUP";
 });
+
+const isStorePickup = computed(() => String(order.value?.shipping_service_code || "").toUpperCase() === "STORE_PICKUP");
 
 const statusChanged = computed(() => {
   if (!order.value) {

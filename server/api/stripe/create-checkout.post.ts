@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
-import { calculateFreightOptions } from "~~/server/utils/freight";
+import { calculateFreightOptions, getStorePickupOption } from "~~/server/utils/freight";
 import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
@@ -29,8 +29,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Cart is empty" });
   }
 
+  const fulfilmentMethod = text(body?.fulfilmentMethod).toLowerCase() === "pickup" ? "pickup" : "delivery";
   const addressId = text(body?.addressId);
-  if (!addressId) {
+  if (fulfilmentMethod === "delivery" && !addressId) {
     throw createError({ statusCode: 400, statusMessage: "Please choose a delivery address." });
   }
 
@@ -52,26 +53,38 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getAdminSupabase();
 
-  // Always read the selected delivery address from the database. Never trust
-  // address fields supplied by the browser.
-  const { data: address, error: addressError } = await supabase
-    .from("customer_addresses")
-    .select("id, user_id, label, full_name, address_line_1, address_line_2, suburb, state, postcode, country, phone, is_primary")
-    .eq("id", addressId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  // Always read the selected delivery address from the database for delivery orders.
+  // Store pickup uses the administrator-configured pickup location instead.
+  let address: any = null;
+  let postcode = "";
+  let pickupOption: any = null;
 
-  if (addressError) {
-    throwInternalError(event, "CHECKOUT ADDRESS LOOKUP ERROR", addressError, "Unable to load the selected delivery address.");
-  }
+  if (fulfilmentMethod === "delivery") {
+    const { data: savedAddress, error: addressError } = await supabase
+      .from("customer_addresses")
+      .select("id, user_id, label, full_name, address_line_1, address_line_2, suburb, state, postcode, country, phone, is_primary")
+      .eq("id", addressId)
+      .eq("user_id", userId)
+      .maybeSingle();
 
-  if (!address) {
-    throw createError({ statusCode: 400, statusMessage: "The selected delivery address could not be found. Please choose it again." });
-  }
+    if (addressError) {
+      throwInternalError(event, "CHECKOUT ADDRESS LOOKUP ERROR", addressError, "Unable to load the selected delivery address.");
+    }
 
-  const postcode = text(address.postcode);
-  if (!/^\d{4}$/.test(postcode)) {
-    throw createError({ statusCode: 400, statusMessage: "The selected delivery address has an invalid postcode." });
+    if (!savedAddress) {
+      throw createError({ statusCode: 400, statusMessage: "The selected delivery address could not be found. Please choose it again." });
+    }
+
+    address = savedAddress;
+    postcode = text(address.postcode);
+    if (!/^\d{4}$/.test(postcode)) {
+      throw createError({ statusCode: 400, statusMessage: "The selected delivery address has an invalid postcode." });
+    }
+  } else {
+    pickupOption = await getStorePickupOption();
+    if (!pickupOption.enabled) {
+      throw createError({ statusCode: 400, statusMessage: "Pickup in store is currently unavailable." });
+    }
   }
 
   const productIds = [...new Set(requestedItems.map((item: any) => item.id))];
@@ -150,16 +163,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Recalculate freight server-side using the postcode from the selected saved address.
-  const freight = await calculateFreightOptions({ items: requestedItems, postcode });
   const requestedServiceCode = text(body?.shippingServiceCode);
-  const selectedRate = freight.rates.find((rate) => rate.code === requestedServiceCode);
+  let selectedRate: { code: string; name: string; price: number; free: boolean };
 
-  if (!selectedRate) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "The selected delivery service is no longer available. Please recalculate delivery.",
-    });
+  if (fulfilmentMethod === "pickup") {
+    if (requestedServiceCode && requestedServiceCode !== "STORE_PICKUP") {
+      throw createError({ statusCode: 400, statusMessage: "Invalid pickup option." });
+    }
+    selectedRate = { code: "STORE_PICKUP", name: pickupOption.name, price: 0, free: true };
+  } else {
+    // Recalculate freight server-side using the postcode from the selected saved address.
+    const freight = await calculateFreightOptions({ items: requestedItems, postcode });
+    const matchedRate = freight.rates.find((rate) => rate.code === requestedServiceCode);
+    if (!matchedRate) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "The selected delivery service is no longer available. Please recalculate delivery.",
+      });
+    }
+    selectedRate = matchedRate;
   }
 
   if (selectedRate.price > 0) {
@@ -186,16 +208,24 @@ export default defineEventHandler(async (event) => {
     client_reference_id: userId,
     metadata: {
       user_id: userId,
-      shipping_address_id: String(address.id),
-      shipping_label: text(address.label),
-      shipping_name: text(address.full_name),
-      shipping_address_line_1: text(address.address_line_1),
-      shipping_address_line_2: text(address.address_line_2),
-      shipping_suburb: text(address.suburb),
-      shipping_state: text(address.state),
-      shipping_postcode: postcode,
-      shipping_country: text(address.country) || "AU",
-      shipping_phone: text(address.phone),
+      fulfilment_method: fulfilmentMethod,
+      shipping_address_id: fulfilmentMethod === "delivery" ? String(address.id) : "",
+      shipping_label: fulfilmentMethod === "delivery" ? text(address.label) : "Store Pickup",
+      customer_name: fulfilmentMethod === "delivery"
+        ? text(address.full_name)
+        : text(user?.user_metadata?.full_name || user?.user_metadata?.name || user.email),
+      shipping_name: fulfilmentMethod === "delivery"
+        ? text(address.full_name)
+        : text(pickupOption.name),
+      shipping_address_line_1: fulfilmentMethod === "delivery" ? text(address.address_line_1) : text(pickupOption.addressLine1),
+      shipping_address_line_2: fulfilmentMethod === "delivery" ? text(address.address_line_2) : text(pickupOption.addressLine2),
+      shipping_suburb: fulfilmentMethod === "delivery" ? text(address.suburb) : text(pickupOption.suburb),
+      shipping_state: fulfilmentMethod === "delivery" ? text(address.state) : text(pickupOption.state),
+      shipping_postcode: fulfilmentMethod === "delivery" ? postcode : text(pickupOption.postcode),
+      shipping_country: "AU",
+      shipping_phone: fulfilmentMethod === "delivery" ? text(address.phone) : "",
+      pickup_name: fulfilmentMethod === "pickup" ? text(pickupOption.name) : "",
+      pickup_instructions: fulfilmentMethod === "pickup" ? text(pickupOption.instructions) : "",
       shipping_service_code: selectedRate.code,
       shipping_method: selectedRate.name,
       shipping_cost: selectedRate.price.toFixed(2),

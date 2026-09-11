@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("freight_settings")
-    .select("id, origin_postcode, enabled, updated_at")
+    .select("id, origin_postcode, enabled, pickup_enabled, pickup_name, pickup_address_line_1, pickup_address_line_2, pickup_suburb, pickup_state, pickup_postcode, pickup_instructions, updated_at")
     .eq("id", 1)
     .single();
 

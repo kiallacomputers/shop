@@ -20,6 +20,7 @@ export type InvoiceData = {
   customer_email?: string | null;
   total: number;
   shipping_method?: string | null;
+  shipping_service_code?: string | null;
   shipping_cost?: number | null;
   shipping_address?: InvoiceAddress | null;
   items: InvoiceItem[];
@@ -136,8 +137,10 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
   text(left, y, `Order: #${order.id}`);
   y -= 28;
 
+  const isPickup = String(order.shipping_service_code || "").toUpperCase() === "STORE_PICKUP";
+
   setFont("F2", 11);
-  text(left, y, "DELIVER TO");
+  text(left, y, isPickup ? "PICKUP FROM" : "DELIVER TO");
   y -= 18;
   setFont("F1", 10);
 
@@ -159,7 +162,7 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
 
   y -= 10;
   setFont("F2", 11);
-  text(left, y, "DELIVERY");
+  text(left, y, isPickup ? "PICKUP" : "DELIVERY");
   y -= 18;
   setFont("F1", 10);
   text(left, y, order.shipping_method || "Delivery");
