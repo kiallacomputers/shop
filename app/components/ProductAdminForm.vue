@@ -161,6 +161,57 @@
 
 
       <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Related Products</h2>
+            <p class="mt-1 text-sm text-slate-500">Choose up to four products to show first in <strong>You May Also Like</strong>. Any empty spots are filled automatically from the same category, then the same main category.</p>
+          </div>
+          <span class="text-sm font-semibold text-slate-500">{{ relatedProductIds.length }}/4 selected</span>
+        </div>
+
+        <div v-if="selectedRelatedProducts.length" class="mt-5 grid gap-3 sm:grid-cols-2">
+          <div v-for="item in selectedRelatedProducts" :key="item.id" class="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
+            <div class="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-blue-100 bg-white">
+              <img v-if="firstProductImage(item)" :src="firstProductImage(item)" :alt="item.name" class="h-full w-full object-contain p-1" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold text-slate-900">{{ item.name }}</p>
+              <p class="truncate text-xs text-slate-500">{{ item.product_code || item.slug }}</p>
+            </div>
+            <button type="button" class="rounded-lg px-2.5 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50" @click="removeRelatedProduct(Number(item.id))">Remove</button>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <label class="block">
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Search products</span>
+            <input v-model="relatedSearch" type="search" class="input" placeholder="Search by product name, code or category..." />
+          </label>
+        </div>
+
+        <div v-if="relatedSearch.trim()" class="mt-3 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+          <button
+            v-for="item in relatedSearchResults"
+            :key="item.id"
+            type="button"
+            class="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="relatedProductIds.length >= 4"
+            @click="addRelatedProduct(Number(item.id))"
+          >
+            <div class="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+              <img v-if="firstProductImage(item)" :src="firstProductImage(item)" :alt="item.name" class="h-full w-full object-contain p-1" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold text-slate-900">{{ item.name }}</p>
+              <p class="truncate text-xs text-slate-500">{{ item.product_code || 'No product code' }}<span v-if="item.categories?.name"> · {{ item.categories.name }}</span></p>
+            </div>
+            <span class="text-xs font-bold text-blue-600">Add</span>
+          </button>
+          <p v-if="!relatedSearchResults.length" class="px-4 py-4 text-sm text-slate-500">No matching products available.</p>
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Freight Measurements</h2>
         <p class="mt-1 text-sm text-slate-500">
           Used to calculate Australia Post parcel rates. Enter the packed weight and dimensions for one unit.
@@ -339,6 +390,9 @@ const uploadError = ref("");
 const descriptionBlocks = ref<any[]>([]);
 const standardMarkupPercent = ref(20);
 const standardPricingLevelName = ref("Standard");
+const allProducts = ref<any[]>([]);
+const relatedProductIds = ref<number[]>([]);
+const relatedSearch = ref("");
 
 const form = reactive({
   name: "",
@@ -399,6 +453,42 @@ watch(() => form.slug, (value, oldValue) => {
   if (oldValue && value !== slugify(form.name)) slugTouched.value = true;
 });
 
+const currentProductId = computed(() => Number(props.productId || 0));
+const selectableProducts = computed(() => allProducts.value.filter((item) => Number(item.id) !== currentProductId.value));
+const selectedRelatedProducts = computed(() => relatedProductIds.value
+  .map((id) => selectableProducts.value.find((item) => Number(item.id) === Number(id)))
+  .filter(Boolean));
+const relatedSearchResults = computed(() => {
+  const term = relatedSearch.value.trim().toLowerCase();
+  if (!term) return [];
+  return selectableProducts.value
+    .filter((item) => !relatedProductIds.value.includes(Number(item.id)))
+    .filter((item) => [item.name, item.product_code, item.slug, item.categories?.name]
+      .some((value) => String(value || "").toLowerCase().includes(term)))
+    .slice(0, 20);
+});
+const firstProductImage = (item: any) => {
+  const source = item?.images;
+  if (Array.isArray(source)) return source.find(Boolean) || "";
+  if (typeof source === "string") {
+    try {
+      const parsed = JSON.parse(source);
+      return Array.isArray(parsed) ? parsed.find(Boolean) || "" : "";
+    } catch {
+      return source.trim();
+    }
+  }
+  return "";
+};
+const addRelatedProduct = (id: number) => {
+  if (!Number.isInteger(id) || id <= 0 || relatedProductIds.value.includes(id) || relatedProductIds.value.length >= 4) return;
+  relatedProductIds.value.push(id);
+  relatedSearch.value = "";
+};
+const removeRelatedProduct = (id: number) => {
+  relatedProductIds.value = relatedProductIds.value.filter((item) => item !== id);
+};
+
 const handleImageSelection = async (event: Event) => {
   const input = event.target as HTMLInputElement;
   const files = Array.from(input.files || []);
@@ -446,11 +536,13 @@ const loadForm = async () => {
   errorMessage.value = "";
 
   try {
-    const [categoryRows, standardPricing] = await Promise.all([
+    const [categoryRows, standardPricing, productRows] = await Promise.all([
       adminFetch("/api/admin/categories"),
       adminFetch<{ key: string; name: string; markup_percent: number }>("/api/admin/pricing/standard"),
+      adminFetch("/api/admin/products"),
     ]);
     categories.value = categoryRows as Array<{ id: string | number; name: string }>;
+    allProducts.value = Array.isArray(productRows) ? productRows as any[] : [];
     standardPricingLevelName.value = standardPricing?.name || "Standard";
     const loadedStandardMarkup = Number(standardPricing?.markup_percent);
     standardMarkupPercent.value = Number.isFinite(loadedStandardMarkup) ? loadedStandardMarkup : 20;
@@ -474,6 +566,9 @@ const loadForm = async () => {
       form.active = product.active !== false;
       form.featured = product.featured === true;
       form.refurbished = product.refurbished === true;
+      relatedProductIds.value = Array.isArray(product.related_product_ids)
+        ? product.related_product_ids.map((id: any) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0).slice(0, 4)
+        : [];
 
       let images: string[] = [];
       if (Array.isArray(product.images)) images = product.images;
@@ -519,6 +614,7 @@ const saveProduct = async () => {
       height_cm: Number(form.height_cm),
       images: imageUrls.value,
       description,
+      related_product_ids: relatedProductIds.value,
     };
 
     if (props.mode === "create") {

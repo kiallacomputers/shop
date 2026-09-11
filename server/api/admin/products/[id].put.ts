@@ -14,6 +14,14 @@ const normaliseImages = (value: unknown) => {
   return [];
 };
 
+const normaliseRelatedProductIds = (value: unknown) => {
+  if (!Array.isArray(value)) return [] as number[];
+  const ids = value
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && item > 0);
+  return [...new Set(ids)].slice(0, 4);
+};
+
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const roundToNearestFive = (value: number) => {
   if (value <= 0) return 0;
@@ -37,6 +45,7 @@ export default defineEventHandler(async (event) => {
   const lengthCm = Number(body?.length_cm);
   const widthCm = Number(body?.width_cm);
   const heightCm = Number(body?.height_cm);
+  const relatedProductIds = normaliseRelatedProductIds(body?.related_product_ids);
   const standardPricingLevel = await getStandardPricingLevel();
   const sellMarkupPercent = standardPricingLevel.markupPercent;
 
@@ -110,6 +119,28 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!data) throw createError({ statusCode: 404, statusMessage: "Product not found" });
+
+  const currentProductId = Number(data.id);
+  const relationIds = relatedProductIds.filter((relatedId) => relatedId !== currentProductId);
+  const { error: deleteRelatedError } = await supabase
+    .from("product_related_products")
+    .delete()
+    .eq("product_id", currentProductId);
+  if (deleteRelatedError) {
+    throw createError({ statusCode: 500, statusMessage: deleteRelatedError.message || "Unable to update related products" });
+  }
+  if (relationIds.length) {
+    const { error: insertRelatedError } = await supabase
+      .from("product_related_products")
+      .insert(relationIds.map((relatedId, index) => ({
+        product_id: currentProductId,
+        related_product_id: relatedId,
+        sort_order: index,
+      })));
+    if (insertRelatedError) {
+      throw createError({ statusCode: 500, statusMessage: insertRelatedError.message || "Unable to save related products" });
+    }
+  }
 
   if (!hasVariants && Number(data.stock || 0) > 0) {
     try {

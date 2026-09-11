@@ -13,6 +13,14 @@ const normaliseImages = (value: unknown) => {
   return [];
 };
 
+const normaliseRelatedProductIds = (value: unknown) => {
+  if (!Array.isArray(value)) return [] as number[];
+  const ids = value
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && item > 0);
+  return [...new Set(ids)].slice(0, 4);
+};
+
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 const roundToNearestFive = (value: number) => {
   if (value <= 0) return 0;
@@ -34,6 +42,7 @@ export default defineEventHandler(async (event) => {
   const lengthCm = Number(body?.length_cm);
   const widthCm = Number(body?.width_cm);
   const heightCm = Number(body?.height_cm);
+  const relatedProductIds = normaliseRelatedProductIds(body?.related_product_ids);
   const standardPricingLevel = await getStandardPricingLevel();
   const sellMarkupPercent = standardPricingLevel.markupPercent;
 
@@ -104,6 +113,21 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 409, statusMessage: "A product with this slug already exists" });
     }
     throw createError({ statusCode: 500, statusMessage: error.message || "Unable to create product" });
+  }
+
+  const currentProductId = Number(data.id);
+  const relationIds = relatedProductIds.filter((relatedId) => relatedId !== currentProductId);
+  if (relationIds.length) {
+    const { error: relatedError } = await supabase
+      .from("product_related_products")
+      .insert(relationIds.map((relatedId, index) => ({
+        product_id: currentProductId,
+        related_product_id: relatedId,
+        sort_order: index,
+      })));
+    if (relatedError) {
+      throw createError({ statusCode: 500, statusMessage: relatedError.message || "Unable to save related products" });
+    }
   }
 
   return data;

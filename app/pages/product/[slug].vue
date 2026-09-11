@@ -440,6 +440,26 @@
               </div>
             </div>
           </section>
+
+          <section
+            v-if="relatedProducts.length"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
+          >
+            <div class="mb-5 flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">Recommended for you</p>
+                <h2 class="mt-1 text-xl font-bold text-slate-900">You May Also Like</h2>
+              </div>
+              <p class="text-sm text-slate-500">Products that work well with this item.</p>
+            </div>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <ProductCard
+                v-for="item in relatedProducts"
+                :key="item.id"
+                :product="item"
+              />
+            </div>
+          </section>
         </div>
       </main>
     </div>
@@ -580,7 +600,7 @@ const customerUser = useSupabaseUser();
 const { isSaved, toggle: toggleWishlistProduct, load: loadWishlist } = useWishlist();
 const wishlistSaved = computed(() => isSaved(product.value?.id));
 const toggleWishlist = async () => { await toggleWishlistProduct(product.value?.id); };
-const { quote, pricingLevelName } = useCustomerPricing();
+const { quote, applyToProducts, pricingLevelName } = useCustomerPricing();
 
 const quotedProductPrice = ref(null);
 const quotedVariantPrices = ref({});
@@ -813,6 +833,43 @@ const { data: product } = await useAsyncData(
   },
 );
 
+const { data: relatedProductRows } = await useAsyncData(
+  `related-products-${route.params.slug}`,
+  async () => {
+    if (!product.value?.id) return [];
+    return await $fetch(`/api/products/${product.value.id}/related`);
+  },
+);
+
+const relatedProducts = ref(Array.isArray(relatedProductRows.value) ? relatedProductRows.value : []);
+const refreshRelatedProductPrices = async () => {
+  const source = Array.isArray(relatedProductRows.value) ? relatedProductRows.value : [];
+  if (!source.length) {
+    relatedProducts.value = [];
+    return;
+  }
+
+  const rows = source.map((item) => ({
+    ...item,
+    product_variants: Array.isArray(item.product_variants)
+      ? item.product_variants.map((variant) => ({ ...variant }))
+      : [],
+  }));
+
+  if (import.meta.client) {
+    await applyToProducts(rows);
+  }
+  relatedProducts.value = rows;
+};
+
+watch(
+  [() => relatedProductRows.value, () => customerUser.value?.id],
+  async () => {
+    await refreshRelatedProductPrices();
+  },
+  { immediate: true, deep: true },
+);
+
 watchEffect(() => {
   if (product.value?.has_variants && selectedVariantId.value == null && activeVariants.value.length) {
     selectedVariantId.value = Number(activeVariants.value[0].id);
@@ -857,7 +914,7 @@ watch(
   { immediate: true },
 );
 
-onMounted(async () => { await Promise.all([refreshCustomerPrice(), loadWishlist()]); });
+onMounted(async () => { await Promise.all([refreshCustomerPrice(), refreshRelatedProductPrices(), loadWishlist()]); });
 
 /*
 |--------------------------------------------------------------------------
