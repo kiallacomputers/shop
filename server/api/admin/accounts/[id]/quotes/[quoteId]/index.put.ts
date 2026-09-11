@@ -42,7 +42,12 @@ export default defineEventHandler(async (event) => {
     if (Number.isNaN(parsed.getTime())) throw createError({ statusCode: 400, statusMessage: "Invalid quote expiry date." });
     expiresAt = parsed.toISOString();
   } else if (status === "quoted") {
-    const d = new Date(); d.setDate(d.getDate() + 7); expiresAt = d.toISOString();
+    const issued = existing.created_at ? new Date(existing.created_at) : new Date();
+    const d = new Date(issued);
+    d.setDate(d.getDate() + 7);
+    // Keep the quote valid through the end of the seventh calendar day.
+    d.setHours(23, 59, 59, 999);
+    expiresAt = d.toISOString();
   }
 
   const movingToQuoted = status === "quoted" && existing.status !== "quoted";

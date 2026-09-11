@@ -219,7 +219,7 @@ export function createQuotePdf(q: QuotePdfData) {
   setFont("F1", 8);
   const terms = [
     "All prices are in Australian dollars (AUD) and include GST unless otherwise stated.",
-    `This quotation is valid until ${fmtDate(q.expires_at) || "the validity date shown above"}.`,
+    `This quotation is valid for 7 days from the issue date shown above. Valid until ${fmtDate(q.expires_at) || "7 days after issue"}.`,
     "Pricing and supply are subject to product availability at the time the quote is accepted.",
     "Acceptance and payment of this quotation confirms approval to supply the quoted goods or services.",
   ];
