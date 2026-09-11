@@ -606,21 +606,34 @@
 
       <!-- Image -->
       <div
-        class="flex max-h-[78vh] max-w-[92vw] items-center justify-center overflow-hidden sm:max-h-[82vh]"
+        ref="lightboxViewportRef"
+        class="flex h-[78vh] w-[92vw] touch-none items-center justify-center overflow-hidden sm:h-[82vh]"
         @click.stop
         @wheel.prevent="handleWheel"
+        @pointerdown="startImagePointer"
+        @pointermove="moveImagePointer"
+        @pointerup="endImagePointer"
+        @pointercancel="endImagePointer"
       >
         <img
           :src="currentImage"
           :alt="product.name"
-          class="max-h-[78vh] max-w-[92vw] select-none object-contain transition-transform duration-200 sm:max-h-[82vh]"
+          class="max-h-full max-w-full select-none object-contain transition-transform duration-100"
+          :class="isDraggingImage ? 'cursor-grabbing' : zoomLevel > 1 ? 'cursor-grab' : 'cursor-zoom-in'"
           :style="{
-            transform: `scale(${zoomLevel})`,
-            cursor: zoomLevel > 1 ? 'grab' : 'zoom-in',
+            transform: `translate3d(${panX}px, ${panY}px, 0) scale(${zoomLevel})`,
+            transformOrigin: 'center center',
           }"
           @click="handleImageClick"
           draggable="false"
         />
+      </div>
+
+      <div
+        v-if="images.length > 1"
+        class="pointer-events-none absolute bottom-[9.25rem] left-1/2 z-40 hidden -translate-x-1/2 rounded-full bg-black/45 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm sm:block"
+      >
+        Use ← →, mouse wheel, or swipe to change image
       </div>
 
       <!-- Lightbox thumbnails -->
@@ -1110,6 +1123,39 @@ const currentImage = computed(() => {
 const lightboxOpen = ref(false);
 
 const zoomLevel = ref(1);
+const panX = ref(0);
+const panY = ref(0);
+const isDraggingImage = ref(false);
+const lightboxViewportRef = ref(null);
+
+let pointerStartX = 0;
+let pointerStartY = 0;
+let pointerStartPanX = 0;
+let pointerStartPanY = 0;
+let pointerMoved = false;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let wheelNavigationLocked = false;
+
+const resetPan = () => {
+  panX.value = 0;
+  panY.value = 0;
+  isDraggingImage.value = false;
+};
+
+const goToImage = (index) => {
+  if (!images.value.length) return;
+  const total = images.value.length;
+  currentImageIndex.value = ((Number(index) % total) + total) % total;
+};
+
+const previousImage = () => {
+  goToImage(currentImageIndex.value - 1);
+};
+
+const nextImage = () => {
+  goToImage(currentImageIndex.value + 1);
+};
 
 const openLightbox = () => {
   if (!currentImage.value) {
@@ -1117,6 +1163,7 @@ const openLightbox = () => {
   }
 
   zoomLevel.value = 1;
+  resetPan();
 
   lightboxOpen.value = true;
 
@@ -1127,6 +1174,7 @@ const closeLightbox = () => {
   lightboxOpen.value = false;
 
   zoomLevel.value = 1;
+  resetPan();
 
   document.body.style.overflow = "";
 };
@@ -1149,6 +1197,7 @@ const zoomIn = () => {
 
 const zoomOut = () => {
   zoomLevel.value = Math.max(zoomLevel.value - 0.25, 1);
+  if (zoomLevel.value === 1) resetPan();
 };
 
 /*
@@ -1159,6 +1208,7 @@ const zoomOut = () => {
 
 const resetZoom = () => {
   zoomLevel.value = 1;
+  resetPan();
 };
 
 /*
@@ -1168,6 +1218,11 @@ const resetZoom = () => {
 */
 
 const handleImageClick = () => {
+  if (pointerMoved) {
+    pointerMoved = false;
+    return;
+  }
+
   if (zoomLevel.value < 4) {
     zoomIn();
   } else {
@@ -1182,10 +1237,74 @@ const handleImageClick = () => {
 */
 
 const handleWheel = (event) => {
-  if (event.deltaY < 0) {
-    zoomIn();
-  } else {
-    zoomOut();
+  // At normal size the mouse wheel changes images. Once zoomed,
+  // the wheel controls zoom so the user can then drag/pan around.
+  if (zoomLevel.value === 1 && images.value.length > 1) {
+    if (wheelNavigationLocked || Math.abs(event.deltaY) < 8) return;
+    wheelNavigationLocked = true;
+    if (event.deltaY > 0) nextLightboxImage();
+    else previousLightboxImage();
+    window.setTimeout(() => {
+      wheelNavigationLocked = false;
+    }, 220);
+    return;
+  }
+
+  if (event.deltaY < 0) zoomIn();
+  else zoomOut();
+};
+
+/*
+|--------------------------------------------------------------------------
+| Drag / Swipe In Lightbox
+|--------------------------------------------------------------------------
+*/
+
+const startImagePointer = (event) => {
+  if (!lightboxOpen.value) return;
+
+  pointerStartX = event.clientX;
+  pointerStartY = event.clientY;
+  swipeStartX = event.clientX;
+  swipeStartY = event.clientY;
+  pointerStartPanX = panX.value;
+  pointerStartPanY = panY.value;
+  pointerMoved = false;
+
+  if (zoomLevel.value > 1) {
+    isDraggingImage.value = true;
+    event.currentTarget?.setPointerCapture?.(event.pointerId);
+  }
+};
+
+const moveImagePointer = (event) => {
+  const dx = event.clientX - pointerStartX;
+  const dy = event.clientY - pointerStartY;
+
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) pointerMoved = true;
+
+  if (!isDraggingImage.value || zoomLevel.value <= 1) return;
+
+  panX.value = pointerStartPanX + dx;
+  panY.value = pointerStartPanY + dy;
+};
+
+const endImagePointer = (event) => {
+  if (isDraggingImage.value) {
+    isDraggingImage.value = false;
+    event.currentTarget?.releasePointerCapture?.(event.pointerId);
+    return;
+  }
+
+  // At 100% zoom, a horizontal swipe changes image.
+  if (zoomLevel.value === 1 && images.value.length > 1) {
+    const dx = event.clientX - swipeStartX;
+    const dy = event.clientY - swipeStartY;
+    if (Math.abs(dx) >= 55 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      if (dx < 0) nextLightboxImage();
+      else previousLightboxImage();
+      pointerMoved = true;
+    }
   }
 };
 
@@ -1225,8 +1344,14 @@ const goToLightboxImage = (index) => {
 */
 
 const handleEscape = (event) => {
-  if (event.key === "Escape" && lightboxOpen.value) {
+  if (!lightboxOpen.value) return;
+
+  if (event.key === "Escape") {
     closeLightbox();
+  } else if (event.key === "ArrowLeft" && images.value.length > 1) {
+    previousLightboxImage();
+  } else if (event.key === "ArrowRight" && images.value.length > 1) {
+    nextLightboxImage();
   }
 };
 
