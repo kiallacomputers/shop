@@ -4,12 +4,12 @@ import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
 import { calculateFreightOptions } from "~~/server/utils/freight";
 import {
-import { throwInternalError } from "~~/server/utils/internalError";
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
   getStandardPricingLevel,
 } from "~~/server/utils/customerPricing";
+import { throwInternalError } from "~~/server/utils/internalError";
 
 const text = (value: unknown) => String(value ?? "").trim();
 
