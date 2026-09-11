@@ -607,9 +607,9 @@ async function subscribeBackInStock() {
       product_id: Number(product.value?.id),
       variant_id: selectedVariant.value?.id ? Number(selectedVariant.value.id) : null,
     };
-    const result = await $fetch<any>("/api/back-in-stock", { method: "POST", body });
+    const result = await $fetch("/api/back-in-stock", { method: "POST", body });
     backInStockMessage.value = result?.message || "Saved. We’ll only email you while this product remains in your wishlist.";
-  } catch (error: any) {
+  } catch (error) {
     backInStockError.value = true;
     backInStockMessage.value = error?.data?.statusMessage || error?.message || "Unable to save your notification request.";
   } finally {
