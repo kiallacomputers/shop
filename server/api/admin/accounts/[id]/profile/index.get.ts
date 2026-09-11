@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const user = authResult.user;
 
-  const [profileResult, addressResult, orderResult, wishlistResult, quoteResult, pricingResult, backInStockResult] = await Promise.all([
+  const [profileResult, addressResult, orderResult, wishlistResult, quoteResult, pricingResult, backInStockResult, crmEmailResult] = await Promise.all([
     supabase.from("customer_crm_profiles").select("*").eq("user_id", userId).maybeSingle(),
     supabase.from("customer_addresses").select("id,label,full_name,address_line_1,address_line_2,suburb,state,postcode,country,phone,is_primary").eq("user_id", userId).order("is_primary", { ascending: false }),
     supabase.from("orders").select("id,total,status,customer_name,customer_email,tracking_number,carrier,created_at").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     supabase.from("customer_quote_requests").select(`id,quote_number,status,customer_message,admin_notes,quoted_total,expires_at,quoted_at,sent_at,created_at,updated_at,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)`).eq("user_id", userId).order("created_at", { ascending: false }),
     supabase.from("customer_pricing_assignments").select("pricing_level_key,created_at,updated_at").eq("user_id", userId).maybeSingle(),
     supabase.from("customer_back_in_stock_notifications").select("id,product_id,variant_id,status,requested_at,sent_at,cancelled_at,products(name,slug),product_variants(name)").eq("user_id", userId).order("requested_at", { ascending: false }),
+    supabase.from("customer_crm_emails").select("id,recipient_email,subject,message,sent_by_email,sent_at").eq("customer_user_id", userId).order("sent_at", { ascending: false }).limit(100),
   ]);
 
   for (const result of [profileResult, addressResult, orderResult, wishlistResult, quoteResult]) {
@@ -32,6 +33,13 @@ export default defineEventHandler(async (event) => {
   const backInStockRows = backInStockResult.error?.code === "42P01" ? [] : (backInStockResult.data || []);
   if (backInStockResult.error && backInStockResult.error.code !== "42P01") {
     throw createError({ statusCode: 500, statusMessage: backInStockResult.error.message });
+  }
+
+
+  // Direct CRM email history is optional until its migration is deployed.
+  const crmEmails = crmEmailResult.error?.code === "42P01" ? [] : (crmEmailResult.data || []);
+  if (crmEmailResult.error && crmEmailResult.error.code !== "42P01") {
+    throw createError({ statusCode: 500, statusMessage: crmEmailResult.error.message });
   }
 
   const wishlistIds = (wishlistResult.data || []).map((row: any) => Number(row.product_id));
@@ -89,6 +97,11 @@ export default defineEventHandler(async (event) => {
     title: "Added to wishlist", detail: item.name, href: `/product/${item.slug}`,
   });
 
+  for (const email of crmEmails as any[]) addEvent({
+    id: `crm-email-${email.id}`, type: "email", at: email.sent_at,
+    title: "Customer email sent", detail: email.subject || "Direct email sent from CRM",
+  });
+
   for (const notice of backInStockRows as any[]) {
     const product: any = Array.isArray(notice.products) ? notice.products[0] : notice.products;
     const variant: any = Array.isArray(notice.product_variants) ? notice.product_variants[0] : notice.product_variants;
@@ -140,6 +153,7 @@ export default defineEventHandler(async (event) => {
     orders,
     wishlist: wishlistProducts,
     quotes: quoteResult.data || [],
+    emails: crmEmails,
     timeline: timeline.slice(0, 250),
   };
 });

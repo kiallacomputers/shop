@@ -64,6 +64,46 @@
         </section>
 
         <section class="mb-6 card">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 class="text-lg font-black text-slate-900">Email Customer</h2>
+              <p class="mt-1 text-sm text-slate-500">Send a one-to-one branded email to {{ customer.account.email }}.</p>
+            </div>
+            <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">Microsoft Graph</span>
+          </div>
+
+          <div class="mt-5 grid grid-cols-1 gap-4">
+            <label>
+              <span class="field-label">Subject</span>
+              <input v-model="emailForm.subject" maxlength="180" class="input" placeholder="Enter email subject" />
+            </label>
+            <label>
+              <span class="field-label">Message</span>
+              <textarea v-model="emailForm.message" maxlength="10000" rows="8" class="input resize-y" placeholder="Write your message to the customer..."></textarea>
+            </label>
+          </div>
+          <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-xs text-slate-500">This is a direct service email and will be recorded in the customer's activity timeline.</p>
+            <button type="button" :disabled="sendingEmail || !emailForm.subject.trim() || !emailForm.message.trim()" class="rounded-lg bg-blue-600 px-5 py-2.5 font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" @click="sendCustomerEmail">
+              {{ sendingEmail ? 'Sending...' : 'Send Email' }}
+            </button>
+          </div>
+
+          <div v-if="customer.emails?.length" class="mt-6 border-t border-slate-200 pt-5">
+            <h3 class="text-sm font-black uppercase tracking-wide text-slate-500">Recent Direct Emails</h3>
+            <div class="mt-3 space-y-3">
+              <div v-for="email in customer.emails.slice(0, 5)" :key="email.id" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                  <p class="font-bold text-slate-800">{{ email.subject }}</p>
+                  <time class="text-xs text-slate-400">{{ formatDateTime(email.sent_at) }}</time>
+                </div>
+                <p class="mt-1 line-clamp-2 whitespace-pre-line text-sm text-slate-600">{{ email.message }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mb-6 card">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-lg font-black text-slate-900">Customer Activity</h2>
@@ -187,12 +227,14 @@ const { adminFetch } = useAdminFetch();
 const customer = ref<any>(null);
 const loading = ref(true);
 const saving = ref(false);
+const sendingEmail = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const form = reactive<any>({});
 const tagsText = ref("");
 const selectedPricingLevel = ref("standard");
 const timelineFilter = ref("all");
+const emailForm = reactive({ subject: "", message: "" });
 
 const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
 const formatDate = (value: string) => value ? new Intl.DateTimeFormat("en-AU", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) : "—";
@@ -299,6 +341,28 @@ async function saveQuote(quote: any) {
     successMessage.value = `${quote.quote_number || `Quote #${quote.id}`} updated.`;
   } catch (error: any) {
     errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to update quote.";
+  }
+}
+
+async function sendCustomerEmail() {
+  if (!emailForm.subject.trim() || !emailForm.message.trim()) return;
+  sendingEmail.value = true;
+  successMessage.value = "";
+  errorMessage.value = "";
+  try {
+    const result = await adminFetch<any>(`/api/admin/accounts/${route.params.id}/email/send`, {
+      method: "POST",
+      body: { subject: emailForm.subject, message: emailForm.message },
+    });
+    successMessage.value = result?.warning || `Email sent to ${customer.value.account.email}.`;
+    emailForm.subject = "";
+    emailForm.message = "";
+    await loadCustomer();
+    successMessage.value = result?.warning || `Email sent to ${customer.value.account.email}.`;
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to send customer email.";
+  } finally {
+    sendingEmail.value = false;
   }
 }
 
