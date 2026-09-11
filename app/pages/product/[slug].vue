@@ -417,7 +417,7 @@
                         <th
                           v-for="header in section.headers"
                           :key="header"
-                          class="border-b border-gray-200 p-3 font-semibold"
+                          class="whitespace-pre-line border-b border-gray-200 p-3 font-semibold"
                           :style="{ textAlign: section.textAlign || 'left' }"
                         >
                           {{ header }}
@@ -434,7 +434,7 @@
                         <td
                           v-for="(cell, c) in row"
                           :key="c"
-                          class="p-3"
+                          class="whitespace-pre-line p-3"
                           :style="{ textAlign: section.textAlign || 'left' }"
                         >
                           {{ cell }}

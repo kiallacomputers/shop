@@ -540,12 +540,14 @@
                     :key="headerIndex"
                     class="min-w-[180px] border-r border-slate-200 p-2 last:border-r-0"
                   >
-                    <input
+                    <textarea
                       v-model="block.headers![headerIndex]"
-                      type="text"
-                      class="input bg-white font-semibold"
+                      rows="1"
+                      class="input table-cell-textarea bg-white font-semibold"
                       :placeholder="`Column ${headerIndex + 1}`"
-                    />
+                      @input="autoGrowTableCell"
+                      @focus="autoGrowTableCell"
+                    ></textarea>
                   </th>
 
                   <th class="w-12 p-2"></th>
@@ -563,12 +565,14 @@
                     :key="cellIndex"
                     class="border-r border-slate-200 p-2 last:border-r-0"
                   >
-                    <input
+                    <textarea
                       v-model="row[cellIndex]"
-                      type="text"
-                      class="input"
+                      rows="1"
+                      class="input table-cell-textarea"
                       placeholder="Value"
-                    />
+                      @input="autoGrowTableCell"
+                      @focus="autoGrowTableCell"
+                    ></textarea>
                   </td>
 
                   <td class="p-2 text-center">
@@ -1183,6 +1187,14 @@ const clearImage = (block: DescriptionBlock) => {
 // TABLE ACTIONS
 // ========================================
 
+
+const autoGrowTableCell = (event: Event) => {
+  const el = event.target as HTMLTextAreaElement | null;
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+};
+
 const addTableColumn = (block: DescriptionBlock) => {
   block.headers!.push(`Column ${block.headers!.length + 1}`);
 
@@ -1246,6 +1258,15 @@ const jsonPreview = computed(() =>
   padding: 0.625rem 0.75rem;
   color: rgb(15 23 42);
   outline: none;
+}
+
+
+.table-cell-textarea {
+  min-height: 2.625rem;
+  resize: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  line-height: 1.4;
 }
 
 .input:focus {
