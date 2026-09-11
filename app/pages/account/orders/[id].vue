@@ -245,13 +245,17 @@
         <div class="ml-auto max-w-sm space-y-2">
           <div class="flex items-center justify-between text-gray-600">
             <span>Subtotal</span>
-            <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0))) }}</span>
+            <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0) - Number(order.processing_fee || 0))) }}</span>
           </div>
           <div class="flex items-center justify-between text-gray-600">
             <span>{{ isStorePickup ? "Pickup" : "Delivery" }}</span>
             <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
           </div>
-          <div class="flex items-center justify-between text-gray-600">
+          <div class="flex justify-between text-slate-600">
+              <span>Processing Fee</span>
+              <span>{{ currency(Number(order.processing_fee || 0)) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-gray-600">
             <span>GST (10%)</span>
             <span>{{ currency(Number(order.total || 0) / 11) }}</span>
           </div>

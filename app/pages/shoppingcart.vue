@@ -240,6 +240,7 @@
             <span>{{ fulfilmentMethod === "pickup" ? "Pickup" : "Delivery" }}</span>
             <span>{{ fulfilmentMethod === "pickup" ? "FREE" : quoting ? "Calculating..." : selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
           </div>
+          <div class="flex items-center justify-between text-slate-600"><span>Processing Fee</span><span>{{ currency(PROCESSING_FEE) }}</span></div>
           <div class="flex items-center justify-between text-slate-600">
             <span>GST (10%)</span>
             <span>{{ currency(gstIncluded) }}</span>
@@ -361,7 +362,8 @@ const selectedRate = computed<FreightRate | null>(() => {
   }
   return freightRates.value.find((rate) => rate.code === selectedServiceCode.value) || null;
 });
-const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0));
+const PROCESSING_FEE = 2;
+const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0) + PROCESSING_FEE);
 const gstIncluded = computed(() => grandTotal.value / 11);
 
 const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));

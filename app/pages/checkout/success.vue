@@ -147,6 +147,11 @@
                 </div>
 
                 <div class="flex justify-between text-slate-600">
+                  <span>Processing Fee</span>
+                  <span>{{ currency(processingFee) }}</span>
+                </div>
+
+                <div class="flex justify-between text-slate-600">
                   <span>GST (10%)</span>
                   <span>{{ currency(gstAmount) }}</span>
                 </div>
@@ -223,7 +228,8 @@ const currency = (value: unknown) =>
   }).format(Number(value || 0));
 
 const deliveryCost = computed(() => Number(order.value?.shipping_cost || 0));
-const subtotal = computed(() => Math.max(0, Number(order.value?.total || 0) - deliveryCost.value));
+const processingFee = computed(() => Number(order.value?.processing_fee || 0));
+const subtotal = computed(() => Math.max(0, Number(order.value?.total || 0) - deliveryCost.value - processingFee.value));
 const isStorePickup = computed(() => String(order.value?.shipping_service_code || "").toUpperCase() === "STORE_PICKUP");
 const gstAmount = computed(() => Number(order.value?.total || 0) / 11);
 const locationLine = computed(() =>
