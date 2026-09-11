@@ -504,6 +504,10 @@
         <!-- ======================================== -->
 
         <template v-else-if="block.type === 'table'">
+          <p class="mb-3 text-xs text-slate-500">
+            Press Enter for a new line. Use <strong>**text**</strong> to make selected text bold.
+          </p>
+
           <div class="mb-4 flex flex-wrap gap-2">
             <button
               type="button"

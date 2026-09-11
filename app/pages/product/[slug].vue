@@ -420,7 +420,13 @@
                           class="whitespace-pre-line border-b border-gray-200 p-3 font-semibold"
                           :style="{ textAlign: section.textAlign || 'left' }"
                         >
-                          {{ header }}
+                          <template
+                            v-for="(part, partIndex) in parseBoldText(header)"
+                            :key="partIndex"
+                          >
+                            <strong v-if="part.bold">{{ part.text }}</strong>
+                            <span v-else>{{ part.text }}</span>
+                          </template>
                         </th>
                       </tr>
                     </thead>
@@ -437,7 +443,13 @@
                           class="whitespace-pre-line p-3"
                           :style="{ textAlign: section.textAlign || 'left' }"
                         >
-                          {{ cell }}
+                          <template
+                            v-for="(part, partIndex) in parseBoldText(cell)"
+                            :key="partIndex"
+                          >
+                            <strong v-if="part.bold">{{ part.text }}</strong>
+                            <span v-else>{{ part.text }}</span>
+                          </template>
                         </td>
                       </tr>
                     </tbody>
