@@ -12,5 +12,13 @@ export default defineNitroPlugin((nitroApp) => {
       name: (error as any)?.name || "Error",
       message: (error as any)?.message || "Unexpected server error",
     });
+
+    // Never return raw database, Stripe, Microsoft Graph or infrastructure
+    // messages to the browser. Admins can use the request ID to match the
+    // customer's error to the private server log.
+    if (status >= 500) {
+      (error as any).statusMessage = "Something went wrong on our side. Please try again.";
+      (error as any).data = requestId !== "unknown" ? { requestId } : undefined;
+    }
   });
 });

@@ -212,7 +212,10 @@ export default defineEventHandler(async (event) => {
 
   // Snapshot the chosen address into Stripe metadata so the paid order retains
   // the exact delivery destination even if the customer later edits My Account.
-  const session = await stripe.checkout.sessions.create({
+  let session: Stripe.Checkout.Session;
+
+  try {
+    session = await stripe.checkout.sessions.create({
     mode: "payment",
     line_items: lineItems,
     client_reference_id: userId,
@@ -249,7 +252,24 @@ export default defineEventHandler(async (event) => {
     // The delivery address has already been selected on the Kialla Computers
     // site, so Stripe only collects billing details if the payment method needs them.
     billing_address_collection: "auto",
-  });
+    });
+  } catch (error) {
+    throwInternalError(
+      event,
+      "STRIPE CHECKOUT SESSION ERROR",
+      error,
+      "We could not start the secure payment checkout. Please try again.",
+    );
+  }
+
+  if (!session.url) {
+    throwInternalError(
+      event,
+      "STRIPE CHECKOUT SESSION URL MISSING",
+      new Error("Stripe Checkout session did not return a URL"),
+      "We could not start the secure payment checkout. Please try again.",
+    );
+  }
 
   return { url: session.url, sessionId: session.id };
 });

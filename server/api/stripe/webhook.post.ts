@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { sendOrderEmails } from "~~/server/utils/orderEmail";
+import { throwInternalError } from "~~/server/utils/internalError";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -90,11 +91,6 @@ export default defineEventHandler(async (event) => {
 
   console.log("SESSION ID:", session.id);
   console.log("PAYMENT STATUS:", session.payment_status);
-  console.log("SESSION METADATA:", session.metadata);
-  console.log(
-    "CLIENT REFERENCE ID:",
-    session.client_reference_id,
-  );
 
   if (session.payment_status !== "paid") {
     console.log("⚠️ SESSION COMPLETED BUT PAYMENT NOT PAID");
@@ -113,14 +109,9 @@ export default defineEventHandler(async (event) => {
   );
 
   if (!userId) {
-    console.error(
-      "❌ NO SUPABASE USER ID ON STRIPE SESSION",
-      {
-        sessionId: session.id,
-        metadata: session.metadata,
-        clientReferenceId: session.client_reference_id,
-      },
-    );
+    console.error("❌ NO SUPABASE USER ID ON STRIPE SESSION", {
+      sessionId: session.id,
+    });
 
     throw createError({
       statusCode: 500,
@@ -128,7 +119,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  console.log("SUPABASE USER ID:", userId);
 
   const supabase = getAdminSupabase();
 
@@ -151,10 +141,12 @@ export default defineEventHandler(async (event) => {
       existingOrderError,
     );
 
-    throw createError({
-      statusCode: 500,
-      statusMessage: existingOrderError.message,
-    });
+    throwInternalError(
+      event,
+      "STRIPE EXISTING ORDER CHECK ERROR",
+      existingOrderError,
+      "Unable to process this payment confirmation.",
+    );
   }
 
   if (existingOrder) {
@@ -283,12 +275,12 @@ export default defineEventHandler(async (event) => {
       orderError,
     );
 
-    throw createError({
-      statusCode: 500,
-      statusMessage:
-        orderError?.message ||
-        "Unable to create order",
-    });
+    throwInternalError(
+      event,
+      "STRIPE ORDER CREATION ERROR",
+      orderError || new Error("Order insert returned no row"),
+      "Unable to complete the paid order.",
+    );
   }
 
   console.log("✅ ORDER CREATED:", order.id);
@@ -307,7 +299,7 @@ export default defineEventHandler(async (event) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (paidQuoteError) throw createError({ statusCode: 500, statusMessage: paidQuoteError.message });
+    if (paidQuoteError) throwInternalError(event, "STRIPE PAID QUOTE LOOKUP ERROR", paidQuoteError, "Unable to complete the paid order.");
     if (!paidQuote) throw createError({ statusCode: 500, statusMessage: "Paid quote could not be found." });
 
     const quoteItems = Array.isArray(paidQuote.customer_quote_request_items)
@@ -330,7 +322,7 @@ export default defineEventHandler(async (event) => {
         quantity,
         price,
       });
-      if (orderItemError) throw createError({ statusCode: 500, statusMessage: orderItemError.message });
+      if (orderItemError) throwInternalError(event, "STRIPE ORDER ITEM INSERT ERROR", orderItemError, "Unable to complete the paid order.");
 
       const stockTable = variantId ? "product_variants" : "products";
       const stockId = variantId || productId;
@@ -339,10 +331,10 @@ export default defineEventHandler(async (event) => {
         .select("id,name,stock")
         .eq("id", stockId)
         .single();
-      if (stockReadError || !stockRow) throw createError({ statusCode: 500, statusMessage: stockReadError?.message || `Stock item ${stockId} was not found` });
+      if (stockReadError || !stockRow) throwInternalError(event, "STRIPE STOCK LOOKUP ERROR", stockReadError || new Error(`Stock item ${stockId} was not found`), "Unable to complete the paid order.");
       const newStock = Math.max(0, Number(stockRow.stock || 0) - quantity);
       const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
-      if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
+      if (stockError) throwInternalError(event, "STRIPE STOCK UPDATE ERROR", stockError, "Unable to complete the paid order.");
     }
 
     await supabase
@@ -421,21 +413,23 @@ export default defineEventHandler(async (event) => {
           orderItemError,
         );
 
-        throw createError({
-          statusCode: 500,
-          statusMessage: orderItemError.message,
-        });
+        throwInternalError(
+          event,
+          "STRIPE ORDER ITEM INSERT ERROR",
+          orderItemError,
+          "Unable to complete the paid order.",
+        );
       }
 
       // Update stock on the selected variant, or on the base product when there are no variants.
       const stockTable = variantId ? "product_variants" : "products";
       const stockId = variantId ? Number(variantId) : Number(productId);
       const { data: stockRow, error: productError } = await supabase.from(stockTable).select("id, name, stock").eq("id", stockId).single();
-      if (productError || !stockRow) throw createError({ statusCode: 500, statusMessage: productError?.message || `Stock item ${stockId} was not found` });
+      if (productError || !stockRow) throwInternalError(event, "STRIPE STOCK LOOKUP ERROR", productError || new Error(`Stock item ${stockId} was not found`), "Unable to complete the paid order.");
       const currentStock = Number(stockRow.stock || 0);
       const newStock = Math.max(0, currentStock - quantity);
       const { error: stockError } = await supabase.from(stockTable).update({ stock: newStock }).eq("id", stockId);
-      if (stockError) throw createError({ statusCode: 500, statusMessage: stockError.message });
+      if (stockError) throwInternalError(event, "STRIPE STOCK UPDATE ERROR", stockError, "Unable to complete the paid order.");
       console.log(`✅ STOCK UPDATED: ${stockRow.name}: ${currentStock} -> ${newStock}`);
     }
 
@@ -479,7 +473,7 @@ export default defineEventHandler(async (event) => {
       });
 
       confirmationEmailSent = emailResult.customerSent;
-      console.log("✅ CUSTOMER ORDER EMAIL SENT:", customerEmail);
+      console.log("✅ CUSTOMER ORDER EMAIL SENT");
       console.log("✅ SELLER ORDER EMAIL SENT:", emailResult.sellerSent);
     } catch (emailError: any) {
       // The order/payment must remain successful even if email delivery fails.

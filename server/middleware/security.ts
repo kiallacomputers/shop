@@ -1,6 +1,15 @@
 import { randomUUID } from "node:crypto";
 
 const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+const normaliseOrigin = (value: string) => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+};
 
 export default defineEventHandler((event) => {
   const requestId = randomUUID();
@@ -38,5 +47,28 @@ export default defineEventHandler((event) => {
       statusCode: 413,
       statusMessage: "Request is too large.",
     });
+  }
+
+  // Browser requests that mutate application state must come from this site.
+  // Stripe webhooks are server-to-server and are authenticated with Stripe's
+  // signature, so they are intentionally excluded from this origin check.
+  const method = String(event.method || "GET").toUpperCase();
+  if (UNSAFE_METHODS.has(method) && path !== "/api/stripe/webhook") {
+    const originHeader = String(getHeader(event, "origin") || "").trim();
+    if (originHeader) {
+      const requestUrl = getRequestURL(event);
+      const forwardedHost = String(getHeader(event, "x-forwarded-host") || "").trim();
+      const host = forwardedHost || String(getHeader(event, "host") || requestUrl.host).trim();
+      const proto = forwardedProto || requestUrl.protocol.replace(":", "") || "https";
+      const expectedOrigin = normaliseOrigin(`${proto}://${host}`);
+      const suppliedOrigin = normaliseOrigin(originHeader);
+
+      if (!expectedOrigin || !suppliedOrigin || suppliedOrigin !== expectedOrigin) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "This request was blocked for security reasons.",
+        });
+      }
+    }
   }
 });
