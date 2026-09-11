@@ -73,12 +73,17 @@ const displayPrice = computed(() => {
   return prices.length ? Math.min(...prices) : basePrice;
 });
 const displayRrp = computed(() => {
+  // Product cards should show the product-level RRP from Edit Product.
+  // Variant RRPs can contain older/manual values and should not override the
+  // advertised product RRP on listing/featured cards.
   const baseRrp = Number(props.product?.oldPrice ?? props.product?.old_price ?? 0);
-  if (!props.product?.has_variants || !variantRows.value.length) return baseRrp;
+  if (Number.isFinite(baseRrp) && baseRrp > 0) return baseRrp;
+
+  // Fallback only when the product itself has no RRP configured.
   const prices = variantRows.value
-    .map((v) => Number(v.old_price ?? baseRrp))
+    .map((v) => Number(v.old_price ?? 0))
     .filter((v) => Number.isFinite(v) && v > 0);
-  return prices.length ? Math.min(...prices) : baseRrp;
+  return prices.length ? Math.min(...prices) : 0;
 });
 const standardDisplayPrice = computed(() => {
   const basePrice = Number(props.product?.price || 0);
