@@ -460,6 +460,32 @@
               />
             </div>
           </section>
+          <section
+            v-if="recentlyViewedProducts.length"
+            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
+          >
+            <div class="mb-5 flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-[0.14em] text-cyan-600">Pick up where you left off</p>
+                <h2 class="mt-1 text-xl font-bold text-slate-900">Recently Viewed</h2>
+              </div>
+              <button
+                type="button"
+                class="text-sm font-semibold text-slate-500 transition hover:text-slate-800"
+                @click="clearRecentlyViewed"
+              >
+                Clear history
+              </button>
+            </div>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              <ProductCard
+                v-for="item in recentlyViewedProducts"
+                :key="item.id"
+                :product="item"
+              />
+            </div>
+          </section>
+
         </div>
       </main>
     </div>
@@ -870,6 +896,83 @@ watch(
   { immediate: true, deep: true },
 );
 
+const RECENTLY_VIEWED_STORAGE_KEY = "kc_recently_viewed_products";
+const recentlyViewedProducts = ref([]);
+
+const readRecentlyViewedIds = () => {
+  if (!import.meta.client) return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed)
+      ? parsed.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeRecentlyViewedIds = (ids) => {
+  if (!import.meta.client) return;
+  localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(ids.slice(0, 12)));
+};
+
+const rememberCurrentProduct = () => {
+  const currentId = Number(product.value?.id);
+  if (!import.meta.client || !Number.isInteger(currentId) || currentId <= 0) return;
+  const ids = readRecentlyViewedIds().filter((id) => id !== currentId);
+  writeRecentlyViewedIds([currentId, ...ids]);
+};
+
+const refreshRecentlyViewedProducts = async () => {
+  if (!import.meta.client || !product.value?.id) return;
+
+  const currentId = Number(product.value.id);
+  const ids = readRecentlyViewedIds()
+    .filter((id) => id !== currentId)
+    .slice(0, 4);
+
+  if (!ids.length) {
+    recentlyViewedProducts.value = [];
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      id, name, slug, blurb, product_code, has_variants,
+      price, oldPrice, stock, active, featured, refurbished, images, category_id,
+      categories (id, name, slug, parent_id),
+      product_variants (id, product_id, name, product_code, price, old_price, stock, active, images)
+    `)
+    .in("id", ids)
+    .eq("active", true);
+
+  if (error) {
+    console.error("RECENTLY VIEWED LOAD ERROR:", error);
+    return;
+  }
+
+  const byId = new Map((data || []).map((item) => [Number(item.id), item]));
+  const rows = ids
+    .map((id) => byId.get(id))
+    .filter(Boolean)
+    .map((item) => ({
+      ...item,
+      product_variants: Array.isArray(item.product_variants)
+        ? item.product_variants.map((variant) => ({ ...variant }))
+        : [],
+    }));
+
+  await applyToProducts(rows);
+  recentlyViewedProducts.value = rows;
+};
+
+const clearRecentlyViewed = () => {
+  if (import.meta.client) localStorage.removeItem(RECENTLY_VIEWED_STORAGE_KEY);
+  recentlyViewedProducts.value = [];
+  rememberCurrentProduct();
+};
+
 watchEffect(() => {
   if (product.value?.has_variants && selectedVariantId.value == null && activeVariants.value.length) {
     selectedVariantId.value = Number(activeVariants.value[0].id);
@@ -914,7 +1017,23 @@ watch(
   { immediate: true },
 );
 
-onMounted(async () => { await Promise.all([refreshCustomerPrice(), refreshRelatedProductPrices(), loadWishlist()]); });
+onMounted(async () => {
+  await Promise.all([
+    refreshCustomerPrice(),
+    refreshRelatedProductPrices(),
+    refreshRecentlyViewedProducts(),
+    loadWishlist(),
+  ]);
+  rememberCurrentProduct();
+});
+
+watch(
+  () => customerUser.value?.id,
+  async () => {
+    if (!import.meta.client) return;
+    await refreshRecentlyViewedProducts();
+  },
+);
 
 /*
 |--------------------------------------------------------------------------
