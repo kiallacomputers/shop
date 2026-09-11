@@ -511,9 +511,18 @@
         &times;
       </button>
 
+      <!-- Image counter -->
+      <div
+        v-if="images.length > 1"
+        class="absolute left-1/2 top-5 z-50 -translate-x-1/2 rounded-full bg-white/90 px-3 py-1.5 text-sm font-bold text-slate-800 shadow-lg"
+        @click.stop
+      >
+        {{ currentImageIndex + 1 }} / {{ images.length }}
+      </div>
+
       <!-- Zoom Controls -->
       <div
-        class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-white/90 rounded-lg p-2 shadow-lg"
+        class="absolute bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-white/90 p-2 shadow-lg sm:bottom-6"
         @click.stop
       >
         <button
@@ -597,14 +606,14 @@
 
       <!-- Image -->
       <div
-        class="max-w-[90vw] max-h-[85vh] overflow-hidden flex items-center justify-center"
+        class="flex max-h-[78vh] max-w-[92vw] items-center justify-center overflow-hidden sm:max-h-[82vh]"
         @click.stop
         @wheel.prevent="handleWheel"
       >
         <img
           :src="currentImage"
           :alt="product.name"
-          class="max-w-none max-h-[85vh] object-contain select-none transition-transform duration-200"
+          class="max-h-[78vh] max-w-[92vw] select-none object-contain transition-transform duration-200 sm:max-h-[82vh]"
           :style="{
             transform: `scale(${zoomLevel})`,
             cursor: zoomLevel > 1 ? 'grab' : 'zoom-in',
@@ -612,6 +621,24 @@
           @click="handleImageClick"
           draggable="false"
         />
+      </div>
+
+      <!-- Lightbox thumbnails -->
+      <div
+        v-if="images.length > 1"
+        class="absolute bottom-20 left-1/2 z-50 flex max-w-[88vw] -translate-x-1/2 gap-2 overflow-x-auto rounded-xl bg-black/35 p-2 backdrop-blur-sm sm:bottom-24"
+        @click.stop
+      >
+        <button
+          v-for="(image, index) in images"
+          :key="`lightbox-${index}`"
+          type="button"
+          class="h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 bg-white transition sm:h-16 sm:w-16"
+          :class="index === currentImageIndex ? 'border-sky-400 ring-2 ring-sky-300/50' : 'border-white/40 hover:border-white'"
+          @click="goToLightboxImage(index)"
+        >
+          <img :src="image" :alt="`${product.name} image ${index + 1}`" class="h-full w-full object-contain p-1" />
+        </button>
       </div>
     </div>
   </Teleport>
@@ -1183,6 +1210,11 @@ const previousLightboxImage = () => {
 const nextLightboxImage = () => {
   nextImage();
 
+  resetZoom();
+};
+
+const goToLightboxImage = (index) => {
+  goToImage(index);
   resetZoom();
 };
 
