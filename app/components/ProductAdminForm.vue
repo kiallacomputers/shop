@@ -324,24 +324,82 @@
           </div>
         </div>
 
-        <div v-if="imageUrls.length" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          <div
-            v-for="(image, index) in imageUrls"
-            :key="`${image}-${index}`"
-            class="group relative overflow-hidden rounded-xl border border-slate-200 bg-white"
-          >
-            <div class="aspect-square bg-slate-50">
-              <img :src="image" :alt="`Product image ${index + 1}`" class="h-full w-full object-contain p-2" />
-            </div>
-            <div class="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
-              <span class="truncate text-xs text-slate-500">Image {{ index + 1 }}</span>
-              <button
-                type="button"
-                class="text-xs font-semibold text-red-600 hover:text-red-700"
-                @click="removeImage(index)"
-              >
-                Remove
-              </button>
+        <div v-if="imageUrls.length" class="mt-5">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p class="text-sm text-slate-600">
+              Drag images to rearrange them, or use the arrow buttons. <strong>Image 1 is the main product image.</strong>
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            <div
+              v-for="(image, index) in imageUrls"
+              :key="`${image}-${index}`"
+              draggable="true"
+              class="group relative overflow-hidden rounded-xl border bg-white transition"
+              :class="draggedImageIndex === index
+                ? 'border-blue-500 opacity-50 ring-2 ring-blue-200'
+                : dragOverImageIndex === index
+                  ? 'border-blue-500 ring-2 ring-blue-200'
+                  : 'border-slate-200'"
+              @dragstart="startImageDrag(index, $event)"
+              @dragover.prevent="dragOverImage(index)"
+              @drop.prevent="dropImage(index)"
+              @dragend="endImageDrag"
+            >
+              <div class="absolute left-2 top-2 z-10 flex items-center gap-1">
+                <span
+                  v-if="index === 0"
+                  class="rounded-full bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow"
+                >
+                  Main
+                </span>
+                <span class="cursor-move rounded-full bg-white/95 px-2 py-1 text-xs font-bold text-slate-600 shadow" title="Drag to rearrange">
+                  ⋮⋮
+                </span>
+              </div>
+
+              <div class="aspect-square bg-slate-50">
+                <img :src="image" :alt="`Product image ${index + 1}`" class="h-full w-full object-contain p-2" draggable="false" />
+              </div>
+
+              <div class="border-t border-slate-200 px-3 py-2">
+                <div class="mb-2 flex items-center justify-between gap-2">
+                  <span class="truncate text-xs font-semibold text-slate-600">
+                    Image {{ index + 1 }}<span v-if="index === 0"> · Main</span>
+                  </span>
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-red-600 hover:text-red-700"
+                    @click="removeImage(index)"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    :disabled="index === 0"
+                    class="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                    aria-label="Move image left"
+                    title="Move earlier"
+                    @click="moveImage(index, index - 1)"
+                  >
+                    ← Earlier
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="index === imageUrls.length - 1"
+                    class="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+                    aria-label="Move image right"
+                    title="Move later"
+                    @click="moveImage(index, index + 1)"
+                  >
+                    Later →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -387,6 +445,8 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const uploadingImages = ref(false);
 const uploadProgress = ref(0);
 const uploadError = ref("");
+const draggedImageIndex = ref<number | null>(null);
+const dragOverImageIndex = ref<number | null>(null);
 const descriptionBlocks = ref<any[]>([]);
 const standardMarkupPercent = ref(20);
 const standardPricingLevelName = ref("Standard");
@@ -526,6 +586,44 @@ const handleImageSelection = async (event: Event) => {
     uploadingImages.value = false;
     if (input) input.value = "";
   }
+};
+
+const moveImage = (fromIndex: number, toIndex: number) => {
+  if (
+    fromIndex === toIndex ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= imageUrls.value.length ||
+    toIndex >= imageUrls.value.length
+  ) return;
+
+  const [image] = imageUrls.value.splice(fromIndex, 1);
+  imageUrls.value.splice(toIndex, 0, image);
+};
+
+const startImageDrag = (index: number, event: DragEvent) => {
+  draggedImageIndex.value = index;
+  dragOverImageIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(index));
+  }
+};
+
+const dragOverImage = (index: number) => {
+  if (draggedImageIndex.value !== null) dragOverImageIndex.value = index;
+};
+
+const dropImage = (toIndex: number) => {
+  const fromIndex = draggedImageIndex.value;
+  if (fromIndex !== null) moveImage(fromIndex, toIndex);
+  draggedImageIndex.value = null;
+  dragOverImageIndex.value = null;
+};
+
+const endImageDrag = () => {
+  draggedImageIndex.value = null;
+  dragOverImageIndex.value = null;
 };
 
 const removeImage = (index: number) => {
