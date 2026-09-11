@@ -1,429 +1,302 @@
 <template>
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    <div
-      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8"
-    >
+  <main class="mx-auto max-w-7xl px-4 py-8">
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">
-          Administration
-        </p>
-
-        <h1 class="text-3xl font-bold text-slate-900 mt-1">
-          Admin Dashboard
-        </h1>
-
-        <p class="text-slate-500 mt-2">
-          Overview of your Kialla Computers online store.
-        </p>
+        <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">Administration</p>
+        <h1 class="mt-1 text-3xl font-bold text-slate-900">Business Dashboard</h1>
+        <p class="mt-2 text-slate-500">Sales, orders, inventory and customer activity at a glance.</p>
       </div>
 
       <div class="flex items-center gap-3">
         <span
           v-if="adminRole"
           class="rounded-full px-3 py-1.5 text-xs font-bold"
-          :class="
-            isSuperAdmin
-              ? 'bg-violet-100 text-violet-700'
-              : 'bg-blue-100 text-blue-700'
-          "
+          :class="isSuperAdmin ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'"
         >
           {{ isSuperAdmin ? "SuperAdmin" : "Admin" }}
         </span>
-
         <button
           type="button"
           :disabled="loading"
           class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
           @click="loadDashboard"
         >
+          <svg :class="['h-4 w-4', loading ? 'animate-spin' : '']" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6" />
+          </svg>
           Refresh
         </button>
       </div>
     </div>
 
-    <!-- ========================================= -->
-    <!-- ADMIN TOOLS -->
-    <!-- ========================================= -->
-
-    <section class="mb-8">
-      <h2 class="text-lg font-bold text-slate-900 mb-4">
-        Admin Tools
-      </h2>
-
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-      >
-        <NuxtLink
-          to="/admin/inventory"
-          class="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition"
-        >
-          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-700 transition group-hover:bg-amber-100">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z" />
-            </svg>
-          </div>
-          <p class="font-bold text-slate-900 group-hover:text-amber-700">Inventory & Low Stock</p>
-          <p class="text-sm text-slate-500 mt-1">Low stock, back orders, customer demand and stock value.</p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/products"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-blue-600">
-            Manage Products
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Add products, edit pricing and update stock.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/storage-cleanup"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-amber-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-amber-700">
-            Storage Cleanup
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Find unused product images and safely remove them from storage.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/categories"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-blue-600">
-            Manage Categories
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Create and organise your shop categories.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/orders"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-blue-600">
-            Manage Orders
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Review purchases and update order status.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          v-if="isSuperAdmin"
-          to="/admin/quotes"
-          class="group rounded-xl border border-violet-200 bg-white p-5 shadow-sm hover:border-violet-400 hover:shadow-md transition"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <p class="font-bold text-slate-900 group-hover:text-violet-700">Quote Management</p>
-            <span class="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase text-violet-700">SuperAdmin</span>
-          </div>
-          <p class="text-sm text-slate-500 mt-1">Manage all quotes, expiry dates, PDFs and resend customer quotes.</p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/back-in-stock"
-          class="group rounded-xl border border-amber-200 bg-white p-5 shadow-sm hover:border-amber-400 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-amber-700">Back in Stock</p>
-          <p class="text-sm text-slate-500 mt-1">See waiting customers, product demand and notification history.</p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/analytics"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-emerald-300 hover:shadow-md transition"
-        >
-          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 transition group-hover:bg-emerald-100">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m6 10V5m6 14v-7m4 7H2" />
-            </svg>
-          </div>
-
-          <p class="font-bold text-slate-900 group-hover:text-emerald-700">
-            Traffic Analytics
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            View visits, popular products, categories and traffic sources.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/facebook-share"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-blue-400 hover:shadow-md transition"
-        >
-          <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
-            <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5" aria-hidden="true">
-              <path d="M13.5 22v-8h2.8l.42-3.2H13.5V8.75c0-.93.26-1.56 1.62-1.56h1.73V4.33c-.3-.04-1.32-.13-2.51-.13-2.48 0-4.18 1.52-4.18 4.3v2.3H7.35V14h2.81v8h3.34Z"/>
-            </svg>
-          </div>
-
-          <p class="font-bold text-slate-900 group-hover:text-blue-700">
-            Facebook Product Share
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Choose a product, build a post and share it to your Facebook Page.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/ads"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-cyan-700">
-            Manage Advertisements
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Upload, order and enable storefront banner advertisements.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          to="/admin/freight"
-          class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition"
-        >
-          <p class="font-bold text-slate-900 group-hover:text-cyan-700">
-            Manage Freight
-          </p>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Australia Post rates and $11/$16.50 local postcode delivery.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          v-if="isSuperAdmin"
-          to="/admin/pricing-levels"
-          class="group rounded-xl border border-emerald-200 bg-white p-5 shadow-sm hover:border-emerald-400 hover:shadow-md transition"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <p class="font-bold text-slate-900 group-hover:text-emerald-700">
-              Manage Pricing Levels
-            </p>
-            <span class="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase text-violet-700">
-              SuperAdmin
-            </span>
-          </div>
-          <p class="text-sm text-slate-500 mt-1">
-            Set customer pricing names, markup percentages and availability.
-          </p>
-        </NuxtLink>
-
-        <NuxtLink
-          v-if="isSuperAdmin"
-          to="/admin/accounts"
-          class="group rounded-xl border border-violet-200 bg-white p-5 shadow-sm hover:border-violet-400 hover:shadow-md transition"
-        >
-          <div class="flex items-center justify-between gap-3">
-            <p class="font-bold text-slate-900 group-hover:text-violet-700">
-              Account Management
-            </p>
-
-            <span
-              class="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase text-violet-700"
-            >
-              SuperAdmin
-            </span>
-          </div>
-
-          <p class="text-sm text-slate-500 mt-1">
-            Manage users and administrator roles.
-          </p>
-        </NuxtLink>
-      </div>
-    </section>
-
-    <div
-      v-if="errorMessage"
-      class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
-    >
+    <div v-if="errorMessage" class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
       {{ errorMessage }}
     </div>
 
-    <div
-      v-if="loading && !dashboard"
-      class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5"
-    >
-      <div
-        v-for="item in 4"
-        :key="item"
-        class="h-32 rounded-xl border border-slate-200 bg-white animate-pulse"
-      />
+    <div v-if="loading && !dashboard" class="space-y-6">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div v-for="item in 4" :key="item" class="h-36 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+      </div>
+      <div class="h-80 animate-pulse rounded-2xl border border-slate-200 bg-white" />
     </div>
 
     <template v-else-if="dashboard">
-      <section
-        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8"
-      >
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Products</p>
-          <p class="text-3xl font-bold text-slate-900 mt-2">
-            {{ dashboard.stats.products }}
-          </p>
-          <p class="text-sm text-slate-500 mt-2">
-            {{ dashboard.stats.activeProducts }} active
-          </p>
+      <!-- SALES PERIODS -->
+      <section class="mb-6">
+        <div class="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Sales</h2>
+            <p class="text-sm text-slate-500">Revenue from paid and active orders.</p>
+          </div>
+          <p class="hidden text-xs text-slate-400 sm:block">Updated {{ formatDateTime(dashboard.generated_at) }}</p>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Orders</p>
-          <p class="text-3xl font-bold text-slate-900 mt-2">
-            {{ dashboard.stats.orders }}
-          </p>
-          <p class="text-sm text-slate-500 mt-2">
-            {{ dashboard.stats.paidOrders }} paid
-          </p>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Paid Revenue</p>
-          <p class="text-3xl font-bold text-slate-900 mt-2">
-            {{ currency(dashboard.stats.paidRevenue) }}
-          </p>
-          <p class="text-sm text-slate-500 mt-2">
-            From paid orders
-          </p>
-        </div>
-
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Low Stock</p>
-          <p class="text-3xl font-bold text-slate-900 mt-2">
-            {{ dashboard.stats.lowStock }}
-          </p>
-          <p class="text-sm text-slate-500 mt-2">
-            {{ dashboard.stats.categories }} categories
-          </p>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <article v-for="period in salesPeriodCards" :key="period.key" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <p class="text-sm font-semibold text-slate-500">{{ period.label }}</p>
+              <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ period.orders }} orders</span>
+            </div>
+            <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">{{ currency(period.revenue) }}</p>
+            <p class="mt-2 text-xs text-slate-500">GST component {{ currency(period.gst) }}</p>
+          </article>
         </div>
       </section>
 
-      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div
-          class="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-        >
-          <div
-            class="flex items-center justify-between border-b border-slate-200 px-5 py-4"
-          >
+      <!-- FINANCIAL / ORDER / INVENTORY SUMMARY -->
+      <section class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <NuxtLink to="/admin/orders" class="group rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm transition hover:border-emerald-400 hover:shadow-md">
+          <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-lg font-bold text-slate-900">
-                Recent Orders
-              </h2>
-              <p class="text-sm text-slate-500">
-                Latest customer purchases
-              </p>
+              <p class="text-sm font-semibold text-emerald-800">30-Day Financials</p>
+              <p class="mt-2 text-2xl font-bold text-slate-900">{{ currency(dashboard.sales.last30.revenue) }}</p>
             </div>
+            <span class="rounded-xl bg-white p-2 text-emerald-700 shadow-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19V9m6 10V5m6 14v-7m4 7H2" /></svg>
+            </span>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div><p class="text-slate-500">GST</p><p class="mt-1 font-bold text-slate-800">{{ currency(dashboard.sales.last30.gst) }}</p></div>
+            <div><p class="text-slate-500">Est. gross profit*</p><p class="mt-1 font-bold text-emerald-700">{{ currency(dashboard.sales.last30.estimatedGrossProfitExGst) }}</p></div>
+          </div>
+        </NuxtLink>
 
-            <NuxtLink
-              to="/admin/orders"
-              class="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-              View All
-            </NuxtLink>
+        <NuxtLink to="/admin/orders" class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-slate-500">Orders Requiring Action</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ ordersRequiringAction }}</p>
+            </div>
+            <span class="rounded-xl bg-blue-50 p-2 text-blue-700">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M5 6l1 14h12l1-14M9 10v6m6-6v6M8 3h8l1 3H7l1-3Z" /></svg>
+            </span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span class="rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">{{ dashboard.orders.newPaid }} new</span>
+            <span class="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">{{ dashboard.orders.processing }} processing</span>
+            <span class="rounded-full bg-violet-50 px-2.5 py-1 font-semibold text-violet-700">{{ dashboard.orders.shipping }} shipping</span>
+          </div>
+        </NuxtLink>
+
+        <NuxtLink to="/admin/inventory" class="group rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm transition hover:border-amber-400 hover:shadow-md">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-amber-800">Inventory Attention</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ dashboard.inventory.lowStock + dashboard.inventory.outOfStock }}</p>
+            </div>
+            <span class="rounded-xl bg-white p-2 text-amber-700 shadow-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z" /></svg>
+            </span>
+          </div>
+          <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div><p class="text-slate-500">Low stock</p><p class="mt-1 font-bold text-amber-700">{{ dashboard.inventory.lowStock }}</p></div>
+            <div><p class="text-slate-500">Out of stock</p><p class="mt-1 font-bold text-red-700">{{ dashboard.inventory.outOfStock }}</p></div>
+          </div>
+          <p class="mt-3 border-t border-amber-100 pt-3 text-xs text-slate-500">Stock value <strong class="text-slate-800">{{ currency(dashboard.inventory.stockValueExGst) }}</strong> ex GST · {{ dashboard.inventory.waitingCustomers }} waiting customers</p>
+        </NuxtLink>
+
+        <NuxtLink v-if="isSuperAdmin" to="/admin/accounts" class="group rounded-2xl border border-violet-200 bg-violet-50/40 p-5 shadow-sm transition hover:border-violet-400 hover:shadow-md">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-violet-800">Customers</p>
+              <p class="mt-2 text-3xl font-bold text-slate-900">{{ dashboard.customers.total }}</p>
+            </div>
+            <span class="rounded-xl bg-white p-2 text-violet-700 shadow-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            </span>
+          </div>
+          <p class="mt-4 text-xs text-slate-500"><span class="font-bold text-violet-700">+{{ dashboard.customers.new30d }}</span> new in the last 30 days</p>
+        </NuxtLink>
+
+        <div v-else class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p class="text-sm font-semibold text-slate-500">Inventory Value</p>
+          <p class="mt-2 text-3xl font-bold text-slate-900">{{ currency(dashboard.inventory.stockValueExGst) }}</p>
+          <p class="mt-4 text-xs text-slate-500">{{ number(dashboard.inventory.stockUnits) }} units on hand · ex GST cost value</p>
+        </div>
+      </section>
+
+      <!-- CHART + STATUS -->
+      <section class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+          <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">30-Day Sales Trend</h2>
+              <p class="text-sm text-slate-500">Daily revenue from paid and active orders.</p>
+            </div>
+            <div class="text-sm text-slate-500">All-time sales <strong class="text-slate-900">{{ currency(dashboard.sales.allTimeRevenue) }}</strong></div>
           </div>
 
-          <div
-            v-if="dashboard.recentOrders.length === 0"
-            class="p-8 text-center text-slate-500"
-          >
-            No orders have been placed yet.
+          <div class="overflow-x-auto pb-2">
+            <div class="flex h-56 min-w-[680px] items-end gap-1.5 border-b border-slate-200 px-1">
+              <div v-for="day in dashboard.sales.chart" :key="day.date" class="group relative flex h-full min-w-0 flex-1 items-end">
+                <div
+                  class="w-full rounded-t bg-blue-500 transition hover:bg-blue-600"
+                  :style="{ height: `${chartHeight(day.revenue)}%` }"
+                />
+                <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block">
+                  {{ shortDate(day.date) }} · {{ currency(day.revenue) }} · {{ day.orders }} order{{ day.orders === 1 ? '' : 's' }}
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 flex min-w-[680px] justify-between text-[10px] text-slate-400">
+              <span>{{ shortDate(dashboard.sales.chart[0]?.date) }}</span>
+              <span>{{ shortDate(dashboard.sales.chart[14]?.date) }}</span>
+              <span>{{ shortDate(dashboard.sales.chart[29]?.date) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="border-b border-slate-200 px-5 py-4">
+            <h2 class="text-lg font-bold text-slate-900">Order Status</h2>
+            <p class="text-sm text-slate-500">Current workflow position.</p>
+          </div>
+          <div class="space-y-3 p-5">
+            <StatusRow label="New / Paid" :value="dashboard.orders.newPaid" tone="blue" />
+            <StatusRow label="Processing" :value="dashboard.orders.processing" tone="amber" />
+            <StatusRow label="Shipping" :value="dashboard.orders.shipping" tone="violet" />
+            <StatusRow label="Delivered" :value="dashboard.orders.delivered" tone="green" />
+            <StatusRow label="Back-order stock risk" :value="dashboard.orders.backorderRisk" tone="red" />
+          </div>
+          <div class="border-t border-slate-100 px-5 py-4">
+            <NuxtLink to="/admin/orders" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Manage orders →</NuxtLink>
+          </div>
+        </div>
+      </section>
+
+      <!-- OPERATIONAL LISTS -->
+      <section class="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Recent Orders</h2>
+              <p class="text-sm text-slate-500">Latest customer purchases.</p>
+            </div>
+            <NuxtLink to="/admin/orders" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View all</NuxtLink>
           </div>
 
+          <div v-if="!dashboard.recentOrders.length" class="p-8 text-center text-slate-500">No orders have been placed yet.</div>
           <div v-else class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th class="px-5 py-3">Order</th>
-                  <th class="px-5 py-3">Customer</th>
-                  <th class="px-5 py-3">Status</th>
-                  <th class="px-5 py-3 text-right">Total</th>
-                  <th class="px-5 py-3 text-right">Date</th>
-                </tr>
+                <tr><th class="px-5 py-3">Order</th><th class="px-5 py-3">Customer</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right">Total</th></tr>
               </thead>
-
               <tbody class="divide-y divide-slate-100">
-                <tr
-                  v-for="order in dashboard.recentOrders"
-                  :key="order.id"
-                >
-                  <td class="px-5 py-4">
-                    <NuxtLink
-                      :to="`/admin/orders/${order.id}`"
-                      class="font-semibold hover:text-blue-600"
-                    >
-                      #{{ order.id }}
-                    </NuxtLink>
+                <tr v-for="order in dashboard.recentOrders" :key="order.id" class="hover:bg-slate-50/70">
+                  <td class="px-5 py-3.5">
+                    <NuxtLink :to="`/admin/orders/${order.id}`" class="font-bold text-slate-900 hover:text-blue-600">#{{ order.id }}</NuxtLink>
+                    <p class="mt-0.5 text-xs text-slate-400">{{ formatDate(order.created_at) }}</p>
                   </td>
-
-                  <td class="px-5 py-4">
-                    {{ order.customer_name || "Customer" }}
-                  </td>
-
-                  <td class="px-5 py-4">
-                    {{ order.status || "Pending" }}
-                  </td>
-
-                  <td class="px-5 py-4 text-right">
-                    {{ currency(order.total) }}
-                  </td>
-
-                  <td class="px-5 py-4 text-right">
-                    {{ formatDate(order.created_at) }}
-                  </td>
+                  <td class="max-w-[180px] px-5 py-3.5"><p class="truncate font-medium text-slate-800">{{ order.customer_name || "Customer" }}</p><p class="truncate text-xs text-slate-400">{{ order.customer_email || "" }}</p></td>
+                  <td class="px-5 py-3.5"><span :class="statusClass(order.status)" class="rounded-full px-2.5 py-1 text-xs font-bold">{{ prettyStatus(order.status) }}</span></td>
+                  <td class="px-5 py-3.5 text-right font-bold text-slate-900">{{ currency(order.total) }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div
-          class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-        >
-          <div class="border-b border-slate-200 px-5 py-4">
-            <h2 class="text-lg font-bold text-slate-900">
-              Low Stock
-            </h2>
-            <p class="text-sm text-slate-500">
-              5 units or fewer
-            </p>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Products Needing Attention</h2>
+              <p class="text-sm text-slate-500">Low stock, waiting customers and open order demand.</p>
+            </div>
+            <NuxtLink to="/admin/inventory" class="text-sm font-semibold text-amber-700 hover:text-amber-800">Inventory →</NuxtLink>
           </div>
 
-          <div
-            v-if="dashboard.lowStockProducts.length === 0"
-            class="p-8 text-center text-slate-500"
-          >
-            Stock levels look good.
-          </div>
-
+          <div v-if="!dashboard.inventory.attention.length" class="p-8 text-center text-slate-500">Stock levels look good.</div>
           <div v-else class="divide-y divide-slate-100">
-            <div
-              v-for="product in dashboard.lowStockProducts"
-              :key="product.id"
-              class="flex items-center justify-between gap-4 px-5 py-4"
-            >
-              <NuxtLink
-                :to="`/admin/products/${product.id}`"
-                class="truncate font-medium text-slate-900 hover:text-blue-600"
-              >
-                {{ product.name }}
-              </NuxtLink>
-
-              <span
-                class="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700"
-              >
-                {{ Number(product.stock || 0) }} left
-              </span>
+            <div v-for="item in dashboard.inventory.attention" :key="`${item.product_id}:${item.variant_id || 'base'}`" class="flex items-center gap-4 px-5 py-3.5">
+              <div class="min-w-0 flex-1">
+                <NuxtLink :to="item.variant_id ? `/admin/products/${item.product_id}/variants` : `/admin/products/${item.product_id}`" class="block truncate font-semibold text-slate-900 hover:text-blue-600">
+                  {{ item.name }}<span v-if="item.variant_name" class="font-normal text-slate-500"> — {{ item.variant_name }}</span>
+                </NuxtLink>
+                <p v-if="item.code" class="mt-0.5 truncate text-xs text-slate-400">{{ item.code }}</p>
+              </div>
+              <div class="flex shrink-0 flex-wrap justify-end gap-1.5 text-xs">
+                <span :class="item.stock <= 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'" class="rounded-full px-2.5 py-1 font-bold">{{ item.stock }} stock</span>
+                <span v-if="item.waiting_customers" class="rounded-full bg-blue-100 px-2.5 py-1 font-bold text-blue-700">{{ item.waiting_customers }} waiting</span>
+                <span v-if="item.open_order_qty" class="rounded-full bg-violet-100 px-2.5 py-1 font-bold text-violet-700">{{ item.open_order_qty }} ordered</span>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- TOP SELLERS + QUOTES -->
+      <section class="mb-8 grid grid-cols-1 gap-6" :class="isSuperAdmin ? 'xl:grid-cols-3' : ''">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" :class="isSuperAdmin ? 'xl:col-span-2' : ''">
+          <div class="border-b border-slate-200 px-5 py-4">
+            <h2 class="text-lg font-bold text-slate-900">Top-Selling Products</h2>
+            <p class="text-sm text-slate-500">By units sold during the last 90 days.</p>
+          </div>
+          <div v-if="!dashboard.topProducts.length" class="p-8 text-center text-slate-500">No sales data yet.</div>
+          <div v-else class="divide-y divide-slate-100">
+            <div v-for="(item, index) in dashboard.topProducts" :key="`${item.product_id}:${item.variant_id || 'base'}`" class="grid grid-cols-[2rem_1fr_auto] items-center gap-3 px-5 py-3.5">
+              <span class="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{{ index + 1 }}</span>
+              <div class="min-w-0">
+                <NuxtLink :to="`/admin/products/${item.product_id}`" class="block truncate font-semibold text-slate-900 hover:text-blue-600">{{ item.name }}<span v-if="item.variant_name" class="font-normal text-slate-500"> — {{ item.variant_name }}</span></NuxtLink>
+                <p class="mt-0.5 text-xs text-slate-400">{{ item.code || 'No product code' }}</p>
+              </div>
+              <div class="text-right"><p class="font-bold text-slate-900">{{ item.quantity }} sold</p><p class="text-xs text-slate-500">{{ currency(item.revenue) }}</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="isSuperAdmin" class="rounded-2xl border border-violet-200 bg-white shadow-sm">
+          <div class="border-b border-violet-100 px-5 py-4">
+            <h2 class="text-lg font-bold text-slate-900">Quotes</h2>
+            <p class="text-sm text-slate-500">Customer quote pipeline.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3 p-5">
+            <QuoteStat label="Awaiting action" :value="dashboard.quotes.awaitingAction" tone="amber" />
+            <QuoteStat label="Sent" :value="dashboard.quotes.sent" tone="blue" />
+            <QuoteStat label="Accepted" :value="dashboard.quotes.accepted" tone="green" />
+            <QuoteStat label="Expired" :value="dashboard.quotes.expired" tone="red" />
+          </div>
+          <div class="border-t border-violet-100 px-5 py-4"><NuxtLink to="/admin/quotes" class="text-sm font-semibold text-violet-700 hover:text-violet-800">Manage quotes →</NuxtLink></div>
+        </div>
+      </section>
+
+      <p class="mb-8 text-xs text-slate-400">* Estimated gross profit is product sales ex GST less the current Buy Price ex GST. Freight, payment fees and other business costs are not deducted.</p>
+
+      <!-- ADMIN TOOLS -->
+      <section class="border-t border-slate-200 pt-8">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-slate-900">Admin Tools</h2>
+          <p class="text-sm text-slate-500">Store management and configuration.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+          <NuxtLink v-for="tool in visibleTools" :key="tool.to" :to="tool.to" class="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md">
+            <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-700 transition group-hover:bg-blue-50 group-hover:text-blue-700" v-html="tool.icon" />
+            <div class="flex items-start justify-between gap-2">
+              <p class="font-bold text-slate-900 group-hover:text-blue-700">{{ tool.title }}</p>
+              <span v-if="tool.superadmin" class="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase text-violet-700">SuperAdmin</span>
+            </div>
+            <p class="mt-1 text-sm text-slate-500">{{ tool.description }}</p>
+          </NuxtLink>
         </div>
       </section>
     </template>
@@ -431,86 +304,115 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  middleware: "admin",
-});
+import { defineComponent, h } from "vue";
 
-type DashboardData = {
-  stats: {
-    products: number;
-    activeProducts: number;
-    lowStock: number;
-    categories: number;
-    orders: number;
-    paidOrders: number;
-    paidRevenue: number;
-  };
-  lowStockProducts: Array<{
-    id: number | string;
-    name: string;
-    stock: number | null;
-  }>;
-  recentOrders: Array<{
-    id: number | string;
-    customer_email?: string | null;
-    customer_name?: string | null;
-    total?: number | string | null;
-    status?: string | null;
-    created_at?: string | null;
-  }>;
+const toneMap: Record<string, string> = {
+  blue: "bg-blue-100 text-blue-700",
+  amber: "bg-amber-100 text-amber-700",
+  violet: "bg-violet-100 text-violet-700",
+  green: "bg-emerald-100 text-emerald-700",
+  red: "bg-red-100 text-red-700",
 };
 
-const {
-  adminFetch,
-  checkAdmin,
-  isSuperAdmin,
-  adminRole,
-} = useAdminFetch();
+const StatusRow = defineComponent({
+  props: { label: { type: String, required: true }, value: { type: Number, required: true }, tone: { type: String, default: "blue" } },
+  setup(props) {
+    return () => h("div", { class: "flex items-center justify-between gap-3" }, [
+      h("span", { class: "text-sm text-slate-600" }, props.label),
+      h("span", { class: `min-w-9 rounded-full px-2.5 py-1 text-center text-xs font-bold ${toneMap[props.tone] || toneMap.blue}` }, String(props.value)),
+    ]);
+  },
+});
 
-const dashboard =
-  ref<DashboardData | null>(null);
+const QuoteStat = defineComponent({
+  props: { label: { type: String, required: true }, value: { type: Number, required: true }, tone: { type: String, default: "blue" } },
+  setup(props) {
+    return () => h("div", { class: "rounded-xl bg-slate-50 p-3" }, [
+      h("p", { class: "text-xs text-slate-500" }, props.label),
+      h("p", { class: `mt-1 text-2xl font-bold ${(toneMap[props.tone] || toneMap.blue).split(" ")[1]}` }, String(props.value)),
+    ]);
+  },
+});
 
+definePageMeta({ middleware: "admin" });
+
+const { adminFetch, checkAdmin, isSuperAdmin, adminRole } = useAdminFetch();
+
+const dashboard = ref<any>(null);
 const loading = ref(true);
 const errorMessage = ref("");
 
-const currency = (value: unknown) =>
-  new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-  }).format(Number(value || 0));
+const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
+const number = (value: unknown) => new Intl.NumberFormat("en-AU").format(Number(value || 0));
 
-const formatDate = (
-  value?: string | null,
-) => {
+const formatDate = (value?: string | null) => value
+  ? new Intl.DateTimeFormat("en-AU", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value))
+  : "—";
+
+const formatDateTime = (value?: string | null) => value
+  ? new Intl.DateTimeFormat("en-AU", { day: "2-digit", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(value))
+  : "—";
+
+const shortDate = (value?: string | null) => {
   if (!value) return "—";
-
-  return new Intl.DateTimeFormat(
-    "en-AU",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
-  ).format(new Date(value));
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" }).format(new Date(year, month - 1, day));
 };
+
+const salesPeriodCards = computed(() => {
+  if (!dashboard.value?.sales?.periods) return [];
+  return ["today", "7d", "30d", "90d"].map((key) => ({ key, ...dashboard.value.sales.periods[key] }));
+});
+
+const ordersRequiringAction = computed(() => {
+  if (!dashboard.value?.orders) return 0;
+  return Number(dashboard.value.orders.newPaid || 0) + Number(dashboard.value.orders.processing || 0) + Number(dashboard.value.orders.shipping || 0);
+});
+
+const maxChartRevenue = computed(() => Math.max(1, ...(dashboard.value?.sales?.chart || []).map((day: any) => Number(day.revenue || 0))));
+const chartHeight = (value: unknown) => {
+  const amount = Number(value || 0);
+  if (amount <= 0) return 2;
+  return Math.max(5, Math.round((amount / maxChartRevenue.value) * 100));
+};
+
+const prettyStatus = (value: unknown) => String(value || "pending").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const statusClass = (value: unknown) => {
+  const status = String(value || "").toLowerCase();
+  if (status === "delivered") return "bg-emerald-100 text-emerald-700";
+  if (status === "shipping") return "bg-violet-100 text-violet-700";
+  if (status === "processing") return "bg-amber-100 text-amber-700";
+  if (status === "paid") return "bg-blue-100 text-blue-700";
+  if (["cancelled", "refunded"].includes(status)) return "bg-red-100 text-red-700";
+  return "bg-slate-100 text-slate-700";
+};
+
+const toolIcon = (path: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${path}" /></svg>`;
+const tools = [
+  { to: "/admin/inventory", title: "Inventory & Low Stock", description: "Low stock, back orders, demand and stock value.", icon: toolIcon("M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z") },
+  { to: "/admin/products", title: "Manage Products", description: "Add products, edit pricing and update stock.", icon: toolIcon("M3 6h18M6 6v14h12V6M9 10h6") },
+  { to: "/admin/storage-cleanup", title: "Storage Cleanup", description: "Find and remove unused product images.", icon: toolIcon("M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13") },
+  { to: "/admin/categories", title: "Manage Categories", description: "Create and organise shop categories.", icon: toolIcon("M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z") },
+  { to: "/admin/orders", title: "Manage Orders", description: "Review purchases and update order status.", icon: toolIcon("M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3") },
+  { to: "/admin/quotes", title: "Quote Management", description: "Manage quotes, expiry, PDFs and customer sends.", superadmin: true, icon: toolIcon("M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6m-6 4h4") },
+  { to: "/admin/back-in-stock", title: "Back in Stock", description: "Waiting customers and notification history.", icon: toolIcon("M12 3v12m0 0-4-4m4 4 4-4M5 20h14") },
+  { to: "/admin/analytics", title: "Traffic Analytics", description: "Visits, products, categories and traffic sources.", icon: toolIcon("M4 19V9m6 10V5m6 14v-7m4 7H2") },
+  { to: "/admin/facebook-share", title: "Facebook Product Share", description: "Publish product posts to your Facebook Page.", icon: toolIcon("M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8") },
+  { to: "/admin/ads", title: "Manage Advertisements", description: "Upload, order and enable storefront banners.", icon: toolIcon("M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5") },
+  { to: "/admin/freight", title: "Manage Freight", description: "Australia Post rates and local delivery.", icon: toolIcon("M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z") },
+  { to: "/admin/pricing-levels", title: "Manage Pricing Levels", description: "Set customer pricing markups and availability.", superadmin: true, icon: toolIcon("M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3") },
+  { to: "/admin/accounts", title: "Account Management", description: "Manage customers and administrator roles.", superadmin: true, icon: toolIcon("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87") },
+];
+const visibleTools = computed(() => tools.filter((tool) => !tool.superadmin || isSuperAdmin.value));
 
 async function loadDashboard() {
   loading.value = true;
   errorMessage.value = "";
-
   try {
     await checkAdmin();
-
-    dashboard.value =
-      await adminFetch<DashboardData>(
-        "/api/admin/dashboard",
-      );
+    dashboard.value = await adminFetch("/api/admin/dashboard");
   } catch (error: any) {
-    errorMessage.value =
-      error?.data?.statusMessage ||
-      error?.statusMessage ||
-      error?.message ||
-      "Unable to load dashboard data.";
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to load dashboard data.";
   } finally {
     loading.value = false;
   }
