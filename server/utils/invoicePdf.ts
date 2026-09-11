@@ -22,6 +22,7 @@ export type InvoiceData = {
   shipping_method?: string | null;
   shipping_service_code?: string | null;
   shipping_cost?: number | null;
+  processing_fee?: number | null;
   shipping_address?: InvoiceAddress | null;
   items: InvoiceItem[];
   paid_at?: Date | string | null;
@@ -215,8 +216,9 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
   ensure(125);
   y -= 8;
   const deliveryCost = Number(order.shipping_cost || 0);
+  const processingFee = Number(order.processing_fee || 0);
   const orderTotal = Number(order.total || 0);
-  const merchandiseSubtotal = Math.max(0, orderTotal - deliveryCost);
+  const merchandiseSubtotal = Math.max(0, orderTotal - deliveryCost - processingFee);
   const gstIncluded = orderTotal / 11;
 
   setFont("F1", 10);
@@ -225,6 +227,9 @@ export function buildInvoicePdf(order: InvoiceData): Buffer {
   y -= 18;
   text(400, y, "Delivery");
   text(485, y, money(deliveryCost));
+  y -= 18;
+  text(400, y, "Processing Fee");
+  text(485, y, money(processingFee));
   y -= 18;
   text(400, y, "GST (10%)");
   text(485, y, money(gstIncluded));

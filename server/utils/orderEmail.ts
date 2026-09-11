@@ -30,6 +30,7 @@ type OrderEmailData = {
   shipping_service_code?: string | null;
   shipping_postcode?: string | null;
   shipping_cost?: number | null;
+  processing_fee?: number | null;
   shipping_address?: ShippingAddress | null;
   items: OrderEmailItem[];
   paid_at?: Date | string | null;
@@ -81,13 +82,15 @@ const itemRows = (order: OrderEmailData) =>
 
 const totalsHtml = (order: OrderEmailData) => {
   const deliveryCost = Number(order.shipping_cost || 0);
+  const processingFee = Number(order.processing_fee || 0);
   const total = Number(order.total || 0);
-  const subtotal = Math.max(0, total - deliveryCost);
+  const subtotal = Math.max(0, total - deliveryCost - processingFee);
   const gstIncluded = total / 11;
 
   return `<div style="margin-top:22px;margin-left:auto;max-width:320px;font-size:14px;">
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>${isStorePickup(order) ? "Pickup" : "Delivery"}</span><strong>${deliveryCost === 0 ? "FREE" : money(deliveryCost)}</strong></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>Processing Fee</span><strong>${money(processingFee)}</strong></div>
     <div style="display:flex;justify-content:space-between;padding:5px 0;"><span>GST (10%)</span><strong>${money(gstIncluded)}</strong></div>
     <div style="display:flex;justify-content:space-between;border-top:1px solid #cbd5e1;margin-top:6px;padding-top:10px;font-size:20px;"><span><strong>Total</strong></span><strong>${money(total)}</strong></div>
   </div>`;
