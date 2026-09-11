@@ -18,9 +18,52 @@
           <NuxtLink to="/#categories" class="desktop-nav">Categories</NuxtLink>
           <NuxtLink to="/#shop" class="desktop-nav">Shop</NuxtLink>
           <NuxtLink to="/#featured" class="desktop-nav">Featured</NuxtLink>
+          <NuxtLink to="/search" class="desktop-nav xl:hidden">Search</NuxtLink>
         </nav>
 
-        <div class="ml-auto flex items-center gap-2 sm:gap-3">
+        <div class="relative ml-auto hidden xl:block w-[280px] 2xl:w-[340px]">
+          <form @submit.prevent="submitSearch" class="relative">
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" /></svg>
+            <input
+              v-model="searchText"
+              type="search"
+              autocomplete="off"
+              class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:bg-white focus:ring-2 focus:ring-cyan-100"
+              placeholder="Search products or codes..."
+              aria-label="Search products"
+              @focus="searchOpen = true"
+              @blur="closeSearchSoon"
+              @keydown.escape="searchOpen = false"
+            />
+          </form>
+
+          <div v-if="searchOpen && searchText.trim().length >= 2" class="absolute left-0 right-0 top-[calc(100%+.5rem)] z-[80] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <div v-if="searchLoading" class="px-4 py-4 text-sm font-semibold text-slate-500">Searching…</div>
+            <template v-else-if="searchSuggestions.length">
+              <NuxtLink
+                v-for="item in searchSuggestions"
+                :key="item.id"
+                :to="`/product/${item.slug}`"
+                class="flex items-center gap-3 border-b border-slate-100 px-3 py-3 transition last:border-b-0 hover:bg-slate-50"
+                @mousedown.prevent
+                @click="searchOpen = false"
+              >
+                <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                  <img v-if="firstImage(item)" :src="firstImage(item)" :alt="item.name" class="h-full w-full object-contain p-1" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-black text-[#0b1f3a]">{{ item.name }}</p>
+                  <p class="truncate text-xs font-semibold text-slate-400">{{ item.product_code || item.categories?.name || 'Product' }}</p>
+                </div>
+                <p class="shrink-0 text-sm font-black text-[#0b1f3a]">${{ suggestionPrice(item).toFixed(2) }}</p>
+              </NuxtLink>
+              <button type="button" class="flex w-full items-center justify-center bg-slate-50 px-4 py-3 text-sm font-black text-blue-600 hover:bg-blue-50" @mousedown.prevent @click="submitSearch">View all results</button>
+            </template>
+            <div v-else class="px-4 py-4 text-sm font-semibold text-slate-500">No products found. Press Enter for full search.</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
           <div v-if="user" class="hidden lg:block text-right mr-2">
             <p class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Signed in as</p>
             <p class="text-sm font-bold text-[#0b1f3a]">{{ firstName }}</p>
@@ -48,6 +91,27 @@
       <Transition enter-active-class="transition duration-200" enter-from-class="opacity-0 -translate-y-2" leave-active-class="transition duration-150" leave-to-class="opacity-0 -translate-y-2">
         <div v-if="mobileMenuOpen" class="md:hidden border-t border-slate-200 bg-white shadow-xl max-h-[calc(100vh-104px)] overflow-y-auto">
           <nav class="max-w-7xl mx-auto px-3 py-3 grid gap-1">
+            <form class="relative mb-2" @submit.prevent="submitMobileSearch">
+              <svg class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" /></svg>
+              <input v-model="mobileSearchText" type="search" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-3 text-sm font-semibold outline-none focus:border-cyan-300 focus:bg-white" placeholder="Search products or codes..." aria-label="Search products" />
+            </form>
+            <div v-if="mobileSearchText.trim().length >= 2" class="mb-2 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div v-if="searchLoading" class="px-3 py-3 text-sm font-semibold text-slate-500">Searching…</div>
+              <template v-else-if="searchSuggestions.length">
+                <NuxtLink v-for="item in searchSuggestions" :key="`mobile-search-${item.id}`" :to="`/product/${item.slug}`" class="flex items-center gap-3 border-b border-slate-100 px-3 py-2.5 last:border-b-0" @click="closeMobileMenu">
+                  <div class="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <img v-if="firstImage(item)" :src="firstImage(item)" :alt="item.name" class="h-full w-full object-contain p-1" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-black text-[#0b1f3a]">{{ item.name }}</p>
+                    <p class="truncate text-xs font-semibold text-slate-400">{{ item.product_code || item.categories?.name || 'Product' }}</p>
+                  </div>
+                  <p class="shrink-0 text-xs font-black text-[#0b1f3a]">${{ suggestionPrice(item).toFixed(2) }}</p>
+                </NuxtLink>
+                <button type="button" class="w-full bg-slate-50 px-3 py-2.5 text-sm font-black text-blue-600" @click="submitMobileSearch">View all results</button>
+              </template>
+              <p v-else class="px-3 py-3 text-sm font-semibold text-slate-500">No products found.</p>
+            </div>
             <div v-if="user" class="mb-2 rounded-xl bg-slate-50 px-4 py-3">
               <p class="text-[11px] font-black uppercase tracking-wide text-slate-400">Signed in as</p>
               <p class="mt-0.5 font-extrabold text-[#0b1f3a]">{{ firstName || user.email }}</p>
@@ -79,6 +143,83 @@ const user = useSupabaseUser();
 const supabase = useSupabaseClient();
 
 const cart = useCartStore();
+const { applyToProducts } = useCustomerPricing();
+
+// ========================================
+// PRODUCT SEARCH
+// ========================================
+const searchText = ref("");
+const mobileSearchText = ref("");
+const searchOpen = ref(false);
+const searchLoading = ref(false);
+const searchSuggestions = ref([]);
+let searchTimer;
+
+const firstImage = (product) => {
+  const value = product?.images;
+  if (Array.isArray(value)) return value.find(Boolean) || "";
+  if (typeof value === "string") {
+    try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed.find(Boolean) || "" : ""; } catch { return ""; }
+  }
+  return "";
+};
+
+const suggestionPrice = (product) => {
+  const variants = Array.isArray(product?.product_variants) ? product.product_variants.filter((variant) => variant?.active !== false) : [];
+  const base = Number(product?.customer_price ?? product?.price ?? 0);
+  if (!product?.has_variants || !variants.length) return base;
+  const prices = variants.map((variant) => Number(variant.customer_price ?? variant.price ?? base)).filter((price) => Number.isFinite(price) && price > 0);
+  return prices.length ? Math.min(...prices) : base;
+};
+
+const loadSearchSuggestions = async (value) => {
+  const query = value.trim();
+  if (query.length < 2) {
+    searchSuggestions.value = [];
+    searchLoading.value = false;
+    return;
+  }
+  searchLoading.value = true;
+  try {
+    const rows = await $fetch("/api/products/search", { query: { q: query, limit: 5 } });
+    searchSuggestions.value = Array.isArray(rows) ? rows : [];
+    if (import.meta.client && searchSuggestions.value.length) await applyToProducts(searchSuggestions.value);
+  } catch (error) {
+    console.error("PRODUCT SEARCH FAILED:", error);
+    searchSuggestions.value = [];
+  } finally {
+    searchLoading.value = false;
+  }
+};
+
+watch(searchText, (value) => {
+  searchOpen.value = value.trim().length >= 2;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadSearchSuggestions(value), 220);
+});
+
+watch(mobileSearchText, (value) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadSearchSuggestions(value), 220);
+});
+
+const submitSearch = async () => {
+  const query = searchText.value.trim();
+  if (query.length < 2) return;
+  searchOpen.value = false;
+  await navigateTo({ path: "/search", query: { q: query } });
+};
+
+const submitMobileSearch = async () => {
+  const query = mobileSearchText.value.trim();
+  if (query.length < 2) return;
+  closeMobileMenu();
+  await navigateTo({ path: "/search", query: { q: query } });
+};
+
+const closeSearchSoon = () => {
+  setTimeout(() => { searchOpen.value = false; }, 140);
+};
 
 // ========================================
 // MOBILE MENU
