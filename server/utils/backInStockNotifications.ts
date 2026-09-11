@@ -58,11 +58,41 @@ export async function processBackInStockNotifications({
     throw error;
   }
 
+  const rows = notifications || [];
+  const userIds = [...new Set(rows.map((row: any) => row.user_id ? String(row.user_id) : null).filter(Boolean))];
+
+  // Back-in-stock emails are intentionally limited to signed-in customers who
+  // still have this product in their wishlist and have not disabled the
+  // notification preference in My Account.
+  const wishlistUsers = new Set<string>();
+  const optedOutUsers = new Set<string>();
+  if (userIds.length) {
+    const [{ data: wishlistRows }, { data: profileRows }] = await Promise.all([
+      supabase
+        .from("customer_wishlist")
+        .select("user_id")
+        .eq("product_id", productId)
+        .in("user_id", userIds),
+      supabase
+        .from("customer_crm_profiles")
+        .select("user_id,back_in_stock_updates")
+        .in("user_id", userIds),
+    ]);
+    for (const item of wishlistRows || []) wishlistUsers.add(String(item.user_id));
+    for (const profile of profileRows || []) {
+      if (profile.back_in_stock_updates === false) optedOutUsers.add(String(profile.user_id));
+    }
+  }
+
   const standard = await getStandardPricingLevel();
   let sent = 0;
-  for (const row of notifications || []) {
+  let eligible = 0;
+  for (const row of rows) {
+    const rowUserId = row.user_id ? String(row.user_id) : null;
+    if (!rowUserId || !wishlistUsers.has(rowUserId) || optedOutUsers.has(rowUserId)) continue;
+    eligible += 1;
     try {
-      const level = await getPricingLevelForUser(row.user_id ? String(row.user_id) : null);
+      const level = await getPricingLevelForUser(rowUserId);
       const basePrice = calculateBaseCustomerPrice(
         product.buy_price_ex_gst,
         level.markupPercent,
@@ -105,5 +135,5 @@ export async function processBackInStockNotifications({
     }
   }
 
-  return { sent, waiting: (notifications || []).length };
+  return { sent, waiting: rows.length, eligible };
 }

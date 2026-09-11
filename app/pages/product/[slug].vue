@@ -177,12 +177,9 @@
 
                   <div v-if="effectiveStock <= 0 && (!product.has_variants || activeVariants.length)" class="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
                     <p class="font-bold text-slate-900">Prefer to wait for stock?</p>
-                    <p class="mt-1 text-sm text-slate-600">We can email you as soon as {{ selectedVariant?.name || product.name }} is available.</p>
-                    <div v-if="!customerUser" class="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <input v-model="backInStockEmail" type="email" autocomplete="email" placeholder="Your email address" class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm" />
-                      <button type="button" :disabled="backInStockBusy" class="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : 'Notify Me When In Stock' }}</button>
-                    </div>
-                    <button v-else type="button" :disabled="backInStockBusy" class="mt-3 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : 'Notify Me When In Stock' }}</button>
+                    <p class="mt-1 text-sm text-slate-600">Back-in-stock emails are only sent for products you keep in your wishlist, so you only hear from us about items you are interested in.</p>
+                    <NuxtLink v-if="!customerUser" :to="`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`" class="mt-3 inline-flex rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700">Sign In to Save & Notify</NuxtLink>
+                    <button v-else type="button" :disabled="backInStockBusy" class="mt-3 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-700 disabled:opacity-50" @click="subscribeBackInStock">{{ backInStockBusy ? 'Saving…' : (wishlistSaved ? 'Notify Me When In Stock' : 'Save to Wishlist & Notify Me') }}</button>
                     <p v-if="backInStockMessage" class="mt-2 text-sm font-semibold" :class="backInStockError ? 'text-red-600' : 'text-green-700'">{{ backInStockMessage }}</p>
                   </div>
 
@@ -588,7 +585,6 @@ const { quote, pricingLevelName } = useCustomerPricing();
 const quotedProductPrice = ref(null);
 const quotedVariantPrices = ref({});
 const selectedVariantId = ref(null);
-const backInStockEmail = ref("");
 const backInStockBusy = ref(false);
 const backInStockMessage = ref("");
 const backInStockError = ref(false);
@@ -597,13 +593,22 @@ async function subscribeBackInStock() {
   backInStockMessage.value = "";
   backInStockError.value = false;
   try {
+    if (!customerUser.value) {
+      await navigateTo(`/auth/signin?redirect=${encodeURIComponent(route.fullPath)}`);
+      return;
+    }
+
+    if (!wishlistSaved.value) {
+      await toggleWishlistProduct(product.value?.id);
+      await loadWishlist(true);
+    }
+
     const body = {
       product_id: Number(product.value?.id),
       variant_id: selectedVariant.value?.id ? Number(selectedVariant.value.id) : null,
-      email: customerUser.value ? undefined : backInStockEmail.value,
     };
     const result = await $fetch<any>("/api/back-in-stock", { method: "POST", body });
-    backInStockMessage.value = result?.message || "We’ll email you when this item is back in stock.";
+    backInStockMessage.value = result?.message || "Saved. We’ll only email you while this product remains in your wishlist.";
   } catch (error: any) {
     backInStockError.value = true;
     backInStockMessage.value = error?.data?.statusMessage || error?.message || "Unable to save your notification request.";
