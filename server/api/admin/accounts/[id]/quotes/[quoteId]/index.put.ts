@@ -1,5 +1,6 @@
 import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
 import { sendQuoteReadyEmail } from "~~/server/utils/quoteEmail";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
@@ -76,8 +77,8 @@ export default defineEventHandler(async (event) => {
       const customer = authResult.data.user;
       const customerEmail = String(customer?.email || "").trim();
       if (customerEmail) {
-        const requestUrl = getRequestURL(event);
-        await sendQuoteReadyEmail({ id:quoteId, quote_number:existing.quote_number, created_at:existing.created_at, expires_at:data.expires_at, customer_email:customerEmail, customer_name:String(customer?.user_metadata?.display_name || customer?.user_metadata?.full_name || ""), customer_message:existing.customer_message || null, quoted_total:quotedTotal, items:quoteItems || [], accountUrl:`${requestUrl.origin}/account?quote=${quoteId}` });
+        const siteOrigin = getSiteOrigin(event);
+        await sendQuoteReadyEmail({ id:quoteId, quote_number:existing.quote_number, created_at:existing.created_at, expires_at:data.expires_at, customer_email:customerEmail, customer_name:String(customer?.user_metadata?.display_name || customer?.user_metadata?.full_name || ""), customer_message:existing.customer_message || null, quoted_total:quotedTotal, items:quoteItems || [], accountUrl:`${siteOrigin}/account?quote=${quoteId}` });
         const sentAt = new Date().toISOString();
         await supabase.from("customer_quote_requests").update({ sent_at: sentAt }).eq("id", quoteId);
         data.sent_at = sentAt;

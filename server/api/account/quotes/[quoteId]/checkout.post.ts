@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 
 const text = (value: unknown) => String(value ?? "").trim();
 
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const stripe = new Stripe(config.stripeSecretKey);
-  const requestUrl = getRequestURL(event);
+  const siteOrigin = getSiteOrigin(event);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
@@ -108,8 +109,8 @@ export default defineEventHandler(async (event) => {
       shipping_service_code: "quote",
       shipping_cost: "0.00",
     },
-    success_url: `${requestUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${requestUrl.origin}/account?quote=${quote.id}`,
+    success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${siteOrigin}/account?quote=${quote.id}`,
     billing_address_collection: "auto",
   });
 

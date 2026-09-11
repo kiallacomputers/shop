@@ -1,4 +1,5 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { extensionForImageMime, imageBytesMatchMime } from "~~/server/utils/imageUpload";
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -6,19 +7,6 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "image/gif",
 ]);
-
-const extensionFor = (filename: string, mimeType: string) => {
-  const fromName = filename.split(".").pop()?.toLowerCase();
-
-  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName;
-
-  if (mimeType === "image/jpeg") return "jpg";
-  if (mimeType === "image/png") return "png";
-  if (mimeType === "image/webp") return "webp";
-  if (mimeType === "image/gif") return "gif";
-
-  return "bin";
-};
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
@@ -51,7 +39,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const ext = extensionFor(file.filename, mimeType);
+  if (!imageBytesMatchMime(file.data, mimeType)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "The uploaded file does not match its image type.",
+    });
+  }
+
+  const ext = extensionForImageMime(mimeType);
   const safeBase = file.filename
     .replace(/\.[^.]+$/, "")
     .toLowerCase()
@@ -76,7 +71,7 @@ export default defineEventHandler(async (event) => {
     console.error("ADMIN PRODUCT IMAGE UPLOAD ERROR:", uploadError);
     throw createError({
       statusCode: 500,
-      statusMessage: uploadError.message || "Unable to upload product image",
+      statusMessage: "Unable to upload product image",
     });
   }
 

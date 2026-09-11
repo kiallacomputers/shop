@@ -1,5 +1,6 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
+import { throwInternalError } from "~~/server/utils/internalError";
 
 export default defineEventHandler(async (event) => {
   const user: any = await requireRequestUser(event);
@@ -41,10 +42,7 @@ export default defineEventHandler(async (event) => {
     .maybeSingle();
 
   if (orderError) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: orderError.message || "Unable to load your order.",
-    });
+    throwInternalError(event, "CHECKOUT SUCCESS ORDER LOOKUP ERROR", orderError, "Unable to load your order.");
   }
 
   if (!order) {
@@ -61,10 +59,7 @@ export default defineEventHandler(async (event) => {
     .order("id", { ascending: true });
 
   if (itemsError) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: itemsError.message || "Unable to load your order items.",
-    });
+    throwInternalError(event, "CHECKOUT SUCCESS ITEMS ERROR", itemsError, "Unable to load your order items.");
   }
 
   return {

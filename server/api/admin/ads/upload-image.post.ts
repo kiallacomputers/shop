@@ -1,14 +1,7 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { extensionForImageMime, imageBytesMatchMime } from "~~/server/utils/imageUpload";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-const extensionFor = (filename: string, mimeType: string) => {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  if (ext && /^[a-z0-9]+$/.test(ext)) return ext;
-  if (mimeType === "image/jpeg") return "jpg";
-  if (mimeType === "image/png") return "png";
-  return "webp";
-};
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
@@ -28,7 +21,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 413, statusMessage: "Banner image must be 10 MB or smaller" });
   }
 
-  const ext = extensionFor(file.filename, mimeType);
+  if (!imageBytesMatchMime(file.data, mimeType)) {
+    throw createError({ statusCode: 400, statusMessage: "The uploaded file does not match its image type." });
+  }
+
+  const ext = extensionForImageMime(mimeType);
   const storagePath = `ads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const supabase = getAdminSupabase();
 
@@ -42,7 +39,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error("ADMIN AD IMAGE UPLOAD ERROR:", error);
-    throw createError({ statusCode: 500, statusMessage: error.message || "Unable to upload banner image" });
+    throw createError({ statusCode: 500, statusMessage: "Unable to upload banner image" });
   }
 
   const { data } = supabase.storage.from("products").getPublicUrl(storagePath);

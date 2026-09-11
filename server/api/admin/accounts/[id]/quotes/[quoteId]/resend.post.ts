@@ -1,5 +1,6 @@
 import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
 import { sendQuoteReadyEmail } from "~~/server/utils/quoteEmail";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
@@ -22,8 +23,8 @@ export default defineEventHandler(async (event) => {
   const user = auth.data?.user;
   const email = String(user?.email || "").trim();
   if (!email) throw createError({ statusCode: 400, statusMessage: "Customer does not have an email address." });
-  const requestUrl = getRequestURL(event);
-  await sendQuoteReadyEmail({ ...quote, customer_email:email, customer_name:String(user?.user_metadata?.display_name || user?.user_metadata?.full_name || ""), items:quote.customer_quote_request_items || [], accountUrl:`${requestUrl.origin}/account?quote=${quoteId}` });
+  const siteOrigin = getSiteOrigin(event);
+  await sendQuoteReadyEmail({ ...quote, customer_email:email, customer_name:String(user?.user_metadata?.display_name || user?.user_metadata?.full_name || ""), items:quote.customer_quote_request_items || [], accountUrl:`${siteOrigin}/account?quote=${quoteId}` });
   const sentAt = new Date().toISOString();
   const { error:updateError } = await supabase.from("customer_quote_requests").update({ sent_at:sentAt, updated_at:sentAt }).eq("id",quoteId);
   if (updateError) throw createError({ statusCode: 500, statusMessage:updateError.message });

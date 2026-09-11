@@ -1,5 +1,6 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { processBackInStockNotifications } from "~~/server/utils/backInStockNotifications";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 export default defineEventHandler(async (event) => {
   await requireAdmin(event); const productId=Number(getRouterParam(event,"id")), variantId=Number(getRouterParam(event,"variantId")); const body=await readBody(event);
   const name=String(body?.name||"").trim(), productCode=String(body?.product_code||"").trim(); const price=Number(body?.price), oldPrice=body?.old_price==null||body?.old_price===""?null:Number(body.old_price), stock=Number(body?.stock);
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
   if(baseCode) throw createError({statusCode:409,statusMessage:"That product code is already used by a product"}); const {data,error}=await supabase.from("product_variants").update({name,product_code:productCode,price,old_price:Number.isFinite(oldPrice as number)?oldPrice:null,stock,active:body?.active!==false,images:Array.isArray(body?.images)?body.images:[],sort_order:Number(body?.sort_order)||0,updated_at:new Date().toISOString()}).eq("id",variantId).eq("product_id",productId).select("*").single();
   if(error){if(error.code==="23505") throw createError({statusCode:409,statusMessage:"That product code is already in use"}); throw createError({statusCode:500,statusMessage:error.message});}
   if (Number(data?.stock || 0) > 0) {
-    try { await processBackInStockNotifications({ productId, variantId, origin: getRequestURL(event).origin }); }
+    try { await processBackInStockNotifications({ productId, variantId, origin: getSiteOrigin(event) }); }
     catch (notifyError) { console.error("BACK IN STOCK PROCESSING ERROR:", notifyError); }
   }
   return data;

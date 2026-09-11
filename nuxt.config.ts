@@ -1,7 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.NODE_ENV !== "production" },
   app: {
     head: {
       title: "Kialla Computers",
@@ -39,6 +39,7 @@ export default defineNuxtConfig({
     facebookGraphVersion: process.env.FACEBOOK_GRAPH_VERSION || "v24.0",
 
     public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://shop.kiallacomputers.com.au",
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
     },

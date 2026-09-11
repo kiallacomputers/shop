@@ -1,4 +1,5 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { throwInternalError } from "~~/server/utils/internalError";
 
 const PRODUCT_SELECT = `
   id, name, slug, product_code, has_variants, blurb, description,
@@ -117,10 +118,7 @@ export default defineEventHandler(async (event) => {
     .limit(1000);
 
   if (error) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message || "Unable to search products.",
-    });
+    throwInternalError(event, "PRODUCT SEARCH ERROR", error, "Unable to search products.");
   }
 
   const { data: categoryRows } = await supabase

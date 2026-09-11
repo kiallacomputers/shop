@@ -1,6 +1,7 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { processBackInStockNotifications } from "~~/server/utils/backInStockNotifications";
 import { getStandardPricingLevel } from "~~/server/utils/customerPricing";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 
 const cleanSlug = (value: unknown) =>
   String(value || "")
@@ -144,7 +145,7 @@ export default defineEventHandler(async (event) => {
 
   if (!hasVariants && Number(data.stock || 0) > 0) {
     try {
-      await processBackInStockNotifications({ productId: Number(data.id), origin: getRequestURL(event).origin });
+      await processBackInStockNotifications({ productId: Number(data.id), origin: getSiteOrigin(event) });
     } catch (notifyError) {
       console.error("BACK IN STOCK PROCESSING ERROR:", notifyError);
     }

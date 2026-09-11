@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { H3Event } from "h3";
 import { serverSupabaseUser } from "#supabase/server";
+import { getHeader } from "h3";
 
 export type AdminRole = "superadmin" | "admin";
 
@@ -51,12 +52,27 @@ export const getAdminUser = async (
   try {
     user = await serverSupabaseUser(event);
   } catch (error) {
-    console.error(
-      "SUPABASE USER CHECK ERROR:",
-      error,
-    );
-
+    console.error("SUPABASE USER CHECK ERROR:", error);
     user = null;
+  }
+
+  // Netlify/serverless requests can occasionally lose the cookie-backed
+  // Supabase session. Accept the authenticated browser bearer token as a
+  // fallback, but always validate it with Supabase before checking admin role.
+  if (!user) {
+    const authorization = getHeader(event, "authorization") || "";
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    const token = match?.[1]?.trim();
+
+    if (token) {
+      try {
+        const supabase = getAdminSupabase();
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data?.user) user = data.user;
+      } catch (error) {
+        console.error("ADMIN BEARER USER CHECK ERROR:", error);
+      }
+    }
   }
 
   if (!user) {
@@ -111,10 +127,11 @@ export const getAdminUser = async (
     };
   }
 
-  const role =
-    adminUser?.role === "superadmin"
+  const storedRole = String(adminUser?.role || "").toLowerCase();
+  const role: AdminRole | null =
+    storedRole === "superadmin"
       ? "superadmin"
-      : adminUser
+      : storedRole === "admin"
         ? "admin"
         : null;
 

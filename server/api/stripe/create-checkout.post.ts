@@ -1,8 +1,10 @@
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
 import { calculateFreightOptions } from "~~/server/utils/freight";
 import {
+import { throwInternalError } from "~~/server/utils/internalError";
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
@@ -60,7 +62,7 @@ export default defineEventHandler(async (event) => {
     .maybeSingle();
 
   if (addressError) {
-    throw createError({ statusCode: 500, statusMessage: addressError.message });
+    throwInternalError(event, "CHECKOUT ADDRESS LOOKUP ERROR", addressError, "Unable to load the selected delivery address.");
   }
 
   if (!address) {
@@ -79,7 +81,7 @@ export default defineEventHandler(async (event) => {
     .in("id", productIds);
 
   if (productError) {
-    throw createError({ statusCode: 500, statusMessage: productError.message });
+    throwInternalError(event, "CHECKOUT PRODUCT LOOKUP ERROR", productError, "Unable to load your cart products.");
   }
 
   if (!products || products.length !== productIds.length) {
@@ -97,7 +99,7 @@ export default defineEventHandler(async (event) => {
   const { data: variants, error: variantError } = variantIds.length
     ? await supabase.from("product_variants").select("id,product_id,name,product_code,price,stock,active").in("id", variantIds)
     : { data: [], error: null };
-  if (variantError) throw createError({ statusCode: 500, statusMessage: variantError.message });
+  if (variantError) throwInternalError(event, "CHECKOUT VARIANT LOOKUP ERROR", variantError, "Unable to load product options.");
   const variantMap = new Map((variants || []).map((v: any) => [Number(v.id), v]));
 
   for (const item of requestedItems) {
@@ -174,7 +176,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const requestUrl = getRequestURL(event);
+  const siteOrigin = getSiteOrigin(event);
 
   // Snapshot the chosen address into Stripe metadata so the paid order retains
   // the exact delivery destination even if the customer later edits My Account.
@@ -201,8 +203,8 @@ export default defineEventHandler(async (event) => {
       pricing_level_name: pricingLevel.name,
     },
     customer_email: user.email || undefined,
-    success_url: `${requestUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${requestUrl.origin}/shoppingcart`,
+    success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${siteOrigin}/shoppingcart`,
     // The delivery address has already been selected on the Kialla Computers
     // site, so Stripe only collects billing details if the payment method needs them.
     billing_address_collection: "auto",

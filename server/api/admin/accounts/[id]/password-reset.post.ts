@@ -1,13 +1,15 @@
 import {
   getAdminSupabase,
-  requireAdmin,
+  requireSuperAdmin,
 } from "~~/server/utils/adminAuth";
+import { getSiteOrigin } from "~~/server/utils/siteUrl";
+import { throwInternalError } from "~~/server/utils/internalError";
 
 export default defineEventHandler(async (event) => {
   // ========================================
   // REQUIRE ADMIN
   // ========================================
-  await requireAdmin(event);
+  await requireSuperAdmin(event);
 
   const supabase = getAdminSupabase();
 
@@ -34,11 +36,7 @@ export default defineEventHandler(async (event) => {
   if (userError) {
     console.error("PASSWORD RESET USER LOOKUP ERROR:", userError);
 
-    throw createError({
-      statusCode: 500,
-      statusMessage:
-        userError.message || "Unable to find user.",
-    });
+    throwInternalError(event, "PASSWORD RESET USER LOOKUP ERROR", userError, "Unable to find user.");
   }
 
   const user = userData?.user;
@@ -53,14 +51,7 @@ export default defineEventHandler(async (event) => {
   // ========================================
   // BUILD RESET REDIRECT URL
   // ========================================
-  const config = useRuntimeConfig();
-
-  const siteUrl =
-    config.public?.siteUrl ||
-    "https://shop.kiallacomputers.com.au";
-
-  const redirectTo =
-    `${String(siteUrl).replace(/\/$/, "")}/reset-password`;
+  const redirectTo = `${getSiteOrigin(event)}/reset-password`;
 
   // ========================================
   // SEND PASSWORD RESET EMAIL
@@ -78,12 +69,7 @@ export default defineEventHandler(async (event) => {
   if (resetError) {
     console.error("PASSWORD RESET EMAIL ERROR:", resetError);
 
-    throw createError({
-      statusCode: 500,
-      statusMessage:
-        resetError.message ||
-        "Unable to send password reset email.",
-    });
+    throwInternalError(event, "PASSWORD RESET EMAIL ERROR", resetError, "Unable to send password reset email.");
   }
 
   // Supabase normally returns an empty object for
