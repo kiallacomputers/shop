@@ -1,40 +1,23 @@
 <template>
-  <div class="max-w-5xl mx-auto px-4 py-8">
+  <main class="kc-page max-w-5xl">
     <!-- Back -->
     <NuxtLink
       to="/account"
-      class="inline-flex items-center mb-6 text-blue-600 hover:text-blue-800"
+      class="kc-link mb-6 inline-flex items-center"
     >
       ← Back to My Account
     </NuxtLink>
 
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-lg text-gray-500">Loading order...</p>
+    <div v-if="loading" class="kc-state">
+      <p>Loading your order…</p>
     </div>
 
     <!-- Error -->
-    <div
-      v-else-if="errorMessage"
-      class="bg-red-50 border border-red-200 rounded-lg p-6"
-    >
-      <h1 class="text-xl font-bold text-red-700 mb-3">Unable to load order</h1>
-
-      <p class="text-red-600">
-        {{ errorMessage }}
-      </p>
-
-      <div class="mt-4 text-sm text-gray-600">
-        <p>
-          <strong>Order ID:</strong>
-          {{ route.params.id }}
-        </p>
-
-        <p class="mt-1">
-          <strong>User ID:</strong>
-          {{ user?.id }}
-        </p>
-      </div>
+    <div v-else-if="errorMessage" class="kc-alert kc-alert-error" role="alert">
+      <h1 class="font-bold">Unable to load this order</h1>
+      <p class="mt-1">{{ errorMessage }}</p>
+      <NuxtLink to="/account" class="kc-link mt-3 inline-flex">Return to My Account →</NuxtLink>
     </div>
 
     <!-- Order -->
@@ -47,21 +30,21 @@
         class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8"
       >
         <div>
-          <p class="text-sm text-gray-500">Order</p>
+          <p class="text-sm text-slate-500">Order</p>
 
-          <h1 class="text-3xl font-bold">#{{ order.id }}</h1>
+          <h1 class="kc-title text-3xl">#{{ order.id }}</h1>
 
           <button
             v-if="orderItems.length"
             type="button"
             :disabled="buyingAgain"
-            class="mt-3 rounded-lg border border-blue-300 bg-white px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+            class="kc-btn-secondary mt-3 !py-2.5 !px-4 text-sm"
             @click="buyAgain"
           >
-            {{ buyingAgain ? "Adding..." : "Buy Again" }}
+            {{ buyingAgain ? "Adding…" : "Buy again" }}
           </button>
 
-          <p v-if="order.created_at" class="text-gray-500 mt-2">
+          <p v-if="order.created_at" class="text-slate-500 mt-2">
             {{ formatDate(order.created_at) }}
           </p>
         </div>
@@ -78,12 +61,12 @@
       <!-- CUSTOMER -->
       <!-- ================================= -->
 
-      <div class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div class="kc-panel p-5 sm:p-6 mb-6">
         <h2 class="text-xl font-bold mb-5">Customer Information</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p class="text-sm text-gray-500">Name</p>
+            <p class="text-sm text-slate-500">Name</p>
 
             <p class="font-semibold mt-1">
               {{ order.customer_name || "Not provided" }}
@@ -91,7 +74,7 @@
           </div>
 
           <div>
-            <p class="text-sm text-gray-500">Email</p>
+            <p class="text-sm text-slate-500">Email</p>
 
             <p class="font-semibold mt-1">
               {{ order.customer_email || "Not provided" }}
@@ -104,12 +87,12 @@
       <!-- DELIVERY ADDRESS -->
       <!-- ================================= -->
 
-      <div v-if="order.shipping_address_line_1 || order.shipping_postcode" class="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div v-if="order.shipping_address_line_1 || order.shipping_postcode" class="kc-panel p-5 sm:p-6 mb-6">
         <h2 class="text-xl font-bold mb-5">{{ isStorePickup ? "Pickup Details" : "Delivery Details" }}</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p class="text-sm text-gray-500">{{ isStorePickup ? "Pickup From" : "Ship To" }}</p>
+            <p class="text-sm text-slate-500">{{ isStorePickup ? "Pickup From" : "Ship To" }}</p>
             <div class="font-semibold mt-1 space-y-0.5">
               <p>{{ order.shipping_name || order.customer_name || "Customer" }}</p>
               <p v-if="order.shipping_address_line_1">{{ order.shipping_address_line_1 }}</p>
@@ -119,9 +102,9 @@
           </div>
 
           <div>
-            <p class="text-sm text-gray-500">{{ isStorePickup ? "Pickup Method" : "Delivery Method" }}</p>
+            <p class="text-sm text-slate-500">{{ isStorePickup ? "Pickup Method" : "Delivery Method" }}</p>
             <p class="font-semibold mt-1">{{ order.shipping_method || "Delivery" }}</p>
-            <p v-if="Number(order.shipping_cost || 0) > 0" class="text-sm text-gray-500 mt-1">
+            <p v-if="Number(order.shipping_cost || 0) > 0" class="text-sm text-slate-500 mt-1">
               {{ isStorePickup ? "Pickup" : "Delivery" }}: ${{ Number(order.shipping_cost || 0).toFixed(2) }}
             </p>
           </div>
@@ -134,12 +117,12 @@
 
       <div
         v-if="order.tracking_number"
-        class="bg-white border border-gray-200 rounded-lg p-6 mb-6"
+        class="kc-panel p-5 sm:p-6 mb-6"
       >
         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-xl font-bold">Parcel Tracking</h2>
-            <p class="mt-1 text-sm text-gray-500">Track this parcel directly with Australia Post using the number below.</p>
+            <p class="mt-1 text-sm text-slate-500">Track this parcel directly with Australia Post using the number below.</p>
           </div>
           <span
             v-if="order.tracking_status"
@@ -151,17 +134,17 @@
 
         <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <p class="text-sm text-gray-500">Carrier</p>
+            <p class="text-sm text-slate-500">Carrier</p>
             <p class="mt-1 font-semibold">{{ order.carrier || "Australia Post" }}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Tracking Number</p>
+            <p class="text-sm text-slate-500">Tracking Number</p>
             <p class="mt-1 break-all font-mono font-semibold">{{ order.tracking_number }}</p>
             <a
               :href="trackingUrl(order.tracking_number)"
               target="_blank"
               rel="noopener"
-              class="mt-3 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              class="kc-btn-primary mt-3 !py-2 !px-4 text-sm"
             >
               Track on Australia Post ↗
             </a>
@@ -171,9 +154,9 @@
         <div v-if="Array.isArray(order.tracking_events) && order.tracking_events.length" class="mt-5 border-t pt-5">
           <h3 class="font-bold">Tracking History</h3>
           <div class="mt-3 space-y-3">
-            <div v-for="(event, index) in order.tracking_events" :key="`${event.date || 'event'}-${index}`" class="rounded-lg bg-gray-50 p-4">
+            <div v-for="(event, index) in order.tracking_events" :key="`${event.date || 'event'}-${index}`" class="rounded-lg bg-slate-50 p-4">
               <p class="font-semibold">{{ event.description || "Tracking update" }}</p>
-              <p class="mt-1 text-sm text-gray-500">
+              <p class="mt-1 text-sm text-slate-500">
                 {{ [event.location, event.date ? formatTrackingDate(event.date) : null].filter(Boolean).join(" • ") }}
               </p>
             </div>
@@ -186,14 +169,14 @@
       <!-- ================================= -->
 
       <div
-        class="bg-white border border-gray-200 rounded-lg overflow-hidden mb-6"
+        class="kc-panel overflow-hidden mb-6"
       >
-        <div class="bg-gray-50 border-b px-6 py-4">
+        <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6">
           <h2 class="text-xl font-bold">Invoice Items</h2>
         </div>
 
         <div v-if="orderItems.length" class="divide-y">
-          <div v-for="item in orderItems" :key="item.id" class="p-6">
+          <div v-for="item in orderItems" :key="item.id" class="p-4 sm:p-6">
             <div class="flex flex-col md:flex-row md:items-center gap-4">
               <!-- Product -->
               <div class="flex-1">
@@ -201,14 +184,14 @@
                   {{ item.product_name }}
                 </h3>
 
-                <p class="text-sm text-gray-500 mt-1">
+                <p class="text-sm text-slate-500 mt-1">
                   Product ID: {{ item.product_id }}
                 </p>
               </div>
 
               <!-- Quantity -->
               <div>
-                <span class="text-gray-500"> Qty: </span>
+                <span class="text-slate-500"> Qty: </span>
 
                 <span class="font-semibold ml-1">
                   {{ item.quantity }}
@@ -217,7 +200,7 @@
 
               <!-- Unit Price -->
               <div>
-                <span class="text-gray-500"> Price: </span>
+                <span class="text-slate-500"> Price: </span>
 
                 <span class="font-semibold ml-1">
                   ${{ Number(item.price).toFixed(2) }}
@@ -232,7 +215,7 @@
           </div>
         </div>
 
-        <div v-else class="p-6 text-gray-500">
+        <div v-else class="p-6 text-slate-500">
           No items were found for this order.
         </div>
       </div>
@@ -241,13 +224,13 @@
       <!-- TOTAL -->
       <!-- ================================= -->
 
-      <div class="bg-white border border-gray-200 rounded-lg p-6">
+      <div class="kc-panel p-5 sm:p-6">
         <div class="ml-auto max-w-sm space-y-2">
-          <div class="flex items-center justify-between text-gray-600">
+          <div class="flex items-center justify-between text-slate-600">
             <span>Subtotal</span>
             <span>{{ currency(Math.max(0, Number(order.total || 0) - Number(order.shipping_cost || 0) - Number(order.processing_fee || 0))) }}</span>
           </div>
-          <div class="flex items-center justify-between text-gray-600">
+          <div class="flex items-center justify-between text-slate-600">
             <span>{{ isStorePickup ? "Pickup" : "Delivery" }}</span>
             <span>{{ Number(order.shipping_cost || 0) === 0 ? "FREE" : currency(order.shipping_cost) }}</span>
           </div>
@@ -255,7 +238,7 @@
               <span>Processing Fee</span>
               <span>{{ currency(Number(order.processing_fee || 0)) }}</span>
             </div>
-            <div class="flex items-center justify-between text-gray-600">
+            <div class="flex items-center justify-between text-slate-600">
             <span>GST (10%)</span>
             <span>{{ currency(Number(order.total || 0) / 11) }}</span>
           </div>
@@ -266,7 +249,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -539,7 +522,7 @@ function statusClass(status: string) {
       return "bg-orange-100 text-orange-700";
 
     default:
-      return "bg-gray-100 text-gray-700";
+      return "bg-slate-100 text-slate-700";
   }
 }
 

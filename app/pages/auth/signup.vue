@@ -1,109 +1,43 @@
-<script setup>
-definePageMeta({
-  layout: "auth",
-});
-
-const router = useRouter()
-
-const supabase = useSupabaseClient()
-
-const loading = ref(false)
-
-const form = reactive({
-  firstName: '',
-  lastName: '',
-  email: '',
-  password: ''
-})
-
-const errorMessage = ref('')
-const successMessage = ref('')
-
+<script setup lang="ts">
+definePageMeta({ layout: "auth" });
+const supabase = useSupabaseClient();
+const loading = ref(false);
+const form = reactive({ fullName: "", email: "", password: "" });
+const errorMessage = ref("");
+const successMessage = ref("");
 const signUp = async () => {
-  loading.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  const { error } = await supabase.auth.signUp({
-    email: form.email,
-    password: form.password,
-    options: {
-      data: {
-        display_name: form.FullName,
-      }
-    }
-  })
-
-  loading.value = false
-
-  if (error) {
-    errorMessage.value = error.message
-    return
-  }
-
-  successMessage.value =
-    'Your account has been created. Please check your email to verify your account.'
-// Redirect after 5 seconds
-  setTimeout(() => {
-    router.push("/")
-  }, 5000)
-}
+  loading.value = true;
+  errorMessage.value = "";
+  successMessage.value = "";
+  try {
+    const { error } = await supabase.auth.signUp({
+      email: form.email.trim(), password: form.password,
+      options: { data: { display_name: form.fullName.trim() } },
+    });
+    if (error) { errorMessage.value = error.message; return; }
+    successMessage.value = "Your account has been created. Check your email to verify your account before signing in.";
+  } catch (error: any) {
+    errorMessage.value = error?.message || "Unable to create your account right now.";
+  } finally { loading.value = false; }
+};
 </script>
 
 <template>
   <div class="kc-panel w-full p-6 sm:p-8">
-    <h1 class="kc-title text-3xl mb-6">
-      Create Account
-    </h1>
+    <p class="kc-eyebrow">Customer account</p>
+    <h1 class="kc-title mt-1 text-3xl">Create account</h1>
+    <p class="mb-7 mt-2 text-sm text-slate-500">Create an account to save addresses, track orders and keep a wishlist.</p>
 
-    <form @submit.prevent="signUp" class="space-y-4">
+    <form class="space-y-5" @submit.prevent="signUp">
+      <label><span class="kc-field-label">Full name</span><input v-model="form.fullName" type="text" autocomplete="name" required class="w-full border px-4 py-3" /></label>
+      <label><span class="kc-field-label">Email address</span><input v-model="form.email" type="email" autocomplete="email" required class="w-full border px-4 py-3" /></label>
+      <label><span class="kc-field-label">Password</span><input v-model="form.password" type="password" autocomplete="new-password" required minlength="8" class="w-full border px-4 py-3" /><span class="mt-1.5 block text-xs text-slate-500">Use at least 8 characters.</span></label>
 
-      <div>
-        <label class="block mb-1">Full Name</label>
-        <input
-          v-model="form.FullName"
-          type="text"
-          required
-          class="w-full border rounded-lg px-3 py-2"
-        />
-      </div>
+      <div v-if="errorMessage" class="kc-alert kc-alert-error" role="alert">{{ errorMessage }}</div>
+      <div v-if="successMessage" class="kc-alert kc-alert-success" role="status">{{ successMessage }}</div>
 
-      <div>
-        <label class="block mb-1">Email</label>
-        <input
-          v-model="form.email"
-          type="email"
-          required
-          class="w-full border rounded-lg px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label class="block mb-1">Password</label>
-        <input
-          v-model="form.password"
-          type="password"
-          required
-          minlength="8"
-          class="w-full border rounded-lg px-3 py-2"
-        />
-      </div>
-
-      <button
-        type="submit"
-        :disabled="loading"
-        class="w-full rounded-xl bg-[#2367d1] text-white py-3 font-extrabold hover:bg-[#194fa8] transition"
-      >
-        {{ loading ? 'Creating Account...' : 'Create Account' }}
-      </button>
-
-      <p v-if="errorMessage" class="text-red-600">
-        {{ errorMessage }}
-      </p>
-
-      <p v-if="successMessage" class="text-green-600">
-        {{ successMessage }}
-      </p>
+      <button type="submit" :disabled="loading || !!successMessage" class="kc-btn-primary w-full min-h-[48px]">{{ loading ? "Creating account…" : successMessage ? "Account created" : "Create account" }}</button>
+      <p class="text-center text-sm text-slate-600">Already have an account? <NuxtLink to="/auth/signin" class="kc-link">Sign in</NuxtLink></p>
     </form>
   </div>
 </template>

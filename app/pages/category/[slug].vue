@@ -99,8 +99,10 @@
           />
         </div>
 
-        <div v-else class="kc-panel p-12 text-center text-slate-500">
-          No products found in this category.
+        <div v-else class="kc-state">
+          <h2 class="font-black text-[#0b1f3a]">No products in this category yet</h2>
+          <p class="mt-2 text-sm">Try another category or search the full catalogue.</p>
+          <NuxtLink to="/search" class="kc-btn-secondary mt-5">Search products</NuxtLink>
         </div>
       </section>
     </div>

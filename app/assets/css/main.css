@@ -53,3 +53,17 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
   button, a, select, input[type="checkbox"], input[type="radio"] { -webkit-tap-highlight-color:transparent; }
   .kc-btn-primary, .kc-btn-secondary { min-height:46px; }
 }
+
+
+/* Final storefront consistency */
+.kc-state { background:#fff; border:1px solid var(--kc-line); border-radius:1rem; box-shadow:0 10px 30px rgba(15,35,64,.045); padding:2rem; text-align:center; color:var(--kc-muted); }
+.kc-alert { border-radius:.85rem; border:1px solid; padding:.85rem 1rem; font-size:.875rem; line-height:1.45; }
+.kc-alert-error { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+.kc-alert-success { border-color:#bbf7d0; background:#f0fdf4; color:#15803d; }
+.kc-alert-info { border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8; }
+.kc-link { color:var(--kc-blue); font-weight:800; transition:color .15s ease; }
+.kc-link:hover { color:#194fa8; }
+.kc-btn-primary:disabled,.kc-btn-secondary:disabled { cursor:not-allowed; opacity:.55; transform:none; }
+.kc-field-label { display:block; margin-bottom:.4rem; color:#334155; font-size:.875rem; font-weight:700; }
+.kc-page-header { margin-bottom:2rem; }
+@media (max-width:767px) { .kc-state { padding:1.5rem 1rem; } .kc-page-header { margin-bottom:1.4rem; } }

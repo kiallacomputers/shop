@@ -16,12 +16,12 @@
           </svg>
           <input id="product-search-page" v-model="searchInput" type="search" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/30" placeholder="Search product name, code, category, description or variant..." />
         </div>
-        <button type="submit" class="min-h-[46px] rounded-xl bg-[#2367d1] px-6 py-3 text-sm font-black text-white transition hover:bg-[#194fa8]">Search</button>
+        <button type="submit" class="kc-btn-primary min-h-[46px] px-6 py-3 text-sm">Search</button>
       </form>
       <p class="mt-3 text-sm text-slate-300">Try a product name, model, SKU/product code, category or part of a description.</p>
     </section>
 
-    <div v-if="query.length < 2" class="kc-panel mt-6 p-8 text-center text-slate-500">
+    <div v-if="query.length < 2" class="kc-state mt-6">
       Enter at least 2 characters to search the catalogue.
     </div>
 
@@ -91,14 +91,14 @@
           </label>
         </div>
 
-        <div v-if="errorMessage" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{{ errorMessage }}</div>
+        <div v-if="errorMessage" class="kc-alert kc-alert-error" role="alert">{{ errorMessage }}</div>
         <div v-else-if="loading" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <div v-for="n in 6" :key="n" class="kc-panel h-[420px] animate-pulse bg-slate-50"></div>
         </div>
         <div v-else-if="sortedProducts.length" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <ProductCard v-for="product in sortedProducts" :key="product.id" :product="product" />
         </div>
-        <div v-else class="kc-panel p-10 text-center">
+        <div v-else class="kc-state">
           <p class="text-lg font-black text-[#0b1f3a]">No matching products</p>
           <p class="mt-2 text-sm text-slate-500">Try fewer words, part of a product code, or clear the filters.</p>
           <button v-if="hasFilters" type="button" class="mt-4 kc-btn-secondary" @click="clearFilters">Clear filters</button>

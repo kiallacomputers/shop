@@ -1,12 +1,10 @@
 <template>
-  <main class="min-h-[70vh] bg-slate-50">
-    <div class="max-w-lg mx-auto px-4 py-16">
-      <div class="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-        <p class="text-sm font-semibold uppercase tracking-wider text-blue-600">
+  <div class="kc-panel w-full p-6 sm:p-8">
+        <p class="kc-eyebrow">
           Account Security
         </p>
 
-        <h1 class="mt-1 text-3xl font-bold text-slate-900">
+        <h1 class="kc-title mt-1 text-3xl">
           Reset Password
         </h1>
 
@@ -16,14 +14,14 @@
 
         <div
           v-if="checkingSession"
-          class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 text-sm text-blue-700"
+          class="kc-alert kc-alert-info"
         >
           Verifying your password reset link...
         </div>
 
         <div
           v-else-if="errorMessage"
-          class="rounded-lg border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700"
+          class="kc-alert kc-alert-error"
         >
           <p class="font-semibold">Unable to reset password</p>
           <p class="mt-1">{{ errorMessage }}</p>
@@ -71,7 +69,7 @@
           <button
             type="submit"
             :disabled="saving"
-            class="w-full rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            class="kc-btn-primary w-full"
           >
             {{ saving ? "Updating Password..." : "Update Password" }}
           </button>
@@ -88,17 +86,16 @@
 
           <NuxtLink
             to="/auth/signin"
-            class="mt-6 inline-flex rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700"
+            class="kc-btn-primary mt-6"
           >
             Sign In
           </NuxtLink>
         </div>
-      </div>
-    </div>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
+definePageMeta({ layout: "auth" });
 const supabase = useSupabaseClient();
 const route = useRoute();
 

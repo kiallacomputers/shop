@@ -1,6 +1,5 @@
 <template>
-  <main class="min-h-screen bg-slate-50">
-    <div class="mx-auto max-w-5xl px-3 py-6 sm:px-4 sm:py-14">
+  <main class="kc-page max-w-5xl">
       <!-- Confirmation hero -->
       <section class="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
         <div class="bg-emerald-50 px-4 py-7 text-center sm:px-10 sm:py-8">
@@ -190,23 +189,22 @@
       <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <NuxtLink
           to="/account"
-          class="inline-flex min-h-[50px] w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-3 sm:w-auto font-semibold text-white hover:bg-blue-700"
+          class="kc-btn-primary min-h-[50px] w-full px-6 py-3 sm:w-auto"
         >
-          View My Account
+          View my account
         </NuxtLink>
 
         <NuxtLink
           to="/"
-          class="inline-flex min-h-[50px] w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 sm:w-auto font-semibold text-slate-700 hover:bg-slate-50"
+          class="kc-btn-secondary min-h-[50px] w-full px-6 py-3 sm:w-auto"
         >
-          Continue Shopping
+          Continue shopping
         </NuxtLink>
       </div>
 
       <p class="mt-6 text-center text-xs text-slate-500">
         Keep your order number for reference. If you have any questions, reply to your order confirmation email.
       </p>
-    </div>
   </main>
 </template>
 

@@ -6,11 +6,11 @@
       <p v-if="user" class="text-slate-600 mt-2">Welcome, {{ user.email }}</p>
     </div>
 
-    <div v-if="loading" class="bg-white border rounded-lg p-8 text-center">
-      <p class="text-slate-500">Loading your account...</p>
+    <div v-if="loading" class="kc-state">
+      <p>Loading your account…</p>
     </div>
 
-    <div v-else-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-6">
+    <div v-else-if="errorMessage" class="kc-alert kc-alert-error">
       <h2 class="text-xl font-bold text-red-700 mb-2">Unable to load your account</h2>
       <p class="text-red-600">{{ errorMessage }}</p>
     </div>
@@ -38,7 +38,7 @@
             <h2 class="text-xl font-bold text-slate-900">Customer Profile</h2>
             <p class="mt-1 text-sm text-slate-500">Keep your contact details and notification preferences up to date.</p>
           </div>
-          <button type="button" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-700" @click="showProfileForm = !showProfileForm">
+          <button type="button" class="kc-btn-secondary !py-2.5 !px-4 text-sm" @click="showProfileForm = !showProfileForm">
             {{ showProfileForm ? 'Close' : 'Edit Profile' }}
           </button>
         </div>
@@ -62,7 +62,7 @@
             <label class="flex items-center gap-2 text-sm"><input v-model="profileForm.back_in_stock_updates" type="checkbox" /> Back-in-stock notices</label>
             <label class="flex items-center gap-2 text-sm"><input v-model="profileForm.marketing_updates" type="checkbox" /> Specials and new products</label>
           </div>
-          <div class="mt-5 text-right"><button type="button" :disabled="savingProfile" class="rounded-lg bg-blue-600 px-5 py-2.5 font-bold text-white disabled:opacity-50" @click="saveProfile">{{ savingProfile ? 'Saving...' : 'Save Profile' }}</button></div>
+          <div class="mt-5 text-right"><button type="button" :disabled="savingProfile" class="kc-btn-primary !py-2.5 !px-5" @click="saveProfile">{{ savingProfile ? 'Saving...' : 'Save Profile' }}</button></div>
         </div>
       </section>
 
@@ -166,7 +166,7 @@
           <button
             v-if="!showAddressForm"
             type="button"
-            class="rounded-lg bg-blue-600 px-4 py-2.5 font-semibold text-white hover:bg-blue-700"
+            class="kc-btn-primary !py-2.5 !px-4"
             @click="openAddAddress"
           >
             + Add Address
@@ -236,7 +236,7 @@
           </label>
 
           <div class="mt-5 flex justify-end gap-3">
-            <button type="button" class="rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-slate-700 hover:bg-white" @click="cancelAddressForm">Cancel</button>
+            <button type="button" class="kc-btn-secondary !py-2.5 !px-4" @click="cancelAddressForm">Cancel</button>
             <button type="button" :disabled="savingAddress" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50" @click="saveAddress">
               {{ savingAddress ? 'Saving...' : editingAddressId ? 'Save Changes' : 'Save Address' }}
             </button>
