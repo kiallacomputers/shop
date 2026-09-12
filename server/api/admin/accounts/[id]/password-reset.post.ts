@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
   // ========================================
   // BUILD RESET REDIRECT URL
   // ========================================
-  const redirectTo = `${getSiteOrigin(event)}/reset-password`;
+  const redirectTo = `${getSiteOrigin(event)}/auth/reset-password`;
 
   // ========================================
   // SEND PASSWORD RESET EMAIL
