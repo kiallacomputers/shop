@@ -188,6 +188,7 @@ const searchOpen = ref(false);
 const searchLoading = ref(false);
 const searchSuggestions = ref([]);
 let searchTimer;
+let searchController;
 
 const firstImage = (product) => {
   const value = product?.images;
@@ -213,16 +214,24 @@ const loadSearchSuggestions = async (value) => {
     searchLoading.value = false;
     return;
   }
+  searchController?.abort();
+  searchController = new AbortController();
+  const controller = searchController;
   searchLoading.value = true;
   try {
-    const rows = await $fetch("/api/products/search", { query: { q: query, limit: 5 } });
+    const rows = await $fetch("/api/products/search", {
+      query: { q: query, limit: 5 },
+      signal: controller.signal,
+    });
+    if (controller !== searchController) return;
     searchSuggestions.value = Array.isArray(rows) ? rows : [];
     if (import.meta.client && searchSuggestions.value.length) await applyToProducts(searchSuggestions.value);
   } catch (error) {
+    if (error?.name === "AbortError") return;
     console.error("PRODUCT SEARCH FAILED:", error);
     searchSuggestions.value = [];
   } finally {
-    searchLoading.value = false;
+    if (controller === searchController) searchLoading.value = false;
   }
 };
 
@@ -285,6 +294,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", handleDesktopAccountOutsideClick);
+  clearTimeout(searchTimer);
+  searchController?.abort();
 });
 
 // ========================================

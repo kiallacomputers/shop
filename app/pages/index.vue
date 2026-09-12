@@ -85,6 +85,7 @@
 
 <script setup>
 const supabase = useSupabaseClient();
+const { visibleCategories } = useStorefrontCategories();
 
 const { data: featuredProducts } = await useAsyncData("featured-products", async () => {
   const { data, error } = await supabase
@@ -133,25 +134,10 @@ watch(
   { immediate: true },
 );
 
-onMounted(refreshFeaturedPricing);
-
-const { data: categoryData } = await useAsyncData("homepage-categories", async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id,name,slug,parent_id,active")
-    .order("name", { ascending: true });
-
-  if (error) {
-    console.error("HOMEPAGE CATEGORY LOAD ERROR:", error);
-    throw error;
-  }
-
-  return data || [];
-});
 
 const shopCategories = computed(() =>
-  (categoryData.value || [])
-    .filter((category) => category.active !== false && category.slug)
+  (visibleCategories.value || [])
+    .filter((category) => category.slug)
     .filter(
       (category) =>
         category.parent_id === null ||

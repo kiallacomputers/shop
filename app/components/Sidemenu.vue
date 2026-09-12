@@ -36,26 +36,9 @@
   </div>
 </template>
 <script setup>
-const supabase = useSupabaseClient();
 const mobileOpen = ref(false); const openMenu = ref(null);
 const toggle = (id) => { openMenu.value = openMenu.value === id ? null : id; };
-const { data, error: categoriesError } = await useAsyncData("categories", async () => {
-  const { data, error } = await supabase
-    .from("categories")
-    .select("id,name,slug,parent_id,active")
-    .order("name", { ascending: true });
-
-  if (error) {
-    console.error("CATEGORY LOAD ERROR:", error);
-    throw error;
-  }
-
-  return data || [];
-});
-
-const visibleCategoryData = computed(() =>
-  (data.value || []).filter((category) => category.active !== false),
-);
+const { visibleCategories: visibleCategoryData } = useStorefrontCategories();
 
 const isTopLevel = (category) =>
   category.parent_id === null ||

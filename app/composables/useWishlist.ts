@@ -18,16 +18,21 @@ export const useWishlist = () => {
 
   async function load(force = false) {
     if (!import.meta.client || loading.value || (loaded.value && !force)) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      productIds.value = [];
-      loaded.value = true;
-      return;
-    }
 
+    // Set this before the first await so a page containing many ProductCards
+    // cannot start multiple wishlist/session requests at the same time.
     loading.value = true;
     try {
-      const result = await authFetch<{ productIds: number[] }>("/api/account/wishlist");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        productIds.value = [];
+        loaded.value = true;
+        return;
+      }
+
+      const result = await $fetch<{ productIds: number[] }>("/api/account/wishlist", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
       productIds.value = (result?.productIds || []).map(Number);
       loaded.value = true;
     } finally {

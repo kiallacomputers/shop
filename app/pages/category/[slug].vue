@@ -114,36 +114,10 @@ const router = useRouter();
 
 const slug = computed(() => String(route.params.slug || ""));
 
-const { data: category } = await useAsyncData(
-  () => `category-${slug.value}`,
-  async () => {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("slug", slug.value)
-      .single();
+const { visibleCategories } = useStorefrontCategories();
 
-    if (error) throw error;
-    return data;
-  },
-  { watch: [slug] },
-);
-
-const { data: allCategories } = await useAsyncData(
-  "storefront-category-tree",
-  async () => {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("id,parent_id,name,slug,active")
-      .order("name", { ascending: true });
-
-    if (error) throw error;
-    return data || [];
-  },
-);
-
-const visibleCategories = computed(() =>
-  (allCategories.value || []).filter((item) => item.active !== false),
+const category = computed(() =>
+  (visibleCategories.value || []).find((item) => String(item.slug || "") === slug.value) || null,
 );
 
 const childCategories = computed(() => {

@@ -2,7 +2,7 @@
   <article class="group kc-panel overflow-hidden flex flex-col h-full hover:-translate-y-1 hover:border-cyan-300 hover:shadow-[0_18px_45px_rgba(15,35,64,.11)] transition duration-200">
     <div class="relative aspect-[4/3] bg-gradient-to-b from-slate-50 to-white overflow-hidden">
       <NuxtLink :to="`/product/${product.slug}`" class="block h-full">
-        <img v-if="currentImage" :src="currentImage" :alt="product.name" class="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
+        <img v-if="currentImage" :src="currentImage" :alt="product.name" loading="lazy" decoding="async" class="w-full h-full object-contain p-4 sm:p-6 transition-transform duration-300 group-hover:scale-[1.04]" />
         <div v-else class="w-full h-full flex items-center justify-center text-sm text-slate-400">No image available</div>
       </NuxtLink>
 

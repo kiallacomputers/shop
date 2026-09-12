@@ -7,6 +7,8 @@
         class="w-full md:w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden shrink-0"
       >
         <img
+          loading="lazy"
+          decoding="async"
           v-if="firstImage"
           :src="firstImage"
           :alt="product.name"
