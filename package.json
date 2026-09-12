@@ -7,7 +7,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "backup:shop": "powershell -ExecutionPolicy Bypass -File ./scripts/backup-kialla.ps1",
+    "backup:verify": "powershell -ExecutionPolicy Bypass -File ./scripts/verify-backup.ps1"
   },
   "dependencies": {
     "@nuxtjs/supabase": "^2.0.9",
