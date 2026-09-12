@@ -279,9 +279,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 useSeoMeta({ robots: "noindex, nofollow" });
-lang="ts">
 definePageMeta({ middleware: ["auth"] });
 
 type FreightRate = { code: string; name: string; price: number; free: boolean };

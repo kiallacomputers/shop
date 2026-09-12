@@ -208,9 +208,8 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 useSeoMeta({ robots: "noindex, nofollow" });
-lang="ts">
 const cart = useCartStore();
 const route = useRoute();
 const supabase = useSupabaseClient();
