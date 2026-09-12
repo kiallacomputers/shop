@@ -114,10 +114,12 @@ const props = withDefaults(
     category?: Category | null;
     categories: Category[];
     submitLabel?: string;
+    initialParentId?: string;
   }>(),
   {
     category: null,
     submitLabel: "",
+    initialParentId: "",
   },
 );
 
@@ -135,7 +137,7 @@ const form = reactive({
   slug: props.category?.slug ?? "",
   parent_id: props.category?.parent_id
     ? String(props.category.parent_id)
-    : "",
+    : String(props.initialParentId || ""),
   active: props.category?.active ?? true,
 });
 

@@ -21,7 +21,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        Add Category
+        Add Main Category
       </NuxtLink>
     </div>
 
@@ -84,27 +84,56 @@
         :key="group.parent.id"
         class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
       >
-        <div class="flex flex-col gap-4 bg-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-2">
-              <h2 class="truncate text-lg font-bold text-slate-900">{{ group.parent.name }}</h2>
-              <span
-                class="rounded-full px-2.5 py-1 text-xs font-semibold"
-                :class="group.parent.active === false ? 'bg-slate-200 text-slate-600' : 'bg-green-100 text-green-700'"
-              >
-                {{ group.parent.active === false ? "Inactive" : "Active" }}
-              </span>
-            </div>
-            <p class="mt-1 text-xs text-slate-500">
-              /{{ group.parent.slug }} · Sort {{ Number(group.parent.sort_order || 0) }} ·
-              {{ group.children.length }} {{ group.children.length === 1 ? "subcategory" : "subcategories" }}
-            </p>
-          </div>
+        <div
+          class="flex flex-col gap-3 bg-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4"
+        >
+          <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            :aria-expanded="isExpanded(group.parent.id)"
+            @click="toggleGroup(group.parent.id)"
+          >
+            <span
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm transition-transform"
+              :class="isExpanded(group.parent.id) ? 'rotate-90' : ''"
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6" />
+              </svg>
+            </span>
 
-          <div class="flex shrink-0 gap-2">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="truncate text-lg font-bold text-slate-900">{{ group.parent.name }}</h2>
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                  :class="group.parent.active === false ? 'bg-slate-200 text-slate-600' : 'bg-green-100 text-green-700'"
+                >
+                  {{ group.parent.active === false ? "Inactive" : "Active" }}
+                </span>
+                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">
+                  {{ group.children.length }} {{ group.children.length === 1 ? "subcategory" : "subcategories" }}
+                </span>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">
+                /{{ group.parent.slug }} · Sort {{ Number(group.parent.sort_order || 0) }}
+              </p>
+            </div>
+          </button>
+
+          <div class="flex shrink-0 flex-wrap gap-2 pl-11 sm:pl-0">
+            <NuxtLink
+              :to="{ path: '/admin/categories/new', query: { parent: String(group.parent.id) } }"
+              class="admin-btn-primary !min-h-0 !px-3 !py-2 !text-xs"
+              @click.stop
+            >
+              + Add Subcategory
+            </NuxtLink>
             <NuxtLink
               :to="`/admin/categories/${group.parent.id}`"
-              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700"
+              class="admin-btn-secondary !min-h-0 !px-3 !py-2 !text-xs"
+              @click.stop
             >
               Edit
             </NuxtLink>
@@ -112,14 +141,14 @@
               type="button"
               :disabled="deletingId === String(group.parent.id)"
               class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-              @click="deleteCategory(group.parent)"
+              @click.stop="deleteCategory(group.parent)"
             >
               {{ deletingId === String(group.parent.id) ? "Deleting..." : "Delete" }}
             </button>
           </div>
         </div>
 
-        <div v-if="group.children.length" class="divide-y divide-slate-100">
+        <div v-if="isExpanded(group.parent.id) && group.children.length" class="divide-y divide-slate-100">
           <div
             v-for="category in group.children"
             :key="category.id"
@@ -162,8 +191,8 @@
           </div>
         </div>
 
-        <div v-else class="px-5 py-4 text-sm text-slate-400">
-          No subcategories.
+        <div v-else-if="isExpanded(group.parent.id)" class="px-5 py-4 text-sm text-slate-400">
+          No subcategories yet. Use <strong>+ Add Subcategory</strong> to add one directly under this category.
         </div>
       </section>
 
@@ -218,6 +247,21 @@ const errorMessage = ref("");
 const deletingId = ref<string | null>(null);
 const search = ref("");
 const statusFilter = ref("");
+const expandedIds = ref<Set<string>>(new Set());
+
+const isExpanded = (id: string | number) => {
+  const key = String(id);
+  if (search.value.trim() || statusFilter.value) return true;
+  return expandedIds.value.has(key);
+};
+
+const toggleGroup = (id: string | number) => {
+  const key = String(id);
+  const next = new Set(expandedIds.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  expandedIds.value = next;
+};
 
 const matchesFilter = (category: Category) => {
   const query = search.value.trim().toLowerCase();

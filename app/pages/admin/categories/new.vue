@@ -17,11 +17,16 @@
       </div>
 
       <h1 class="mt-3 text-3xl font-bold text-slate-900">
-        Add Category
+        {{ selectedParent ? "Add Subcategory" : "Add Main Category" }}
       </h1>
 
       <p class="mt-2 text-slate-500">
-        Create a new main category or subcategory.
+        <template v-if="selectedParent">
+          This category will be added under <strong class="text-slate-700">{{ selectedParent.name }}</strong>.
+        </template>
+        <template v-else>
+          Create a new top-level category for your store.
+        </template>
       </p>
     </div>
 
@@ -42,6 +47,7 @@
     <CategoryAdminForm
       v-else
       :categories="categories"
+      :initial-parent-id="initialParentId"
       submit-label="Create Category"
       @saved="handleSaved"
     />
@@ -64,8 +70,17 @@ type Category = {
 };
 
 const { adminFetch } = useAdminFetch();
+const route = useRoute();
 
 const categories = ref<Category[]>([]);
+const initialParentId = computed(() => String(route.query.parent || ""));
+const selectedParent = computed(() =>
+  categories.value.find(
+    (category) =>
+      String(category.id) === initialParentId.value &&
+      (category.parent_id === null || category.parent_id === undefined || category.parent_id === ""),
+  ) || null,
+);
 
 const loading = ref(true);
 const errorMessage = ref("");
