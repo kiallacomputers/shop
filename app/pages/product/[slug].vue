@@ -692,7 +692,7 @@
   </Teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const supabase = useSupabaseClient();
 const route = useRoute();
 
