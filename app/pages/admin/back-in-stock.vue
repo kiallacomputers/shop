@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin" });
+definePageMeta({ layout: "admin", middleware: "admin" });
 const { adminFetch } = useAdminFetch();
 const rows = ref<any[]>([]); const loading=ref(false); const errorMessage=ref(''); const successMessage=ref(''); const filter=ref('all'); const processingKey=ref('');
 const waiting=computed(()=>rows.value.filter(x=>x.status==='waiting')); const sent=computed(()=>rows.value.filter(x=>x.status==='sent')); const filtered=computed(()=>filter.value==='all'?rows.value:rows.value.filter(x=>x.status===filter.value));

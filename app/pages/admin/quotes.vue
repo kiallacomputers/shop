@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["admin", "superadmin"] });
+definePageMeta({ layout: "admin", middleware: ["admin", "superadmin"] });
 const { adminFetch } = useAdminFetch();
 const quotes = ref<any[]>([]); const loading = ref(true); const busyId = ref<number|null>(null);
 const search = ref(""); const statusFilter = ref("all"); const errorMessage = ref(""); const successMessage = ref("");

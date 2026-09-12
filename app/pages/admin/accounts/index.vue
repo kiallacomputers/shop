@@ -303,7 +303,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["admin", "superadmin"] });
+definePageMeta({ layout: "admin", middleware: ["admin", "superadmin"] });
 
 type Role = "superadmin" | "admin" | null;
 type PricingLevel = { key: string; name: string; markup_percent: number };

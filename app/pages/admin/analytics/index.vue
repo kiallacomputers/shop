@@ -323,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
+definePageMeta({ layout: "admin",
   middleware: "admin",
 });
 

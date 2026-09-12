@@ -280,25 +280,6 @@
       </section>
 
       <p class="mb-8 text-xs text-slate-400">* Estimated gross profit is product sales ex GST less the current Buy Price ex GST. Freight, payment fees and other business costs are not deducted.</p>
-
-      <!-- ADMIN TOOLS -->
-      <section class="border-t border-slate-200 pt-8">
-        <div class="mb-4">
-          <h2 class="text-lg font-bold text-slate-900">Admin Tools</h2>
-          <p class="text-sm text-slate-500">Store management and configuration.</p>
-        </div>
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-          <NuxtLink v-for="tool in visibleTools" :key="tool.to" :to="tool.to" class="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md">
-            <div class="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-700 transition group-hover:bg-blue-50 group-hover:text-blue-700" v-html="tool.icon" />
-            <div class="flex items-start justify-between gap-2">
-              <p class="font-bold text-slate-900 group-hover:text-blue-700">{{ tool.title }}</p>
-              <span v-if="tool.superadmin" class="rounded-full bg-violet-100 px-2 py-0.5 text-[9px] font-bold uppercase text-violet-700">SuperAdmin</span>
-            </div>
-            <p class="mt-1 text-sm text-slate-500">{{ tool.description }}</p>
-          </NuxtLink>
-        </div>
-      </section>
     </template>
   </main>
 </template>
@@ -334,7 +315,7 @@ const QuoteStat = defineComponent({
   },
 });
 
-definePageMeta({ middleware: "admin" });
+definePageMeta({ layout: "admin", middleware: "admin" });
 
 const { adminFetch, checkAdmin, isSuperAdmin, adminRole } = useAdminFetch();
 
@@ -387,24 +368,6 @@ const statusClass = (value: unknown) => {
   return "bg-slate-100 text-slate-700";
 };
 
-const toolIcon = (path: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${path}" /></svg>`;
-const tools = [
-  { to: "/admin/reports", title: "Business Reports", description: "Sales, GST, customers, products and CSV exports.", superadmin: true, icon: toolIcon("M4 19V5h16v14H4Zm4-4 3-3 2 2 3-4M8 8h8") },
-  { to: "/admin/inventory", title: "Inventory & Low Stock", description: "Low stock, back orders, demand and stock value.", icon: toolIcon("M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5M8 4h8l1 3H7l1-3Z") },
-  { to: "/admin/products", title: "Manage Products", description: "Add products, edit pricing and update stock.", icon: toolIcon("M3 6h18M6 6v14h12V6M9 10h6") },
-  { to: "/admin/storage-cleanup", title: "Storage Cleanup", description: "Find and remove unused product images.", icon: toolIcon("M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13") },
-  { to: "/admin/categories", title: "Manage Categories", description: "Create and organise shop categories.", icon: toolIcon("M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z") },
-  { to: "/admin/orders", title: "Manage Orders", description: "Review purchases and update order status.", icon: toolIcon("M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3") },
-  { to: "/admin/quotes", title: "Quote Management", description: "Manage quotes, expiry, PDFs and customer sends.", superadmin: true, icon: toolIcon("M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6m-6 4h4") },
-  { to: "/admin/back-in-stock", title: "Back in Stock", description: "Waiting customers and notification history.", icon: toolIcon("M12 3v12m0 0-4-4m4 4 4-4M5 20h14") },
-  { to: "/admin/analytics", title: "Traffic Analytics", description: "Visits, products, categories and traffic sources.", icon: toolIcon("M4 19V9m6 10V5m6 14v-7m4 7H2") },
-  { to: "/admin/facebook-share", title: "Facebook Product Share", description: "Publish product posts to your Facebook Page.", icon: toolIcon("M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8") },
-  { to: "/admin/ads", title: "Manage Advertisements", description: "Upload, order and enable storefront banners.", icon: toolIcon("M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5") },
-  { to: "/admin/freight", title: "Manage Freight", description: "Australia Post, local delivery and store pickup.", icon: toolIcon("M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z") },
-  { to: "/admin/pricing-levels", title: "Manage Pricing Levels", description: "Set customer pricing markups and availability.", superadmin: true, icon: toolIcon("M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3") },
-  { to: "/admin/accounts", title: "Account Management", description: "Manage customers and administrator roles.", superadmin: true, icon: toolIcon("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87") },
-];
-const visibleTools = computed(() => tools.filter((tool) => !tool.superadmin || isSuperAdmin.value));
 
 async function loadDashboard() {
   loading.value = true;

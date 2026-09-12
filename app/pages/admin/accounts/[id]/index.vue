@@ -220,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["admin", "superadmin"] });
+definePageMeta({ layout: "admin", middleware: ["admin", "superadmin"] });
 
 const route = useRoute();
 const { adminFetch } = useAdminFetch();

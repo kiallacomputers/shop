@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: "admin" });
+definePageMeta({ layout: "admin", middleware: "admin" });
 
 type Product = {
   id: string | number;

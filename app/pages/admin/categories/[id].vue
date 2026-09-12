@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import CategoryAdminForm from "~/components/CategoryAdminForm.vue";
 
-definePageMeta({
+definePageMeta({ layout: "admin",
   middleware: "admin",
 });
 

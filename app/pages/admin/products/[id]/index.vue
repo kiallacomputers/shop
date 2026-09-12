@@ -8,7 +8,7 @@
 <script setup lang="ts">
 import ProductAdminForm from "~/components/ProductAdminForm.vue";
 
-definePageMeta({
+definePageMeta({ layout: "admin",
   middleware: "admin",
 });
 

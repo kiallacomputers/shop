@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ middleware: ["auth", "admin", "superadmin"] });
+definePageMeta({ layout: "admin", middleware: ["auth", "admin", "superadmin"] });
 const { adminFetch } = useAdminFetch();
 const report = ref<any>(null); const loading = ref(false); const errorMessage = ref(""); const tab = ref("sales"); const preset = ref("month");
 const localDate = (d: Date) => { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${day}`; };
