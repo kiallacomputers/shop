@@ -24,7 +24,62 @@
         {{ addressError }}
       </div>
 
-      <section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <div class="mb-5 lg:hidden">
+        <label class="mb-2 block text-sm font-bold text-slate-700" for="account-section-mobile">
+          Account Section
+        </label>
+        <select
+          id="account-section-mobile"
+          :value="activeAccountSection"
+          class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm"
+          @change="handleAccountSectionSelect"
+        >
+          <option v-for="section in accountSections" :key="section.id" :value="section.id">
+            {{ section.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="grid items-start gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)]">
+        <aside class="sticky top-24 hidden lg:block">
+          <nav class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm" aria-label="My Account sections">
+            <p class="px-3 pb-2 pt-1 text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+              My Account
+            </p>
+
+            <button
+              v-for="section in accountSections"
+              :key="section.id"
+              type="button"
+              class="mb-1 flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition"
+              :class="
+                activeAccountSection === section.id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+              "
+              @click="scrollToAccountSection(section.id)"
+            >
+              <span>{{ section.label }}</span>
+              <span
+                v-if="section.id === 'account-orders' && dashboardStats.orders"
+                class="inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-black"
+                :class="activeAccountSection === section.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'"
+              >
+                {{ dashboardStats.orders }}
+              </span>
+              <span
+                v-else-if="section.id === 'account-wishlist' && dashboardStats.wishlist"
+                class="inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-black"
+                :class="activeAccountSection === section.id ? 'bg-white/20 text-white' : 'bg-rose-50 text-rose-600'"
+              >
+                {{ dashboardStats.wishlist }}
+              </span>
+            </button>
+          </nav>
+        </aside>
+
+        <div class="min-w-0">
+<section class="scroll-mt-24 mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5" id="account-overview">
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Orders</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.orders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Open Orders</p><p class="mt-2 text-3xl font-black text-blue-700">{{ dashboardStats.openOrders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Total Spent</p><p class="mt-2 text-2xl font-black text-slate-900">{{ currency(dashboardStats.totalSpent) }}</p></div>
@@ -32,7 +87,7 @@
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Quote Requests</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.quotes }}</p></div>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-profile">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Customer Profile</h2>
@@ -66,7 +121,7 @@
         </div>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-wishlist">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Wishlist</h2><p class="mt-1 text-sm text-slate-500">Keep products handy while you decide.</p></div>
           <NuxtLink to="/account/wishlist" class="text-sm font-bold text-blue-600 hover:text-blue-700">View Wishlist →</NuxtLink>
@@ -80,7 +135,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">No saved products yet.</p>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-back-in-stock">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Back in Stock Notifications</h2><p class="mt-1 text-sm text-slate-500">Products you have asked us to notify you about.</p></div>
         </div>
@@ -99,7 +154,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">You are not currently waiting for any products.</p>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-quotes">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Quote Requests</h2><p class="mt-1 text-sm text-slate-500">Quotes requested from your shopping cart.</p></div>
           <NuxtLink to="/shoppingcart" class="text-sm font-bold text-blue-600 hover:text-blue-700">Request a Quote →</NuxtLink>
@@ -138,7 +193,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">No quote requests yet.</p>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-information">
         <h2 class="text-xl font-bold mb-4 text-slate-900">Account Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -156,7 +211,7 @@
         </div>
       </section>
 
-      <section class="kc-panel p-6 mb-8">
+      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-security">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Account Security</h2>
@@ -239,7 +294,7 @@
       </section>
 
       <!-- ADDRESS BOOK -->
-      <section class="kc-panel mb-8 overflow-hidden">
+      <section class="scroll-mt-24 kc-panel mb-8 overflow-hidden" id="account-addresses">
         <div class="p-6 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Delivery Addresses</h2>
@@ -369,7 +424,7 @@
       </section>
 
       <!-- ORDERS -->
-      <section>
+      <section id="account-orders" class="scroll-mt-24">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 class="text-2xl font-bold text-slate-900">My Orders</h2>
@@ -403,6 +458,8 @@
           </div>
         </div>
       </section>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -411,6 +468,57 @@
 definePageMeta({ middleware: "auth" });
 
 const supabase = useSupabaseClient();
+
+const accountSections = [
+  { id: "account-overview", label: "Overview" },
+  { id: "account-profile", label: "Profile" },
+  { id: "account-security", label: "Security" },
+  { id: "account-addresses", label: "Delivery Addresses" },
+  { id: "account-orders", label: "My Orders" },
+  { id: "account-wishlist", label: "Wishlist" },
+  { id: "account-back-in-stock", label: "Back in Stock" },
+  { id: "account-quotes", label: "Quotes" },
+  { id: "account-information", label: "Account Information" },
+];
+
+const activeAccountSection = ref("account-overview");
+let accountSectionObserver: IntersectionObserver | null = null;
+
+const scrollToAccountSection = (id: string) => {
+  activeAccountSection.value = id;
+  document.getElementById(id)?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+};
+
+const handleAccountSectionSelect = (event: Event) => {
+  scrollToAccountSection((event.target as HTMLSelectElement).value);
+};
+
+const setupAccountSectionObserver = () => {
+  accountSectionObserver?.disconnect();
+
+  accountSectionObserver = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+      const id = visible[0]?.target?.id;
+      if (id) activeAccountSection.value = id;
+    },
+    {
+      rootMargin: "-96px 0px -65% 0px",
+      threshold: [0.05, 0.15, 0.35],
+    },
+  );
+
+  for (const section of accountSections) {
+    const element = document.getElementById(section.id);
+    if (element) accountSectionObserver.observe(element);
+  }
+};
 
 const user = ref<any>(null);
 const orders = ref<any[]>([]);
@@ -755,5 +863,13 @@ function statusClass(status: string) {
   }
 }
 
-onMounted(loadAccount);
+onMounted(async () => {
+  await loadAccount();
+  await nextTick();
+  setupAccountSectionObserver();
+});
+
+onBeforeUnmount(() => {
+  accountSectionObserver?.disconnect();
+});
 </script>
