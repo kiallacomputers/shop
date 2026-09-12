@@ -156,6 +156,88 @@
         </div>
       </section>
 
+      <section class="kc-panel p-6 mb-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Account Security</h2>
+            <p class="mt-1 text-sm text-slate-500">
+              Change the password used to sign in to your Kialla Computers account.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="kc-btn-secondary !px-4 !py-2.5 text-sm"
+            @click="togglePasswordForm"
+          >
+            {{ showPasswordForm ? "Cancel" : "Change Password" }}
+          </button>
+        </div>
+
+        <div
+          v-if="passwordSuccess"
+          class="kc-alert kc-alert-success mt-5"
+        >
+          {{ passwordSuccess }}
+        </div>
+
+        <div
+          v-if="passwordError"
+          class="kc-alert kc-alert-error mt-5"
+        >
+          {{ passwordError }}
+        </div>
+
+        <form
+          v-if="showPasswordForm"
+          class="mt-6 border-t border-slate-200 pt-6"
+          @submit.prevent="changePassword"
+        >
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label>
+              <span class="mb-1.5 block text-sm font-semibold text-slate-700">
+                New Password
+              </span>
+              <input
+                v-model="newPassword"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+                class="w-full rounded-lg border border-slate-300 px-3 py-2.5"
+              />
+            </label>
+
+            <label>
+              <span class="mb-1.5 block text-sm font-semibold text-slate-700">
+                Confirm New Password
+              </span>
+              <input
+                v-model="confirmNewPassword"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+                class="w-full rounded-lg border border-slate-300 px-3 py-2.5"
+              />
+            </label>
+          </div>
+
+          <p class="mt-3 text-xs text-slate-500">
+            Your password must be at least 8 characters long.
+          </p>
+
+          <div class="mt-5 flex justify-end">
+            <button
+              type="submit"
+              :disabled="changingPassword"
+              class="kc-btn-primary !px-5 !py-2.5"
+            >
+              {{ changingPassword ? "Updating Password..." : "Update Password" }}
+            </button>
+          </div>
+        </form>
+      </section>
+
       <!-- ADDRESS BOOK -->
       <section class="kc-panel mb-8 overflow-hidden">
         <div class="p-6 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -352,6 +434,13 @@ const payingQuoteId = ref<number | null>(null);
 const backInStockNotifications = ref<any[]>([]);
 const cancellingBackInStockId = ref<number | null>(null);
 
+const showPasswordForm = ref(false);
+const newPassword = ref("");
+const confirmNewPassword = ref("");
+const changingPassword = ref(false);
+const passwordError = ref("");
+const passwordSuccess = ref("");
+
 const showAddressForm = ref(false);
 const editingAddressId = ref<string | null>(null);
 const editingPrimary = ref(false);
@@ -533,6 +622,61 @@ async function cancelBackInStock(notice: any) {
     errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to cancel notification.";
   } finally {
     cancellingBackInStockId.value = null;
+  }
+}
+
+function togglePasswordForm() {
+  showPasswordForm.value = !showPasswordForm.value;
+  passwordError.value = "";
+  passwordSuccess.value = "";
+  newPassword.value = "";
+  confirmNewPassword.value = "";
+}
+
+async function changePassword() {
+  passwordError.value = "";
+  passwordSuccess.value = "";
+
+  if (newPassword.value.length < 8) {
+    passwordError.value = "Your password must be at least 8 characters long.";
+    return;
+  }
+
+  if (newPassword.value !== confirmNewPassword.value) {
+    passwordError.value = "The passwords do not match.";
+    return;
+  }
+
+  changingPassword.value = true;
+
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      throw new Error("Your sign-in session has expired. Please sign in again.");
+    }
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword.value,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    newPassword.value = "";
+    confirmNewPassword.value = "";
+    showPasswordForm.value = false;
+    passwordSuccess.value = "Your password has been updated successfully.";
+  } catch (error: any) {
+    passwordError.value =
+      error?.message ||
+      "Unable to update your password. Please try again.";
+  } finally {
+    changingPassword.value = false;
   }
 }
 
