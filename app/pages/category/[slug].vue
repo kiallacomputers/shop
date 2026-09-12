@@ -122,6 +122,39 @@ const category = computed(() =>
   (visibleCategories.value || []).find((item) => String(item.slug || "") === slug.value) || null,
 );
 
+const categorySeoTitle = computed(() => category.value?.name ? `${category.value.name} — Shop Online` : "Shop Category");
+const categorySeoDescription = computed(() =>
+  category.value?.name
+    ? `Shop ${category.value.name} from Kialla Computers. Browse our current range with secure checkout and Australian delivery.`
+    : "Browse products from Kialla Computers."
+);
+const categoryCanonical = computed(() => `https://shop.kiallacomputers.com.au/category/${encodeURIComponent(slug.value)}`);
+
+useSeoMeta({
+  title: () => categorySeoTitle.value,
+  description: () => categorySeoDescription.value,
+  ogTitle: () => `${category.value?.name || "Shop"} | Kialla Computers`,
+  ogDescription: () => categorySeoDescription.value,
+  ogUrl: () => categoryCanonical.value,
+  twitterTitle: () => `${category.value?.name || "Shop"} | Kialla Computers`,
+  twitterDescription: () => categorySeoDescription.value,
+});
+
+useHead(() => ({
+  link: [{ rel: "canonical", href: categoryCanonical.value }],
+  script: category.value ? [{
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://shop.kiallacomputers.com.au/" },
+        { "@type": "ListItem", position: 2, name: category.value.name, item: categoryCanonical.value }
+      ]
+    })
+  }] : []
+}));
+
 const childCategories = computed(() => {
   if (!category.value) return [];
 

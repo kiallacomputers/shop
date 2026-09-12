@@ -899,6 +899,68 @@ const { data: product } = await useAsyncData(
   },
 );
 
+const productCanonical = computed(() => `https://shop.kiallacomputers.com.au/product/${encodeURIComponent(String(product.value?.slug || route.params.slug || ""))}`);
+const productSeoDescription = computed(() => {
+  const text = String(product.value?.blurb || "").replace(/\s+/g, " ").trim();
+  return text
+    ? text.slice(0, 155)
+    : `Shop ${product.value?.name || "this product"} from Kialla Computers with secure checkout and Australian delivery.`;
+});
+const productSeoImage = computed(() => {
+  const source = product.value?.images;
+  if (Array.isArray(source)) return source.find(Boolean) || undefined;
+  if (typeof source === "string") {
+    try {
+      const parsed = JSON.parse(source);
+      if (Array.isArray(parsed)) return parsed.find(Boolean) || undefined;
+    } catch {}
+  }
+  return undefined;
+});
+
+useSeoMeta({
+  title: () => product.value?.name || "Product",
+  description: () => productSeoDescription.value,
+  ogTitle: () => `${product.value?.name || "Product"} | Kialla Computers`,
+  ogDescription: () => productSeoDescription.value,
+  ogUrl: () => productCanonical.value,
+  ogType: "website",
+  ogImage: () => productSeoImage.value,
+  twitterTitle: () => `${product.value?.name || "Product"} | Kialla Computers`,
+  twitterDescription: () => productSeoDescription.value,
+  twitterImage: () => productSeoImage.value,
+});
+
+useHead(() => {
+  if (!product.value) return { link: [{ rel: "canonical", href: productCanonical.value }] };
+
+  const stock = Number(product.value.stock || 0);
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.value.name,
+    description: productSeoDescription.value,
+    sku: product.value.product_code || undefined,
+    image: productSeoImage.value ? [productSeoImage.value] : undefined,
+    category: product.value.categories?.name || undefined,
+    offers: {
+      "@type": "Offer",
+      url: productCanonical.value,
+      priceCurrency: "AUD",
+      price: Number(product.value.price || 0).toFixed(2),
+      availability: stock > 0 ? "https://schema.org/InStock" : "https://schema.org/BackOrder",
+      itemCondition: product.value.refurbished
+        ? "https://schema.org/RefurbishedCondition"
+        : "https://schema.org/NewCondition"
+    }
+  };
+
+  return {
+    link: [{ rel: "canonical", href: productCanonical.value }],
+    script: [{ type: "application/ld+json", children: JSON.stringify(structuredData) }]
+  };
+});
+
 const { data: relatedProductRows } = await useAsyncData(
   `related-products-${route.params.slug}`,
   async () => {

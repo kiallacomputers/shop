@@ -1,4 +1,6 @@
-<script setup lang="ts">
+<script setup>
+useSeoMeta({ robots: "noindex, nofollow" });
+lang="ts">
 definePageMeta({ layout: "auth" });
 const supabase = useSupabaseClient();
 const loading = ref(false);

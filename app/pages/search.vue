@@ -109,6 +109,13 @@
 </template>
 
 <script setup>
+useSeoMeta({
+  title: "Search",
+  description: "Search the Kialla Computers product catalogue.",
+  robots: "noindex, follow",
+});
+useHead({ link: [{ rel: "canonical", href: "https://shop.kiallacomputers.com.au/search" }] });
+
 const route = useRoute();
 const router = useRouter();
 const user = useSupabaseUser();

@@ -84,6 +84,34 @@
 </template>
 
 <script setup>
+const seoSiteUrl = "https://shop.kiallacomputers.com.au";
+
+useSeoMeta({
+  title: "Computers, Components & Local Computer Support",
+  description: "Shop computers, components, upgrades and practical computer support from Kialla Computers. Secure checkout, Australian delivery and local service.",
+  ogTitle: "Kialla Computers — Computers without the hassle",
+  ogDescription: "Quality computers, components, upgrades and practical support from a local independent Australian business.",
+  ogUrl: seoSiteUrl,
+  twitterTitle: "Kialla Computers — Computers without the hassle",
+  twitterDescription: "Computers, components, upgrades and practical computer support with Australian delivery.",
+});
+
+useHead({
+  link: [{ rel: "canonical", href: seoSiteUrl }],
+  script: [{
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      name: "Kialla Computers",
+      url: seoSiteUrl,
+      description: "Computers, components, upgrades and practical computer support with Australian delivery.",
+      areaServed: "AU",
+      currenciesAccepted: "AUD"
+    })
+  }]
+});
+
 const supabase = useSupabaseClient();
 const { visibleCategories } = useStorefrontCategories();
 

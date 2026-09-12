@@ -252,7 +252,9 @@
   </main>
 </template>
 
-<script setup lang="ts">
+<script setup>
+useSeoMeta({ robots: "noindex, nofollow" });
+lang="ts">
 // =====================================================
 // CUSTOMER LOGIN ONLY
 // =====================================================
