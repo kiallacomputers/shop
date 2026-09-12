@@ -67,3 +67,160 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .kc-field-label { display:block; margin-bottom:.4rem; color:#334155; font-size:.875rem; font-weight:700; }
 .kc-page-header { margin-bottom:2rem; }
 @media (max-width:767px) { .kc-state { padding:1.5rem 1rem; } .kc-page-header { margin-bottom:1.4rem; } }
+
+
+/* ============================================================
+   ADMIN UI SYSTEM — Stage 2
+   Scoped to the dedicated admin layout so storefront styling
+   remains unchanged.
+   ============================================================ */
+.admin-content {
+  --admin-border:#e2e8f0;
+  --admin-muted:#64748b;
+  --admin-ink:#0f172a;
+  --admin-blue:#2563eb;
+  background:#f1f5f9;
+  color:var(--admin-ink);
+}
+.admin-content > main,
+.admin-content > div {
+  min-height:auto !important;
+  background:transparent !important;
+}
+.admin-content main,
+.admin-content > div {
+  width:100%;
+}
+.admin-content h1 {
+  color:#0f172a;
+  font-size:clamp(1.65rem,2.3vw,2rem);
+  line-height:1.15;
+  font-weight:800;
+  letter-spacing:-.025em;
+}
+.admin-content h2 { color:#0f172a; letter-spacing:-.015em; }
+.admin-content p { text-wrap:pretty; }
+
+.admin-content input:not([type="checkbox"]):not([type="radio"]),
+.admin-content select,
+.admin-content textarea {
+  min-height:42px;
+  border:1px solid #cbd5e1;
+  border-radius:.65rem;
+  background:#fff;
+  color:#0f172a;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+.admin-content input:not([type="checkbox"]):not([type="radio"]):focus,
+.admin-content select:focus,
+.admin-content textarea:focus {
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow:0 0 0 3px rgba(59,130,246,.12);
+}
+.admin-content input[type="checkbox"],
+.admin-content input[type="radio"] { accent-color:#2563eb; }
+
+.admin-content table { border-collapse:separate; border-spacing:0; width:100%; }
+.admin-content thead th {
+  position:relative;
+  background:#f8fafc;
+  color:#475569;
+  font-size:.72rem;
+  line-height:1rem;
+  font-weight:800;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.admin-content tbody tr { transition:background-color .15s ease; }
+.admin-content tbody tr:hover { background:#f8fafc; }
+.admin-content th,
+.admin-content td { vertical-align:middle; }
+
+.admin-content button,
+.admin-content a {
+  -webkit-tap-highlight-color:transparent;
+}
+.admin-content button:focus-visible,
+.admin-content a:focus-visible {
+  outline:3px solid rgba(37,99,235,.25);
+  outline-offset:2px;
+}
+.admin-content button:disabled { cursor:not-allowed; }
+
+.admin-content .admin-page-backlink { display:none !important; }
+
+/* Cards/panels already use Tailwind borders; make their depth consistent. */
+.admin-content .shadow-sm {
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 3px 10px rgba(15,23,42,.035);
+}
+.admin-content .rounded-xl.border,
+.admin-content .rounded-2xl.border {
+  border-color:#e2e8f0;
+}
+
+/* Horizontal tables remain usable instead of squeezing columns. */
+.admin-content .overflow-x-auto {
+  scrollbar-width:thin;
+  scrollbar-color:#cbd5e1 transparent;
+}
+.admin-content .overflow-x-auto::-webkit-scrollbar { height:9px; }
+.admin-content .overflow-x-auto::-webkit-scrollbar-thumb {
+  background:#cbd5e1;
+  border-radius:999px;
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+
+/* Keep primary actions easy to reach on narrow admin pages. */
+@media (max-width:639px) {
+  .admin-content h1 { font-size:1.55rem; }
+  .admin-content button,
+  .admin-content a.rounded-lg,
+  .admin-content a.rounded-xl { min-height:42px; }
+  .admin-content table { min-width:680px; }
+  .admin-content .overflow-x-auto { overscroll-behavior-x:contain; }
+}
+
+.admin-btn-primary,
+.admin-btn-secondary,
+.admin-btn-danger {
+  display:inline-flex;
+  min-height:42px;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  border-radius:.65rem;
+  padding:.625rem 1rem;
+  font-size:.875rem;
+  line-height:1.25rem;
+  font-weight:700;
+  transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+}
+.admin-btn-primary { border:1px solid #2563eb; background:#2563eb; color:#fff; box-shadow:0 1px 2px rgba(15,23,42,.08); }
+.admin-btn-primary:hover { background:#1d4ed8; border-color:#1d4ed8; }
+.admin-btn-secondary { border:1px solid #cbd5e1; background:#fff; color:#334155; }
+.admin-btn-secondary:hover { background:#f8fafc; border-color:#94a3b8; }
+.admin-btn-danger { border:1px solid #dc2626; background:#dc2626; color:#fff; }
+.admin-btn-danger:hover { background:#b91c1c; border-color:#b91c1c; }
+.admin-btn-primary:disabled,.admin-btn-secondary:disabled,.admin-btn-danger:disabled { opacity:.55; }
+
+.admin-action-bar {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:.65rem;
+}
+.admin-subnav-link {
+  display:inline-flex;
+  align-items:center;
+  min-height:36px;
+  color:#475569;
+  font-size:.875rem;
+  font-weight:700;
+}
+.admin-subnav-link:hover { color:#0f172a; }
+
+.admin-content .overflow-x-auto thead th { position:sticky; top:0; z-index:2; }

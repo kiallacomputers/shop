@@ -2,10 +2,7 @@
   <main class="max-w-5xl mx-auto px-4 py-8">
     <div class="mb-7">
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
-          ← Admin Dashboard
-        </NuxtLink>
-        <NuxtLink to="/admin/products" class="text-sm font-semibold text-slate-600 hover:text-slate-900">
+        <NuxtLink to="/admin/products" class="admin-subnav-link">
           Manage Products
         </NuxtLink>
       </div>
@@ -21,18 +18,15 @@
       Loading product...
     </div>
 
-    <form v-else class="space-y-6" @submit.prevent="saveProduct">
+    <form id="product-admin-form" v-else class="space-y-6" @submit.prevent="saveProduct">
       <div v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {{ errorMessage }}
       </div>
 
-      <div v-if="mode === 'edit'" class="flex justify-end">
-        <button
-          type="submit"
-          :disabled="saving"
-          class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ saving ? "Saving..." : "Save Changes" }}
+      <div class="admin-action-bar">
+        <NuxtLink to="/admin/products" class="admin-btn-secondary">Cancel</NuxtLink>
+        <button type="submit" :disabled="saving" class="admin-btn-primary">
+          {{ saving ? "Saving..." : (mode === "create" ? "Create Product" : "Save Changes") }}
         </button>
       </div>
 

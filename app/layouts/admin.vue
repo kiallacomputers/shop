@@ -33,7 +33,7 @@
           <NuxtLink to="/" class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">View Store</NuxtLink>
         </div>
       </header>
-      <main class="min-h-[calc(100vh-4rem)]">
+      <main class="admin-content min-h-[calc(100vh-4rem)]">
         <slot />
       </main>
     </div>

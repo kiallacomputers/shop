@@ -2,7 +2,7 @@
   <main class="mx-auto max-w-7xl px-4 py-8">
     <div class="mb-7 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
       <div>
-        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700">← Admin Dashboard</NuxtLink>
+        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700 admin-page-backlink">← Admin Dashboard</NuxtLink>
         <p class="mt-5 text-sm font-semibold uppercase tracking-wider text-blue-600">Administration</p>
         <h1 class="mt-1 text-3xl font-bold text-slate-900">Inventory & Low Stock</h1>
         <p class="mt-2 max-w-3xl text-slate-500">
@@ -10,8 +10,8 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50" @click="exportCsv">Export CSV</button>
-        <button type="button" :disabled="loading" class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" @click="load">{{ loading ? 'Refreshing…' : 'Refresh' }}</button>
+        <button type="button" class="admin-btn-secondary" @click="exportCsv">Export CSV</button>
+        <button type="button" :disabled="loading" class="admin-btn-primary" @click="load">{{ loading ? 'Refreshing…' : 'Refresh' }}</button>
       </div>
     </div>
 

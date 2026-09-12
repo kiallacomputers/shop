@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-[1500px] px-4 py-8">
       <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink">
             ← Admin Dashboard
           </NuxtLink>
           <p class="mt-3 text-sm font-bold uppercase tracking-wide text-violet-600">Customer CRM</p>
@@ -16,7 +16,7 @@
         <button
           type="button"
           :disabled="loading"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+          class="admin-btn-secondary"
           @click="loadAccounts"
         >
           {{ loading ? "Refreshing..." : "Refresh CRM" }}

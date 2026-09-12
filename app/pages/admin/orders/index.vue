@@ -11,7 +11,7 @@
         <div>
           <NuxtLink
             to="/admin"
-            class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink"
           >
             ← Admin Dashboard
           </NuxtLink>

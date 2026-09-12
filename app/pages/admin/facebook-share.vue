@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-6xl px-4 py-8">
       <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink">
             ← Admin Dashboard
           </NuxtLink>
           <h1 class="mt-3 text-3xl font-bold text-slate-900">Facebook Product Share</h1>

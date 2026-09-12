@@ -4,7 +4,7 @@
       <div>
         <NuxtLink
           to="/admin"
-          class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink"
         >
           ← Admin Dashboard
         </NuxtLink>
@@ -25,7 +25,7 @@
       <button
         type="button"
         :disabled="loading || deleting"
-        class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        class="admin-btn-secondary"
         @click="loadUnused"
       >
         {{ loading ? "Scanning..." : "Scan Again" }}

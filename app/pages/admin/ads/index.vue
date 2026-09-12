@@ -3,7 +3,7 @@
     <div class="mx-auto max-w-6xl px-4 py-8">
       <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700">
+          <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink">
             ← Admin Dashboard
           </NuxtLink>
           <p class="mt-4 text-sm font-semibold uppercase tracking-wider text-blue-600">Administration</p>
@@ -12,7 +12,7 @@
         </div>
         <button
           type="button"
-          class="rounded-lg bg-slate-900 px-5 py-2.5 font-semibold text-white hover:bg-slate-700"
+          class="admin-btn-primary"
           @click="startNew"
         >
           + New Advertisement

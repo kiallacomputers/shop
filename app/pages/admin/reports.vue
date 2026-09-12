@@ -1,7 +1,7 @@
 <template>
   <main class="mx-auto max-w-7xl px-4 py-8">
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div><NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-800">← Admin Dashboard</NuxtLink><p class="mt-4 text-sm font-semibold uppercase tracking-wider text-violet-600">SuperAdmin</p><h1 class="mt-1 text-3xl font-bold text-slate-900">Business Reports</h1><p class="mt-2 text-slate-500">Sales, orders, products, customers, inventory and GST reporting.</p></div>
+      <div><NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-800 admin-page-backlink">← Admin Dashboard</NuxtLink><p class="mt-4 text-sm font-semibold uppercase tracking-wider text-violet-600">SuperAdmin</p><h1 class="mt-1 text-3xl font-bold text-slate-900">Business Reports</h1><p class="mt-2 text-slate-500">Sales, orders, products, customers, inventory and GST reporting.</p></div>
       <span class="self-start rounded-full bg-violet-100 px-3 py-1.5 text-xs font-bold text-violet-700">SuperAdmin only</span>
     </div>
 

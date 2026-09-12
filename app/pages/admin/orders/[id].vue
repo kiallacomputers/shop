@@ -8,13 +8,13 @@
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <NuxtLink
           to="/admin"
-          class="text-sm font-semibold text-blue-600 hover:text-blue-700"
+          class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink"
         >
           ← Admin Dashboard
         </NuxtLink>
         <NuxtLink
           to="/admin/orders"
-          class="text-sm font-semibold text-slate-600 hover:text-slate-900"
+          class="admin-subnav-link"
         >
           Manage Orders
         </NuxtLink>

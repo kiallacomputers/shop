@@ -81,10 +81,10 @@
       {{ errorMessage }}
     </div>
 
-    <div class="flex justify-end gap-3">
+    <div class="admin-action-bar">
       <NuxtLink
         to="/admin/categories"
-        class="rounded-lg border border-slate-300 px-5 py-2.5 font-semibold text-slate-700 hover:bg-slate-50"
+        class="admin-btn-secondary"
       >
         Cancel
       </NuxtLink>
@@ -92,7 +92,7 @@
       <button
         type="submit"
         :disabled="saving"
-        class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        class="admin-btn-primary"
       >
         {{ saving ? "Saving..." : buttonText }}
       </button>

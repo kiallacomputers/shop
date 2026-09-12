@@ -2,7 +2,7 @@
   <main class="max-w-7xl mx-auto px-4 py-8">
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700">← Admin Dashboard</NuxtLink>
+        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700 admin-page-backlink">← Admin Dashboard</NuxtLink>
         <p class="mt-5 text-sm font-semibold uppercase tracking-wider text-blue-600">Administration</p>
         <h1 class="mt-1 text-3xl font-bold text-slate-900">Back in Stock Notifications</h1>
         <p class="mt-2 text-slate-500">See customer demand and notification history for unavailable products.</p>

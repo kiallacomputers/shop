@@ -2,7 +2,7 @@
   <main class="mx-auto max-w-7xl px-4 py-8">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700">← Admin Dashboard</NuxtLink>
+        <NuxtLink to="/admin" class="text-sm font-bold text-blue-600 hover:text-blue-700 admin-page-backlink">← Admin Dashboard</NuxtLink>
         <p class="mt-4 text-sm font-semibold uppercase tracking-wider text-blue-600">Administration</p>
         <h1 class="mt-1 text-3xl font-black text-slate-900">Quote Management</h1>
         <p class="mt-2 text-slate-500">Review, price, expire, resend and download all customer quotes.</p>
