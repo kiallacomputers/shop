@@ -57,7 +57,7 @@
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
               "
-              @click="scrollToAccountSection(section.id)"
+              @click="activeAccountSection = section.id"
             >
               <span>{{ section.label }}</span>
               <span
@@ -79,7 +79,7 @@
         </aside>
 
         <div class="min-w-0">
-<section class="scroll-mt-24 mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5" id="account-overview">
+<section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5" id="account-overview" v-show="activeAccountSection === 'account-overview'">
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Orders</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.orders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Open Orders</p><p class="mt-2 text-3xl font-black text-blue-700">{{ dashboardStats.openOrders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Total Spent</p><p class="mt-2 text-2xl font-black text-slate-900">{{ currency(dashboardStats.totalSpent) }}</p></div>
@@ -87,7 +87,7 @@
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Quote Requests</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.quotes }}</p></div>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-profile">
+      <section class="kc-panel p-6 mb-8" id="account-profile" v-show="activeAccountSection === 'account-profile'">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Customer Profile</h2>
@@ -121,7 +121,7 @@
         </div>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-wishlist">
+      <section class="kc-panel p-6 mb-8" id="account-wishlist" v-show="activeAccountSection === 'account-wishlist'">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Wishlist</h2><p class="mt-1 text-sm text-slate-500">Keep products handy while you decide.</p></div>
           <NuxtLink to="/account/wishlist" class="text-sm font-bold text-blue-600 hover:text-blue-700">View Wishlist →</NuxtLink>
@@ -135,7 +135,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">No saved products yet.</p>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-back-in-stock">
+      <section class="kc-panel p-6 mb-8" id="account-back-in-stock" v-show="activeAccountSection === 'account-back-in-stock'">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Back in Stock Notifications</h2><p class="mt-1 text-sm text-slate-500">Products you have asked us to notify you about.</p></div>
         </div>
@@ -154,7 +154,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">You are not currently waiting for any products.</p>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-quotes">
+      <section class="kc-panel p-6 mb-8" id="account-quotes" v-show="activeAccountSection === 'account-quotes'">
         <div class="flex items-center justify-between gap-4">
           <div><h2 class="text-xl font-bold text-slate-900">Quote Requests</h2><p class="mt-1 text-sm text-slate-500">Quotes requested from your shopping cart.</p></div>
           <NuxtLink to="/shoppingcart" class="text-sm font-bold text-blue-600 hover:text-blue-700">Request a Quote →</NuxtLink>
@@ -193,7 +193,7 @@
         <p v-else class="mt-4 text-sm text-slate-500">No quote requests yet.</p>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-information">
+      <section class="kc-panel p-6 mb-8" id="account-information" v-show="activeAccountSection === 'account-information'">
         <h2 class="text-xl font-bold mb-4 text-slate-900">Account Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
@@ -211,7 +211,7 @@
         </div>
       </section>
 
-      <section class="scroll-mt-24 kc-panel p-6 mb-8" id="account-security">
+      <section class="kc-panel p-6 mb-8" id="account-security" v-show="activeAccountSection === 'account-security'">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Account Security</h2>
@@ -294,7 +294,7 @@
       </section>
 
       <!-- ADDRESS BOOK -->
-      <section class="scroll-mt-24 kc-panel mb-8 overflow-hidden" id="account-addresses">
+      <section class="kc-panel mb-8 overflow-hidden" id="account-addresses" v-show="activeAccountSection === 'account-addresses'">
         <div class="p-6 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-xl font-bold text-slate-900">Delivery Addresses</h2>
@@ -424,7 +424,7 @@
       </section>
 
       <!-- ORDERS -->
-      <section id="account-orders" class="scroll-mt-24">
+      <section id="account-orders" v-show="activeAccountSection === 'account-orders'">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 class="text-2xl font-bold text-slate-900">My Orders</h2>
@@ -482,42 +482,9 @@ const accountSections = [
 ];
 
 const activeAccountSection = ref("account-overview");
-let accountSectionObserver: IntersectionObserver | null = null;
-
-const scrollToAccountSection = (id: string) => {
-  activeAccountSection.value = id;
-  document.getElementById(id)?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-};
 
 const handleAccountSectionSelect = (event: Event) => {
-  scrollToAccountSection((event.target as HTMLSelectElement).value);
-};
-
-const setupAccountSectionObserver = () => {
-  accountSectionObserver?.disconnect();
-
-  accountSectionObserver = new IntersectionObserver(
-    (entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-      const id = visible[0]?.target?.id;
-      if (id) activeAccountSection.value = id;
-    },
-    {
-      rootMargin: "-96px 0px -65% 0px",
-      threshold: [0.05, 0.15, 0.35],
-    },
-  );
-
-  for (const section of accountSections) {
-    const element = document.getElementById(section.id);
-    if (element) accountSectionObserver.observe(element);
-  }
+  activeAccountSection.value = (event.target as HTMLSelectElement).value;
 };
 
 const user = ref<any>(null);
@@ -863,13 +830,5 @@ function statusClass(status: string) {
   }
 }
 
-onMounted(async () => {
-  await loadAccount();
-  await nextTick();
-  setupAccountSectionObserver();
-});
-
-onBeforeUnmount(() => {
-  accountSectionObserver?.disconnect();
-});
+onMounted(loadAccount);
 </script>
