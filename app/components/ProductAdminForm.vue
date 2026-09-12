@@ -48,10 +48,23 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
             <select v-model="form.category_id" class="input">
               <option value="">Uncategorised</option>
-              <option v-for="category in categories" :key="category.id" :value="String(category.id)">
-                {{ category.name }}
-              </option>
+              <optgroup
+                v-for="group in groupedProductCategories"
+                :key="group.parent.id"
+                :label="group.parent.name"
+              >
+                <option
+                  v-for="category in group.children"
+                  :key="category.id"
+                  :value="String(category.id)"
+                >
+                  {{ category.name }}
+                </option>
+              </optgroup>
             </select>
+            <p class="mt-1.5 text-xs text-slate-500">
+              Main categories are shown as headings. Products can only be assigned to a subcategory.
+            </p>
           </label>
 
 
@@ -429,7 +442,15 @@ const props = defineProps<{
 const { adminFetch } = useAdminFetch();
 const router = useRouter();
 
-const categories = ref<Array<{ id: string | number; name: string }>>([]);
+type ProductCategory = {
+  id: string | number;
+  name: string;
+  parent_id?: string | number | null;
+  sort_order?: number | null;
+  active?: boolean | null;
+};
+
+const categories = ref<ProductCategory[]>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
 const errorMessage = ref("");
@@ -447,6 +468,32 @@ const standardPricingLevelName = ref("Standard");
 const allProducts = ref<any[]>([]);
 const relatedProductIds = ref<number[]>([]);
 const relatedSearch = ref("");
+
+const sortProductCategories = (items: ProductCategory[]) =>
+  [...items].sort((a, b) => {
+    const orderDifference = Number(a.sort_order || 0) - Number(b.sort_order || 0);
+    if (orderDifference !== 0) return orderDifference;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+
+const groupedProductCategories = computed(() => {
+  const parents = sortProductCategories(
+    categories.value.filter(
+      (category) => category.parent_id === null || category.parent_id === undefined || category.parent_id === "",
+    ),
+  );
+
+  return parents
+    .map((parent) => ({
+      parent,
+      children: sortProductCategories(
+        categories.value.filter(
+          (category) => String(category.parent_id ?? "") === String(parent.id),
+        ),
+      ),
+    }))
+    .filter((group) => group.children.length > 0);
+});
 
 const form = reactive({
   name: "",
@@ -633,7 +680,7 @@ const loadForm = async () => {
       adminFetch<{ key: string; name: string; markup_percent: number }>("/api/admin/pricing/standard"),
       adminFetch("/api/admin/products"),
     ]);
-    categories.value = categoryRows as Array<{ id: string | number; name: string }>;
+    categories.value = Array.isArray(categoryRows) ? categoryRows as ProductCategory[] : [];
     allProducts.value = Array.isArray(productRows) ? productRows as any[] : [];
     standardPricingLevelName.value = standardPricing?.name || "Standard";
     const loadedStandardMarkup = Number(standardPricing?.markup_percent);
