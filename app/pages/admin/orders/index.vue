@@ -28,7 +28,7 @@
         <button
           type="button"
           :disabled="loading"
-          class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+          class="admin-btn-secondary"
           @click="loadOrders"
         >
           Refresh Orders
@@ -114,8 +114,8 @@
               <option value="">All Statuses</option>
               <option value="paid">Paid</option>
               <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="completed">Completed</option>
+              <option value="shipping">Shipping</option>
+              <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
               <option value="refunded">Refunded</option>
             </select>
@@ -165,6 +165,21 @@
         </div>
       </div>
 
+      <div class="admin-filter-chips mb-6">
+        <button type="button" class="admin-filter-chip" :class="{ active: statusFilter === '' }" @click="statusFilter = ''">
+          All <span class="count">{{ orders.length }}</span>
+        </button>
+        <button type="button" class="admin-filter-chip" :class="{ active: statusFilter === 'processing' }" @click="statusFilter = 'processing'">
+          Processing <span class="count">{{ orderStatusCount('processing') }}</span>
+        </button>
+        <button type="button" class="admin-filter-chip" :class="{ active: statusFilter === 'shipping' || statusFilter === 'shipped' }" @click="statusFilter = 'shipping'">
+          Shipping <span class="count">{{ shippingCount }}</span>
+        </button>
+        <button type="button" class="admin-filter-chip" :class="{ active: statusFilter === 'delivered' || statusFilter === 'completed' }" @click="statusFilter = 'delivered'">
+          Delivered <span class="count">{{ deliveredCount }}</span>
+        </button>
+      </div>
+
       <!-- ========================================= -->
       <!-- ERROR -->
       <!-- ========================================= -->
@@ -212,10 +227,10 @@
 
       <div
         v-else
-        class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+        class="admin-table-shell"
       >
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[900px] text-left text-sm">
+          <table class="admin-data-table admin-data-table-compact min-w-[900px]">
             <thead class="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th class="px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -297,7 +312,7 @@
                 <td class="px-4 py-4 text-right">
                   <NuxtLink
                     :to="`/admin/orders/${order.id}`"
-                    class="inline-flex rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700"
+                    class="admin-btn-secondary !min-h-0 !px-3 !py-2 !text-xs"
                   >
                     View
                   </NuxtLink>
@@ -337,6 +352,15 @@ const search = ref("");
 const statusFilter = ref("");
 const dateFilter = ref("");
 
+const orderStatusCount = (status: string) =>
+  orders.value.filter((order) => String(order.status || "").toLowerCase() === status).length;
+const shippingCount = computed(() =>
+  orders.value.filter((order) => ["shipping", "shipped"].includes(String(order.status || "").toLowerCase())).length,
+);
+const deliveredCount = computed(() =>
+  orders.value.filter((order) => ["delivered", "completed"].includes(String(order.status || "").toLowerCase())).length,
+);
+
 const filteredOrders = computed(() => {
   const term = search.value.trim().toLowerCase();
 
@@ -356,11 +380,14 @@ const filteredOrders = computed(() => {
       }
     }
 
-    if (
-      statusFilter.value &&
-      String(order.status || "").toLowerCase() !== statusFilter.value
-    ) {
-      return false;
+    if (statusFilter.value) {
+      const currentStatus = String(order.status || "").toLowerCase();
+      const wantedStatus = statusFilter.value;
+      const matchesStatus =
+        currentStatus === wantedStatus ||
+        (wantedStatus === "shipping" && currentStatus === "shipped") ||
+        (wantedStatus === "delivered" && currentStatus === "completed");
+      if (!matchesStatus) return false;
     }
 
     if (dateFilter.value && order.created_at) {
@@ -422,7 +449,7 @@ const processingCount = computed(() =>
 const completedCount = computed(() =>
   orders.value.filter(
     (order) =>
-      String(order.status || "").toLowerCase() === "completed",
+      ["delivered", "completed"].includes(String(order.status || "").toLowerCase()),
   ).length,
 );
 
@@ -457,9 +484,11 @@ const statusClass = (status?: string | null) => {
     case "processing":
       return "bg-amber-100 text-amber-700";
 
+    case "shipping":
     case "shipped":
       return "bg-purple-100 text-purple-700";
 
+    case "delivered":
     case "completed":
       return "bg-green-100 text-green-700";
 

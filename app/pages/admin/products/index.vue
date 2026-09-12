@@ -78,9 +78,9 @@
         <p class="mt-1 text-sm text-slate-500">Try adjusting your filters or add a new product.</p>
       </div>
 
-      <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div v-else class="admin-table-shell">
         <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
+          <table class="admin-data-table admin-data-table-compact min-w-[980px]">
             <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
@@ -94,7 +94,7 @@
 
             <tbody>
               <template v-for="main in groupedProducts" :key="main.name">
-                <tr class="bg-slate-200 border-y border-slate-300">
+                <tr class="admin-group-row bg-slate-200 border-y border-slate-300">
                   <td colspan="6" class="px-5 py-3">
                     <p class="font-bold text-slate-900">{{ main.name }}</p>
                     <p class="text-xs text-slate-500">
@@ -118,7 +118,7 @@
                     class="border-b border-slate-100 hover:bg-slate-50/70 transition">
                     <td class="px-5 py-4">
                       <div class="flex items-center gap-3 min-w-[280px]">
-                        <div class="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                        <div class="admin-product-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                           <img v-if="firstImage(product)" :src="firstImage(product)" :alt="product.name"
                             class="h-full w-full object-contain p-1" />
                           <div v-else class="flex h-full w-full items-center justify-center text-[10px] text-slate-400">

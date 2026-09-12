@@ -15,7 +15,7 @@
         <button
           type="button"
           :disabled="loading"
-          class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+          class="admin-btn-secondary"
           @click="loadLevels"
         >
           Refresh
@@ -68,7 +68,7 @@
           <button
             type="button"
             :disabled="creating || !newLevel.name"
-            class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+            class="admin-btn-primary"
             @click="createLevel"
           >
             {{ creating ? "Adding..." : "Add Pricing Level" }}
@@ -76,7 +76,7 @@
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <section class="admin-table-shell">
         <div class="border-b border-slate-200 px-5 py-4">
           <h2 class="text-lg font-bold text-slate-900">Current Pricing Levels</h2>
         </div>
@@ -84,7 +84,7 @@
         <div v-if="loading" class="p-10 text-center text-slate-500">Loading pricing levels...</div>
 
         <div v-else class="overflow-x-auto">
-          <table class="min-w-full text-left text-sm">
+          <table class="admin-data-table admin-data-table-compact min-w-[760px]">
             <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th class="px-5 py-3">Level</th>
@@ -132,7 +132,7 @@
                   <button
                     type="button"
                     :disabled="savingKey === level.key"
-                    class="rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-bold text-white hover:bg-slate-700 disabled:opacity-50"
+                    class="admin-btn-primary !min-h-0 !px-3 !py-2 !text-xs"
                     @click="saveLevel(level)"
                   >
                     {{ savingKey === level.key ? "Saving..." : "Save" }}

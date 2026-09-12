@@ -69,14 +69,14 @@
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <section class="admin-table-shell">
       <div v-if="loading && !items.length" class="p-12 text-center text-slate-500">Loading inventory…</div>
       <div v-else-if="!filteredItems.length" class="p-12 text-center">
         <h2 class="text-lg font-bold text-slate-900">Nothing to show</h2>
         <p class="mt-1 text-sm text-slate-500">No inventory lines match the current filters.</p>
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="min-w-[1050px] w-full text-left text-sm">
+        <table class="admin-data-table admin-data-table-compact min-w-[1050px]">
           <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th class="px-4 py-3">Product</th>
@@ -94,7 +94,7 @@
             <tr v-for="item in filteredItems" :key="item.key" class="hover:bg-slate-50/70">
               <td class="px-4 py-3">
                 <div class="flex min-w-[290px] items-center gap-3">
-                  <div class="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                  <div class="admin-product-thumb h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                     <img v-if="item.image" :src="item.image" :alt="item.product_name" class="h-full w-full object-contain p-1" />
                     <div v-else class="flex h-full items-center justify-center text-[10px] text-slate-400">No image</div>
                   </div>
@@ -113,7 +113,7 @@
               <td class="px-4 py-3 text-right font-semibold text-slate-900">{{ currency(item.stock_value_ex_gst) }}</td>
               <td class="px-4 py-3 text-center"><span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="statusBadge(item).className">{{ statusBadge(item).label }}</span></td>
               <td class="px-4 py-3 text-right">
-                <NuxtLink :to="item.variant_id ? `/admin/products/${item.product_id}/variants` : `/admin/products/${item.product_id}`" class="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700">{{ item.variant_id ? 'Manage variant' : 'Edit product' }}</NuxtLink>
+                <NuxtLink :to="item.variant_id ? `/admin/products/${item.product_id}/variants` : `/admin/products/${item.product_id}`" class="admin-btn-secondary !min-h-0 !px-3 !py-2 !text-xs">{{ item.variant_id ? 'Manage variant' : 'Edit product' }}</NuxtLink>
               </td>
             </tr>
           </tbody>

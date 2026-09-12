@@ -75,7 +75,7 @@
             <button
               type="button"
               :disabled="saving || uploading"
-              class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              class="admin-btn-primary"
               @click="saveAd"
             >
               {{ saving ? "Saving..." : editingId ? "Save Changes" : "Create Advertisement" }}
@@ -119,8 +119,8 @@
             </div>
 
             <div class="flex gap-2 md:justify-end">
-              <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50" @click="editAd(ad)">Edit</button>
-              <button type="button" :disabled="deletingId === String(ad.id)" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50" @click="deleteAd(ad)">
+              <button type="button" class="admin-btn-secondary !min-h-0 !px-3 !py-2" @click="editAd(ad)">Edit</button>
+              <button type="button" :disabled="deletingId === String(ad.id)" class="admin-btn-danger !min-h-0 !px-3 !py-2" @click="deleteAd(ad)">
                 {{ deletingId === String(ad.id) ? "Deleting..." : "Delete" }}
               </button>
             </div>

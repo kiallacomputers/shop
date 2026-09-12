@@ -56,7 +56,7 @@
             <button
               type="button"
               :disabled="savingSettings"
-              class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              class="admin-btn-primary"
               @click="saveSettings"
             >
               {{ savingSettings ? "Saving..." : "Save Freight Settings" }}

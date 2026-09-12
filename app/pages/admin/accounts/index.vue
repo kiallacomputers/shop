@@ -167,13 +167,13 @@
         <button type="button" class="mt-3 text-sm font-bold text-blue-600" @click="clearFilters">Clear filters</button>
       </div>
 
-      <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div v-else class="admin-table-shell">
         <div class="border-b border-slate-200 bg-slate-50 px-5 py-3 text-sm text-slate-600">
           Showing <strong class="text-slate-900">{{ filteredAccounts.length }}</strong> of {{ accounts.length }} accounts
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[1400px] text-left text-sm">
+          <table class="admin-data-table admin-data-table-compact min-w-[1320px]">
             <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
                 <th class="px-4 py-3">Customer</th>
@@ -251,46 +251,49 @@
                 </td>
 
                 <td class="px-4 py-4 text-right">
-                  <div class="flex min-w-[170px] flex-col items-stretch gap-2">
+                  <div class="admin-row-actions min-w-[220px]">
                     <NuxtLink
                       :to="`/admin/accounts/${account.id}`"
-                      class="rounded-lg bg-blue-600 px-3 py-2 text-center text-xs font-bold text-white hover:bg-blue-700"
+                      class="admin-btn-primary !min-h-0 !px-3 !py-2 !text-xs"
                     >
-                      Open Customer Profile
+                      Open
                     </NuxtLink>
 
                     <button
                       type="button"
                       :disabled="resettingId === account.id"
-                      class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                      class="admin-btn-secondary !min-h-0 !px-3 !py-2 !text-xs"
                       @click="sendPasswordReset(account)"
                     >
                       {{ resettingId === account.id ? "Sending..." : "Reset Password" }}
                     </button>
 
-                    <div v-if="!account.is_current_user" class="flex gap-1">
-                      <button
-                        v-if="account.role !== 'admin'"
-                        type="button"
-                        :disabled="changingId === account.id"
-                        class="flex-1 rounded-md border border-blue-200 px-2 py-1.5 text-[11px] font-bold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
-                        @click="changeRole(account, 'admin')"
-                      >Admin</button>
-                      <button
-                        v-if="account.role !== 'superadmin'"
-                        type="button"
-                        :disabled="changingId === account.id"
-                        class="flex-1 rounded-md border border-violet-200 px-2 py-1.5 text-[11px] font-bold text-violet-700 hover:bg-violet-50 disabled:opacity-50"
-                        @click="changeRole(account, 'superadmin')"
-                      >Super</button>
-                      <button
-                        v-if="account.role"
-                        type="button"
-                        :disabled="changingId === account.id"
-                        class="flex-1 rounded-md border border-red-200 px-2 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
-                        @click="changeRole(account, 'user')"
-                      >Demote</button>
-                    </div>
+                    <details v-if="!account.is_current_user" class="admin-role-details">
+                      <summary>Role ▾</summary>
+                      <div class="admin-role-menu">
+                        <button
+                          v-if="account.role !== 'admin'"
+                          type="button"
+                          :disabled="changingId === account.id"
+                          class="text-blue-700 disabled:opacity-50"
+                          @click="changeRole(account, 'admin')"
+                        >Make Admin</button>
+                        <button
+                          v-if="account.role !== 'superadmin'"
+                          type="button"
+                          :disabled="changingId === account.id"
+                          class="text-violet-700 disabled:opacity-50"
+                          @click="changeRole(account, 'superadmin')"
+                        >Make SuperAdmin</button>
+                        <button
+                          v-if="account.role"
+                          type="button"
+                          :disabled="changingId === account.id"
+                          class="text-red-700 disabled:opacity-50"
+                          @click="changeRole(account, 'user')"
+                        >Remove Admin Role</button>
+                      </div>
+                    </details>
                   </div>
                 </td>
               </tr>

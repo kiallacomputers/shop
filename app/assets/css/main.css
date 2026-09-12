@@ -224,3 +224,101 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .admin-subnav-link:hover { color:#0f172a; }
 
 .admin-content .overflow-x-auto thead th { position:sticky; top:0; z-index:2; }
+
+
+/* ============================================================
+   ADMIN TABLES & ACTIONS — Stage 3
+   ============================================================ */
+.admin-table-shell {
+  overflow:hidden;
+  border:1px solid #e2e8f0;
+  border-radius:.85rem;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 3px 10px rgba(15,23,42,.035);
+}
+.admin-data-table { width:100%; text-align:left; font-size:.875rem; }
+.admin-data-table thead th {
+  border-bottom:1px solid #e2e8f0;
+  background:#f8fafc;
+  padding:.7rem 1rem;
+}
+.admin-data-table tbody td { padding:.75rem 1rem; }
+.admin-data-table tbody tr:not(.admin-group-row) td { border-bottom:1px solid #f1f5f9; }
+.admin-data-table tbody tr:not(.admin-group-row):hover { background:#f8fafc; }
+.admin-data-table-compact tbody td { padding-top:.625rem; padding-bottom:.625rem; }
+.admin-data-table-compact .admin-product-thumb { width:2.75rem; height:2.75rem; }
+.admin-filter-chips { display:flex; flex-wrap:wrap; gap:.5rem; }
+.admin-filter-chip {
+  display:inline-flex;
+  min-height:36px;
+  align-items:center;
+  gap:.4rem;
+  border:1px solid #cbd5e1;
+  border-radius:999px;
+  background:#fff;
+  padding:.4rem .75rem;
+  color:#475569;
+  font-size:.75rem;
+  font-weight:800;
+  transition:.15s ease;
+}
+.admin-filter-chip:hover { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
+.admin-filter-chip.active { border-color:#2563eb; background:#2563eb; color:#fff; }
+.admin-filter-chip .count {
+  display:inline-flex;
+  min-width:1.35rem;
+  height:1.35rem;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  background:rgba(148,163,184,.16);
+  padding:0 .35rem;
+  font-size:.68rem;
+}
+.admin-filter-chip.active .count { background:rgba(255,255,255,.18); }
+.admin-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:.4rem; }
+.admin-icon-action {
+  display:inline-flex;
+  width:2.25rem;
+  height:2.25rem;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #cbd5e1;
+  border-radius:.6rem;
+  background:#fff;
+  color:#475569;
+  font-weight:800;
+}
+.admin-icon-action:hover { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
+.admin-role-details { position:relative; }
+.admin-role-details > summary {
+  list-style:none;
+  cursor:pointer;
+  border:1px solid #cbd5e1;
+  border-radius:.55rem;
+  background:#fff;
+  padding:.45rem .65rem;
+  color:#475569;
+  font-size:.72rem;
+  font-weight:800;
+}
+.admin-role-details > summary::-webkit-details-marker { display:none; }
+.admin-role-details[open] > summary { border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
+.admin-role-menu {
+  position:absolute;
+  right:0;
+  z-index:15;
+  margin-top:.35rem;
+  width:9.5rem;
+  overflow:hidden;
+  border:1px solid #e2e8f0;
+  border-radius:.65rem;
+  background:#fff;
+  box-shadow:0 12px 30px rgba(15,23,42,.14);
+  padding:.3rem;
+}
+.admin-role-menu button { width:100%; border-radius:.45rem; padding:.5rem .6rem; text-align:left; font-size:.72rem; font-weight:800; }
+.admin-role-menu button:hover { background:#f8fafc; }
+@media (max-width:639px) {
+  .admin-data-table tbody td { padding-left:.75rem; padding-right:.75rem; }
+}
