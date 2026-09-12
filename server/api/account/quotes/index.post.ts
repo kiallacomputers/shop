@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
 
   const productIds = [...new Set(requested.map((row: any) => Number(row.id)).filter(Number.isInteger))];
   const variantIds = [...new Set(requested.map((row: any) => Number(row.variantId)).filter(Number.isInteger))];
+  const addonOptionIds = [...new Set(requested.flatMap((row:any) => Array.isArray(row.addonOptionIds) ? row.addonOptionIds : []).map(Number).filter(Number.isInteger))];
   const supabase = getAdminSupabase();
 
   const [{ data: products, error: productError }, pricingLevel, standardLevel] = await Promise.all([
@@ -37,6 +38,17 @@ export default defineEventHandler(async (event) => {
     if (error) throw createError({ statusCode: 500, statusMessage: error.message });
     variants = data || [];
   }
+
+  let addonOptions:any[] = [];
+  if (addonOptionIds.length) {
+    const { data, error } = await supabase
+      .from("product_addon_options")
+      .select("id,name,price,active,group_id,product_addon_groups!inner(id,product_id,name,active)")
+      .in("id", addonOptionIds);
+    if (error) throw createError({ statusCode: 500, statusMessage: error.message });
+    addonOptions = data || [];
+  }
+  const addonMap = new Map(addonOptions.map((option:any) => [Number(option.id), option]));
 
   const productMap = new Map((products || []).map((p: any) => [Number(p.id), p]));
   const variantMap = new Map(variants.map((v: any) => [Number(v.id), v]));
@@ -66,10 +78,19 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const selectedAddons = (Array.isArray(row.addonOptionIds) ? row.addonOptionIds : [])
+      .map((id:any) => addonMap.get(Number(id)))
+      .filter((option:any) => option && option.active !== false && option.product_addon_groups?.active !== false && Number(option.product_addon_groups?.product_id) === Number(product.id));
+    const addonTotal = selectedAddons.reduce((sum:number, option:any) => sum + Number(option.price || 0), 0);
+    requestedPrice += addonTotal;
+    const addonSuffix = selectedAddons.length
+      ? ` + ${selectedAddons.map((option:any) => `${option.product_addon_groups?.name}: ${option.name}`).join(", ")}`
+      : "";
+
     items.push({
       product_id: Number(product.id),
       variant_id: variant ? Number(variant.id) : null,
-      product_name: product.name,
+      product_name: `${product.name}${addonSuffix}` ,
       variant_name: variant?.name || null,
       product_code: variant?.product_code || product.product_code || null,
       quantity,

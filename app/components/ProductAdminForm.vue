@@ -24,6 +24,7 @@
       </div>
 
       <div class="admin-action-bar">
+        <NuxtLink v-if="mode === 'edit' && productId" :to="`/admin/products/${productId}/addons`" class="admin-btn-secondary">Manage Add-ons</NuxtLink>
         <NuxtLink to="/admin/products" class="admin-btn-secondary">Cancel</NuxtLink>
         <button type="submit" :disabled="saving" class="admin-btn-primary">
           {{ saving ? "Saving..." : (mode === "create" ? "Create Product" : "Save Changes") }}

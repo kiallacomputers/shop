@@ -39,6 +39,11 @@
                 <h3 class="font-bold leading-5 text-slate-900 sm:text-base">{{ item.name }}</h3>
                 <p v-if="item.variantName" class="mt-1 text-xs font-semibold text-blue-600">{{ item.variantName }}</p>
                 <p v-if="item.productCode" class="mt-0.5 text-xs text-slate-400">Code: {{ item.productCode }}</p>
+                <div v-if="item.selectedAddons?.length" class="mt-2 space-y-0.5">
+                  <p v-for="addon in item.selectedAddons" :key="addon.id" class="text-xs font-semibold text-slate-600">
+                    + {{ addon.groupName }}: {{ addon.name }} <span v-if="Number(addon.price || 0) > 0">({{ currency(addon.price) }})</span>
+                  </p>
+                </div>
                 <p class="mt-2 text-sm font-black text-[#0b1f3a] sm:hidden">{{ currency(Number(item.price) * item.quantity) }}</p>
               </div>
 
@@ -472,7 +477,8 @@ async function refreshCustomerPrices() {
         ? result.variants[String(item.variantId)] ?? result.products[String(item.id)]
         : result.products[String(item.id)];
       if (Number.isFinite(Number(price)) && Number(price) > 0) {
-        cart.setPrice(item.cartKey || item.id, Number(price));
+        const addonTotal = (item.selectedAddons || []).reduce((sum:any, addon:any) => sum + Number(addon.price || 0), 0);
+        cart.setPrice(item.cartKey || item.id, Number(price) + addonTotal);
       }
     }
   } catch (error) {
@@ -491,7 +497,7 @@ async function getFreightQuote() {
     const response = await $fetch<{ rates: FreightRate[] }>("/api/freight/quote", {
       method: "POST",
       body: {
-        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
+        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity, addonOptionIds: (item.selectedAddons || []).map((addon:any) => Number(addon.id)) })),
         postcode: selectedAddress.value.postcode,
       },
     });
@@ -531,6 +537,7 @@ async function requestQuote() {
           id: item.id,
           variantId: item.variantId || null,
           quantity: item.quantity,
+          addonOptionIds: (item.selectedAddons || []).map((addon:any) => Number(addon.id)),
         })),
       },
     });
@@ -558,7 +565,7 @@ async function checkout() {
     const response = await authenticatedFetch<{ url: string; sessionId: string }>("/api/stripe/create-checkout", {
       method: "POST",
       body: {
-        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity })),
+        items: cart.items.map((item: any) => ({ id: item.id, variantId: item.variantId || null, quantity: item.quantity, addonOptionIds: (item.selectedAddons || []).map((addon:any) => Number(addon.id)) })),
         fulfilmentMethod: fulfilmentMethod.value,
         addressId: fulfilmentMethod.value === "delivery" ? selectedAddress.value?.id : null,
         shippingServiceCode: selectedRate.value.code,

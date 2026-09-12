@@ -21,7 +21,9 @@ export const useCartStore = defineStore(
       console.log("ADD TO CART:", product);
 
       const variantId = product.selectedVariant?.id ? Number(product.selectedVariant.id) : null;
-      const cartKey = `${product.id}:${variantId ?? "base"}`;
+      const selectedAddons = Array.isArray(product.selectedAddons) ? product.selectedAddons : [];
+      const addonKey = selectedAddons.map((addon:any) => Number(addon.id)).filter(Number.isInteger).sort((a:number,b:number)=>a-b).join(",");
+      const cartKey = `${product.id}:${variantId ?? "base"}:${addonKey || "no-addons"}`;
       const existing = items.value.find((item) => item.cartKey === cartKey);
 
       if (existing) {
@@ -37,6 +39,7 @@ export const useCartStore = defineStore(
           slug: product.slug,
           price: Number(product.price),
           image: product.images,
+          selectedAddons,
           quantity: 1,
         });
       }

@@ -170,11 +170,46 @@
                   </div>
                 </div>
 
+                <section v-if="addonGroups.length" class="mt-5 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                  <div class="flex items-center justify-between gap-3">
+                    <h2 class="font-black text-[#0b1f3a]">Optional Add-ons</h2>
+                    <span v-if="addonTotal > 0" class="text-sm font-black text-blue-700">+{{ formatCurrency(addonTotal) }}</span>
+                  </div>
+                  <div class="mt-4 space-y-4">
+                    <div v-for="group in addonGroups" :key="group.id">
+                      <div class="flex items-center gap-2">
+                        <p class="text-sm font-black text-slate-800">{{ group.name }}</p>
+                        <span v-if="group.required" class="rounded bg-amber-100 px-2 py-0.5 text-[11px] font-black text-amber-800">Required</span>
+                      </div>
+                      <div class="mt-2 space-y-2">
+                        <label v-for="option in group.product_addon_options" :key="option.id" class="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 hover:border-blue-300">
+                          <span class="flex items-center gap-3">
+                            <input
+                              :type="group.selection_type === 'single' ? 'radio' : 'checkbox'"
+                              :name="`addon-${group.id}`"
+                              :checked="selectedAddonIds.includes(Number(option.id))"
+                              @change="toggleAddon(group, option)"
+                            />
+                            <span class="text-sm font-bold text-slate-700">{{ option.name }}</span>
+                          </span>
+                          <span class="text-sm font-black text-slate-700">{{ Number(option.price || 0) > 0 ? `+${formatCurrency(Number(option.price))}` : 'Included' }}</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="addonTotal > 0" class="mt-4 flex items-center justify-between border-t border-blue-100 pt-3">
+                    <span class="text-sm font-bold text-slate-600">Configured price</span>
+                    <span class="text-lg font-black text-[#0b1f3a]">{{ formatCurrency(configuredPrice) }}</span>
+                  </div>
+                  <p v-if="!addonSelectionValid" class="mt-3 text-sm font-bold text-amber-700">Please choose an option from each required add-on group.</p>
+                </section>
+
                 <div v-if="!product.has_variants || activeVariants.length" class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto] lg:grid-cols-1 xl:grid-cols-[1fr_auto]">
                   <button
                     type="button"
                     @click="addCurrentToCart"
-                    class="min-h-[50px] w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
+                    :disabled="!addonSelectionValid"
+                    class="min-h-[50px] disabled:cursor-not-allowed disabled:opacity-50 w-full rounded-xl bg-sky-600 px-6 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-4 focus:ring-sky-100"
                   >
                     {{ effectiveStock > 0 ? 'Add to Cart' : 'Add Back Order to Cart' }}
                   </button>
@@ -745,16 +780,54 @@ const hasCustomerDiscount = computed(() =>
   effectiveStandardPrice.value > effectivePrice.value
 );
 
+const addonGroups = computed(() =>
+  (product.value?.product_addon_groups || [])
+    .filter((group:any) => group.active !== false)
+    .sort((a:any,b:any) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
+    .map((group:any) => ({
+      ...group,
+      product_addon_options: (group.product_addon_options || [])
+        .filter((option:any) => option.active !== false)
+        .sort((a:any,b:any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)),
+    }))
+);
+const selectedAddonIds = ref<number[]>([]);
+const selectedAddons = computed(() => addonGroups.value.flatMap((group:any) =>
+  group.product_addon_options
+    .filter((option:any) => selectedAddonIds.value.includes(Number(option.id)))
+    .map((option:any) => ({ id:Number(option.id), groupId:Number(group.id), groupName:group.name, name:option.name, price:Number(option.price || 0) }))
+));
+const addonTotal = computed(() => selectedAddons.value.reduce((sum:number, option:any) => sum + Number(option.price || 0), 0));
+const configuredPrice = computed(() => effectivePrice.value + addonTotal.value);
+const addonSelectionValid = computed(() => addonGroups.value.every((group:any) =>
+  !group.required || group.product_addon_options.some((option:any) => selectedAddonIds.value.includes(Number(option.id)))
+));
+const toggleAddon = (group:any, option:any) => {
+  const id = Number(option.id);
+  if (group.selection_type === "single") {
+    const groupIds = new Set(group.product_addon_options.map((row:any) => Number(row.id)));
+    selectedAddonIds.value = selectedAddonIds.value.filter((row:number) => !groupIds.has(row));
+    selectedAddonIds.value.push(id);
+    return;
+  }
+  selectedAddonIds.value = selectedAddonIds.value.includes(id)
+    ? selectedAddonIds.value.filter((row:number) => row !== id)
+    : [...selectedAddonIds.value, id];
+};
+
 const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
 const effectiveStock = computed(() => Number(selectedVariant.value?.stock ?? product.value?.stock ?? 0));
 const addCurrentToCart = () => {
   if (product.value?.has_variants && !selectedVariant.value) return;
+  if (!addonSelectionValid.value) return;
   cart.addToCart({
     ...product.value,
     price: effectivePrice.value,
     stock: effectiveStock.value,
     images: images.value,
     selectedVariant: selectedVariant.value ? { id: selectedVariant.value.id, name: selectedVariant.value.name, product_code: selectedVariant.value.product_code } : null,
+    selectedAddons: selectedAddons.value,
+    price: configuredPrice.value,
   });
 };
 
@@ -885,6 +958,7 @@ const { data: product } = await useAsyncData(
         id, name, slug, product_code, has_variants, blurb, description,
         price, oldPrice, stock, active, featured, refurbished, images, category_id,
         categories (name, slug),
+        product_addon_groups (id,name,selection_type,required,sort_order,active,product_addon_options(id,name,price,sort_order,active)),
         product_variants (id, product_id, name, product_code, price, old_price, stock, active, images)
         `,
       )

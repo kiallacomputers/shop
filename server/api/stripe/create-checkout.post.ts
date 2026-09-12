@@ -40,6 +40,9 @@ export default defineEventHandler(async (event) => {
     id: Number(item?.id),
     variantId: item?.variantId == null ? null : Number(item.variantId),
     quantity: Number(item?.quantity),
+    addonOptionIds: Array.isArray(item?.addonOptionIds)
+      ? [...new Set(item.addonOptionIds.map((id:any) => Number(id)).filter((id:number) => Number.isInteger(id) && id > 0))]
+      : [],
   }));
 
   if (requestedItems.some((item: any) => !Number.isInteger(item.id) || item.id <= 0 || (item.variantId !== null && (!Number.isInteger(item.variantId) || item.variantId <= 0)) || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
@@ -48,7 +51,8 @@ export default defineEventHandler(async (event) => {
 
   const quantities = new Map<string, number>();
   for (const item of requestedItems) {
-    const key = `${item.id}:${item.variantId ?? "base"}`;
+    const addonKey = [...item.addonOptionIds].sort((a:number,b:number)=>a-b).join(",");
+    const key = `${item.id}:${item.variantId ?? "base"}:${addonKey}`;
     quantities.set(key, (quantities.get(key) || 0) + item.quantity);
   }
 
@@ -116,10 +120,22 @@ export default defineEventHandler(async (event) => {
   if (variantError) throwInternalError(event, "CHECKOUT VARIANT LOOKUP ERROR", variantError, "Unable to load product options.");
   const variantMap = new Map((variants || []).map((v: any) => [Number(v.id), v]));
 
+  const allAddonOptionIds = [...new Set(requestedItems.flatMap((item:any) => item.addonOptionIds))];
+  const { data: addonOptions, error: addonError } = allAddonOptionIds.length
+    ? await supabase
+        .from("product_addon_options")
+        .select("id,name,price,active,group_id,product_addon_groups!inner(id,product_id,name,selection_type,required,active)")
+        .in("id", allAddonOptionIds)
+    : { data: [], error: null };
+  if (addonError) throwInternalError(event, "CHECKOUT ADD-ON LOOKUP ERROR", addonError, "Unable to validate product add-ons.");
+  const addonMap = new Map((addonOptions || []).map((option:any) => [Number(option.id), option]));
+
+  const productAddonGroupIds = [...new Set((addonOptions || []).map((option:any) => Number((option.product_addon_groups as any)?.id)).filter(Number.isInteger))];
+
   for (const item of requestedItems) {
     const product: any = products.find((p: any) => Number(p.id) === item.id);
     if (!product) throw createError({ statusCode: 400, statusMessage: "A product in your cart no longer exists" });
-    const quantity = quantities.get(`${item.id}:${item.variantId ?? "base"}`) || 0;
+    const quantity = item.quantity;
     const variant: any = item.variantId ? variantMap.get(Number(item.variantId)) : null;
 
     if (product.has_variants && (!variant || Number(variant.product_id) !== Number(product.id))) {
@@ -151,14 +167,53 @@ export default defineEventHandler(async (event) => {
     // quantity; the paid order is still accepted and stock is clamped to zero
     // by the webhook after purchase.
 
+    const selectedAddons = item.addonOptionIds.map((id:number) => addonMap.get(id)).filter(Boolean) as any[];
+    if (selectedAddons.length !== item.addonOptionIds.length) {
+      throw createError({ statusCode: 400, statusMessage: `One or more add-ons for ${product.name} are no longer available` });
+    }
+    if (selectedAddons.some((option:any) =>
+      option.active === false ||
+      option.product_addon_groups?.active === false ||
+      Number(option.product_addon_groups?.product_id) !== Number(product.id)
+    )) {
+      throw createError({ statusCode: 400, statusMessage: `Invalid add-on selection for ${product.name}` });
+    }
+
+    const { data: requiredGroups, error: requiredError } = await supabase
+      .from("product_addon_groups")
+      .select("id,name,selection_type,required,active,product_addon_options(id,active)")
+      .eq("product_id", product.id)
+      .eq("active", true);
+    if (requiredError) throwInternalError(event, "CHECKOUT REQUIRED ADD-ON ERROR", requiredError, "Unable to validate required add-ons.");
+
+    for (const group of requiredGroups || []) {
+      const chosenInGroup = selectedAddons.filter((option:any) => Number(option.group_id) === Number(group.id));
+      if (group.required && chosenInGroup.length === 0) {
+        throw createError({ statusCode: 400, statusMessage: `Please choose an option for ${group.name}` });
+      }
+      if (group.selection_type === "single" && chosenInGroup.length > 1) {
+        throw createError({ statusCode: 400, statusMessage: `Please choose only one option for ${group.name}` });
+      }
+    }
+
+    const addonTotal = selectedAddons.reduce((sum:number, option:any) => sum + Number(option.price || 0), 0);
+    const configuredPrice = price + addonTotal;
+    const addonNames = selectedAddons.map((option:any) => `${option.product_addon_groups?.name}: ${option.name}`);
+    const displayName = variant ? `${product.name} - ${variant.name}` : product.name;
+
     lineItems.push({
       price_data: {
         currency: "aud",
         product_data: {
-          name: variant ? `${product.name} - ${variant.name}` : product.name,
-          metadata: { product_id: String(product.id), variant_id: variant ? String(variant.id) : "", product_code: variant?.product_code || product.product_code || "" },
+          name: addonNames.length ? `${displayName} + ${addonNames.join(", ")}` : displayName,
+          metadata: {
+            product_id: String(product.id),
+            variant_id: variant ? String(variant.id) : "",
+            product_code: variant?.product_code || product.product_code || "",
+            addon_option_ids: selectedAddons.map((option:any) => option.id).join(","),
+          },
         },
-        unit_amount: Math.round(price * 100),
+        unit_amount: Math.round(configuredPrice * 100),
       },
       quantity,
     });

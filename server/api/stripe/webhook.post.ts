@@ -365,6 +365,10 @@ export default defineEventHandler(async (event) => {
         stripeProduct.metadata?.product_id;
       const variantId = stripeProduct.metadata?.variant_id || null;
       const productCode = stripeProduct.metadata?.product_code || null;
+      const addonOptionIds = String(stripeProduct.metadata?.addon_option_ids || "")
+        .split(",")
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0);
 
       if (!productId) {
         console.error(
@@ -393,6 +397,7 @@ export default defineEventHandler(async (event) => {
 
       // Save order item.
       const {
+        data: savedOrderItem,
         error: orderItemError,
       } = await supabase
         .from("order_items")
@@ -401,13 +406,15 @@ export default defineEventHandler(async (event) => {
           product_id: Number(productId),
           product_name: productName,
           variant_id: variantId ? Number(variantId) : null,
-          variant_name: variantId ? productName.split(" - ").slice(1).join(" - ") || null : null,
+          variant_name: variantId ? productName.split(" - ")[1]?.split(" + ")[0] || null : null,
           product_code: productCode,
           quantity,
           price,
-        });
+        })
+        .select("id")
+        .single();
 
-      if (orderItemError) {
+      if (orderItemError || !savedOrderItem) {
         console.error(
           "❌ ORDER ITEM INSERT ERROR:",
           orderItemError,
@@ -419,6 +426,28 @@ export default defineEventHandler(async (event) => {
           orderItemError,
           "Unable to complete the paid order.",
         );
+      }
+
+      if (addonOptionIds.length) {
+        const { data: purchasedAddons, error: addonLookupError } = await supabase
+          .from("product_addon_options")
+          .select("id,name,price,group_id,product_addon_groups!inner(name,product_id)")
+          .in("id", addonOptionIds);
+        if (addonLookupError) throwInternalError(event, "ORDER ADD-ON LOOKUP ERROR", addonLookupError, "Unable to save purchased add-ons.");
+
+        const addonRows = (purchasedAddons || [])
+          .filter((option:any) => Number(option.product_addon_groups?.product_id) === Number(productId))
+          .map((option:any) => ({
+            order_item_id: savedOrderItem.id,
+            addon_option_id: option.id,
+            addon_group_name: option.product_addon_groups?.name || "Add-on",
+            addon_name: option.name,
+            price: Number(option.price || 0),
+          }));
+        if (addonRows.length) {
+          const { error: addonInsertError } = await supabase.from("order_item_addons").insert(addonRows);
+          if (addonInsertError) throwInternalError(event, "ORDER ADD-ON INSERT ERROR", addonInsertError, "Unable to save purchased add-ons.");
+        }
       }
 
       // Update stock on the selected variant, or on the base product when there are no variants.
