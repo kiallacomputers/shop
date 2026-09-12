@@ -1,4 +1,4 @@
-import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
 
 
 const BUCKET = "products";
@@ -178,7 +178,7 @@ const listAllFiles = async (supabase: any) => {
 };
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireSuperAdmin(event);
   const supabase = getAdminSupabase();
 
   const { data: products, error: productError } = await supabase

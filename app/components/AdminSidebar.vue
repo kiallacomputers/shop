@@ -35,7 +35,7 @@
       </NavGroup>
 
       <NavGroup title="Tools">
-        <NuxtLink to="/admin/storage-cleanup" :class="linkClass('/admin/storage-cleanup')" @click="$emit('navigate')"><NavIcon path="M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13"/>Storage Cleanup</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/storage-cleanup" :class="linkClass('/admin/storage-cleanup')" @click="$emit('navigate')"><NavIcon path="M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13"/>Storage Cleanup</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/pricing-levels" :class="linkClass('/admin/pricing-levels')" @click="$emit('navigate')"><NavIcon path="M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3"/>Pricing Levels</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounts" :class="linkClass('/admin/accounts')" @click="$emit('navigate')"><NavIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>Accounts</NuxtLink>
       </NavGroup>

@@ -1,4 +1,4 @@
-import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
 
 
 const BUCKET = "products";
@@ -101,7 +101,7 @@ const collectImageReferences = (products: any[]) => {
 };
 
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event);
+  await requireSuperAdmin(event);
 
   const body = await readBody<{ paths?: unknown }>(event);
   const requested = Array.isArray(body?.paths)
