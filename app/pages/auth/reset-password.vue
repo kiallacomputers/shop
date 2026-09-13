@@ -108,25 +108,24 @@ const sessionReady = ref(false);
 const passwordChanged = ref(false);
 const errorMessage = ref("");
 
-let authSubscription: any = null;
-
 const establishRecoverySession = async () => {
   checkingSession.value = true;
   errorMessage.value = "";
 
   try {
-    // PKCE flow: Supabase returns ?code=...
-    const code =
-      typeof route.query.code === "string"
-        ? route.query.code
+    const tokenHash =
+      typeof route.query.token_hash === "string"
+        ? route.query.token_hash
         : "";
 
-    if (code) {
-      const { error } =
-        await supabase.auth.exchangeCodeForSession(code);
+    if (tokenHash) {
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      });
 
-      if (error) {
-        throw error;
+      if (error || !data.session) {
+        throw error || new Error("The password reset link is invalid or has expired.");
       }
 
       sessionReady.value = true;
@@ -134,15 +133,12 @@ const establishRecoverySession = async () => {
       return;
     }
 
-    // Implicit flow / already established session fallback.
     const {
       data: { session },
       error,
     } = await supabase.auth.getSession();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     if (session) {
       sessionReady.value = true;
@@ -150,50 +146,18 @@ const establishRecoverySession = async () => {
       return;
     }
 
-    // Listen briefly for Supabase's PASSWORD_RECOVERY event.
-    const { data } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (
-          event === "PASSWORD_RECOVERY" &&
-          session
-        ) {
-          sessionReady.value = true;
-          checkingSession.value = false;
-          errorMessage.value = "";
-        }
-      },
+    if (typeof route.query.code === "string" && route.query.code) {
+      throw new Error(
+        "This password reset link uses the old recovery method. Please request a new password reset email and use the newest link.",
+      );
+    }
+
+    throw new Error(
+      "The password reset link is invalid or has expired. Please request a new password reset email.",
     );
-
-    authSubscription = data.subscription;
-
-    // If no session appears, show a useful error.
-    window.setTimeout(async () => {
-      if (sessionReady.value) {
-        return;
-      }
-
-      const {
-        data: { session: lateSession },
-      } = await supabase.auth.getSession();
-
-      if (lateSession) {
-        sessionReady.value = true;
-        checkingSession.value = false;
-        return;
-      }
-
-      checkingSession.value = false;
-      errorMessage.value =
-        "The recovery session could not be created. The reset link may have expired or already been used. Please request a new password reset email.";
-    }, 1500);
   } catch (error: any) {
-    console.error(
-      "RECOVERY SESSION ERROR:",
-      error,
-    );
-
+    console.error("RECOVERY SESSION ERROR:", error);
     checkingSession.value = false;
-
     errorMessage.value =
       error?.message ||
       "Unable to verify the password reset link.";
@@ -261,7 +225,4 @@ const updatePassword = async () => {
 
 onMounted(establishRecoverySession);
 
-onBeforeUnmount(() => {
-  authSubscription?.unsubscribe?.();
-});
 </script>
