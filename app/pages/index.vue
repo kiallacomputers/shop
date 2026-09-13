@@ -32,6 +32,23 @@
                   draggable="false"
                 />
               </NuxtLink>
+
+              <div
+                v-if="displayAds.length > 1"
+                class="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full bg-slate-950/55 px-3 py-2 shadow-lg backdrop-blur-sm"
+                aria-label="Advertisement slides"
+              >
+                <button
+                  v-for="(ad, index) in displayAds"
+                  :key="`ad-indicator-${index}`"
+                  type="button"
+                  class="h-2.5 rounded-full border border-white/80 transition-all duration-300"
+                  :class="index === currentAd ? 'w-7 bg-white' : 'w-2.5 bg-white/35 hover:bg-white/75'"
+                  :aria-label="`Show advertisement ${index + 1}: ${ad.title}`"
+                  :aria-current="index === currentAd ? 'true' : undefined"
+                  @click.prevent.stop="goToHeroAd(index)"
+                />
+              </div>
             </div>
           </div>
           <div class="mt-4 flex justify-end">
@@ -209,6 +226,34 @@ const heroSlideClass = (index) => {
   return "hero-ad-hidden-right";
 };
 
+const restartHeroTimer = () => {
+  if (!import.meta.client) return;
+  if (timer) window.clearInterval(timer);
+  timer = window.setInterval(nextHeroAd, 10000);
+};
+
+const goToHeroAd = (index) => {
+  if (
+    index < 0 ||
+    index >= displayAds.value.length ||
+    index === currentAd.value ||
+    heroAnimating.value
+  ) {
+    return;
+  }
+
+  previousAd.value = currentAd.value;
+  currentAd.value = index;
+  heroAnimating.value = true;
+
+  if (heroAnimationTimer) window.clearTimeout(heroAnimationTimer);
+  heroAnimationTimer = window.setTimeout(() => {
+    heroAnimating.value = false;
+  }, 900);
+
+  restartHeroTimer();
+};
+
 const nextHeroAd = () => {
   if (displayAds.value.length <= 1 || heroAnimating.value) return;
 
@@ -229,7 +274,7 @@ watch(displayAds, () => {
 });
 
 onMounted(() => {
-  timer = window.setInterval(nextHeroAd, 10000);
+  restartHeroTimer();
 });
 
 onBeforeUnmount(() => {
