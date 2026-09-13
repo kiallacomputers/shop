@@ -1,0 +1,21 @@
+{
+  "name": "Kialla Computers Chat",
+  "short_name": "KC Chat",
+  "start_url": "/admin/chat",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -52,7 +52,7 @@ const titleMap: Record<string, string> = {
   inventory: "Inventory", freight: "Freight & Pickup", ads: "Advertisements",
   analytics: "Traffic Analytics", reports: "Business Reports", accounts: "Accounts",
   "pricing-levels": "Pricing Levels", "storage-cleanup": "Storage Cleanup",
-  "back-in-stock": "Back in Stock", "facebook-share": "Facebook Product Share",
+  "back-in-stock": "Back in Stock", "facebook-share": "Facebook Product Share", chat: "Live Chat",
 };
 
 const pageTitle = computed(() => {

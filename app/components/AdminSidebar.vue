@@ -17,6 +17,10 @@
         <NuxtLink to="/admin/ads" :class="linkClass('/admin/ads')" @click="$emit('navigate')"><NavIcon path="M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5"/>Advertisements</NuxtLink>
       </NavGroup>
 
+      <NavGroup title="Support">
+        <NuxtLink to="/admin/chat" :class="linkClass('/admin/chat')" @click="$emit('navigate')"><NavIcon path="M21 12a8 8 0 0 1-8 8H6l-4 2 1.3-4A8 8 0 1 1 21 12ZM8 10h8M8 14h5"/>Live Chat</NuxtLink>
+      </NavGroup>
+
       <NavGroup title="Orders">
         <NuxtLink to="/admin/orders" :class="linkClass('/admin/orders')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Orders</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/quotes" :class="linkClass('/admin/quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Quotes</NuxtLink>
