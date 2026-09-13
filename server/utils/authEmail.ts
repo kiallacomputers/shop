@@ -9,6 +9,11 @@ const shell = (title: string, intro: string, buttonText: string, buttonUrl: stri
         <td align="center">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
             <tr>
+              <td style="padding:24px 30px 10px;background:#0f172a;text-align:center;">
+                <img src="https://shop.kiallacomputers.com.au/kialla-computers-logo.png" alt="Kialla Computers" style="display:inline-block;max-width:240px;max-height:90px;width:auto;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
               <td style="padding:28px 30px 12px;">
                 <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2563eb;">Kialla Computers</div>
                 <h1 style="margin:8px 0 14px;font-size:26px;line-height:1.25;">${escapeHtml(title)}</h1>
