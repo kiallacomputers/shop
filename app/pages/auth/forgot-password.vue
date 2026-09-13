@@ -70,9 +70,6 @@
 useSeoMeta({ robots: "noindex, nofollow" });
 definePageMeta({ layout: "auth" });
 
-const supabase = useSupabaseClient();
-const config = useRuntimeConfig();
-
 const email = ref("");
 const loading = ref(false);
 const sent = ref(false);
@@ -88,31 +85,20 @@ const sendResetLink = async () => {
   successMessage.value = "";
 
   try {
-    const siteUrl = String(config.public.siteUrl || window.location.origin).replace(/\/+$/, "");
-    const redirectTo = `${siteUrl}/auth/reset-password`;
-
-    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-      redirectTo,
+    await $fetch("/api/auth/forgot-password", {
+      method: "POST",
+      body: { email: cleanEmail },
     });
-
-    if (error) {
-      // Keep the message generic so the page does not reveal whether
-      // a customer account exists for a particular email address.
-      console.warn("PASSWORD RESET REQUEST:", error.message);
-    }
 
     email.value = cleanEmail;
     sent.value = true;
     successMessage.value =
       "If that email belongs to an account, a secure password reset link has been sent.";
   } catch (error: any) {
-    console.error("PASSWORD RESET REQUEST ERROR:", error);
-
-    // Use the same generic result for privacy.
-    email.value = cleanEmail;
-    sent.value = true;
-    successMessage.value =
-      "If that email belongs to an account, a secure password reset link has been sent.";
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      "Unable to request a password reset right now. Please try again.";
   } finally {
     loading.value = false;
   }
