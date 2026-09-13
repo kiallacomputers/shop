@@ -16,6 +16,15 @@
           <input v-model="password" type="password" autocomplete="current-password" class="w-full border px-4 py-3" required />
         </label>
 
+        <div class="-mt-2 text-right">
+          <NuxtLink
+            to="/auth/forgot-password"
+            class="kc-link text-sm font-semibold"
+          >
+            Forgot your password?
+          </NuxtLink>
+        </div>
+
         <div v-if="errorMessage" class="kc-alert kc-alert-error" role="alert">{{ errorMessage }}</div>
 
         <button type="submit" :disabled="loading" class="kc-btn-primary w-full min-h-[48px]">
