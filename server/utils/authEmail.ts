@@ -10,7 +10,7 @@ const shell = (title: string, intro: string, buttonText: string, buttonUrl: stri
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
             <tr>
               <td style="padding:24px 30px 10px;background:#0f172a;text-align:center;">
-                <img src="https://shop.kiallacomputers.com.au/kialla-computers-logo.png" alt="Kialla Computers" style="display:inline-block;max-width:240px;max-height:90px;width:auto;height:auto;border:0;" />
+                <img src="https://shop.kiallacomputers.com.au/kialla-computers-logo.png" alt="Kialla Computers" style="display:inline-block;width:75%;max-width:180px;height:auto;border:0;" />
               </td>
             </tr>
             <tr>
