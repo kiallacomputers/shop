@@ -63,7 +63,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 sm:gap-3">
+        <div class="ml-auto flex items-center gap-2 sm:gap-3">
           <NuxtLink v-if="!user" to="/auth/signin" class="hidden md:inline-flex kc-btn-secondary !py-2.5 !px-4">Sign in</NuxtLink>
 
           <NuxtLink to="/shoppingcart" class="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-[#0b1f3a] hover:border-cyan-300 hover:text-cyan-600 transition" aria-label="Shopping cart">
