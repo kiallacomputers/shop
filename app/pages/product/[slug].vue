@@ -490,7 +490,7 @@
               </div>
               <p class="text-sm text-slate-500">Products that work well with this item.</p>
             </div>
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <ProductCard
                 v-for="item in relatedProducts"
                 :key="item.id"
@@ -515,7 +515,7 @@
                 Clear history
               </button>
             </div>
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <ProductCard
                 v-for="item in recentlyViewedProducts"
                 :key="item.id"
