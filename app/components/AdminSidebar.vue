@@ -46,9 +46,13 @@
     </nav>
 
     <div class="border-t border-slate-800 p-3">
-      <NuxtLink to="/" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white">
+      <button
+        type="button"
+        class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition hover:bg-slate-800 hover:text-white"
+        @click="backToStore"
+      >
         <NavIcon path="M10 17l-5-5 5-5M5 12h14" /> Back to Store
-      </NuxtLink>
+      </button>
       <div v-if="adminRole" class="mt-2 px-3 py-2 text-xs text-slate-500">
         Signed in as <span class="font-semibold text-slate-300">{{ isSuperAdmin ? "SuperAdmin" : "Admin" }}</span>
       </div>
@@ -58,8 +62,18 @@
 
 <script setup lang="ts">
 import { defineComponent, h } from "vue";
-defineEmits<{ navigate: [] }>();
+const emit = defineEmits<{ navigate: [] }>();
 const route = useRoute();
+const router = useRouter();
+
+const backToStore = async () => {
+  // Close the mobile admin drawer first, then explicitly navigate to the
+  // storefront. Using router.push avoids the drawer overlay swallowing the
+  // navigation tap on mobile Safari.
+  emit("navigate");
+  await nextTick();
+  await router.push("/");
+};
 const { isSuperAdmin, adminRole } = useAdminFetch();
 
 const linkClass = (path: string, exact = false) => {
