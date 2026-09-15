@@ -111,6 +111,7 @@
                 <h1 class="mt-2 text-2xl font-bold leading-tight text-slate-900 sm:text-3xl break-words">
                   {{ product.name }}
                 </h1>
+                <ProductRating :product-id="product.id" :slug="product.slug" show-empty class="mt-2" />
 
                 <div class="mt-5 border-y border-slate-200 py-4">
                   <div v-if="effectiveOldPrice" class="mb-1 text-slate-400">
@@ -475,6 +476,8 @@
               </div>
             </div>
           </section>
+
+          <ProductReviews v-if="product?.id" :product-id="product.id" />
 
           <section
             v-if="relatedProducts.length"

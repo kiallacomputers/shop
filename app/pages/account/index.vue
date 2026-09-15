@@ -79,11 +79,12 @@
         </aside>
 
         <div class="min-w-0">
-<section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-5" id="account-overview" v-show="activeAccountSection === 'account-overview'">
+<section class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-6" id="account-overview" v-show="activeAccountSection === 'account-overview'">
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Orders</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.orders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Open Orders</p><p class="mt-2 text-3xl font-black text-blue-700">{{ dashboardStats.openOrders }}</p></div>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Total Spent</p><p class="mt-2 text-2xl font-black text-slate-900">{{ currency(dashboardStats.totalSpent) }}</p></div>
         <NuxtLink to="/account/wishlist" class="kc-panel p-5 transition hover:border-rose-300"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Wishlist</p><p class="mt-2 text-3xl font-black text-rose-600">{{ dashboardStats.wishlist }}</p></NuxtLink>
+        <NuxtLink to="/account/reviews" class="kc-panel p-5 transition hover:border-amber-300"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">My Reviews</p><p class="mt-2 text-lg font-black text-amber-600">View Reviews →</p></NuxtLink>
         <div class="kc-panel p-5"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">Quote Requests</p><p class="mt-2 text-3xl font-black text-slate-900">{{ dashboardStats.quotes }}</p></div>
       </section>
 

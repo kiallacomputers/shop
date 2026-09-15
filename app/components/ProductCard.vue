@@ -30,6 +30,7 @@
       <NuxtLink :to="`/product/${product.slug}`" class="mt-1 block">
         <h3 class="min-h-[48px] font-extrabold leading-6 text-[#0b1f3a] group-hover:text-blue-600 transition line-clamp-2">{{ product.name }}</h3>
       </NuxtLink>
+      <ProductRating :product-id="product.id" :slug="product.slug" class="mt-1" />
       <p v-if="product.blurb" class="mt-2 text-sm leading-5 text-slate-500 line-clamp-2">{{ product.blurb }}</p>
 
       <div class="mt-auto pt-5">

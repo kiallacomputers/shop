@@ -1,5 +1,6 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { sendDeliveredNotification, sendShippingNotification } from "~~/server/utils/orderEmail";
+import { sendReviewRequestEmail } from "~~/server/utils/reviewEmail";
 
 const allowedStatuses = [
   "paid",
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
     .select(`id, user_id, stripe_session_id, customer_email, customer_name, total, status,
       tracking_number, carrier, tracking_status, shipping_method, shipping_service_code, shipping_name,
       shipping_address_line_1, shipping_address_line_2, shipping_suburb, shipping_state,
-      shipping_postcode, shipped_at, delivered_at, shipped_notified_at, delivered_notified_at,
+      shipping_postcode, shipped_at, delivered_at, shipped_notified_at, delivered_notified_at, review_request_sent_at,
       created_at`)
     .eq("id", id)
     .single();
@@ -142,6 +143,21 @@ export default defineEventHandler(async (event) => {
       (data as any).delivered_notified_at = notifiedAt;
     } catch (mailError) {
       console.error("DELIVERED EMAIL ERROR:", mailError);
+    }
+  }
+
+  if (status === "delivered" && String(existing.status || "").toLowerCase() !== "delivered" && !existing.review_request_sent_at && existing.customer_email) {
+    try {
+      const { data: orderItems } = await supabase.from("order_items").select("product_id,products(name,slug)").eq("order_id", id);
+      const products = (orderItems || []).map((row:any) => row.products).filter((p:any) => p?.slug);
+      if (products.length) {
+        await sendReviewRequestEmail(existing, products);
+        const sentAt = new Date().toISOString();
+        await supabase.from("orders").update({ review_request_sent_at: sentAt }).eq("id", id);
+        (data as any).review_request_sent_at = sentAt;
+      }
+    } catch (reviewMailError) {
+      console.error("REVIEW REQUEST EMAIL ERROR:", reviewMailError);
     }
   }
 
