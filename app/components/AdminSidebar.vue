@@ -64,15 +64,16 @@
 import { defineComponent, h } from "vue";
 const emit = defineEmits<{ navigate: [] }>();
 const route = useRoute();
-const router = useRouter();
 
-const backToStore = async () => {
-  // Close the mobile admin drawer first, then explicitly navigate to the
-  // storefront. Using router.push avoids the drawer overlay swallowing the
-  // navigation tap on mobile Safari.
+const backToStore = () => {
+  // Leave the admin layout with a full document navigation. This avoids a
+  // mobile Safari/Nuxt state case where the URL changes to "/" but the
+  // previous admin page/layout remains rendered.
   emit("navigate");
-  await nextTick();
-  await router.push("/");
+
+  if (import.meta.client) {
+    window.location.assign("/");
+  }
 };
 const { isSuperAdmin, adminRole } = useAdminFetch();
 
