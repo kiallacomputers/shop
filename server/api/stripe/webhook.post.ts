@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { sendOrderEmails } from "~~/server/utils/orderEmail";
 import { throwInternalError } from "~~/server/utils/internalError";
+import { postPaidOrderToAccounting } from "~~/server/utils/accountingSales";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -462,6 +463,17 @@ export default defineEventHandler(async (event) => {
       console.log(`✅ STOCK UPDATED: ${stockRow.name}: ${currentStock} -> ${newStock}`);
     }
 
+  }
+
+  // ========================================
+  // ACCOUNTING — PAID SALES INVOICE + JOURNAL
+  // ========================================
+  // Accounting must never make Stripe retry an otherwise successful paid order.
+  try {
+    const accountingInvoice = await postPaidOrderToAccounting(Number(order.id));
+    console.log("✅ ACCOUNTING INVOICE POSTED:", accountingInvoice?.invoice_number || accountingInvoice?.id);
+  } catch (accountingError: any) {
+    console.error("❌ ACCOUNTING POSTING ERROR:", accountingError?.message || accountingError);
   }
 
   // ========================================
