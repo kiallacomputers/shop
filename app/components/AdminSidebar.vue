@@ -23,7 +23,9 @@
 
       <NavGroup title="Orders">
         <NuxtLink to="/admin/orders" :class="linkClass('/admin/orders')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Orders</NuxtLink>
-        <NuxtLink v-if="isSuperAdmin" to="/admin/quotes" :class="linkClass('/admin/quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Quotes</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/quotes" :class="linkClass('/admin/quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Customer Quote Requests</NuxtLink>
+        <NuxtLink to="/admin/manual-quotes" :class="linkClass('/admin/manual-quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Manual Quotes</NuxtLink>
+        <NuxtLink to="/admin/customers" :class="linkClass('/admin/customers')" @click="$emit('navigate')"><NavIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>Customers</NuxtLink>
         <NuxtLink to="/admin/back-in-stock" :class="linkClass('/admin/back-in-stock')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Back in Stock</NuxtLink>
         <NuxtLink to="/admin/reviews" :class="linkClass('/admin/reviews')" @click="$emit('navigate')"><NavIcon path="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>Product Reviews</NuxtLink>
       </NavGroup>
