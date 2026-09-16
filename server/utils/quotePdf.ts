@@ -11,6 +11,7 @@ type QuotePdfItem = {
   quantity: number;
   requested_price?: number | null;
   quoted_price?: number | null;
+  image_data?: string | null;
 };
 
 export type QuotePdfData = {
@@ -76,6 +77,29 @@ const business = () => ({
   abn: String(process.env.BUSINESS_ABN || "").trim(),
 });
 
+
+const decodeDataImage = (value?: string | null) => {
+  if (!value) return null;
+  const match = String(value).match(/^data:image\/jpeg;base64,(.+)$/i);
+  if (!match) return null;
+  try { return Buffer.from(match[1], "base64"); } catch { return null; }
+};
+
+const jpegSize = (buffer: Buffer) => {
+  let i = 2;
+  while (i < buffer.length - 9) {
+    if (buffer[i] !== 0xff) { i += 1; continue; }
+    const marker = buffer[i + 1];
+    const len = buffer.readUInt16BE(i + 2);
+    if ([0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf].includes(marker)) {
+      return { height: buffer.readUInt16BE(i + 5), width: buffer.readUInt16BE(i + 7) };
+    }
+    if (!len || len < 2) break;
+    i += 2 + len;
+  }
+  return null;
+};
+
 export function createQuotePdf(q: QuotePdfData) {
   const pageWidth = 595;
   const pageHeight = 842;
@@ -84,6 +108,11 @@ export function createQuotePdf(q: QuotePdfData) {
   const top = 794;
   const bottom = 48;
   const info = business();
+  const productImages = (q.items || []).map((item, index) => {
+    const bytes = decodeDataImage(item.image_data);
+    const size = bytes ? jpegSize(bytes) : null;
+    return bytes && size ? { item, index, bytes, ...size, name: `PIm${index + 1}` } : null;
+  }).filter(Boolean) as Array<{item: QuotePdfItem; index:number; bytes:Buffer; width:number; height:number; name:string}>;
 
   const pages: string[][] = [[]];
   let pageIndex = 0;
@@ -96,6 +125,8 @@ export function createQuotePdf(q: QuotePdfData) {
   const line = (x1: number, y1: number, x2: number, y2: number) => cmd(`${x1} ${y1} m ${x2} ${y2} l S`);
   const drawLogo = (x: number, yy: number, width: number, height: number) =>
     cmd(`q ${width} 0 0 ${height} ${x} ${yy} cm /Im1 Do Q`);
+  const drawProductImage = (name: string, x: number, yy: number, width: number, height: number) =>
+    cmd(`q ${width} 0 0 ${height} ${x} ${yy} cm /${name} Do Q`);
 
   const header = (continued = false) => {
     drawLogo(left, y - 64, 64, 64);
@@ -150,24 +181,32 @@ export function createQuotePdf(q: QuotePdfData) {
   line(left, y, right, y);
   y -= 18;
 
-  for (const item of q.items || []) {
+  for (const [itemIndex, item] of (q.items || []).entries()) {
     const unit = Number(item.quoted_price ?? item.requested_price ?? 0);
     const qty = Math.max(1, Number(item.quantity || 1));
     let label = item.product_name || "Product";
     if (item.variant_name) label += ` - ${item.variant_name}`;
-    const labelLines = wrap(label, 52);
-    const rowHeight = Math.max(20, labelLines.length * 12 + (item.product_code ? 13 : 0) + 6);
+    const image = productImages.find((img) => img.index === itemIndex);
+    const labelLines = wrap(label, image ? 42 : 52);
+    const imageHeight = image ? 48 : 0;
+    const rowHeight = Math.max(20, labelLines.length * 12 + (item.product_code ? 13 : 0) + 6, imageHeight + 8);
     ensure(rowHeight + 18);
 
+    if (image) {
+      const maxW=52,maxH=48,scale=Math.min(maxW/image.width,maxH/image.height);
+      const w=image.width*scale,h=image.height*scale;
+      drawProductImage(image.name,left,y-h+3,w,h);
+    }
+    const textLeft = image ? left + 62 : left;
     setFont("F1", 9);
-    labelLines.forEach((l, i) => text(left, y - i * 12, l));
+    labelLines.forEach((l, i) => text(textLeft, y - i * 12, l));
     text(360, y, qty);
     text(402, y, money(unit));
     text(492, y, money(unit * qty));
     y -= labelLines.length * 12;
     if (item.product_code) {
       setFont("F1", 8);
-      text(left + 8, y, `Product Code: ${item.product_code}`);
+      text(textLeft + 8, y, `Product Code: ${item.product_code}`);
       y -= 13;
     }
     y -= 5;
@@ -241,7 +280,10 @@ export function createQuotePdf(q: QuotePdfData) {
   const objects: Array<Buffer | undefined> = [];
   const pageObjectNumbers: number[] = [];
   const contentObjectNumbers: number[] = [];
+  const productImageObjectNumbers = new Map<string, number>();
   let nextObject = 6;
+  for (const image of productImages) productImageObjectNumbers.set(image.name, nextObject++);
+
   for (let i = 0; i < pages.length; i += 1) {
     pageObjectNumbers.push(nextObject++);
     contentObjectNumbers.push(nextObject++);
@@ -264,13 +306,21 @@ export function createQuotePdf(q: QuotePdfData) {
     logoBytes,
     Buffer.from("\nendstream", "latin1"),
   ]);
+  for (const image of productImages) {
+    const objectNumber = productImageObjectNumbers.get(image.name)!;
+    objects[objectNumber] = Buffer.concat([
+      Buffer.from(`<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${image.bytes.length} >>\nstream\n`, "latin1"),
+      image.bytes,
+      Buffer.from("\nendstream", "latin1"),
+    ]);
+  }
 
   for (let i = 0; i < pages.length; i += 1) {
     const stream = Buffer.from(pages[i].join("\n"), "latin1");
     const pageObj = pageObjectNumbers[i];
     const contentObj = contentObjectNumbers[i];
     objects[pageObj] = Buffer.from(
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents ${contentObj} 0 R >>`,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R ${[...productImageObjectNumbers.entries()].map(([name,num]) => `/${name} ${num} 0 R`).join(" ")} >> >> /Contents ${contentObj} 0 R >>`,
       "latin1",
     );
     objects[contentObj] = Buffer.concat([
