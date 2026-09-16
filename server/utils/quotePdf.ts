@@ -12,6 +12,7 @@ type QuotePdfItem = {
   requested_price?: number | null;
   quoted_price?: number | null;
   image_data?: string | null;
+  discount_percent?: number | null;
 };
 
 export type QuotePdfData = {
@@ -174,8 +175,9 @@ export function createQuotePdf(q: QuotePdfData) {
 
   setFont("F2", 9);
   text(left, y, "DESCRIPTION");
-  text(352, y, "QTY");
-  text(402, y, "UNIT PRICE");
+  text(332, y, "QTY");
+  text(370, y, "UNIT PRICE");
+  text(442, y, "DISC.");
   text(500, y, "TOTAL");
   y -= 8;
   line(left, y, right, y);
@@ -183,6 +185,8 @@ export function createQuotePdf(q: QuotePdfData) {
 
   for (const [itemIndex, item] of (q.items || []).entries()) {
     const unit = Number(item.quoted_price ?? item.requested_price ?? 0);
+    const discountPercent = Math.max(0, Number(item.discount_percent || 0));
+    const originalUnit = discountPercent > 0 && discountPercent < 100 ? unit / (1 - discountPercent / 100) : unit;
     const qty = Math.max(1, Number(item.quantity || 1));
     let label = item.product_name || "Product";
     if (item.variant_name) label += ` - ${item.variant_name}`;
@@ -200,8 +204,9 @@ export function createQuotePdf(q: QuotePdfData) {
     const textLeft = image ? left + 62 : left;
     setFont("F1", 9);
     labelLines.forEach((l, i) => text(textLeft, y - i * 12, l));
-    text(360, y, qty);
-    text(402, y, money(unit));
+    text(337, y, qty);
+    text(370, y, money(originalUnit));
+    if (discountPercent > 0) text(444, y, `${discountPercent}%`);
     text(492, y, money(unit * qty));
     y -= labelLines.length * 12;
     if (item.product_code) {
@@ -222,8 +227,26 @@ export function createQuotePdf(q: QuotePdfData) {
   const total = Number(q.quoted_total ?? calculated);
   const gstIncluded = total / 11;
   const exGst = total - gstIncluded;
+  const lineDiscountTotal = (q.items || []).reduce((sum, item) => {
+    const pct = Math.max(0, Number(item.discount_percent || 0));
+    const discountedUnit = Number(item.quoted_price ?? item.requested_price ?? 0);
+    if (!(pct > 0 && pct < 100)) return sum;
+    return sum + ((discountedUnit / (1 - pct / 100)) - discountedUnit) * Math.max(1, Number(item.quantity || 1));
+  }, 0);
+  const quoteDiscountItem = (q.items || []).find((item) => item.product_name === "Quote Discount");
+  const quoteDiscount = quoteDiscountItem ? Math.abs(Number(quoteDiscountItem.quoted_price ?? 0)) : 0;
 
   setFont("F1", 10);
+  if (lineDiscountTotal > 0.004) {
+    text(397, y, "Line Discounts");
+    text(487, y, `-${money(lineDiscountTotal)}`);
+    y -= 18;
+  }
+  if (quoteDiscount > 0.004) {
+    text(397, y, "Quote Discount");
+    text(487, y, `-${money(quoteDiscount)}`);
+    y -= 18;
+  }
   text(397, y, "Subtotal ex GST");
   text(487, y, money(exGst));
   y -= 18;
