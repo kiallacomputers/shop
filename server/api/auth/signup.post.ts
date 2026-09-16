@@ -47,6 +47,47 @@ export default defineEventHandler(async (event) => {
   const verificationUrl =
     `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
 
+  // If this email already belongs to a manually-created sales customer,
+  // link the new website account automatically. Email is the identity key.
+  const newUserId = String(data?.user?.id || "");
+  if (newUserId) {
+    const { data: manualCustomers, error: manualCustomerError } = await supabase
+      .from("sales_customers")
+      .select("id,user_id,pricing_level_key")
+      .ilike("email", email);
+
+    if (manualCustomerError) {
+      console.error("MANUAL CUSTOMER LINK LOOKUP ERROR:", manualCustomerError);
+    } else if ((manualCustomers || []).length > 1) {
+      console.warn(`MANUAL CUSTOMER LINK SKIPPED: multiple sales_customers rows use ${email}`);
+    } else {
+      const manualCustomer: any = manualCustomers?.[0];
+      if (manualCustomer && (!manualCustomer.user_id || String(manualCustomer.user_id) === newUserId)) {
+        const { error: linkError } = await supabase
+          .from("sales_customers")
+          .update({ user_id: newUserId, updated_at: new Date().toISOString() })
+          .eq("id", manualCustomer.id)
+          .or(`user_id.is.null,user_id.eq.${newUserId}`);
+        if (linkError) {
+          console.error("MANUAL CUSTOMER LINK UPDATE ERROR:", linkError);
+        }
+
+        // Carry the manual customer's chosen website pricing level into
+        // their signed-in storefront account as well.
+        if (manualCustomer.pricing_level_key) {
+          const { error: pricingError } = await supabase
+            .from("customer_pricing_assignments")
+            .upsert({
+              user_id: newUserId,
+              pricing_level_key: manualCustomer.pricing_level_key,
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
+          if (pricingError) console.error("MANUAL CUSTOMER PRICING LINK ERROR:", pricingError);
+        }
+      }
+    }
+  }
+
   try {
     await sendSignupVerificationEmail({
       email,
