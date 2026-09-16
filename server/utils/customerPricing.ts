@@ -166,3 +166,13 @@ export async function getPricingLevelForEvent(event: H3Event): Promise<PricingLe
   const userId = user?.id || user?.sub || null;
   return getPricingLevelForUser(userId ? String(userId) : null);
 }
+
+export async function getPricingLevelByKey(key?: string | null): Promise<PricingLevel> {
+  const clean = String(key || "standard").trim() || "standard";
+  const supabase = getAdminSupabase();
+  const { data: level, error } = await supabase.from("customer_pricing_levels")
+    .select("key,name,markup_percent,active").eq("key", clean).eq("active", true).maybeSingle();
+  if (error || !level) return getStandardPricingLevel();
+  const markupPercent=Number(level.markup_percent);
+  return {key:String(level.key),name:String(level.name),markupPercent:Number.isFinite(markupPercent)?markupPercent:STANDARD_PRICING_LEVEL.markupPercent};
+}

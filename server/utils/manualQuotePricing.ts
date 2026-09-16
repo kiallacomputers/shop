@@ -1,5 +1,5 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
-import { calculateBaseCustomerPrice, calculateVariantCustomerPrice, getPricingLevelForUser, getStandardPricingLevel } from "~~/server/utils/customerPricing";
+import { calculateBaseCustomerPrice, calculateVariantCustomerPrice, getPricingLevelForUser, getPricingLevelByKey, getStandardPricingLevel } from "~~/server/utils/customerPricing";
 
 export async function manualQuotePricingMap(q:any) {
   const items=(q?.manual_quote_items||[]).filter((i:any)=>i.product_id);
@@ -11,7 +11,7 @@ export async function manualQuotePricingMap(q:any) {
     supabase.from("products").select("id,buy_price_ex_gst,price").in("id",ids),
     getStandardPricingLevel()
   ]);
-  const level=await getPricingLevelForUser(q?.sales_customers?.user_id||null);
+  const level=q?.sales_customers?.pricing_level_key?await getPricingLevelByKey(q.sales_customers.pricing_level_key):await getPricingLevelForUser(q?.sales_customers?.user_id||null);
   const variants=[...new Set(items.map((i:any)=>Number(i.variant_id)).filter(Boolean))];
   const {data:variantRows}=variants.length?await supabase.from("product_variants").select("id,product_id,price").in("id",variants):{data:[] as any[]};
   for(const item of items){

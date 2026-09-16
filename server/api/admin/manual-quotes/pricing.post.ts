@@ -3,6 +3,7 @@ import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
+  getPricingLevelByKey,
   getStandardPricingLevel,
 } from "~~/server/utils/customerPricing";
 
@@ -17,12 +18,12 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getAdminSupabase();
   const { data: customer, error: customerError } = await supabase
-    .from("sales_customers").select("id,user_id").eq("id", customerId).single();
+    .from("sales_customers").select("id,user_id,pricing_level_key").eq("id", customerId).single();
   if (customerError || !customer)
     throw createError({ statusCode: 404, statusMessage: "Customer not found." });
 
   const [level, standardLevel, productResult] = await Promise.all([
-    getPricingLevelForUser(customer.user_id ? String(customer.user_id) : null),
+    customer.pricing_level_key ? getPricingLevelByKey(customer.pricing_level_key) : getPricingLevelForUser(customer.user_id ? String(customer.user_id) : null),
     getStandardPricingLevel(),
     supabase.from("products").select("id,buy_price_ex_gst,price,active").eq("id", productId).single(),
   ]);
