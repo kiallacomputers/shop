@@ -194,7 +194,9 @@ export function createQuotePdf(q: QuotePdfData) {
     const image = productImages.find((img) => img.index === itemIndex);
     const labelLines = wrap(label, image ? 42 : 52);
     const imageHeight = image ? 48 : 0;
-    const rowHeight = Math.max(20, labelLines.length * 12 + (item.product_code ? 13 : 0) + 6, imageHeight + 8);
+    const hasStandardComparison = Number(item.standard_price || 0) > originalUnit + 0.004;
+    const priceCellHeight = hasStandardComparison ? 26 : 14;
+    const rowHeight = Math.max(20, labelLines.length * 12 + (item.product_code ? 13 : 0) + 6, imageHeight + 8, priceCellHeight + 8);
     ensure(rowHeight + 18);
 
     if (image) {
@@ -208,11 +210,18 @@ export function createQuotePdf(q: QuotePdfData) {
     text(337, y, qty);
     const standardPrice = Number(item.standard_price || 0);
     if (standardPrice > originalUnit + 0.004) {
+      // Keep the standard and customer prices inside the Unit Price cell.
+      // The strike-through is centred on the standard-price text rather than
+      // sitting above it, which prevents it colliding with the table header.
+      const standardY = y;
+      const customerY = y - 12;
+      const standardText = money(standardPrice);
       setFont("F1", 7);
-      text(370, y + 7, money(standardPrice));
-      line(370, y + 10, 410, y + 10);
+      text(370, standardY, standardText);
+      const strikeWidth = Math.min(42, Math.max(22, standardText.length * 4.2));
+      line(369, standardY + 2.5, 369 + strikeWidth, standardY + 2.5);
       setFont("F1", 9);
-      text(370, y - 5, money(originalUnit));
+      text(370, customerY, money(originalUnit));
     } else {
       text(370, y, money(originalUnit));
     }
