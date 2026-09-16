@@ -13,6 +13,7 @@ type QuotePdfItem = {
   quoted_price?: number | null;
   image_data?: string | null;
   discount_percent?: number | null;
+  standard_price?: number | null;
 };
 
 export type QuotePdfData = {
@@ -205,7 +206,16 @@ export function createQuotePdf(q: QuotePdfData) {
     setFont("F1", 9);
     labelLines.forEach((l, i) => text(textLeft, y - i * 12, l));
     text(337, y, qty);
-    text(370, y, money(originalUnit));
+    const standardPrice = Number(item.standard_price || 0);
+    if (standardPrice > originalUnit + 0.004) {
+      setFont("F1", 7);
+      text(370, y + 7, money(standardPrice));
+      line(370, y + 10, 410, y + 10);
+      setFont("F1", 9);
+      text(370, y - 5, money(originalUnit));
+    } else {
+      text(370, y, money(originalUnit));
+    }
     if (discountPercent > 0) text(444, y, `${discountPercent}%`);
     text(492, y, money(unit * qty));
     y -= labelLines.length * 12;

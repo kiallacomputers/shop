@@ -33,7 +33,11 @@ export default defineEventHandler(async (event) => {
   const basePrice = calculateBaseCustomerPrice(
     product.buy_price_ex_gst, level.markupPercent, product.price, standardLevel.markupPercent
   );
+  const standardBasePrice = calculateBaseCustomerPrice(
+    product.buy_price_ex_gst, standardLevel.markupPercent, product.price, standardLevel.markupPercent
+  );
   let price = basePrice;
+  let standardPrice = standardBasePrice;
 
   if (variantId) {
     const { data: variant, error } = await supabase
@@ -45,7 +49,12 @@ export default defineEventHandler(async (event) => {
       storedBasePrice: product.price,
       variantPrice: variant.price,
     });
+    standardPrice = calculateVariantCustomerPrice({
+      baseCustomerPrice: standardBasePrice,
+      storedBasePrice: product.price,
+      variantPrice: variant.price,
+    });
   }
 
-  return { price, basePrice, pricingLevel: { key: level.key, name: level.name, markupPercent: level.markupPercent } };
+  return { price, basePrice, standardPrice, pricingLevel: { key: level.key, name: level.name, markupPercent: level.markupPercent } };
 });
