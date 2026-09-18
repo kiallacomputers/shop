@@ -76,6 +76,10 @@
           <span class="icon-shell" aria-hidden="true">🛡️</span>
           <span class="tool-label">Accounting Health</span>
         </NuxtLink>
+        <NuxtLink class="tool-tile tool-fuchsia" to="/admin/accounting/year-end-export" title="Accountant / Year-End Export">
+          <span class="icon-shell" aria-hidden="true">📁</span>
+          <span class="tool-label">Accountant Export</span>
+        </NuxtLink>
       </div>
     </section>
 
@@ -142,4 +146,5 @@ onMounted(load);
 .tool-sky { @apply border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 focus:ring-sky-400; }
 .tool-rose { @apply border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-400; }
 .tool-slate { @apply border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:bg-slate-200 focus:ring-slate-400; }
+.tool-fuchsia { @apply border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 hover:border-fuchsia-300 hover:bg-fuchsia-100 focus:ring-fuchsia-400; }
 </style>
