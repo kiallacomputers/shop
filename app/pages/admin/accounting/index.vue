@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-9">
+      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-10">
         <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
           <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Chart of Accounts</span>
@@ -59,6 +59,10 @@
         <NuxtLink class="tool-tile tool-teal" to="/admin/accounting/ato-income" title="ATO Income Report">
           <span class="icon-shell" aria-hidden="true">🧮</span>
           <span class="tool-label">ATO Income Report</span>
+        </NuxtLink>
+        <NuxtLink class="tool-tile tool-lime" to="/admin/accounting/inventory" title="Inventory & COGS">
+          <span class="icon-shell" aria-hidden="true">📦</span>
+          <span class="tool-label">Inventory &amp; COGS</span>
         </NuxtLink>
       </div>
     </section>
@@ -122,4 +126,5 @@ onMounted(load);
 .tool-indigo { @apply border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100 focus:ring-indigo-400; }
 .tool-amber { @apply border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 focus:ring-amber-400; }
 .tool-teal { @apply border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100 focus:ring-teal-400; }
+.tool-lime { @apply border-lime-200 bg-lime-50 text-lime-700 hover:border-lime-300 hover:bg-lime-100 focus:ring-lime-400; }
 </style>
