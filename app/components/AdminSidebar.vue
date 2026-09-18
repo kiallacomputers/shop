@@ -11,7 +11,7 @@
         <NavIcon path="M3 12 12 3l9 9M5 10v10h14V10M9 20v-6h6v6" /> Dashboard
       </NuxtLink>
 
-      <NavGroup title="Store" group-key="store" :active="groupActive('store')">
+      <NavGroup title="Store" group-key="store" :active="groupActive('store')" :open="openGroup === 'store'" @toggle="toggleGroup('store')">
         <NuxtLink to="/admin/products" :class="linkClass('/admin/products')" @click="$emit('navigate')"><NavIcon path="M3 6h18M6 6v14h12V6M9 10h6"/>Products</NuxtLink>
         <NuxtLink to="/admin/categories" :class="linkClass('/admin/categories')" @click="$emit('navigate')"><NavIcon path="M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z"/>Categories</NuxtLink>
         <NuxtLink to="/admin/inventory" :class="linkClass('/admin/inventory')" @click="$emit('navigate')"><NavIcon path="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5"/>Inventory</NuxtLink>
@@ -20,7 +20,7 @@
         <NuxtLink to="/admin/back-in-stock" :class="linkClass('/admin/back-in-stock')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Back in Stock</NuxtLink>
       </NavGroup>
 
-      <NavGroup title="Sales" group-key="sales" :active="groupActive('sales')">
+      <NavGroup title="Sales" group-key="sales" :active="groupActive('sales')" :open="openGroup === 'sales'" @toggle="toggleGroup('sales')">
         <NuxtLink to="/admin/orders" :class="linkClass('/admin/orders')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Orders</NuxtLink>
         <NuxtLink to="/admin/manual-quotes" :class="linkClass('/admin/manual-quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Manual Quotes</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/quotes" :class="linkClass('/admin/quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Quote Requests</NuxtLink>
@@ -28,14 +28,14 @@
         <NuxtLink to="/admin/freight" :class="linkClass('/admin/freight')" @click="$emit('navigate')"><NavIcon path="M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>Freight & Pickup</NuxtLink>
       </NavGroup>
 
-      <NavGroup title="Business" group-key="business" :active="groupActive('business')">
+      <NavGroup title="Business" group-key="business" :active="groupActive('business')" :open="openGroup === 'business'" @toggle="toggleGroup('business')">
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounting" :class="linkClass('/admin/accounting')" @click="$emit('navigate')"><NavIcon path="M4 5h16v14H4V5Zm4 4h8M8 13h3m2 0h3M8 17h3m2 0h3"/>Accounting</NuxtLink>
         <NuxtLink to="/admin/analytics" :class="linkClass('/admin/analytics')" @click="$emit('navigate')"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Analytics</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/reports" :class="linkClass('/admin/reports')" @click="$emit('navigate')"><NavIcon path="M4 19V5h16v14H4Zm4-4 3-3 2 2 3-4"/>Reports</NuxtLink>
         <NuxtLink to="/admin/facebook-share" :class="linkClass('/admin/facebook-share')" @click="$emit('navigate')"><NavIcon path="M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8"/>Facebook Share</NuxtLink>
       </NavGroup>
 
-      <NavGroup title="Administration" group-key="administration" :active="groupActive('administration')">
+      <NavGroup title="Administration" group-key="administration" :active="groupActive('administration')" :open="openGroup === 'administration'" @toggle="toggleGroup('administration')">
         <NuxtLink to="/admin/chat" :class="linkClass('/admin/chat')" @click="$emit('navigate')"><NavIcon path="M21 12a8 8 0 0 1-8 8H6l-4 2 1.3-4A8 8 0 1 1 21 12ZM8 10h8M8 14h5"/>Live Chat</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounts" :class="linkClass('/admin/accounts')" @click="$emit('navigate')"><NavIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>Accounts</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/pricing-levels" :class="linkClass('/admin/pricing-levels')" @click="$emit('navigate')"><NavIcon path="M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3"/>Pricing Levels</NuxtLink>
@@ -67,6 +67,17 @@ const groupRoutes: Record<string, string[]> = {
   administration: ["/admin/chat", "/admin/accounts", "/admin/pricing-levels", "/admin/storage-cleanup"],
 };
 const groupActive = (key: string) => groupRoutes[key]?.some((path) => route.path.startsWith(path)) ?? false;
+const activeGroupForRoute = () => Object.keys(groupRoutes).find((key) => groupActive(key)) ?? null;
+const openGroup = ref<string | null>(activeGroupForRoute());
+
+const toggleGroup = (key: string) => {
+  openGroup.value = openGroup.value === key ? null : key;
+};
+
+watch(() => route.path, () => {
+  const active = activeGroupForRoute();
+  if (active) openGroup.value = active;
+});
 
 const backToStore = () => {
   emit("navigate");
@@ -94,10 +105,10 @@ const NavGroup = defineComponent({
     title: { type: String, required: true },
     groupKey: { type: String, required: true },
     active: { type: Boolean, default: false },
+    open: { type: Boolean, default: false },
   },
-  setup(props, { slots }) {
-    const open = ref(props.active);
-    watch(() => props.active, (active) => { if (active) open.value = true; });
+  emits: ["toggle"],
+  setup(props, { slots, emit }) {
     return () => h("div", { class: "mt-2" }, [
       h("button", {
         type: "button",
@@ -105,15 +116,15 @@ const NavGroup = defineComponent({
           "mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.12em] transition",
           props.active ? "bg-slate-800 text-blue-300" : "text-slate-500 hover:bg-slate-800/70 hover:text-slate-300",
         ],
-        onClick: () => { open.value = !open.value; },
-        "aria-expanded": String(open.value),
+        onClick: () => emit("toggle"),
+        "aria-expanded": String(props.open),
       }, [
         h("span", props.title),
-        h("svg", { viewBox: "0 0 20 20", fill: "none", stroke: "currentColor", "stroke-width": "2", class: ["h-4 w-4 transition-transform", open.value ? "rotate-90" : ""] }, [
+        h("svg", { viewBox: "0 0 20 20", fill: "none", stroke: "currentColor", "stroke-width": "2", class: ["h-4 w-4 transition-transform", props.open ? "rotate-90" : ""] }, [
           h("path", { "stroke-linecap": "round", "stroke-linejoin": "round", d: "m7 5 5 5-5 5" }),
         ]),
       ]),
-      h("div", { class: ["overflow-hidden transition-all", open.value ? "block" : "hidden"] }, slots.default?.()),
+      h("div", { class: ["overflow-hidden transition-all", props.open ? "block" : "hidden"] }, slots.default?.()),
     ]);
   },
 });
