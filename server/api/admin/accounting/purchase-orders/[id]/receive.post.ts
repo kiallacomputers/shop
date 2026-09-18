@@ -6,6 +6,8 @@ export default defineEventHandler(async(event)=>{
   if(!id) throw createError({statusCode:400,statusMessage:"Invalid purchase order."});
   const {data:po,error}=await s.from("accounting_purchase_orders").select("*,accounting_purchase_order_lines(*)").eq("id",id).single();
   if(error||!po) throw createError({statusCode:404,statusMessage:"Purchase order not found."});
+  const poStatus=String(po.status||"").toLowerCase();
+  if(!["sent","ordered","part_received"].includes(poStatus)) throw createError({statusCode:409,statusMessage:"Stock can only be received against a sent or manually ordered purchase order."});
   const poLines:any[]=po.accounting_purchase_order_lines||[];
   const requested=new Map<number,number>((Array.isArray(body?.lines)?body.lines:[]).map((x:any)=>[Number(x.purchase_order_line_id),n(x.quantity)]));
   const lineIds=poLines.map(x=>Number(x.id));

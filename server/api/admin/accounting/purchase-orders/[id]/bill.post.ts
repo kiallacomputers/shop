@@ -7,6 +7,8 @@ export default defineEventHandler(async (event) => {
   if(existing) throw createError({statusCode:409,statusMessage:`${existing.bill_number} already exists for this purchase order.`});
   const {data:po,error}=await s.from("accounting_purchase_orders").select("*,accounting_purchase_order_lines(*)").eq("id",id).single();
   if(error||!po) throw createError({statusCode:404,statusMessage:"Purchase order not found."});
+  const poStatus=String(po.status||"").toLowerCase();
+  if(["draft","closed"].includes(poStatus)) throw createError({statusCode:409,statusMessage:"Draft or closed purchase orders cannot be converted to supplier bills."});
   const lines=po.accounting_purchase_order_lines||[]; if(!lines.length) throw createError({statusCode:400,statusMessage:"Purchase order has no lines."});
   const {data:bill,error:be}=await s.from("accounting_supplier_bills").insert({supplier_id:po.supplier_id,purchase_order_id:po.id,supplier_invoice_number:body?.supplier_invoice_number||po.supplier_reference||null,bill_date:body?.bill_date||new Date().toISOString().slice(0,10),due_date:body?.due_date||null,status:"draft",subtotal:po.subtotal,gst_amount:po.gst_amount,total:po.total}).select().single();
   if(be||!bill) throw createError({statusCode:400,statusMessage:be?.message||"Unable to create supplier bill."});
