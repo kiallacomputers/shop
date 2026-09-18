@@ -68,6 +68,10 @@
           <span class="icon-shell" aria-hidden="true">📚</span>
           <span class="tool-label">Financial Statements</span>
         </NuxtLink>
+        <NuxtLink class="tool-tile tool-rose" to="/admin/accounting/period-close" title="Period Close">
+          <span class="icon-shell" aria-hidden="true">🔒</span>
+          <span class="tool-label">Period Close</span>
+        </NuxtLink>
       </div>
     </section>
 
@@ -132,4 +136,5 @@ onMounted(load);
 .tool-teal { @apply border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100 focus:ring-teal-400; }
 .tool-lime { @apply border-lime-200 bg-lime-50 text-lime-700 hover:border-lime-300 hover:bg-lime-100 focus:ring-lime-400; }
 .tool-sky { @apply border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 focus:ring-sky-400; }
+.tool-rose { @apply border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100 focus:ring-rose-400; }
 </style>
