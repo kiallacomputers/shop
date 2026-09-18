@@ -4,16 +4,16 @@ export const csv=(rows:any[])=>{if(!rows.length)return "";const keys=[...new Set
 export async function buildYearEndData(start:string,end:string){
  const s=getAdminSupabase();
  const [{data:accounts,error:ae},{data:lines,error:le},{data:allLines,error:ale},{data:products,error:proe},{data:invoices,error:ie},{data:bills,error:be},{data:moves,error:me},{data:bank,error:bke},{data:recs,error:re},{data:periods,error:pe}]=await Promise.all([
-  s.from('accounting_accounts').select('id,code,name,account_type,normal_balance,active').order('code'),
+  s.from('accounting_accounts').select('*').order('code'),
   s.from('accounting_journal_lines').select('id,journal_id,account_id,description,debit,credit,accounting_accounts(id,code,name,account_type),accounting_journals!inner(id,journal_date,status,reference,description,source_type,source_id,created_at)').eq('accounting_journals.status','posted').gte('accounting_journals.journal_date',start).lte('accounting_journals.journal_date',end).order('id'),
   s.from('accounting_journal_lines').select('debit,credit,accounting_accounts(id,code,name,account_type),accounting_journals!inner(journal_date,status)').eq('accounting_journals.status','posted').lte('accounting_journals.journal_date',end),
   s.from('products').select('id,name,product_code,buy_price_ex_gst,price,stock,active').order('name'),
-  s.from('accounting_invoices').select('id,invoice_number,customer_name,customer_email,invoice_date,status,subtotal,gst_amount,total,paid_amount,payment_method,payment_reference,journal_id').lte('invoice_date',end).order('invoice_date'),
-  s.from('accounting_supplier_bills').select('id,bill_number,bill_date,due_date,status,subtotal,gst_amount,total,paid_amount,journal_id,accounting_suppliers(name)').lte('bill_date',end).order('bill_date'),
+  s.from('accounting_invoices').select('*').lte('invoice_date',end).order('invoice_date'),
+  s.from('accounting_supplier_bills').select('*,accounting_suppliers(name)').lte('bill_date',end).order('bill_date'),
   s.from('accounting_inventory_movements').select('id,product_id,order_id,movement_date,movement_type,quantity,unit_cost,total_cost,reference,notes,journal_id').gte('movement_date',start).lte('movement_date',end).order('movement_date'),
-  s.from('accounting_bank_transactions').select('id,bank_account_id,transaction_date,description,reference,amount,status,matched_type,matched_id').gte('transaction_date',start).lte('transaction_date',end).order('transaction_date'),
+  s.from('accounting_bank_transactions').select('*').gte('transaction_date',start).lte('transaction_date',end).order('transaction_date'),
   s.from('accounting_bank_reconciliations').select('*').gte('statement_date',start).lte('statement_date',end).order('statement_date'),
-  s.from('accounting_periods').select('id,name,start_date,end_date,status,closed_at,closed_by').gte('end_date',start).lte('start_date',end).order('start_date')
+  s.from('accounting_periods').select('*').gte('end_date',start).lte('start_date',end).order('start_date')
  ]);
  const err=[ae,le,ale,proe,ie,be,me,bke,re,pe].find(Boolean); if(err)throw createError({statusCode:500,statusMessage:(err as any).message});
  const generalLedger=(lines||[]).map((x:any)=>{const a=x.accounting_accounts||{},j=x.accounting_journals||{};return{date:j.journal_date,journal_id:j.id,reference:j.reference||'',journal_description:j.description||'',source_type:j.source_type||'',source_id:j.source_id||'',account_code:a.code||'',account_name:a.name||'',account_type:a.account_type||'',line_description:x.description||'',debit:n(x.debit),credit:n(x.credit)}});
