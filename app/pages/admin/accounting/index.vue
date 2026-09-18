@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
+      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-7">
         <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
           <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Chart of Accounts</span>
@@ -47,6 +47,10 @@
         <NuxtLink class="tool-tile tool-red" to="/admin/accounting/payables" title="Accounts Payable">
           <span class="icon-shell" aria-hidden="true">💳</span>
           <span class="tool-label">Accounts Payable</span>
+        </NuxtLink>
+        <NuxtLink class="tool-tile tool-indigo" to="/admin/accounting/bank-reconciliation" title="Bank Reconciliation">
+          <span class="icon-shell" aria-hidden="true">🏦</span>
+          <span class="tool-label">Bank Reconciliation</span>
         </NuxtLink>
       </div>
     </section>
@@ -107,4 +111,5 @@ onMounted(load);
 .tool-cyan { @apply border-cyan-200 bg-cyan-50 text-cyan-700 hover:border-cyan-300 hover:bg-cyan-100 focus:ring-cyan-400; }
 .tool-orange { @apply border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100 focus:ring-orange-400; }
 .tool-red { @apply border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 focus:ring-red-400; }
+.tool-indigo { @apply border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100 focus:ring-indigo-400; }
 </style>
