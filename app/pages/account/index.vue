@@ -157,10 +157,32 @@
 
       <section class="kc-panel p-6 mb-8" id="account-quotes" v-show="activeAccountSection === 'account-quotes'">
         <div class="flex items-center justify-between gap-4">
-          <div><h2 class="text-xl font-bold text-slate-900">Quote Requests</h2><p class="mt-1 text-sm text-slate-500">Quotes requested from your shopping cart.</p></div>
+          <div><h2 class="text-xl font-bold text-slate-900">Quotes</h2><p class="mt-1 text-sm text-slate-500">Manual quotes prepared for you and quotes requested from your shopping cart.</p></div>
           <NuxtLink to="/shoppingcart" class="text-sm font-bold text-blue-600 hover:text-blue-700">Request a Quote →</NuxtLink>
         </div>
-        <div v-if="quoteRequests.length" class="mt-5 divide-y divide-slate-100">
+        <div v-if="manualQuotes.length" class="mt-5">
+          <h3 class="text-sm font-black uppercase tracking-wide text-slate-500">Quotes prepared by Kialla Computers</h3>
+          <div class="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200 px-4">
+            <div v-for="quote in manualQuotes" :key="`manual-${quote.id}`" class="py-4">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="font-bold text-slate-900">{{ quote.quote_number || `Quote #${quote.id}` }}</p>
+                  <p class="mt-1 text-xs text-slate-500">Issued {{ formatDate(quote.issue_date) }}<span v-if="quote.expires_at"> · Valid until {{ formatDate(quote.expires_at) }}</span></p>
+                  <div v-if="quote.manual_quote_items?.length" class="mt-3 space-y-1">
+                    <p v-for="item in quote.manual_quote_items" :key="item.id" class="text-sm text-slate-600">{{ item.quantity }} × {{ item.product_name }} <span class="font-semibold text-slate-800">· {{ currency(Number(item.quantity || 0) * Number(item.unit_price || 0) * (1 - Number(item.discount_percent || 0) / 100)) }}</span></p>
+                  </div>
+                </div>
+                <div class="sm:text-right">
+                  <span class="rounded-full px-2.5 py-1 text-xs font-bold capitalize" :class="manualQuoteStatusClass(quote.status)">{{ quote.status || 'draft' }}</span>
+                  <p class="mt-2 text-lg font-black text-slate-900">{{ currency(quote.totals?.total) }}</p>
+                  <NuxtLink v-if="quote.public_token" :to="`/quote/${quote.public_token}`" class="mt-2 inline-block text-sm font-bold text-blue-600 hover:text-blue-700">View Quote →</NuxtLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <h3 v-if="quoteRequests.length" class="mt-6 text-sm font-black uppercase tracking-wide text-slate-500">Online quote requests</h3>
+        <div v-if="quoteRequests.length" class="mt-2 divide-y divide-slate-100">
           <div v-for="quote in quoteRequests.slice(0, 5)" :key="quote.id" class="py-4">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -191,7 +213,22 @@
             </div>
           </div>
         </div>
-        <p v-else class="mt-4 text-sm text-slate-500">No quote requests yet.</p>
+        <p v-if="!manualQuotes.length && !quoteRequests.length" class="mt-4 text-sm text-slate-500">No quotes yet.</p>
+      </section>
+
+      <section class="kc-panel p-6 mb-8" id="account-accounting" v-show="activeAccountSection === 'account-accounting'">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div><h2 class="text-xl font-bold text-slate-900">Invoices & Statement</h2><p class="mt-1 text-sm text-slate-500">Your accounting history from Kialla Computers.</p></div>
+          <div class="rounded-xl bg-slate-50 px-4 py-3 sm:text-right"><p class="text-xs font-bold uppercase text-slate-500">Outstanding Balance</p><p class="mt-1 text-2xl font-black" :class="customerBalance > 0 ? 'text-amber-700' : 'text-emerald-700'">{{ currency(customerBalance) }}</p></div>
+        </div>
+        <div v-if="!customerAccountingLinked" class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Your login is not linked to a customer accounting record yet.</div>
+        <div v-else-if="customerInvoices.length" class="mt-5 overflow-x-auto rounded-xl border border-slate-200">
+          <table class="min-w-full divide-y divide-slate-200 text-sm">
+            <thead class="bg-slate-50"><tr><th class="px-4 py-3 text-left font-bold text-slate-600">Invoice</th><th class="px-4 py-3 text-left font-bold text-slate-600">Date</th><th class="px-4 py-3 text-left font-bold text-slate-600">Status</th><th class="px-4 py-3 text-right font-bold text-slate-600">Total</th><th class="px-4 py-3 text-right font-bold text-slate-600">Paid</th><th class="px-4 py-3 text-right font-bold text-slate-600">Balance</th></tr></thead>
+            <tbody class="divide-y divide-slate-100 bg-white"><tr v-for="invoice in customerInvoices" :key="invoice.id"><td class="px-4 py-3 font-bold text-slate-900">{{ invoice.invoice_number || `INV-${invoice.id}` }}</td><td class="px-4 py-3 text-slate-600">{{ formatDate(invoice.invoice_date) }}</td><td class="px-4 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{{ invoice.status || 'unpaid' }}</span></td><td class="px-4 py-3 text-right font-semibold">{{ currency(invoice.total) }}</td><td class="px-4 py-3 text-right text-emerald-700">{{ currency(invoice.paid_amount) }}</td><td class="px-4 py-3 text-right font-bold" :class="invoiceBalance(invoice) > 0 ? 'text-amber-700' : 'text-emerald-700'">{{ currency(invoiceBalance(invoice)) }}</td></tr></tbody>
+          </table>
+        </div>
+        <p v-else class="mt-5 text-sm text-slate-500">No accounting invoices yet. Accepted manual quotes will appear here once posted to accounting.</p>
       </section>
 
       <section class="kc-panel p-6 mb-8" id="account-information" v-show="activeAccountSection === 'account-information'">
@@ -480,6 +517,7 @@ const accountSections = [
   { id: "account-wishlist", label: "Wishlist" },
   { id: "account-back-in-stock", label: "Back in Stock" },
   { id: "account-quotes", label: "Quotes" },
+  { id: "account-accounting", label: "Invoices & Statement" },
   { id: "account-information", label: "Account Information" },
 ];
 
@@ -507,6 +545,10 @@ const showProfileForm = ref(false);
 const savingProfile = ref(false);
 const wishlistPreview = ref<any[]>([]);
 const quoteRequests = ref<any[]>([]);
+const manualQuotes = ref<any[]>([]);
+const customerInvoices = ref<any[]>([]);
+const customerBalance = ref(0);
+const customerAccountingLinked = ref(false);
 const payingQuoteId = ref<number | null>(null);
 const backInStockNotifications = ref<any[]>([]);
 const cancellingBackInStockId = ref<number | null>(null);
@@ -786,7 +828,7 @@ async function loadAccount() {
     }
     user.value = currentUser;
 
-    const [addressResult, orderResult, pricingResult, profileResult, dashboardResult, wishlistResult, quotesResult, backInStockResult] = await Promise.all([
+    const [addressResult, orderResult, pricingResult, profileResult, dashboardResult, wishlistResult, quotesResult, backInStockResult, accountingResult] = await Promise.all([
       accountFetch<any[]>("/api/account/addresses"),
       supabase.from("orders").select(`id,user_id,stripe_session_id,customer_email,customer_name,total,status,tracking_number,carrier,tracking_status,shipped_at,delivered_at,created_at`).eq("user_id", currentUser.id).order("created_at", { ascending: false }),
       accountFetch<any>("/api/account/pricing"),
@@ -795,6 +837,7 @@ async function loadAccount() {
       accountFetch<any>("/api/account/wishlist"),
       accountFetch<any[]>("/api/account/quotes"),
       accountFetch<any[]>("/api/account/back-in-stock"),
+      accountFetch<any>("/api/account/customer-accounting"),
     ]);
 
     addresses.value = addressResult || [];
@@ -805,6 +848,10 @@ async function loadAccount() {
     wishlistPreview.value = (wishlistResult?.products || []).slice(0, 3);
     quoteRequests.value = quotesResult || [];
     backInStockNotifications.value = backInStockResult || [];
+    customerAccountingLinked.value = Boolean(accountingResult?.linked);
+    manualQuotes.value = accountingResult?.manualQuotes || [];
+    customerInvoices.value = accountingResult?.invoices || [];
+    customerBalance.value = Number(accountingResult?.balance || 0);
     if (orderResult.error) throw orderResult.error;
     orders.value = orderResult.data || [];
   } catch (error: any) {
@@ -818,6 +865,20 @@ async function loadAccount() {
 function formatDate(date: string) {
   if (!date) return "";
   return new Date(date).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function invoiceBalance(invoice: any) {
+  return Math.max(0, Number(invoice?.total || 0) - Number(invoice?.paid_amount || 0));
+}
+
+function manualQuoteStatusClass(status: string) {
+  switch (String(status || "").toLowerCase()) {
+    case "accepted": case "converted": return "bg-emerald-100 text-emerald-700";
+    case "declined": return "bg-red-100 text-red-700";
+    case "sent": return "bg-blue-100 text-blue-700";
+    case "draft": return "bg-slate-100 text-slate-600";
+    default: return "bg-amber-100 text-amber-800";
+  }
 }
 
 function statusClass(status: string) {

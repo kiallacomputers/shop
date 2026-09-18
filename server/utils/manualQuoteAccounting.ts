@@ -27,7 +27,7 @@ export async function postManualQuoteToAccounting(quoteId: number) {
 
   const { data: quote, error: quoteError } = await s
     .from("manual_quotes")
-    .select("id,quote_number,customer_id,issue_date,delivery_method,delivery_amount,discount_amount,manual_quote_items(*),sales_customers(full_name,company_name,email)")
+    .select("id,quote_number,customer_id,issue_date,delivery_method,delivery_amount,discount_amount,manual_quote_items(*),sales_customers(full_name,company_name,email,auth_user_id)")
     .eq("id", quoteId)
     .single();
   if (quoteError || !quote) throw quoteError || new Error("Manual quote not found.");
@@ -85,7 +85,7 @@ export async function postManualQuoteToAccounting(quoteId: number) {
     .from("accounting_invoices")
     .insert({
       order_id: null,
-      customer_user_id: null,
+      customer_user_id: customer?.auth_user_id || null,
       customer_name: customer?.company_name ? `${customer.full_name} - ${customer.company_name}` : customer?.full_name || "Manual quote customer",
       customer_email: customer?.email || null,
       invoice_date: String(quote.issue_date || new Date().toISOString()).slice(0, 10),

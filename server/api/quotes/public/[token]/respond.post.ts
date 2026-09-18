@@ -1,3 +1,4 @@
+import { postManualQuoteToAccounting } from "~~/server/utils/manualQuoteAccounting";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 export default defineEventHandler(async(event)=>{
  const token=String(getRouterParam(event,"token")||"").trim(),body=await readBody(event);
@@ -11,5 +12,9 @@ export default defineEventHandler(async(event)=>{
  const now=new Date().toISOString();
  const {error:updateError}=await s.from("manual_quotes").update({status:response,customer_responded_at:now,customer_response_note:String(body?.note||"").trim().slice(0,1000)||null,accepted_at:response==="accepted"?now:null,updated_at:now}).eq("id",q.id);
  if(updateError)throw createError({statusCode:500,statusMessage:updateError.message});
+ if(response==="accepted"){
+  try{await postManualQuoteToAccounting(Number(q.id));}
+  catch(error:any){console.error("Unable to post accepted manual quote to accounting:",error?.message||error);}
+ }
  return {ok:true,status:response};
 });
