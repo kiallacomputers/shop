@@ -25,27 +25,27 @@
 
       <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
         <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
-          <span class="icon-shell"><ToolIcon path="M4 5h16v14H4V5Zm4 4h8M8 13h3m2 0h3M8 17h3m2 0h3" /></span>
+          <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Chart of Accounts</span>
         </NuxtLink>
         <NuxtLink class="tool-tile tool-violet" to="/admin/accounting/journals" title="General Journal">
-          <span class="icon-shell"><ToolIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6m-6 4h4" /></span>
+          <span class="icon-shell" aria-hidden="true">📝</span>
           <span class="tool-label">General Journal</span>
         </NuxtLink>
         <NuxtLink class="tool-tile tool-green" to="/admin/accounting/invoices" title="Sales & Invoices">
-          <span class="icon-shell"><ToolIcon path="M6 3h12v18H6V3Zm3 5h6m-6 4h6m-6 4h3" /></span>
+          <span class="icon-shell" aria-hidden="true">🧾</span>
           <span class="tool-label">Sales &amp; Invoices</span>
         </NuxtLink>
         <NuxtLink class="tool-tile tool-cyan" to="/admin/accounting/receivables" title="Accounts Receivable">
-          <span class="icon-shell"><ToolIcon path="M4 6h16v12H4V6Zm3 4h10M8 14h4m5-2 2 2-2 2" /></span>
+          <span class="icon-shell" aria-hidden="true">💰</span>
           <span class="tool-label">Accounts Receivable</span>
         </NuxtLink>
         <NuxtLink class="tool-tile tool-orange" to="/admin/accounting/purchases" title="Suppliers & Purchases">
-          <span class="icon-shell"><ToolIcon path="M3 7h18l-2 12H5L3 7Zm4 0 2-3h6l2 3M8 12h8" /></span>
+          <span class="icon-shell" aria-hidden="true">🚚</span>
           <span class="tool-label">Suppliers &amp; Purchases</span>
         </NuxtLink>
         <NuxtLink class="tool-tile tool-red" to="/admin/accounting/payables" title="Accounts Payable">
-          <span class="icon-shell"><ToolIcon path="M4 6h16v12H4V6Zm3 4h10m-7 4h4m-5-2-2 2 2 2" /></span>
+          <span class="icon-shell" aria-hidden="true">💳</span>
           <span class="tool-label">Accounts Payable</span>
         </NuxtLink>
       </div>
@@ -70,19 +70,12 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, h } from "vue";
 definePageMeta({ layout: "admin", middleware: ["admin"] });
 const { adminFetch, isSuperAdmin } = useAdminFetch();
 const accounts = ref<any[]>([]), journals = ref<any[]>([]), trial = ref<any[]>([]), err = ref("");
 const money = (v: any) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(v || 0));
 const totalDebits = computed(() => trial.value.reduce((s, a) => s + Number(a.debit || 0), 0));
 const totalCredits = computed(() => trial.value.reduce((s, a) => s + Number(a.credit || 0), 0));
-const ToolIcon = defineComponent({
-  props: { path: { type: String, required: true } },
-  setup(props) {
-    return () => h("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", class: "h-9 w-9", "aria-hidden": "true" }, [h("path", { "stroke-linecap": "round", "stroke-linejoin": "round", d: props.path })]);
-  },
-});
 async function load() {
   err.value = "";
   try {
@@ -105,7 +98,7 @@ onMounted(load);
 
 
 .tool-tile { @apply flex min-h-36 flex-col items-center justify-center gap-3 rounded-2xl border p-4 text-center shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2; }
-.icon-shell { @apply flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 shadow-sm ring-1 ring-black/5 transition duration-200; }
+.icon-shell { @apply flex h-16 w-16 items-center justify-center rounded-2xl bg-white/80 text-4xl shadow-sm ring-1 ring-black/5 transition duration-200; }
 .tool-tile:hover .icon-shell { @apply scale-105 bg-white; }
 .tool-label { @apply text-xs font-black leading-tight text-slate-700; }
 .tool-blue { @apply border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 focus:ring-blue-400; }
