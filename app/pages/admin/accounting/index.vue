@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-10">
+      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-11">
         <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
           <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Chart of Accounts</span>
@@ -63,6 +63,10 @@
         <NuxtLink class="tool-tile tool-lime" to="/admin/accounting/inventory" title="Inventory & COGS">
           <span class="icon-shell" aria-hidden="true">📦</span>
           <span class="tool-label">Inventory &amp; COGS</span>
+        </NuxtLink>
+        <NuxtLink class="tool-tile tool-sky" to="/admin/accounting/financial-statements" title="Financial Statements">
+          <span class="icon-shell" aria-hidden="true">📚</span>
+          <span class="tool-label">Financial Statements</span>
         </NuxtLink>
       </div>
     </section>
@@ -127,4 +131,5 @@ onMounted(load);
 .tool-amber { @apply border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100 focus:ring-amber-400; }
 .tool-teal { @apply border-teal-200 bg-teal-50 text-teal-700 hover:border-teal-300 hover:bg-teal-100 focus:ring-teal-400; }
 .tool-lime { @apply border-lime-200 bg-lime-50 text-lime-700 hover:border-lime-300 hover:bg-lime-100 focus:ring-lime-400; }
+.tool-sky { @apply border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-300 hover:bg-sky-100 focus:ring-sky-400; }
 </style>
