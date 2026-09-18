@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-11">
+      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-7">
         <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
           <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Chart of Accounts</span>
