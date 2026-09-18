@@ -2,7 +2,16 @@ import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { createPostedJournal } from "~~/server/utils/accounting";
 
 const round=(v:number)=>Math.round((v+Number.EPSILON)*100)/100;
-async function systemAccount(key:string){const{data,error}=await getAdminSupabase().from("accounting_accounts").select("id,code,name").eq("system_key",key).single();if(error||!data)throw new Error(`Accounting system account '${key}' is missing.`);return data}
+async function systemAccount(key:string){
+ const s=getAdminSupabase();
+ const{data,error}=await s.from("accounting_accounts").select("id,code,name").eq("system_key",key).maybeSingle();
+ if(!error&&data)return data;
+ if(key==="cost_of_goods_sold"){
+  const{data:fallback,error:fe}=await s.from("accounting_accounts").select("id,code,name").eq("code","5000").maybeSingle();
+  if(!fe&&fallback)return fallback;
+ }
+ throw new Error(`Accounting system account '${key}' is missing.`)
+}
 
 export async function postPaidOrderToAccounting(orderId:number) {
  const s=getAdminSupabase();
@@ -34,7 +43,7 @@ export async function postPaidOrderToAccounting(orderId:number) {
  const visible=round(rows.reduce((a:number,x:any)=>a+Number(x.line_total),0)),difference=round(total-visible);
  if(Math.abs(difference)>=0.01)rows.push({invoice_id:inv.id,product_id:null,description:difference>0?"Order Adjustment":"Order Discount",sku:null,quantity:1,unit_price:difference,line_total:difference,gst_amount:round(difference/11),sort_order:rows.length});
  if(rows.length){const{error:le}=await s.from("accounting_invoice_lines").insert(rows);if(le)console.error("ACCOUNTING INVOICE LINE ERROR",le)}
- const movementRows=items.filter((x:any)=>Number(x.product_id)>0&&Number(x.quantity)>0).map((x:any)=>{const unit=Number(costMap.get(Number(x.product_id))||0),qty=Number(x.quantity);return{product_id:Number(x.product_id),movement_date:String(o.created_at||new Date().toISOString()).slice(0,10),movement_type:"sale",quantity:-qty,unit_cost_ex_gst:round(unit),total_cost_ex_gst:round(qty*unit),source_type:"order",source_id:String(o.id),journal_id:journal.id,notes:x.product_name||null}}).filter((x:any)=>x.total_cost_ex_gst>0);
+ const movementRows=items.filter((x:any)=>Number(x.product_id)>0&&Number(x.quantity)>0).map((x:any)=>{const unit=Number(costMap.get(Number(x.product_id))||0),qty=Number(x.quantity);return{product_id:Number(x.product_id),movement_date:String(o.created_at||new Date().toISOString()).slice(0,10),movement_type:"sale",quantity:-qty,order_id:o.id,unit_cost:round(unit),total_cost:round(qty*unit),reference:`Order #${o.id}`,journal_id:journal.id,notes:x.product_name||null}}).filter((x:any)=>x.total_cost>0);
  if(movementRows.length){const{error:me}=await s.from("accounting_inventory_movements").insert(movementRows);if(me)console.error("INVENTORY MOVEMENT ERROR",me)}
  return inv;
 }
