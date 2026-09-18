@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       .neq("status", "draft")
       .order("created_at", { ascending: false }),
     db.from("accounting_invoices")
-      .select("id,invoice_number,invoice_date,status,subtotal,gst_amount,total,paid_amount,payment_method,payment_reference,accounting_invoice_lines(id,description,sku,quantity,unit_price,line_total,gst_amount,sort_order)")
+      .select("id,invoice_number,invoice_date,status,subtotal,gst_amount,total,paid_amount,payment_method,payment_reference,accounting_invoice_lines(id,description,sku,quantity,unit_price,line_total,gst_amount,sort_order),accounting_customer_payments(id,payment_date,amount,payment_method,reference,notes,journal_id,created_at)")
       .eq("customer_user_id", user.id)
       .order("invoice_date", { ascending: false })
       .order("id", { ascending: false }),
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     manual_quote_items: (quote.manual_quote_items || []).sort((a: any, b: any) => Number(a.sort_order || 0) - Number(b.sort_order || 0)),
     totals: quoteTotals(quote),
   }));
-  const invoices = invoicesResult.data || [];
+  const invoices = (invoicesResult.data || []).map((invoice: any) => ({ ...invoice, accounting_customer_payments: (invoice.accounting_customer_payments || []).sort((a:any,b:any)=>String(b.payment_date).localeCompare(String(a.payment_date))) }));
   const balance = invoices.reduce((sum: number, invoice: any) => sum + Math.max(0, Number(invoice.total || 0) - Number(invoice.paid_amount || 0)), 0);
 
   return { linked: true, customer, manualQuotes, invoices, balance };
