@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     db.from("manual_quotes")
       .select("id,quote_number,status,issue_date,expires_at,public_token,sent_at,accepted_at,customer_responded_at,delivery_amount,discount_amount,manual_quote_items(id,product_name,description,sku,quantity,unit_price,discount_percent,sort_order)")
       .eq("customer_id", customer.id)
+      .neq("status", "draft")
       .order("created_at", { ascending: false }),
     db.from("accounting_invoices")
       .select("id,invoice_number,invoice_date,status,subtotal,gst_amount,total,paid_amount,payment_method,payment_reference,accounting_invoice_lines(id,description,sku,quantity,unit_price,line_total,gst_amount,sort_order)")
