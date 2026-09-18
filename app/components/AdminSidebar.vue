@@ -39,6 +39,7 @@
         <NuxtLink to="/admin/analytics" :class="linkClass('/admin/analytics')" @click="$emit('navigate')"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Analytics</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/reports" :class="linkClass('/admin/reports')" @click="$emit('navigate')"><NavIcon path="M4 19V5h16v14H4Zm4-4 3-3 2 2 3-4"/>Reports</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounting" :class="linkClass('/admin/accounting')" @click="$emit('navigate')"><NavIcon path="M4 5h16v14H4V5Zm4 4h8M8 13h3m2 0h3M8 17h3m2 0h3"/>Accounting</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/accounting/receivables" :class="linkClass('/admin/accounting/receivables')" @click="$emit('navigate')"><NavIcon path="M3 6h18v12H3V6Zm3 4h6m-6 4h4m7-5v6m-3-3h6"/>Accounts Receivable</NuxtLink>
         <NuxtLink to="/admin/facebook-share" :class="linkClass('/admin/facebook-share')" @click="$emit('navigate')"><NavIcon path="M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8"/>Facebook Share</NuxtLink>
       </NavGroup>
 
