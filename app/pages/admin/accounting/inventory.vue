@@ -1,4 +1,4 @@
-<template><main class="admin-content"><AdminPurchasingWorkflow />
+<template><main class="admin-content">
 <NuxtLink to="/admin/accounting" class="text-sm font-bold text-blue-600">← Accounting</NuxtLink>
 <div class="mt-2 flex flex-wrap items-end justify-between gap-4"><div><p class="text-xs font-black uppercase tracking-wider text-blue-600">SuperAdmin</p><h1 class="text-3xl font-black">Inventory & COGS</h1><p class="text-slate-500">Inventory valuation and cost of goods sold from posted sales.</p></div><div class="flex flex-wrap gap-2"><label><span class="label">From</span><input v-model="start" type="date" class="input"></label><label><span class="label">To</span><input v-model="end" type="date" class="input"></label><button class="btn-primary" @click="load">Run Report</button></div></div>
 <div v-if="err" class="mt-4 rounded-lg bg-red-50 p-3 text-red-700">{{err}}</div>
