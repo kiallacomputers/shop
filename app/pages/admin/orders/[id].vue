@@ -1,5 +1,5 @@
 <template>
-  <main class="min-h-screen bg-slate-50">
+  <main class="min-h-screen bg-slate-50"><AdminSalesWorkflow />
     <div class="max-w-5xl mx-auto px-4 py-8">
       <!-- ========================================= -->
       <!-- BACK -->

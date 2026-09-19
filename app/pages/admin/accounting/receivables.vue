@@ -1,5 +1,5 @@
 <template>
-  <main class="admin-content">
+  <main class="admin-content"><AdminSalesWorkflow />
     <NuxtLink to="/admin/accounting" class="text-sm font-bold text-blue-600">← Accounting</NuxtLink>
     <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
       <div><h1 class="text-3xl font-black">Accounts Receivable</h1><p class="text-slate-500">Outstanding customer invoices and debtor ageing.</p></div>
