@@ -1,5 +1,5 @@
 <template>
-<main class="admin-content"><NuxtLink to="/admin/accounting" class="text-sm font-bold text-blue-600">← Accounting</NuxtLink>
+<main class="admin-content"><AdminPurchasingWorkflow /><NuxtLink to="/admin/accounting" class="text-sm font-bold text-blue-600">← Accounting</NuxtLink>
 <div class="mt-2 flex flex-wrap items-end justify-between gap-3"><div><p class="text-xs font-black uppercase tracking-wider text-blue-600">SuperAdmin</p><h1 class="text-3xl font-black">Accounts Payable</h1><p class="text-slate-500">Supplier bills, ageing and payments.</p></div><NuxtLink to="/admin/accounting/purchases" class="secondary">Suppliers & Purchase Orders</NuxtLink></div>
 <div v-if="msg" class="mt-4 rounded-lg bg-slate-100 p-3">{{msg}}</div>
 <div class="mt-5 grid gap-4 md:grid-cols-4"><div class="panel p-5"><small>Total Outstanding</small><div class="text-2xl font-black">{{money(totalOutstanding)}}</div></div><div class="panel p-5"><small>Overdue</small><div class="text-2xl font-black text-red-600">{{money(overdueTotal)}}</div></div><div class="panel p-5"><small>Due in 7 Days</small><div class="text-2xl font-black">{{money(dueSoonTotal)}}</div></div><div class="panel p-5"><small>Open Bills</small><div class="text-3xl font-black">{{openBills.length}}</div></div></div>
