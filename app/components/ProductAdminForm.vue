@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-5xl mx-auto px-4 py-8">
+  <main class="max-w-[1500px] mx-auto px-4 py-8">
     <div class="mb-7">
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <NuxtLink to="/admin/products" class="admin-subnav-link">
@@ -19,6 +19,31 @@
     </div>
 
     <form id="product-admin-form" v-else class="space-y-6" @submit.prevent="saveProduct">
+      <div class="product-workspace">
+        <aside class="product-nav">
+          <div class="product-nav-card">
+            <p class="product-nav-kicker">Product workspace</p>
+            <p class="product-nav-name">{{ form.name || (mode === "create" ? "New product" : "Product") }}</p>
+            <div class="product-nav-status">
+              <span :class="form.active ? 'is-live' : 'is-off'">{{ form.active ? 'Active' : 'Inactive' }}</span>
+              <span v-if="form.has_variants">Variants</span>
+              <span v-if="form.featured">Featured</span>
+            </div>
+            <nav class="product-nav-links" aria-label="Product editor sections">
+              <a href="#product-details">📝 Product details</a>
+              <a href="#pricing-stock">💰 Pricing & stock</a>
+              <a href="#related-products">🔗 Related products</a>
+              <a href="#freight">📦 Freight</a>
+              <a href="#product-images">🖼️ Images</a>
+              <a href="#product-description">📄 Description</a>
+            </nav>
+            <div v-if="mode === 'edit' && productId" class="product-nav-tools">
+              <NuxtLink :to="`/admin/products/${productId}/variants`">🎛️ Manage variants</NuxtLink>
+              <NuxtLink :to="`/admin/products/${productId}/addons`">➕ Manage add-ons</NuxtLink>
+            </div>
+          </div>
+        </aside>
+        <div class="product-editor">
       <div v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {{ errorMessage }}
       </div>
@@ -31,7 +56,7 @@
         </button>
       </div>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="product-details" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Product Details</h2>
 
         <div class="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -99,7 +124,7 @@
         </div>
       </section>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="pricing-stock" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Pricing & Stock</h2>
 
         <p class="mt-1 text-sm text-slate-500">
@@ -168,7 +193,7 @@
       </section>
 
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="related-products" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Related Products</h2>
@@ -219,7 +244,7 @@
         </div>
       </section>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="freight" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Freight Measurements</h2>
         <p class="mt-1 text-sm text-slate-500">
           Used to calculate Australia Post parcel rates. Enter the packed weight and dimensions for one unit.
@@ -284,7 +309,7 @@
         </div>
       </section>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="product-images" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Product Images</h2>
@@ -413,7 +438,7 @@
         </div>
       </section>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section id="product-description" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Product Description</h2>
         <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
 
@@ -429,6 +454,8 @@
         <button type="submit" :disabled="saving" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
           {{ saving ? "Saving..." : mode === "create" ? "Create Product" : "Save Changes" }}
         </button>
+      </div>
+        </div>
       </div>
     </form>
   </main>
@@ -796,4 +823,8 @@ onMounted(loadForm);
   border-color: rgb(59 130 246);
   box-shadow: 0 0 0 3px rgb(219 234 254);
 }
+</style>
+
+<style scoped>
+.product-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1.5rem;align-items:start}.product-editor{min-width:0;display:flex;flex-direction:column;gap:1.5rem}.product-nav{position:sticky;top:6rem}.product-nav-card{border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:1rem;box-shadow:0 1px 2px rgb(15 23 42/.05)}.product-nav-kicker{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;font-weight:800;color:#64748b}.product-nav-name{margin-top:.35rem;font-weight:800;color:#0f172a;line-height:1.25}.product-nav-status{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.7rem}.product-nav-status span{font-size:.68rem;font-weight:800;padding:.25rem .45rem;border-radius:999px;background:#f1f5f9;color:#475569}.product-nav-status .is-live{background:#dcfce7;color:#166534}.product-nav-status .is-off{background:#fee2e2;color:#991b1b}.product-nav-links{display:grid;gap:.2rem;margin-top:1rem;padding-top:.75rem;border-top:1px solid #e2e8f0}.product-nav-links a,.product-nav-tools a{display:block;border-radius:.55rem;padding:.55rem .65rem;font-size:.82rem;font-weight:700;color:#475569;text-decoration:none}.product-nav-links a:hover,.product-nav-tools a:hover{background:#eff6ff;color:#1d4ed8}.product-nav-tools{display:grid;gap:.2rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid #e2e8f0}.product-section{scroll-margin-top:7rem}@media(max-width:1023px){.product-workspace{grid-template-columns:1fr}.product-nav{position:static}.product-nav-links{grid-template-columns:repeat(3,minmax(0,1fr))}.product-nav-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.product-nav-links,.product-nav-tools{grid-template-columns:1fr 1fr}}
 </style>

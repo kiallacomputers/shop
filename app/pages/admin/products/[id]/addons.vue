@@ -1,8 +1,15 @@
 <template>
-  <main class="max-w-5xl mx-auto px-4 py-8">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <main class="max-w-[1400px] mx-auto px-4 py-8">
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div><p class="text-sm font-bold uppercase tracking-wide text-blue-600">Product extras</p><h1 class="text-3xl font-black text-slate-900">Manage Add-ons</h1><p class="mt-2 text-slate-500">Create warranty, software, hardware upgrade and service options for this product.</p></div>
       <NuxtLink :to="`/admin/products/${productId}`" class="admin-btn-secondary">Back to Product</NuxtLink>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4 text-sm font-semibold">
+        <NuxtLink :to="`/admin/products/${productId}`" class="rounded-lg bg-slate-100 px-3 py-2 text-slate-700 hover:bg-slate-200">📝 Product editor</NuxtLink>
+        <NuxtLink :to="`/admin/products/${productId}/variants`" class="rounded-lg bg-slate-100 px-3 py-2 text-slate-700 hover:bg-slate-200">🎛️ Variants</NuxtLink>
+        <NuxtLink to="/admin/products" class="rounded-lg bg-slate-100 px-3 py-2 text-slate-700 hover:bg-slate-200">← All products</NuxtLink>
+      </div>
     </div>
 
     <div v-if="errorMessage" class="kc-alert kc-alert-error mt-6">{{ errorMessage }}</div>
