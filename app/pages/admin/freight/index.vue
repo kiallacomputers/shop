@@ -1,6 +1,6 @@
 <template>
-  <main class="min-h-screen bg-slate-50">
-    <div class="max-w-5xl mx-auto px-4 py-8">
+  <main class="admin-page">
+    <div class="admin-page-inner max-w-[1500px]">
       <div class="mb-8">
         <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink">
           ← Admin Dashboard

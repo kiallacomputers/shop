@@ -1,6 +1,6 @@
 <template>
-  <main class="min-h-screen bg-slate-50">
-    <div class="mx-auto max-w-[1500px] px-4 py-8">
+  <main class="admin-page">
+    <div class="admin-page-inner max-w-[1500px]">
       <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <NuxtLink to="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-700 admin-page-backlink">

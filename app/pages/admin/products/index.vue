@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="admin-page">
+    <div class="admin-page-inner max-w-[1500px]">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <div>
           <NuxtLink

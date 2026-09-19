@@ -1,5 +1,5 @@
 <template>
-  <main class="max-w-7xl mx-auto px-4 py-8">
+  <main class="admin-core-page mx-auto max-w-7xl px-4 py-6 md:px-7 md:py-7">
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <NuxtLink
