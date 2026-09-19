@@ -8,7 +8,25 @@
 
     <div v-if="err" class="mb-4 rounded-lg bg-red-50 p-3 text-red-700">{{ err }}</div>
 
-    <div class="grid gap-4 md:grid-cols-4">
+    <section class="admin-panel p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-xl font-black">Business Snapshot</h2><p class="text-sm text-slate-500">Current financial position and {{ fyLabel }} performance.</p></div><button class="btn-secondary" @click="load">Refresh</button></div>
+      <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <NuxtLink to="/admin/accounting/receivables" class="metric"><small>Customers Owe</small><b>{{ money(dash.summary?.receivables) }}</b><span v-if="dash.summary?.overdue_receivables" class="text-red-600">{{ money(dash.summary.overdue_receivables) }} overdue</span></NuxtLink>
+        <NuxtLink to="/admin/accounting/payables" class="metric"><small>Bills Owing</small><b>{{ money(dash.summary?.payables) }}</b><span v-if="dash.summary?.overdue_payables" class="text-red-600">{{ money(dash.summary.overdue_payables) }} overdue</span></NuxtLink>
+        <NuxtLink to="/admin/accounting/inventory" class="metric"><small>Inventory Value</small><b>{{ money(dash.summary?.inventory_value) }}</b><span>At current buy cost</span></NuxtLink>
+        <div class="metric"><small>This Month Income</small><b>{{ money(dash.summary?.month_income) }}</b><span>Posted journals</span></div>
+        <div class="metric"><small>This Month Expenses</small><b>{{ money(dash.summary?.month_expenses) }}</b><span>Including COGS</span></div>
+        <div class="metric"><small>This Month Profit</small><b :class="Number(dash.summary?.month_profit)<0?'text-red-600':'text-emerald-700'">{{ money(dash.summary?.month_profit) }}</b><span>Income less expenses</span></div>
+        <NuxtLink to="/admin/accounting/bank-reconciliation" class="metric"><small>Bank To Reconcile</small><b>{{ dash.summary?.unreconciled_bank || 0 }}</b><span>Statement transactions</span></NuxtLink>
+      </div>
+      <div class="mt-5 grid gap-5 xl:grid-cols-3">
+        <div class="rounded-xl border border-slate-200 p-4 xl:col-span-2"><div class="flex justify-between gap-3"><div><h3 class="font-black">Financial Year Performance</h3><p class="text-xs text-slate-500">Income, expenses and profit by month.</p></div><div class="text-right"><small class="text-slate-500">FY Profit</small><div class="font-black" :class="Number(dash.summary?.fy_profit)<0?'text-red-600':'text-emerald-700'">{{ money(dash.summary?.fy_profit) }}</div></div></div><div class="mt-5 flex h-48 items-end gap-2"><div v-for="m in dash.monthly || []" :key="m.month" class="flex min-w-0 flex-1 flex-col items-center gap-1"><div class="flex h-36 w-full items-end justify-center gap-1"><div class="w-2/5 rounded-t bg-emerald-300" :style="{height: barHeight(m.income)}" :title="`Income ${money(m.income)}`"></div><div class="w-2/5 rounded-t bg-slate-300" :style="{height: barHeight(m.expenses)}" :title="`Expenses ${money(m.expenses)}`"></div></div><span class="text-[10px] font-bold text-slate-500">{{ monthLabel(m.month) }}</span></div><div v-if="!(dash.monthly||[]).length" class="m-auto text-sm text-slate-400">No posted FY activity yet.</div></div><div class="mt-3 flex gap-4 text-xs"><span>🟩 Income {{ money(dash.summary?.fy_income) }}</span><span>⬜ Expenses {{ money(dash.summary?.fy_expenses) }}</span></div></div>
+        <div class="rounded-xl border border-slate-200 p-4"><h3 class="font-black">Needs Attention</h3><div class="mt-3 space-y-2"><NuxtLink v-for="x in attention" :key="x.label" :to="x.to" class="flex justify-between rounded-lg bg-slate-50 p-3 text-sm hover:bg-slate-100"><span>{{x.label}}</span><b :class="x.alert?'text-red-600':''">{{x.value}}</b></NuxtLink><div v-if="!attention.length" class="rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Nothing requiring attention.</div></div></div>
+      </div>
+      <div class="mt-5 grid gap-5 lg:grid-cols-2"><div class="rounded-xl border border-slate-200 p-4"><h3 class="font-black">Overdue Customer Invoices</h3><div v-for="x in dash.overdue_invoices || []" :key="x.id" class="mt-2 flex items-center justify-between gap-3 border-t pt-2 text-sm"><div><b>{{x.number}}</b><div class="text-xs text-slate-500">{{x.customer}} · {{date(x.due_date)}}</div></div><b class="text-red-600">{{money(x.balance)}}</b></div><p v-if="!(dash.overdue_invoices||[]).length" class="mt-3 text-sm text-slate-500">No overdue customer invoices.</p></div><div class="rounded-xl border border-slate-200 p-4"><h3 class="font-black">Overdue Supplier Bills</h3><div v-for="x in dash.overdue_bills || []" :key="x.id" class="mt-2 flex items-center justify-between gap-3 border-t pt-2 text-sm"><div><b>{{x.number}}</b><div class="text-xs text-slate-500">{{x.supplier}} · {{date(x.due_date)}}</div></div><b class="text-red-600">{{money(x.balance)}}</b></div><p v-if="!(dash.overdue_bills||[]).length" class="mt-3 text-sm text-slate-500">No overdue supplier bills.</p></div></div>
+    </section>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-4">
       <div class="admin-panel p-5"><small>Accounts</small><div class="text-3xl font-black">{{ accounts.length }}</div></div>
       <div class="admin-panel p-5"><small>Posted Journals</small><div class="text-3xl font-black">{{ journals.length }}</div></div>
       <div class="admin-panel p-5"><small>Total Debits</small><div class="text-2xl font-black">{{ money(totalDebits) }}</div></div>
@@ -104,18 +122,25 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: ["admin"] });
 const { adminFetch, isSuperAdmin } = useAdminFetch();
-const accounts = ref<any[]>([]), journals = ref<any[]>([]), trial = ref<any[]>([]), err = ref("");
+const accounts = ref<any[]>([]), journals = ref<any[]>([]), trial = ref<any[]>([]), dash = ref<any>({ summary:{}, monthly:[], overdue_invoices:[], overdue_bills:[] }), err = ref("");
 const money = (v: any) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(v || 0));
 const totalDebits = computed(() => trial.value.reduce((s, a) => s + Number(a.debit || 0), 0));
 const totalCredits = computed(() => trial.value.reduce((s, a) => s + Number(a.credit || 0), 0));
+const fyLabel=computed(()=>dash.value?.period?.fy_start?`${String(dash.value.period.fy_start).slice(0,4)}/${String(Number(String(dash.value.period.fy_start).slice(0,4))+1).slice(-2)}`:'Current FY');
+const date=(v:any)=>v?new Date(String(v)+'T00:00:00').toLocaleDateString('en-AU'):'—';
+const monthLabel=(v:string)=>new Date(v+'-01T00:00:00').toLocaleDateString('en-AU',{month:'short'});
+const chartMax=computed(()=>Math.max(1,...(dash.value.monthly||[]).flatMap((x:any)=>[Number(x.income||0),Number(x.expenses||0)])));
+const barHeight=(v:any)=>`${Math.max(2,Math.round(Number(v||0)/chartMax.value*100))}%`;
+const attention=computed(()=>{const s=dash.value.summary||{},a:any[]=[];if(Number(s.overdue_receivables)>0)a.push({label:'Overdue receivables',value:money(s.overdue_receivables),to:'/admin/accounting/receivables',alert:true});if(Number(s.overdue_payables)>0)a.push({label:'Overdue payables',value:money(s.overdue_payables),to:'/admin/accounting/payables',alert:true});if(Number(s.unreconciled_bank)>0)a.push({label:'Bank transactions to reconcile',value:String(s.unreconciled_bank),to:'/admin/accounting/bank-reconciliation',alert:false});return a});
 async function load() {
   err.value = "";
   try {
     if (!isSuperAdmin.value) return navigateTo("/admin");
-    [accounts.value, journals.value, trial.value] = await Promise.all([
+    [accounts.value, journals.value, trial.value, dash.value] = await Promise.all([
       adminFetch("/api/admin/accounting/accounts"),
       adminFetch("/api/admin/accounting/journals"),
       adminFetch("/api/admin/accounting/trial-balance"),
+      adminFetch("/api/admin/accounting/dashboard"),
     ]);
   } catch (e: any) {
     err.value = e?.data?.statusMessage || e.message;
@@ -126,6 +151,10 @@ onMounted(load);
 
 <style scoped>
 .admin-panel { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
+.metric { @apply flex min-h-28 flex-col rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-white hover:shadow-sm; }
+.metric small { @apply text-xs font-black uppercase tracking-wide text-slate-500; }
+.metric b { @apply mt-2 text-xl font-black; }
+.metric span { @apply mt-auto pt-2 text-xs text-slate-500; }
 .btn-secondary { @apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold; }
 
 
