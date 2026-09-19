@@ -132,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: "admin" });
 
 type AdRecord = {
@@ -237,7 +238,7 @@ const saveAd = async () => {
 };
 
 const deleteAd = async (ad: AdRecord) => {
-  if (!window.confirm(`Delete advertisement “${ad.title}”?`)) return;
+  if (!await dialog.confirm(`Delete advertisement “${ad.title}”?`)) return;
   deletingId.value = String(ad.id);
   errorMessage.value = "";
   try {

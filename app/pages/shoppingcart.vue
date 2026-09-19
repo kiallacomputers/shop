@@ -285,6 +285,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 useSeoMeta({ robots: "noindex, nofollow" });
 definePageMeta({ middleware: ["auth"] });
 
@@ -575,7 +576,7 @@ async function checkout() {
     if (!response?.url) throw new Error("Stripe did not return a checkout URL");
     window.location.href = response.url;
   } catch (error: any) {
-    alert(error?.data?.statusMessage || error?.message || "Unable to start checkout");
+    await dialog.alert(error?.data?.statusMessage || error?.message || "Unable to start checkout");
   } finally {
     loading.value = false;
   }

@@ -228,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: "admin" });
 
 type Category = {
@@ -351,7 +352,7 @@ const loadCategories = async () => {
 };
 
 const deleteCategory = async (category: Category) => {
-  const confirmed = window.confirm(
+  const confirmed = await dialog.confirm(
     `Delete category "${category.name}"?\n\nCategories containing products or subcategories cannot be deleted.`,
   );
 

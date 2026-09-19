@@ -240,6 +240,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: "admin" });
 
 type Category = {
@@ -570,7 +571,7 @@ const duplicateProduct = async (product: Product) => {
 // ========================================
 
 const deleteProduct = async (product: Product) => {
-  if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
+  if (!await dialog.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
 
   deletingId.value = String(product.id);
   errorMessage.value = "";

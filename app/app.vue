@@ -2,6 +2,7 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <AppDialogHost />
 </template>
 <style>
 .toast-enter-active,

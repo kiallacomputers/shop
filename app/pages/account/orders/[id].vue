@@ -253,6 +253,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 useSeoMeta({ robots: "noindex, nofollow" });
 // =====================================================
 // CUSTOMER LOGIN ONLY
@@ -459,7 +460,7 @@ async function buyAgain() {
     if (!added) throw new Error("None of the products from this order are currently available.");
     await navigateTo("/shoppingcart");
   } catch (error: any) {
-    alert(error?.message || "Unable to add this order to your cart.");
+    await dialog.alert(error?.message || "Unable to add this order to your cart.");
   } finally {
     buyingAgain.value = false;
   }

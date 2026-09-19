@@ -79,6 +79,7 @@
   </main>
 </template>
 <script setup lang="ts">
+const dialog = useAppDialog();
 // Sibling route note: the product edit page lives at [id]/index.vue so this page renders at /admin/products/:id/variants.
 definePageMeta({ layout: "admin", middleware: 'admin' });
 const route=useRoute(); const productId=String(route.params.id); const {adminFetch}=useAdminFetch();
@@ -131,7 +132,7 @@ const load=async()=>{
 const addVariant=()=>variants.value.push(fresh());
 const resetAllToBase=async()=>{
   if(!variants.value.length)return;
-  if(!confirm("Reset every variant to inherit the current base Sell Price and RRP? Variant-specific price overrides will be removed."))return;
+  if(!await dialog.confirm("Reset every variant to inherit the current base Sell Price and RRP? Variant-specific price overrides will be removed."))return;
   errorMessage.value="";
   try{
     for(const variant of variants.value){
@@ -179,7 +180,7 @@ const saveVariant=async(v:any)=>{
     v.saving=false;
   }
 };
-const removeVariant=async(v:any)=>{if(!confirm(`Delete ${v.name||'this variant'}?`))return;if(v.id)await adminFetch(`/api/admin/products/${productId}/variants/${v.id}`,{method:'DELETE'});variants.value=variants.value.filter(x=>x._key!==v._key);};
+const removeVariant=async(v:any)=>{if(!await dialog.confirm(`Delete ${v.name||'this variant'}?`))return;if(v.id)await adminFetch(`/api/admin/products/${productId}/variants/${v.id}`,{method:'DELETE'});variants.value=variants.value.filter(x=>x._key!==v._key);};
 onMounted(load);
 </script>
 <style scoped>.label{display:block;margin-bottom:.375rem;font-size:.875rem;font-weight:600;color:#334155}.input{width:100%;border:1px solid #cbd5e1;border-radius:.5rem;padding:.625rem .75rem;background:#fff}</style>

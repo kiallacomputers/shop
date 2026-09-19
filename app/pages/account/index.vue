@@ -503,6 +503,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 useSeoMeta({ robots: "noindex, nofollow" });
 definePageMeta({ middleware: "auth" });
 
@@ -690,7 +691,7 @@ async function makePrimary(address: any) {
 }
 
 async function deleteAddress(address: any) {
-  if (!window.confirm(`Delete ${address.label || "this delivery address"}?`)) return;
+  if (!await dialog.confirm(`Delete ${address.label || "this delivery address"}?`)) return;
   addressError.value = "";
   successMessage.value = "";
   deletingAddressId.value = String(address.id);

@@ -306,6 +306,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: ["admin", "superadmin"] });
 
 type Role = "superadmin" | "admin" | null;
@@ -505,7 +506,7 @@ async function changePricingLevel(account: Account, event: Event) {
 
 async function changeRole(account: Account, role: "user" | "admin" | "superadmin") {
   const label = role === "superadmin" ? "SuperAdmin" : role === "admin" ? "Admin" : "User";
-  if (!window.confirm(`Change ${account.display_name || account.email} to ${label}?`)) return;
+  if (!await dialog.confirm(`Change ${account.display_name || account.email} to ${label}?`)) return;
 
   changingId.value = account.id;
   errorMessage.value = "";
@@ -528,7 +529,7 @@ async function sendPasswordReset(account: Account) {
     errorMessage.value = "This account does not have an email address.";
     return;
   }
-  if (!window.confirm(`Send a password reset email to ${account.email}?`)) return;
+  if (!await dialog.confirm(`Send a password reset email to ${account.email}?`)) return;
 
   resettingId.value = account.id;
   errorMessage.value = "";

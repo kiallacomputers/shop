@@ -192,6 +192,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: ["admin", "superadmin"] });
 
 type StorageFile = {
@@ -288,7 +289,7 @@ const deleteSelected = async () => {
   if (!selectedPaths.value.length) return;
 
   const count = selectedPaths.value.length;
-  const confirmed = window.confirm(
+  const confirmed = await dialog.confirm(
     `Permanently delete ${count} unused image${count === 1 ? "" : "s"} from Supabase Storage?\n\nThis cannot be undone.`,
   );
 

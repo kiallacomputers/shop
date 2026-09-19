@@ -247,6 +247,7 @@
 </template>
 
 <script setup lang="ts">
+const dialog = useAppDialog();
 definePageMeta({ layout: "admin", middleware: "admin" });
 
 type LocalPostcode = {
@@ -445,7 +446,7 @@ const addBulkPostcodes = async () => {
 };
 
 const removePostcode = async (postcode: LocalPostcode) => {
-  if (!window.confirm(`Remove local delivery for ${postcode.postcode}?`)) {
+  if (!await dialog.confirm(`Remove local delivery for ${postcode.postcode}?`)) {
     return;
   }
 
