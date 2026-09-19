@@ -25,9 +25,16 @@
         </div>
         <div class="mt-5 divide-y rounded-xl border border-slate-200">
           <div v-if="!suppliers.length" class="p-4 text-sm text-slate-500">No suppliers have been added yet.</div>
-          <div v-for="s in suppliers" :key="s.id" class="flex items-center justify-between gap-3 p-4">
-            <div class="min-w-0"><b class="block truncate">{{ s.name }}</b><span class="text-xs text-slate-500">{{ s.contact_name || 'No contact' }}<template v-if="s.email"> · {{ s.email }}</template></span></div>
-            <NuxtLink :to="`/admin/accounting/purchases?supplier=${s.id}`" class="secondary shrink-0">New PO</NuxtLink>
+          <div v-for="s in suppliers" :key="s.id" class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0">
+              <b class="block truncate">{{ s.name }}</b>
+              <span class="text-xs text-slate-500">{{ s.contact_name || 'No contact' }}<template v-if="s.email"> · {{ s.email }}</template><template v-if="s.phone"> · {{ s.phone }}</template></span>
+              <div v-if="s.address || s.abn" class="mt-1 text-xs text-slate-400"><template v-if="s.abn">ABN {{ s.abn }}</template><template v-if="s.abn && s.address"> · </template>{{ s.address || '' }}</div>
+            </div>
+            <div class="flex shrink-0 flex-wrap gap-2">
+              <button class="secondary" @click="openEdit(s)">Edit</button>
+              <NuxtLink :to="`/admin/accounting/purchases?supplier=${s.id}`" class="secondary">New PO</NuxtLink>
+            </div>
           </div>
         </div>
       </section>
@@ -47,6 +54,28 @@
         </div>
       </section>
     </div>
+
+    <div v-if="editing" class="modal-backdrop" @click.self="closeEdit">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="edit-supplier-title">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+          <div><h2 id="edit-supplier-title" class="text-xl font-black">Edit Supplier</h2><p class="mt-1 text-sm text-slate-500">Update supplier contact and business details without changing its purchasing history.</p></div>
+          <button class="close-btn" aria-label="Close" @click="closeEdit">×</button>
+        </div>
+        <div class="grid gap-3 p-5 sm:grid-cols-2">
+          <label class="field sm:col-span-2"><span>Supplier name *</span><input v-model="editSupplier.name" class="input"></label>
+          <label class="field"><span>Contact name</span><input v-model="editSupplier.contact_name" class="input"></label>
+          <label class="field"><span>ABN</span><input v-model="editSupplier.abn" class="input"></label>
+          <label class="field"><span>Email</span><input v-model="editSupplier.email" type="email" class="input"></label>
+          <label class="field"><span>Phone</span><input v-model="editSupplier.phone" class="input"></label>
+          <label class="field sm:col-span-2"><span>Address</span><textarea v-model="editSupplier.address" rows="3" class="input"></textarea></label>
+          <label class="field sm:col-span-2"><span>Notes</span><textarea v-model="editSupplier.notes" rows="4" class="input"></textarea></label>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2 border-t border-slate-200 p-5">
+          <button class="secondary" :disabled="savingSupplier" @click="closeEdit">Cancel</button>
+          <button class="primary" :disabled="savingSupplier" @click="saveSupplier">{{ savingSupplier ? 'Saving…' : 'Save Supplier' }}</button>
+        </div>
+      </section>
+    </div>
   </main>
 </template>
 
@@ -58,6 +87,9 @@ const products = ref<any[]>([])
 const mappings = ref<any[]>([])
 const msg = ref('')
 const supplier = reactive<any>({ name: '', contact_name: '', email: '', phone: '', abn: '' })
+const editing = ref(false)
+const savingSupplier = ref(false)
+const editSupplier = reactive<any>({ id: null, name: '', contact_name: '', email: '', phone: '', abn: '', address: '', notes: '' })
 const mapping = reactive<any>({ product_id: 0, supplier_id: 0, supplier_sku: '', supplier_product_name: '', buy_price_ex_gst: '', is_primary: false })
 const money = (v:any) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(v || 0))
 async function load() {
@@ -80,6 +112,23 @@ async function addSupplier() {
     await load()
   } catch (e:any) { msg.value = e?.data?.statusMessage || e.message }
 }
+function openEdit(s:any) {
+  Object.assign(editSupplier, { id: s.id, name: s.name || '', contact_name: s.contact_name || '', email: s.email || '', phone: s.phone || '', abn: s.abn || '', address: s.address || '', notes: s.notes || '' })
+  editing.value = true
+}
+function closeEdit() { if (!savingSupplier.value) editing.value = false }
+async function saveSupplier() {
+  try {
+    if (!editSupplier.id) return
+    if (!String(editSupplier.name || '').trim()) { msg.value = 'Enter a supplier name.'; return }
+    savingSupplier.value = true
+    await adminFetch(`/api/admin/accounting/suppliers/${editSupplier.id}`, { method: 'PUT', body: { name: editSupplier.name, contact_name: editSupplier.contact_name, email: editSupplier.email, phone: editSupplier.phone, abn: editSupplier.abn, address: editSupplier.address, notes: editSupplier.notes } })
+    editing.value = false
+    msg.value = 'Supplier updated.'
+    await load()
+  } catch (e:any) { msg.value = e?.data?.statusMessage || e.message }
+  finally { savingSupplier.value = false }
+}
 async function assignSupplier() {
   try {
     if (!mapping.product_id || !mapping.supplier_id) { msg.value = 'Choose both a product and supplier.'; return }
@@ -93,5 +142,5 @@ onMounted(load)
 </script>
 
 <style scoped>
-.panel{@apply rounded-xl border border-slate-200 bg-white shadow-sm}.input{@apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm}.primary{@apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white}.secondary{@apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold}.badge{@apply rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700}
+.panel{@apply rounded-xl border border-slate-200 bg-white shadow-sm}.input{@apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm}.primary{@apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white}.secondary{@apply rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold}.badge{@apply rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase text-blue-700}.modal-backdrop{@apply fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4}.modal-card{@apply max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white shadow-2xl}.close-btn{@apply flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600}.field{@apply grid gap-1 text-sm font-bold text-slate-700}.primary:disabled,.secondary:disabled{@apply cursor-not-allowed opacity-60}
 </style>
