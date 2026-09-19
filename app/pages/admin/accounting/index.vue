@@ -110,6 +110,10 @@
           <span class="icon-shell" aria-hidden="true">📦</span>
           <span class="tool-label">Purchasing &amp; Stock Intelligence</span>
         </NuxtLink>
+        <NuxtLink class="tool-tile tool-violet" to="/admin/accounting/management-report" title="Business Management Reporting">
+          <span class="icon-shell" aria-hidden="true">💼</span>
+          <span class="tool-label">Business Management Report</span>
+        </NuxtLink>
       </div>
     </section>
 
