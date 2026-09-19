@@ -18,7 +18,7 @@
 <script setup lang="ts">
 const route=useRoute()
 const items=[
- {key:'supplier',to:'/admin/accounting/purchases',icon:'🚚',label:'Suppliers',caption:'Suppliers & products'},
+ {key:'supplier',to:'/admin/accounting/suppliers',icon:'🚚',label:'Suppliers',caption:'Suppliers & products'},
  {key:'po',to:'/admin/accounting/purchases#purchase-orders',icon:'📋',label:'Purchase Orders',caption:'Order & receive'},
  {key:'receive',to:'/admin/accounting/purchases#purchase-orders',icon:'📦',label:'Receive Stock',caption:'Partial or full'},
  {key:'bill',to:'/admin/accounting/purchases#supplier-bills',icon:'🧾',label:'Supplier Bills',caption:'Convert & review'},
@@ -26,7 +26,8 @@ const items=[
  {key:'inventory',to:'/admin/accounting/inventory',icon:'📊',label:'Inventory',caption:'Value & COGS'}
 ]
 function active(item:any){
- if(item.key==='supplier'||item.key==='po'||item.key==='receive'||item.key==='bill') return route.path==='/admin/accounting/purchases'
+ if(item.key==='supplier') return route.path==='/admin/accounting/suppliers'
+ if(item.key==='po'||item.key==='receive'||item.key==='bill') return route.path==='/admin/accounting/purchases'
  return route.path===item.to||route.path.startsWith(item.to+'/')
 }
 </script>

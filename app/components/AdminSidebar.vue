@@ -34,8 +34,8 @@
       </NavGroup>
 
       <NavGroup title="Purchasing" group-key="purchasing" :active="groupActive('purchasing')" :open="openGroup === 'purchasing'" @toggle="toggleGroup('purchasing')">
-        <NuxtLink to="/admin/accounting/purchases" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M4 4h16v16H4V4Zm4 4h8M8 12h8M8 16h5"/>Suppliers & Purchase Orders</NuxtLink>
-        <NuxtLink to="/admin/accounting/purchases#purchase-orders" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Purchase Orders</NuxtLink>
+        <NuxtLink to="/admin/accounting/suppliers" :class="linkClass('/admin/accounting/suppliers')" @click="$emit('navigate')"><NavIcon path="M4 4h16v16H4V4Zm4 4h8M8 12h8M8 16h5"/>Suppliers</NuxtLink>
+        <NuxtLink to="/admin/accounting/purchases" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Purchase Orders</NuxtLink>
         <NuxtLink to="/admin/accounting/purchases#purchase-orders" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Stock Receiving</NuxtLink>
         <NuxtLink to="/admin/accounting/payables" :class="linkClass('/admin/accounting/payables')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Accounts Payable</NuxtLink>
         <NuxtLink to="/admin/accounting/inventory" :class="linkClass('/admin/accounting/inventory')" @click="$emit('navigate')"><NavIcon path="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5"/>Inventory & COGS</NuxtLink>
@@ -77,7 +77,7 @@ const { isSuperAdmin, adminRole } = useAdminFetch();
 const groupRoutes: Record<string, string[]> = {
   store: ["/admin/products", "/admin/categories", "/admin/ads", "/admin/reviews", "/admin/back-in-stock"],
   sales: ["/admin/orders", "/admin/manual-quotes", "/admin/quotes", "/admin/customers", "/admin/freight"],
-  purchasing: ["/admin/accounting/purchases", "/admin/accounting/payables", "/admin/accounting/inventory", "/admin/accounting/stock-intelligence"],
+  purchasing: ["/admin/accounting/suppliers", "/admin/accounting/purchases", "/admin/accounting/payables", "/admin/accounting/inventory", "/admin/accounting/stock-intelligence"],
   business: ["/admin/accounting", "/admin/analytics", "/admin/reports", "/admin/facebook-share"],
   administration: ["/admin/chat", "/admin/accounts", "/admin/pricing-levels", "/admin/storage-cleanup"],
 };
