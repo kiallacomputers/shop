@@ -37,83 +37,32 @@
       <div class="flex items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-black">Accounting Tools</h2>
-          <p class="text-sm text-slate-500">Open an accounting area.</p>
+          <p class="text-sm text-slate-500">Tools are grouped by purpose. Open a section to choose an accounting area.</p>
         </div>
       </div>
 
-      <div class="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-7">
-        <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/accounts" title="Chart of Accounts">
-          <span class="icon-shell" aria-hidden="true">📊</span>
-          <span class="tool-label">Chart of Accounts</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-violet" to="/admin/accounting/journals" title="General Journal">
-          <span class="icon-shell" aria-hidden="true">📝</span>
-          <span class="tool-label">General Journal</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-green" to="/admin/accounting/invoices" title="Sales & Invoices">
-          <span class="icon-shell" aria-hidden="true">🧾</span>
-          <span class="tool-label">Sales &amp; Invoices</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-cyan" to="/admin/accounting/receivables" title="Accounts Receivable">
-          <span class="icon-shell" aria-hidden="true">💰</span>
-          <span class="tool-label">Accounts Receivable</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-orange" to="/admin/accounting/purchases" title="Suppliers & Purchases">
-          <span class="icon-shell" aria-hidden="true">🚚</span>
-          <span class="tool-label">Suppliers &amp; Purchases</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-red" to="/admin/accounting/payables" title="Accounts Payable">
-          <span class="icon-shell" aria-hidden="true">💳</span>
-          <span class="tool-label">Accounts Payable</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-indigo" to="/admin/accounting/bank-reconciliation" title="Bank Reconciliation">
-          <span class="icon-shell" aria-hidden="true">🏦</span>
-          <span class="tool-label">Bank Reconciliation</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-amber" to="/admin/accounting/reports" title="GST / BAS & Reports">
-          <span class="icon-shell" aria-hidden="true">📈</span>
-          <span class="tool-label">GST / BAS &amp; Reports</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-teal" to="/admin/accounting/ato-income" title="ATO Income Report">
-          <span class="icon-shell" aria-hidden="true">🧮</span>
-          <span class="tool-label">ATO Income Report</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-lime" to="/admin/accounting/inventory" title="Inventory & COGS">
-          <span class="icon-shell" aria-hidden="true">📦</span>
-          <span class="tool-label">Inventory &amp; COGS</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-sky" to="/admin/accounting/financial-statements" title="Financial Statements">
-          <span class="icon-shell" aria-hidden="true">📚</span>
-          <span class="tool-label">Financial Statements</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-rose" to="/admin/accounting/period-close" title="Period Close">
-          <span class="icon-shell" aria-hidden="true">🔒</span>
-          <span class="tool-label">Period Close</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-slate" to="/admin/accounting/audit" title="Accounting Health & Audit">
-          <span class="icon-shell" aria-hidden="true">🛡️</span>
-          <span class="tool-label">Accounting Health</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-fuchsia" to="/admin/accounting/year-end-export" title="Accountant / Year-End Export">
-          <span class="icon-shell" aria-hidden="true">📁</span>
-          <span class="tool-label">Accountant Export</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-emerald" to="/admin/accounting/cash-flow" title="Cash Flow & Forecasting">
-          <span class="icon-shell" aria-hidden="true">💵</span>
-          <span class="tool-label">Cash Flow &amp; Forecasting</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/profitability" title="Sales & Profitability Analytics">
-          <span class="icon-shell" aria-hidden="true">📊</span>
-          <span class="tool-label">Sales &amp; Profitability</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-orange" to="/admin/accounting/stock-intelligence" title="Purchasing & Stock Intelligence">
-          <span class="icon-shell" aria-hidden="true">📦</span>
-          <span class="tool-label">Purchasing &amp; Stock Intelligence</span>
-        </NuxtLink>
-        <NuxtLink class="tool-tile tool-violet" to="/admin/accounting/management-report" title="Business Management Reporting">
-          <span class="icon-shell" aria-hidden="true">💼</span>
-          <span class="tool-label">Business Management Report</span>
-        </NuxtLink>
+      <div class="mt-5 space-y-3">
+        <section v-for="group in accountingToolGroups" :key="group.id" class="tool-group">
+          <button class="tool-group-button" type="button" :aria-expanded="openToolGroup === group.id" @click="toggleToolGroup(group.id)">
+            <span class="flex min-w-0 items-center gap-3">
+              <span class="group-icon" aria-hidden="true">{{ group.icon }}</span>
+              <span class="min-w-0 text-left">
+                <span class="block font-black text-slate-800">{{ group.label }}</span>
+                <span class="block text-xs font-medium text-slate-500">{{ group.description }}</span>
+              </span>
+            </span>
+            <span class="chevron" :class="{ 'chevron-open': openToolGroup === group.id }" aria-hidden="true">⌄</span>
+          </button>
+
+          <div v-show="openToolGroup === group.id" class="border-t border-slate-200 bg-slate-50/60 p-4">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              <NuxtLink v-for="tool in group.tools" :key="tool.to" class="tool-tile" :class="tool.color" :to="tool.to" :title="tool.label">
+                <span class="icon-shell" aria-hidden="true">{{ tool.icon }}</span>
+                <span class="tool-label">{{ tool.label }}</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -139,6 +88,36 @@
 definePageMeta({ layout: "admin", middleware: ["admin"] });
 const { adminFetch, isSuperAdmin } = useAdminFetch();
 const accounts = ref<any[]>([]), journals = ref<any[]>([]), trial = ref<any[]>([]), dash = ref<any>({ summary:{}, monthly:[], overdue_invoices:[], overdue_bills:[] }), err = ref("");
+const openToolGroup = ref('daily');
+const accountingToolGroups = [
+  { id:'daily', icon:'🧾', label:'Daily Accounting', description:'Accounts, journals, invoicing, receivables, suppliers, payables and banking.', tools:[
+    { icon:'📊', label:'Chart of Accounts', to:'/admin/accounting/accounts', color:'tool-blue' },
+    { icon:'📝', label:'General Journal', to:'/admin/accounting/journals', color:'tool-violet' },
+    { icon:'🧾', label:'Sales & Invoices', to:'/admin/accounting/invoices', color:'tool-green' },
+    { icon:'💰', label:'Accounts Receivable', to:'/admin/accounting/receivables', color:'tool-cyan' },
+    { icon:'🚚', label:'Suppliers & Purchases', to:'/admin/accounting/purchases', color:'tool-orange' },
+    { icon:'💳', label:'Accounts Payable', to:'/admin/accounting/payables', color:'tool-red' },
+    { icon:'🏦', label:'Bank Reconciliation', to:'/admin/accounting/bank-reconciliation', color:'tool-indigo' },
+  ]},
+  { id:'inventory', icon:'📦', label:'Inventory & Purchasing', description:'Inventory accounting, cost of goods and purchasing intelligence.', tools:[
+    { icon:'📦', label:'Inventory & COGS', to:'/admin/accounting/inventory', color:'tool-lime' },
+    { icon:'📦', label:'Purchasing & Stock Intelligence', to:'/admin/accounting/stock-intelligence', color:'tool-orange' },
+  ]},
+  { id:'reports', icon:'📈', label:'Reports & Analysis', description:'Financial, tax, profitability, forecasting and management reporting.', tools:[
+    { icon:'📈', label:'GST / BAS & Reports', to:'/admin/accounting/reports', color:'tool-amber' },
+    { icon:'🧮', label:'ATO Income Report', to:'/admin/accounting/ato-income', color:'tool-teal' },
+    { icon:'📚', label:'Financial Statements', to:'/admin/accounting/financial-statements', color:'tool-sky' },
+    { icon:'💵', label:'Cash Flow & Forecasting', to:'/admin/accounting/cash-flow', color:'tool-emerald' },
+    { icon:'📊', label:'Sales & Profitability', to:'/admin/accounting/profitability', color:'tool-blue' },
+    { icon:'💼', label:'Business Management Report', to:'/admin/accounting/management-report', color:'tool-violet' },
+    { icon:'📁', label:'Accountant Export', to:'/admin/accounting/year-end-export', color:'tool-fuchsia' },
+  ]},
+  { id:'control', icon:'🛡️', label:'Administration & Control', description:'Period locking, accounting health checks and audit controls.', tools:[
+    { icon:'🔒', label:'Period Close', to:'/admin/accounting/period-close', color:'tool-rose' },
+    { icon:'🛡️', label:'Accounting Health', to:'/admin/accounting/audit', color:'tool-slate' },
+  ]},
+];
+const toggleToolGroup = (id:string) => { openToolGroup.value = openToolGroup.value === id ? '' : id; };
 const money = (v: any) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(v || 0));
 const totalDebits = computed(() => trial.value.reduce((s, a) => s + Number(a.debit || 0), 0));
 const totalCredits = computed(() => trial.value.reduce((s, a) => s + Number(a.credit || 0), 0));
@@ -193,4 +172,10 @@ onMounted(load);
 .tool-slate { @apply border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:bg-slate-200 focus:ring-slate-400; }
 .tool-fuchsia { @apply border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 hover:border-fuchsia-300 hover:bg-fuchsia-100 focus:ring-fuchsia-400; }
 .tool-emerald { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 focus:ring-emerald-400; }
+
+.tool-group { @apply overflow-hidden rounded-xl border border-slate-200 bg-white; }
+.tool-group-button { @apply flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition hover:bg-slate-50; }
+.group-icon { @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-2xl; }
+.chevron { @apply shrink-0 text-2xl font-black text-slate-400 transition-transform duration-200; }
+.chevron-open { @apply rotate-180 text-slate-700; }
 </style>
