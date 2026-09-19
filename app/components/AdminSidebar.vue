@@ -1,12 +1,18 @@
 <template>
   <div class="flex h-full flex-col text-slate-300">
-    <div class="flex h-16 items-center border-b border-slate-800 px-5">
-      <NuxtLink to="/admin" class="text-base font-bold text-white" @click="$emit('navigate')">
-        Kialla Computers <span class="text-blue-400">Admin</span>
+    <div class="border-b border-slate-800/90 px-4 py-4">
+      <NuxtLink to="/admin" class="flex items-center gap-3 rounded-xl px-2 py-1" @click="$emit('navigate')">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-sm">
+          <img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-full w-full object-contain" />
+        </div>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-black text-white">Kialla Computers</p>
+          <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-400">Administration</p>
+        </div>
       </NuxtLink>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-4">
+    <nav class="admin-sidebar-nav flex-1 overflow-y-auto px-3 py-4">
       <NuxtLink to="/admin" :class="linkClass('/admin', true)" @click="$emit('navigate')">
         <NavIcon path="M3 12 12 3l9 9M5 10v10h14V10M9 20v-6h6v6" /> Dashboard
       </NuxtLink>
@@ -87,8 +93,8 @@ const backToStore = () => {
 const linkClass = (path: string, exact = false) => {
   const active = exact ? route.path === path : route.path.startsWith(path);
   return [
-    "mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition",
-    active ? "bg-blue-600 text-white shadow-sm" : "text-slate-300 hover:bg-slate-800 hover:text-white",
+    "mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
+    active ? "bg-blue-600 text-white shadow-lg shadow-blue-950/20" : "text-slate-300 hover:bg-slate-800/90 hover:text-white",
   ];
 };
 
