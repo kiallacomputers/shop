@@ -106,6 +106,10 @@
           <span class="icon-shell" aria-hidden="true">📊</span>
           <span class="tool-label">Sales &amp; Profitability</span>
         </NuxtLink>
+        <NuxtLink class="tool-tile tool-orange" to="/admin/accounting/stock-intelligence" title="Purchasing & Stock Intelligence">
+          <span class="icon-shell" aria-hidden="true">📦</span>
+          <span class="tool-label">Purchasing &amp; Stock Intelligence</span>
+        </NuxtLink>
       </div>
     </section>
 
