@@ -11,7 +11,6 @@
         </div>
       </div>
       <button class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white" @click="addVariant">+ Add Variant</button>
-      </div>
       <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4 text-sm font-semibold">
         <NuxtLink :to="`/admin/products/${productId}`" class="rounded-lg bg-slate-100 px-3 py-2 text-slate-700 hover:bg-slate-200">📝 Product editor</NuxtLink>
         <NuxtLink :to="`/admin/products/${productId}/addons`" class="rounded-lg bg-slate-100 px-3 py-2 text-slate-700 hover:bg-slate-200">➕ Add-ons</NuxtLink>
