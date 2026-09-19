@@ -20,7 +20,6 @@
       <NavGroup title="Store" group-key="store" :active="groupActive('store')" :open="openGroup === 'store'" @toggle="toggleGroup('store')">
         <NuxtLink to="/admin/products" :class="linkClass('/admin/products')" @click="$emit('navigate')"><NavIcon path="M3 6h18M6 6v14h12V6M9 10h6"/>Products</NuxtLink>
         <NuxtLink to="/admin/categories" :class="linkClass('/admin/categories')" @click="$emit('navigate')"><NavIcon path="M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z"/>Categories</NuxtLink>
-        <NuxtLink to="/admin/inventory" :class="linkClass('/admin/inventory')" @click="$emit('navigate')"><NavIcon path="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5"/>Inventory</NuxtLink>
         <NuxtLink to="/admin/ads" :class="linkClass('/admin/ads')" @click="$emit('navigate')"><NavIcon path="M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5"/>Advertisements</NuxtLink>
         <NuxtLink to="/admin/reviews" :class="linkClass('/admin/reviews')" @click="$emit('navigate')"><NavIcon path="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>Product Reviews</NuxtLink>
         <NuxtLink to="/admin/back-in-stock" :class="linkClass('/admin/back-in-stock')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Back in Stock</NuxtLink>
@@ -32,6 +31,15 @@
         <NuxtLink v-if="isSuperAdmin" to="/admin/quotes" :class="linkClass('/admin/quotes')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Quote Requests</NuxtLink>
         <NuxtLink to="/admin/customers" :class="linkClass('/admin/customers')" @click="$emit('navigate')"><NavIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>Customers</NuxtLink>
         <NuxtLink to="/admin/freight" :class="linkClass('/admin/freight')" @click="$emit('navigate')"><NavIcon path="M3 6h11v10H3V6Zm11 4h4l3 3v3h-7v-6ZM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>Freight & Pickup</NuxtLink>
+      </NavGroup>
+
+      <NavGroup title="Purchasing" group-key="purchasing" :active="groupActive('purchasing')" :open="openGroup === 'purchasing'" @toggle="toggleGroup('purchasing')">
+        <NuxtLink to="/admin/accounting/purchases" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M4 4h16v16H4V4Zm4 4h8M8 12h8M8 16h5"/>Suppliers & Purchase Orders</NuxtLink>
+        <NuxtLink to="/admin/accounting/purchases#purchase-orders" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Purchase Orders</NuxtLink>
+        <NuxtLink to="/admin/accounting/purchases#purchase-orders" :class="linkClass('/admin/accounting/purchases')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Stock Receiving</NuxtLink>
+        <NuxtLink to="/admin/accounting/payables" :class="linkClass('/admin/accounting/payables')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Accounts Payable</NuxtLink>
+        <NuxtLink to="/admin/accounting/inventory" :class="linkClass('/admin/accounting/inventory')" @click="$emit('navigate')"><NavIcon path="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5"/>Inventory & COGS</NuxtLink>
+        <NuxtLink to="/admin/accounting/stock-intelligence" :class="linkClass('/admin/accounting/stock-intelligence')" @click="$emit('navigate')"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Stock Intelligence</NuxtLink>
       </NavGroup>
 
       <NavGroup title="Business" group-key="business" :active="groupActive('business')" :open="openGroup === 'business'" @toggle="toggleGroup('business')">
@@ -67,8 +75,9 @@ const route = useRoute();
 const { isSuperAdmin, adminRole } = useAdminFetch();
 
 const groupRoutes: Record<string, string[]> = {
-  store: ["/admin/products", "/admin/categories", "/admin/inventory", "/admin/ads", "/admin/reviews", "/admin/back-in-stock"],
+  store: ["/admin/products", "/admin/categories", "/admin/ads", "/admin/reviews", "/admin/back-in-stock"],
   sales: ["/admin/orders", "/admin/manual-quotes", "/admin/quotes", "/admin/customers", "/admin/freight"],
+  purchasing: ["/admin/accounting/purchases", "/admin/accounting/payables", "/admin/accounting/inventory", "/admin/accounting/stock-intelligence"],
   business: ["/admin/accounting", "/admin/analytics", "/admin/reports", "/admin/facebook-share"],
   administration: ["/admin/chat", "/admin/accounts", "/admin/pricing-levels", "/admin/storage-cleanup"],
 };
