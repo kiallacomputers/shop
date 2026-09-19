@@ -102,6 +102,10 @@
           <span class="icon-shell" aria-hidden="true">💵</span>
           <span class="tool-label">Cash Flow &amp; Forecasting</span>
         </NuxtLink>
+        <NuxtLink class="tool-tile tool-blue" to="/admin/accounting/profitability" title="Sales & Profitability Analytics">
+          <span class="icon-shell" aria-hidden="true">📊</span>
+          <span class="tool-label">Sales &amp; Profitability</span>
+        </NuxtLink>
       </div>
     </section>
 
