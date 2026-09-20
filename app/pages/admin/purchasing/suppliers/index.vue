@@ -27,13 +27,14 @@
           <div v-if="!suppliers.length" class="p-4 text-sm text-slate-500">No suppliers have been added yet.</div>
           <div v-for="s in suppliers" :key="s.id" class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="min-w-0">
-              <b class="block truncate">{{ s.name }}</b>
+              <NuxtLink :to="`/admin/purchasing/suppliers/${s.id}`" class="block truncate font-black text-slate-900 hover:text-blue-700 hover:underline">{{ s.name }}</NuxtLink>
               <span class="text-xs text-slate-500">{{ s.contact_name || 'No contact' }}<template v-if="s.email"> · {{ s.email }}</template><template v-if="s.phone"> · {{ s.phone }}</template></span>
               <div v-if="s.address || s.abn" class="mt-1 text-xs text-slate-400"><template v-if="s.abn">ABN {{ s.abn }}</template><template v-if="s.abn && s.address"> · </template>{{ s.address || '' }}</div>
             </div>
             <div class="flex shrink-0 flex-wrap gap-2">
+              <NuxtLink :to="`/admin/purchasing/suppliers/${s.id}`" class="secondary">View</NuxtLink>
               <button class="secondary" @click="openEdit(s)">Edit</button>
-              <NuxtLink :to="`/admin/purchasing/purchase-orders?supplier=${s.id}`" class="secondary">New PO</NuxtLink>
+              <NuxtLink :to="`/admin/purchasing/purchase-orders/new?supplier=${s.id}`" class="secondary">New PO</NuxtLink>
             </div>
           </div>
         </div>
