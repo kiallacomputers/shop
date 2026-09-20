@@ -1,5 +1,6 @@
 <template>
-  <main class="mx-auto max-w-[1500px] px-4 py-6 md:px-7 md:py-7">
+  <NuxtPage v-if="isNestedSupplierPage" />
+  <main v-else class="mx-auto max-w-[1500px] px-4 py-6 md:px-7 md:py-7">
     <AdminPurchasingWorkflow />
     <NuxtLink to="/admin/purchasing/suppliers" class="text-sm font-bold text-blue-600">← Suppliers</NuxtLink>
 
@@ -93,6 +94,7 @@
 <script setup lang="ts">
 definePageMeta({ layout:'admin', middleware:['admin'] })
 const route=useRoute(); const {adminFetch}=useAdminFetch()
+const isNestedSupplierPage=computed(()=>route.path !== `/admin/purchasing/suppliers/${route.params.id}`)
 const id=computed(()=>Number(route.params.id)); const loading=ref(true); const msg=ref(''); const saving=ref(false); const editing=ref(false)
 const suppliers=ref<any[]>([]), mappings=ref<any[]>([]), pos=ref<any[]>([]), allBills=ref<any[]>([]), allPayments=ref<any[]>([])
 const supplier=computed(()=>suppliers.value.find((s:any)=>Number(s.id)===id.value)||null)
@@ -108,7 +110,7 @@ watch([supplier,editing],()=>{if(editing.value&&supplier.value)Object.assign(edi
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0)); const date=(v:any)=>v?new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(v)):'—'; const label=(v:any)=>String(v||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase()); const owing=(b:any)=>Math.max(0,Number(b.total||0)-Number(b.paid_amount||0)); const isOverdue=(b:any)=>owing(b)>0&&b.due_date&&new Date(b.due_date)<new Date(new Date().toDateString()); const statusClass=(s:any)=>['received','paid','billed'].includes(String(s||'').toLowerCase())?'green':['draft'].includes(String(s||'').toLowerCase())?'':['closed'].includes(String(s||'').toLowerCase())?'red':'blue'
 async function load(){loading.value=true;msg.value='';try{const [s,m,p,b,pay]=await Promise.all([adminFetch('/api/admin/accounting/suppliers'),adminFetch('/api/admin/accounting/product-suppliers'),adminFetch('/api/admin/accounting/purchase-orders'),adminFetch('/api/admin/accounting/supplier-bills'),adminFetch('/api/admin/accounting/supplier-payments')]);suppliers.value=s||[];mappings.value=m||[];pos.value=p||[];allBills.value=b||[];allPayments.value=pay||[]}catch(e:any){msg.value=e?.data?.statusMessage||e?.message||'Unable to load supplier.'}finally{loading.value=false}}
 async function saveSupplier(){if(!String(edit.name||'').trim()){msg.value='Supplier name is required.';return}saving.value=true;try{await adminFetch(`/api/admin/accounting/suppliers/${id.value}`,{method:'PUT',body:edit});editing.value=false;msg.value='Supplier updated.';await load()}catch(e:any){msg.value=e?.data?.statusMessage||e?.message||'Unable to update supplier.'}finally{saving.value=false}}
-onMounted(load)
+onMounted(()=>{ if(!isNestedSupplierPage.value) load() })
 </script>
 
 <style scoped>
