@@ -1,0 +1,2 @@
+import {getAdminSupabase,requireSuperAdmin} from "~~/server/utils/adminAuth";
+export default defineEventHandler(async e=>{await requireSuperAdmin(e);const id=Number(getQuery(e).id);if(!id)throw createError({statusCode:400,statusMessage:'Item id is required.'});const{error}=await getAdminSupabase().from('accounting_cash_flow_items').delete().eq('id',id);if(error)throw createError({statusCode:400,statusMessage:error.message});return{ok:true}});
