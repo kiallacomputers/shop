@@ -125,22 +125,39 @@ function resultLabel(p:any){if(!counted(p))return"Not counted";if(isChanged(p))r
 function resultClass(p:any){if(!counted(p))return"bg-slate-100 text-slate-600";if(!isChanged(p))return"bg-emerald-100 text-emerald-700";return variance(p)>0?"bg-blue-100 text-blue-700":"bg-amber-100 text-amber-800"}
 function clearMessages(){err.value="";message.value=""}
 function setVisibleToSystem(){for(const p of filtered.value)p.counted_stock=String(Number(p.stock||0));clearMessages()}
-async function load(){loading.value=true;clearMessages();try{if(!isSuperAdmin.value)return navigateTo("/admin");const [adminRows, accountingRows, h]:any[]=await Promise.all([
+async function load(){loading.value=true;clearMessages();try{if(!isSuperAdmin.value)return navigateTo("/admin");const [adminRows, accountingRows, supplierRows, h]:any[]=await Promise.all([
   adminFetch("/api/admin/products"),
   adminFetch("/api/admin/accounting/store-products"),
+  adminFetch("/api/admin/accounting/product-suppliers"),
   adminFetch("/api/admin/accounting/stocktake/history")
 ]);
 const accountingById=new Map((Array.isArray(accountingRows)?accountingRows:[]).map((p:any)=>[String(p.id),p]));
+const supplierByProduct=new Map<string,any>();
+for(const row of (Array.isArray(supplierRows)?supplierRows:[])){
+  const productId=String(row.product_id ?? row.products?.id ?? "");
+  if(!productId) continue;
+  const current=supplierByProduct.get(productId);
+  // Prefer the primary/default supplier mapping, otherwise keep the first SKU found.
+  if(!current || row.is_primary===true) supplierByProduct.set(productId,row);
+}
 products.value=(Array.isArray(adminRows)?adminRows:[]).map((p:any)=>{
   const accounting:any=accountingById.get(String(p.id))||{};
+  const supplier:any=supplierByProduct.get(String(p.id))||{};
+  const resolvedSku=String(
+    p.product_code ||
+    p.sku ||
+    accounting.product_code ||
+    accounting.sku ||
+    supplier.supplier_sku ||
+    ""
+  ).trim();
   return {
     ...accounting,
     ...p,
-    // Explicitly preserve the store SKU from Admin Products, while allowing
-    // legacy product_code data as a fallback.
-    sku: p.sku ?? p.product_code ?? accounting.sku ?? accounting.product_code ?? "",
-    product_code: p.product_code ?? p.sku ?? accounting.product_code ?? accounting.sku ?? "",
-    buy_price_ex_gst: accounting.buy_price_ex_gst ?? p.buy_price_ex_gst ?? p.buy_price ?? 0,
+    supplier_sku:supplier.supplier_sku||"",
+    sku:resolvedSku,
+    product_code:resolvedSku,
+    buy_price_ex_gst: accounting.buy_price_ex_gst ?? p.buy_price_ex_gst ?? supplier.buy_price_ex_gst ?? p.buy_price ?? 0,
     counted_stock:""
   };
 });
