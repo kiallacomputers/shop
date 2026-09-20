@@ -35,7 +35,7 @@
 
       <NavGroup title="Purchasing" group-key="purchasing" :active="groupActive('purchasing')" :open="openGroup === 'purchasing'" @toggle="toggleGroup('purchasing')" @mouseenter="openHoverGroup('purchasing')" @mouseleave="scheduleCloseGroup('purchasing')">
         <NuxtLink to="/admin/purchasing/suppliers" :class="linkClass('/admin/purchasing/suppliers', true)" @click="$emit('navigate')"><NavIcon path="M4 4h16v16H4V4Zm4 4h8M8 12h8M8 16h5"/>Suppliers</NuxtLink>
-        <NuxtLink to="/admin/purchasing/purchase-orders" :class="linkClass('/admin/purchasing/purchase-orders')" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Purchase Orders</NuxtLink>
+        <NuxtLink to="/admin/purchasing/purchase-orders" :class="linkClass('/admin/purchasing/purchase-orders', false, ['/admin/purchasing/purchase-orders/receive-stock'])" @click="$emit('navigate')"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Purchase Orders</NuxtLink>
         <NuxtLink to="/admin/purchasing/purchase-orders/receive-stock" :class="linkClass('/admin/purchasing/purchase-orders/receive-stock')" @click="$emit('navigate')"><NavIcon path="M12 3v12m0 0-4-4m4 4 4-4M5 20h14"/>Receive Stock</NuxtLink>
         <NuxtLink to="/admin/purchasing/suppliers/bills" :class="linkClass('/admin/purchasing/suppliers/bills')" @click="$emit('navigate')"><NavIcon path="M6 3h9l3 3v15H6V3Zm3 7h6m-6 4h6"/>Bills</NuxtLink>
         <NuxtLink to="/admin/purchasing/inventory" :class="linkClass('/admin/purchasing/inventory')" @click="$emit('navigate')"><NavIcon path="M4 7h16M5 7l1 13h12l1-13M9 11v5m6-5v5"/>Inventory & COGS</NuxtLink>
@@ -123,8 +123,10 @@ const backToStore = () => {
   if (import.meta.client) window.location.assign("/");
 };
 
-const linkClass = (path: string, exact = false) => {
-  const active = exact ? route.path === path : route.path.startsWith(path);
+const linkClass = (path: string, exact = false, exclude: string[] = []) => {
+  const matches = exact ? route.path === path : route.path === path || route.path.startsWith(`${path}/`);
+  const excluded = exclude.some((excludedPath) => route.path === excludedPath || route.path.startsWith(`${excludedPath}/`));
+  const active = matches && !excluded;
   return [
     "mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all",
     active ? "bg-blue-600 text-white shadow-lg shadow-blue-950/20" : "text-slate-300 hover:bg-slate-800/90 hover:text-white",

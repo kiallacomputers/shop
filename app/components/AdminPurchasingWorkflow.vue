@@ -30,5 +30,12 @@ const items=[
  {to:'/admin/accounting/payables',icon:'💳',label:'Payables',caption:'Money owing'},
  {to:'/admin/purchasing/inventory',icon:'📊',label:'Inventory',caption:'Value & COGS'}
 ]
-function active(item:any){return route.path===item.to||route.path.startsWith(item.to+'/')}
+function active(item:any){
+  if (item.to === '/admin/purchasing/purchase-orders') {
+    const isPurchaseOrderRoute = route.path === item.to || route.path.startsWith(item.to + '/')
+    const isReceiveStockRoute = route.path === '/admin/purchasing/purchase-orders/receive-stock' || route.path.startsWith('/admin/purchasing/purchase-orders/receive-stock/')
+    return isPurchaseOrderRoute && !isReceiveStockRoute
+  }
+  return route.path === item.to || route.path.startsWith(item.to + '/')
+}
 </script>
