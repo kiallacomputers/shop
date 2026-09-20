@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
       cogs: 0,
     };
     row.quantity_sold += Math.abs(n(x.quantity));
-    row.cogs = r(row.cogs + n(x.total_cost));
+    row.cogs = r(row.cogs + Math.abs(n(x.total_cost)));
     byProduct.set(id, row);
   }
 
@@ -95,7 +95,10 @@ export default defineEventHandler(async (event) => {
       inventory_value: r(valuation.reduce((a: number, x: any) => a + x.value, 0)),
       retail_value: r(valuation.reduce((a: number, x: any) => a + x.retail_value, 0)),
       units_on_hand: r(valuation.reduce((a: number, x: any) => a + x.stock, 0)),
-      period_cogs: r(sales.reduce((a: number, x: any) => a + n(x.total_cost), 0)),
+      period_cogs: r(sales.reduce((a: number, x: any) => a + Math.abs(n(x.total_cost)), 0)),
+      low_stock_products: valuation.filter((x: any) => x.active && n(x.stock) <= 5).length,
+      out_of_stock_products: valuation.filter((x: any) => x.active && n(x.stock) <= 0).length,
+      potential_margin: r(valuation.reduce((a: number, x: any) => a + x.potential_margin, 0)),
     },
     valuation,
     profitability: [...byProduct.values()].sort((a, b) => b.cogs - a.cogs),
