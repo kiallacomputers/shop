@@ -217,9 +217,32 @@ async function load() {
   loading.value = true;
   clearMessages();
   try {
-    const result: any = await adminFetch("/api/admin/products/stock-levels");
-    products.value = result.products || [];
-    categories.value = result.categories || [];
+    // Reuse the existing Products and Categories APIs that already power
+    // the working admin pages. This avoids a second product-list query path
+    // and keeps this bulk editor in sync with the rest of Admin.
+    const [productRows, categoryRows]: any[] = await Promise.all([
+      adminFetch("/api/admin/products"),
+      adminFetch("/api/admin/categories"),
+    ]);
+
+    categories.value = Array.isArray(categoryRows) ? categoryRows : [];
+
+    const categoryMap = new Map(
+      categories.value.map((category: any) => [String(category.id), category.name]),
+    );
+
+    products.value = (Array.isArray(productRows) ? productRows : []).map((product: any) => ({
+      ...product,
+      stock: Number(product.stock || 0),
+      low_stock_level: Number(product.low_stock_level || 0),
+      reorder_level: Number(product.reorder_level || 0),
+      target_stock_level: Number(product.target_stock_level || 0),
+      category_name:
+        product.categories?.name ||
+        categoryMap.get(String(product.category_id || "")) ||
+        "",
+    }));
+
     snapshot();
   } catch (e: any) {
     errorMessage.value = e?.data?.statusMessage || e?.message || "Unable to load products.";
