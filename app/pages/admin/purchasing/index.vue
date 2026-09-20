@@ -18,8 +18,8 @@ definePageMeta({layout:'admin',middleware:['admin']})
 const cards=[
  {to:'/admin/purchasing/suppliers',icon:'🚚',title:'Suppliers',text:'Supplier directory, contact details and product mappings.'},
  {to:'/admin/purchasing/purchase-orders',icon:'📋',title:'Purchase Orders',text:'Create, send, order and manage purchase orders.'},
- {to:'/admin/purchasing/receive-stock',icon:'📦',title:'Receive Stock',text:'Receive full or partial deliveries against purchase orders.'},
- {to:'/admin/purchasing/supplier-bills',icon:'🧾',title:'Supplier Bills',text:'Review bills created from purchase orders and their payment status.'},
+ {to:'/admin/purchasing/purchase-orders/receive-stock',icon:'📦',title:'Receive Stock',text:'Receive full or partial deliveries against purchase orders.'},
+ {to:'/admin/purchasing/suppliers/bills',icon:'🧾',title:'Supplier Bills',text:'Review bills created from purchase orders and their payment status.'},
  {to:'/admin/purchasing/inventory',icon:'📊',title:'Inventory & COGS',text:'Stock valuation, cost of goods and manual stock adjustments.'},
  {to:'/admin/purchasing/stock-intelligence',icon:'📈',title:'Stock Intelligence',text:'Reorder recommendations, stock cover and supplier purchasing insights.'}
 ]

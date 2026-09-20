@@ -74,7 +74,7 @@ const subtotal=computed(()=>Number(po.value?.subtotal ?? (po.value?.accounting_p
 const gst=computed(()=>Number(po.value?.gst_amount ?? subtotal.value*.1))
 const total=computed(()=>Number(po.value?.total ?? subtotal.value+gst.value))
 function printDocument(){window.print()}
-onMounted(async()=>{try{const [orders,suppliers]:any=await Promise.all([adminFetch('/api/admin/accounting/purchase-orders'),adminFetch('/api/admin/purchasing/suppliers')]);po.value=(orders||[]).find((x:any)=>String(x.id)===String(route.params.id));if(!po.value)throw new Error('Purchase order not found.');supplier.value=(suppliers||[]).find((x:any)=>String(x.id)===String(po.value.supplier_id))||null}catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to load purchase order.'}finally{loading.value=false}})
+onMounted(async()=>{try{const [orders,suppliers]:any=await Promise.all([adminFetch('/api/admin/accounting/purchase-orders'),adminFetch('/api/admin/accounting/suppliers')]);po.value=(orders||[]).find((x:any)=>String(x.id)===String(route.params.id));if(!po.value)throw new Error('Purchase order not found.');supplier.value=(suppliers||[]).find((x:any)=>String(x.id)===String(po.value.supplier_id))||null}catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to load purchase order.'}finally{loading.value=false}})
 </script>
 
 <style scoped>

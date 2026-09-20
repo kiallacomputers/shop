@@ -25,8 +25,8 @@ const route=useRoute()
 const items=[
  {to:'/admin/purchasing/suppliers',icon:'🚚',label:'Suppliers',caption:'Directory & products'},
  {to:'/admin/purchasing/purchase-orders',icon:'📋',label:'Purchase Orders',caption:'Create & order'},
- {to:'/admin/purchasing/receive-stock',icon:'📦',label:'Receive Stock',caption:'Partial or full'},
- {to:'/admin/purchasing/supplier-bills',icon:'🧾',label:'Supplier Bills',caption:'Bills & due dates'},
+ {to:'/admin/purchasing/purchase-orders/receive-stock',icon:'📦',label:'Receive Stock',caption:'Partial or full'},
+ {to:'/admin/purchasing/suppliers/bills',icon:'🧾',label:'Bills',caption:'Bills & due dates'},
  {to:'/admin/accounting/payables',icon:'💳',label:'Payables',caption:'Money owing'},
  {to:'/admin/purchasing/inventory',icon:'📊',label:'Inventory',caption:'Value & COGS'}
 ]
