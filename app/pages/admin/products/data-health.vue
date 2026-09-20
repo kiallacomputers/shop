@@ -28,7 +28,59 @@ const isStockLevelIssue=(i:any)=>["target","levels","stock_levels","stock-levels
 function openFix(p:any,i:any){modal.value={product:p,issue:i};modalError.value="";Object.assign(fix,{value:"",supplier_id:0,supplier_sku:"",buy_price_ex_gst:"",low_stock_level:p.low_stock_level,reorder_level:p.reorder_level,target_stock_level:p.target_stock_level});if(i.key==="sku")fix.value=p.sku||"";if(i.key==="sell_price")fix.value=p.sell_price||"";if(i.key==="buy_price"){fix.value=p.buy_price||"";fix.supplier_id=Number(p.suppliers?.find((x:any)=>x.is_primary)?.supplier_id||0)}const current=p.suppliers?.find((x:any)=>x.is_primary)||p.suppliers?.[0];if(["primary_supplier","supplier_sku"].includes(i.key)&&current){fix.supplier_id=Number(current.supplier_id);fix.supplier_sku=current.supplier_sku||"";fix.buy_price_ex_gst=current.buy_price_ex_gst??""}}
 function supplierChanged(){const row=modal.value?.product?.suppliers?.find((x:any)=>Number(x.supplier_id)===Number(fix.supplier_id));fix.supplier_sku=row?.supplier_sku||"";fix.buy_price_ex_gst=row?.buy_price_ex_gst??""}
 function closeFix(){if(!saving.value)modal.value=null}
-async function saveFix(){if(!modal.value)return;saving.value=true;modalError.value="";try{const key=modal.value.issue.key;const body:any={product_id:modal.value.product.id,issue:key};if(["sku","category","sell_price","buy_price"].includes(key))body.value=fix.value;if(key==="buy_price")body.supplier_id=fix.supplier_id;if(["target","levels"].includes(key))Object.assign(body,{low_stock_level:fix.low_stock_level,reorder_level:fix.reorder_level,target_stock_level:fix.target_stock_level})}if(["supplier","primary_supplier","supplier_sku"].includes(key))Object.assign(body,{supplier_id:fix.supplier_id,supplier_sku:fix.supplier_sku,buy_price_ex_gst:fix.buy_price_ex_gst,is_primary:key!=="supplier_sku"});await adminFetch("/api/admin/products/data-health/fix",{method:"PUT",body});modal.value=null;await load()}catch(e:any){modalError.value=e?.data?.statusMessage||e?.message||"Unable to save this fix."}finally{saving.value=false}}
+async function saveFix() {
+  if (!modal.value) return;
+  saving.value = true;
+  modalError.value = "";
+
+  try {
+    const key = modal.value.issue.key;
+    const body: any = {
+      product_id: modal.value.product.id,
+      issue: key,
+    };
+
+    if (["sku", "category", "sell_price", "buy_price"].includes(key)) {
+      body.value = fix.value;
+    }
+
+    if (key === "buy_price") {
+      body.supplier_id = fix.supplier_id;
+    }
+
+    if (isStockLevelIssue(modal.value.issue)) {
+      body.issue = "levels";
+      Object.assign(body, {
+        low_stock_level: fix.low_stock_level,
+        reorder_level: fix.reorder_level,
+        target_stock_level: fix.target_stock_level,
+      });
+    }
+
+    if (["supplier", "primary_supplier", "supplier_sku"].includes(key)) {
+      Object.assign(body, {
+        supplier_id: fix.supplier_id,
+        supplier_sku: fix.supplier_sku,
+        buy_price_ex_gst: fix.buy_price_ex_gst,
+        is_primary: key !== "supplier_sku",
+      });
+    }
+
+    await adminFetch("/api/admin/products/data-health/fix", {
+      method: "PUT",
+      body,
+    });
+
+    modal.value = null;
+    await load();
+  } catch (e: any) {
+    modalError.value =
+      e?.data?.statusMessage || e?.message || "Unable to save this fix.";
+  } finally {
+    saving.value = false;
+  }
+}
+
 async function load(){loading.value=true;err.value="";try{const[r,c,s]:any[]=await Promise.all([adminFetch("/api/admin/products/data-health"),adminFetch("/api/admin/categories"),adminFetch("/api/admin/products/suppliers")]);products.value=r.products||[];summary.value=r.summary||summary.value;categories.value=Array.isArray(c)?c:(c?.categories||[]);suppliers.value=Array.isArray(s)?s:[]}catch(e:any){err.value=e?.data?.statusMessage||e?.message||"Unable to check product data."}finally{loading.value=false}}onMounted(load)
 </script>
 <style scoped>.panel{@apply rounded-xl border border-slate-200 bg-white shadow-sm}.metric{@apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm}.metric small{@apply block text-xs font-bold uppercase text-slate-500}.metric b{@apply mt-1 block text-2xl}.input{@apply rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-blue-500}.label{@apply mb-1.5 block text-sm font-bold text-slate-700}.hint{@apply mt-1 text-xs text-slate-500}.btn-primary{@apply rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 disabled:opacity-50}.btn-secondary{@apply rounded-lg border border-slate-300 bg-white px-4 py-2 font-bold hover:bg-slate-50 disabled:opacity-50}.pill{@apply rounded-full px-2 py-1 text-xs font-bold}.good{@apply bg-emerald-100 text-emerald-700}.warn{@apply bg-amber-100 text-amber-800}.bad{@apply bg-red-100 text-red-700}</style>
