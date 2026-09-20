@@ -14,7 +14,9 @@
           <li
             v-for="category in categories"
             :key="category.id"
-            class="relative group/category"
+            class="relative"
+            @mouseenter="openDesktopMenu(category.id)"
+            @mouseleave="scheduleDesktopClose(category.id)"
           >
             <div class="flex items-center gap-1">
               <NuxtLink
@@ -27,7 +29,7 @@
               <!-- Desktop: arrow indicates a fly-out menu. Mobile: button keeps tap/expand behaviour. -->
               <span
                 v-if="category.items.length"
-                class="hidden md:flex h-9 w-9 items-center justify-center text-slate-400 transition group-hover/category:text-blue-600"
+                class="hidden md:flex h-9 w-9 items-center justify-center text-slate-400 transition text-blue-600"
                 aria-hidden="true"
               >›</span>
               <button
@@ -43,7 +45,10 @@
             <!-- Desktop fly-out: opens to the RIGHT of the left category menu. -->
             <div
               v-if="category.items.length"
-              class="hidden md:group-hover/category:block absolute left-full top-0 z-[80] pl-2 min-w-[240px]"
+              v-show="desktopMenu === category.id"
+              class="hidden md:block absolute left-full top-0 z-[80] pl-2 min-w-[240px]"
+              @mouseenter="cancelDesktopClose"
+              @mouseleave="scheduleDesktopClose(category.id)"
             >
               <div class="rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                 <div class="px-3 py-2 text-xs font-black uppercase tracking-[.12em] text-slate-400">
@@ -82,7 +87,28 @@
 </template>
 <script setup>
 const mobileOpen = ref(false); const openMenu = ref(null);
+const desktopMenu = ref(null);
+let desktopCloseTimer = null;
+
 const toggle = (id) => { openMenu.value = openMenu.value === id ? null : id; };
+const cancelDesktopClose = () => {
+  if (desktopCloseTimer) {
+    clearTimeout(desktopCloseTimer);
+    desktopCloseTimer = null;
+  }
+};
+const openDesktopMenu = (id) => {
+  cancelDesktopClose();
+  desktopMenu.value = id;
+};
+const scheduleDesktopClose = (id) => {
+  cancelDesktopClose();
+  desktopCloseTimer = setTimeout(() => {
+    if (desktopMenu.value === id) desktopMenu.value = null;
+    desktopCloseTimer = null;
+  }, 260);
+};
+onBeforeUnmount(cancelDesktopClose);
 const { visibleCategories: visibleCategoryData } = useStorefrontCategories();
 
 const isTopLevel = (category) =>
