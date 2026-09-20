@@ -70,9 +70,9 @@
     </section>
 
     <div class="max-w-7xl mx-auto px-4 py-8 sm:py-10 md:py-14">
-      <section id="shop" class="grid gap-7 lg:grid-cols-[240px_1fr] items-start">
-        <aside class="lg:sticky lg:top-28"><Sidemenu /></aside>
-        <div id="featured">
+      <section id="shop" class="relative overflow-visible grid gap-7 lg:grid-cols-[240px_1fr] items-start">
+        <aside class="relative z-[1000] overflow-visible lg:sticky lg:top-28"><Sidemenu /></aside>
+        <div id="featured" class="relative z-0">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-5">
             <div><p class="kc-eyebrow">Recommended</p><h2 class="kc-title mt-1 text-2xl md:text-3xl">Featured products</h2></div>
             <p class="text-sm text-slate-500">Carefully selected products from our current range.</p>
