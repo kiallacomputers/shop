@@ -49,7 +49,7 @@
         <tbody>
           <tr v-for="p in filtered" :key="p.id" class="border-t" :class="isChanged(p)?'bg-amber-50/60':''">
             <td class="p-3 font-bold">{{p.name}}</td>
-            <td class="text-slate-600">{{p.product_code||'—'}}</td>
+            <td class="text-slate-600">{{displaySku(p)}}</td>
             <td class="text-right font-black">{{num(p.stock)}}</td>
             <td><input v-model="p.counted_stock" type="number" min="0" step="1" class="count-input" placeholder="—" @input="clearMessages" /></td>
             <td class="text-right font-black" :class="variance(p)<0?'text-red-600':variance(p)>0?'text-emerald-700':''">
@@ -109,6 +109,7 @@ const stocktakeDate=ref(new Date().toISOString().slice(0,10));
 const reference=ref(`ST-${new Date().toISOString().slice(0,10).replaceAll("-","")}`);
 const reason=ref("Stocktake variance"),notes=ref("");
 
+const displaySku=(p:any)=>String(p?.sku ?? p?.product_code ?? p?.product_sku ?? p?.supplier_sku ?? "").trim() || "—";
 const money=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
 const num=(v:any)=>new Intl.NumberFormat("en-AU",{maximumFractionDigits:3}).format(Number(v||0));
 const signed=(v:number)=>v>0?`+${num(v)}`:num(v);
@@ -119,12 +120,31 @@ const valueAdjustment=(p:any)=>variance(p)*Number(p.buy_price_ex_gst||0);
 const changedRows=computed(()=>products.value.filter(isChanged));
 const countedCount=computed(()=>products.value.filter(counted).length);
 const netValue=computed(()=>changedRows.value.reduce((a:number,p:any)=>a+valueAdjustment(p),0));
-const filtered=computed(()=>products.value.filter((p:any)=>{const q=search.value.trim().toLowerCase();if(q&&!String(p.name||"").toLowerCase().includes(q)&&!String(p.product_code||"").toLowerCase().includes(q))return false;if(filter.value==="uncounted")return !counted(p);if(filter.value==="changed")return isChanged(p);if(filter.value==="matched")return counted(p)&&!isChanged(p);return true}));
+const filtered=computed(()=>products.value.filter((p:any)=>{const q=search.value.trim().toLowerCase();if(q&&!String(p.name||"").toLowerCase().includes(q)&&!displaySku(p).toLowerCase().includes(q))return false;if(filter.value==="uncounted")return !counted(p);if(filter.value==="changed")return isChanged(p);if(filter.value==="matched")return counted(p)&&!isChanged(p);return true}));
 function resultLabel(p:any){if(!counted(p))return"Not counted";if(isChanged(p))return variance(p)>0?"Increase":"Decrease";return"Matched"}
 function resultClass(p:any){if(!counted(p))return"bg-slate-100 text-slate-600";if(!isChanged(p))return"bg-emerald-100 text-emerald-700";return variance(p)>0?"bg-blue-100 text-blue-700":"bg-amber-100 text-amber-800"}
 function clearMessages(){err.value="";message.value=""}
 function setVisibleToSystem(){for(const p of filtered.value)p.counted_stock=String(Number(p.stock||0));clearMessages()}
-async function load(){loading.value=true;clearMessages();try{if(!isSuperAdmin.value)return navigateTo("/admin");const [rows,h]:any[]=await Promise.all([adminFetch("/api/admin/accounting/store-products"),adminFetch("/api/admin/accounting/stocktake/history")]);products.value=(Array.isArray(rows)?rows:[]).map((p:any)=>({...p,counted_stock:""}));history.value=Array.isArray(h)?h:[]}catch(e:any){err.value=e?.data?.statusMessage||e?.message||"Unable to load stocktake."}finally{loading.value=false}}
+async function load(){loading.value=true;clearMessages();try{if(!isSuperAdmin.value)return navigateTo("/admin");const [adminRows, accountingRows, h]:any[]=await Promise.all([
+  adminFetch("/api/admin/products"),
+  adminFetch("/api/admin/accounting/store-products"),
+  adminFetch("/api/admin/accounting/stocktake/history")
+]);
+const accountingById=new Map((Array.isArray(accountingRows)?accountingRows:[]).map((p:any)=>[String(p.id),p]));
+products.value=(Array.isArray(adminRows)?adminRows:[]).map((p:any)=>{
+  const accounting:any=accountingById.get(String(p.id))||{};
+  return {
+    ...accounting,
+    ...p,
+    // Explicitly preserve the store SKU from Admin Products, while allowing
+    // legacy product_code data as a fallback.
+    sku: p.sku ?? p.product_code ?? accounting.sku ?? accounting.product_code ?? "",
+    product_code: p.product_code ?? p.sku ?? accounting.product_code ?? accounting.sku ?? "",
+    buy_price_ex_gst: accounting.buy_price_ex_gst ?? p.buy_price_ex_gst ?? p.buy_price ?? 0,
+    counted_stock:""
+  };
+});
+history.value=Array.isArray(h)?h:[]}catch(e:any){err.value=e?.data?.statusMessage||e?.message||"Unable to load stocktake."}finally{loading.value=false}}
 async function postStocktake(){clearMessages();if(!changedRows.value.length)return;for(const p of changedRows.value){const c=Number(p.counted_stock);if(!Number.isInteger(c)||c<0){err.value=`${p.name}: counted stock must be a whole number of 0 or more.`;reviewOpen.value=false;return}}posting.value=true;try{const result:any=await adminFetch("/api/admin/accounting/stocktake/post",{method:"POST",body:{movement_date:stocktakeDate.value,reference:reference.value,reason:reason.value,notes:notes.value,items:changedRows.value.map((p:any)=>({product_id:p.id,counted_stock:Number(p.counted_stock)}))}});reviewOpen.value=false;message.value=`Stocktake posted successfully: ${result.adjustments} adjustment${result.adjustments===1?"":"s"}, ${result.journals} journal${result.journals===1?"":"s"}.`;await load();message.value=`Stocktake posted successfully: ${result.adjustments} adjustment${result.adjustments===1?"":"s"}, ${result.journals} journal${result.journals===1?"":"s"}.`}catch(e:any){err.value=e?.data?.statusMessage||e?.message||"Unable to post stocktake."}finally{posting.value=false}}
 onMounted(load);
 </script>
