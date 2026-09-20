@@ -18,6 +18,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button class="secondary" @click="editing=true">Edit Supplier</button>
+          <NuxtLink :to="`/admin/purchasing/suppliers/${supplier.id}/purchase-order-preview`" class="secondary">Generate PO Preview</NuxtLink>
           <NuxtLink :to="`/admin/purchasing/purchase-orders/new?supplier=${supplier.id}`" class="primary">+ Purchase Order</NuxtLink>
         </div>
       </div>
