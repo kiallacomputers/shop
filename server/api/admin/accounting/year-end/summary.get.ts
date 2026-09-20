@@ -1,2 +1,0 @@
-import {requireSuperAdmin} from "~~/server/utils/adminAuth";import{buildYearEndData}from"~~/server/utils/accountingYearEnd";
-export default defineEventHandler(async e=>{await requireSuperAdmin(e);const q=getQuery(e),now=new Date(),fy=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;const start=String(q.start||`${fy}-07-01`),end=String(q.end||`${fy+1}-06-30`);return buildYearEndData(start,end)});

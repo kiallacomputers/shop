@@ -1,2 +1,0 @@
-import { getAdminSupabase,requireSuperAdmin } from "~~/server/utils/adminAuth";
-export default defineEventHandler(async(event)=>{await requireSuperAdmin(event);const invoiceId=Number(getQuery(event).invoice_id||0);let q=getAdminSupabase().from("accounting_customer_payments").select("*").order("payment_date",{ascending:false}).order("id",{ascending:false});if(invoiceId)q=q.eq("invoice_id",invoiceId);const{data,error}=await q.limit(500);if(error)throw createError({statusCode:500,statusMessage:error.message});return data||[]});

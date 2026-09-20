@@ -1,1 +1,0 @@
-import{getAdminSupabase,requireSuperAdmin}from"~~/server/utils/adminAuth";export default defineEventHandler(async e=>{await requireSuperAdmin(e);const{data,error}=await getAdminSupabase().from("accounting_suppliers").select("*").order("name");if(error)throw createError({statusCode:500,statusMessage:error.message});return data||[]})
