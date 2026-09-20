@@ -12,7 +12,7 @@
       </NuxtLink>
     </div>
 
-    <nav class="admin-sidebar-nav flex-1 overflow-y-auto px-3 py-4">
+    <nav class="admin-sidebar-nav flex-1 overflow-y-auto px-3 py-4 lg:overflow-visible">
       <NuxtLink to="/admin" :class="linkClass('/admin', true)" @click="$emit('navigate')">
         <NavIcon path="M3 12 12 3l9 9M5 10v10h14V10M9 20v-6h6v6" /> Dashboard
       </NuxtLink>
@@ -128,7 +128,7 @@ const NavGroup = defineComponent({
   },
   emits: ["toggle"],
   setup(props, { slots, emit }) {
-    return () => h("div", { class: "relative mt-2" }, [
+    return () => h("div", { class: "relative mt-2 lg:pr-2" }, [
       h("button", {
         type: "button",
         class: [
@@ -143,7 +143,9 @@ const NavGroup = defineComponent({
           h("path", { "stroke-linecap": "round", "stroke-linejoin": "round", d: "m7 5 5 5-5 5" }),
         ]),
       ]),
-      h("div", { class: ["absolute left-1 right-1 top-full z-50 mt-1 rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/40", props.open ? "block" : "hidden"] }, slots.default?.()),
+      h("div", { class: ["z-[100] rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-black/40",
+          "relative mx-1 mt-1 lg:absolute lg:left-full lg:top-0 lg:mx-0 lg:ml-2 lg:mt-0 lg:w-64",
+          props.open ? "block" : "hidden"] }, slots.default?.()),
     ]);
   },
 });
