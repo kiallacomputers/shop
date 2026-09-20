@@ -35,6 +35,7 @@
               <NuxtLink :to="`/admin/purchasing/suppliers/${s.id}`" class="secondary">View</NuxtLink>
               <button class="secondary" @click="openEdit(s)">Edit</button>
               <NuxtLink :to="`/admin/purchasing/purchase-orders/new?supplier=${s.id}`" class="secondary">New PO</NuxtLink>
+              <NuxtLink :to="`/admin/purchasing/suppliers/${s.id}/purchase-order-preview`" class="secondary">Generate PO Preview</NuxtLink>
             </div>
           </div>
         </div>
