@@ -1,15 +1,16 @@
 import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
-
+import { sendDomainEmail, escapeHtml } from "~~/server/utils/domainEmail";
+const money=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
-  const id = Number(getRouterParam(event, "id"));
-  if (!id) throw createError({ statusCode: 400, statusMessage: "Invalid purchase order." });
-  const s = getAdminSupabase();
-  const { data: current, error: currentError } = await s.from("accounting_purchase_orders").select("id,po_number,status").eq("id",id).single();
-  if (currentError || !current) throw createError({ statusCode:404, statusMessage:"Purchase order not found." });
-  if (String(current.status).toLowerCase() !== "draft")
-    throw createError({ statusCode:409, statusMessage:"Only draft purchase orders can be sent." });
-  const { data, error } = await s.from("accounting_purchase_orders").update({ status:"sent" }).eq("id",id).eq("status","draft").select().single();
-  if (error || !data) throw createError({ statusCode:400, statusMessage:error?.message || "Unable to mark purchase order as sent." });
-  return data;
+  await requireSuperAdmin(event); const id=Number(getRouterParam(event,"id")); if(!id) throw createError({statusCode:400,statusMessage:"Invalid purchase order."});
+  const s=getAdminSupabase(); const {data:po,error}=await s.from("accounting_purchase_orders").select("*,accounting_suppliers(*),accounting_purchase_order_lines(*)").eq("id",id).single();
+  if(error||!po) throw createError({statusCode:404,statusMessage:"Purchase order not found."});
+  if(String(po.status).toLowerCase()!=="draft") throw createError({statusCode:409,statusMessage:"Only draft purchase orders can be sent."});
+  const supplier:any=po.accounting_suppliers; if(!supplier?.email) throw createError({statusCode:400,statusMessage:"This supplier does not have an email address."});
+  const lines=(po.accounting_purchase_order_lines||[]).map((l:any)=>`<tr><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(l.sku||'—')}</td><td style="padding:8px;border-bottom:1px solid #ddd">${escapeHtml(l.description)}</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">${Number(l.quantity||0)}</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">${money(l.unit_cost_ex_gst)}</td><td style="padding:8px;border-bottom:1px solid #ddd;text-align:right">${money(Number(l.quantity||0)*Number(l.unit_cost_ex_gst||0))}</td></tr>`).join('');
+  const html=`<div style="font-family:Arial,sans-serif;max-width:800px;margin:auto;color:#0f172a"><h2>Purchase Order ${escapeHtml(po.po_number)}</h2><p>Hi ${escapeHtml(supplier.contact_name||supplier.name||'there')},</p><p>Please find our purchase order details below.</p><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f1f5f9"><th style="padding:8px;text-align:left">SKU</th><th style="padding:8px;text-align:left">Description</th><th style="padding:8px;text-align:right">Qty</th><th style="padding:8px;text-align:right">Unit ex GST</th><th style="padding:8px;text-align:right">Line ex GST</th></tr></thead><tbody>${lines}</tbody></table><div style="margin-top:18px;text-align:right"><div>Subtotal: <b>${money(po.subtotal)}</b></div><div>GST: <b>${money(po.gst_amount)}</b></div><div style="font-size:18px;margin-top:5px">Total: <b>${money(po.total)}</b></div></div>${po.expected_date?`<p><b>Expected delivery:</b> ${escapeHtml(po.expected_date)}</p>`:''}${po.notes?`<p><b>Notes:</b><br>${escapeHtml(po.notes).replaceAll('\n','<br>')}</p>`:''}<p>Regards,<br>Kialla Computers</p></div>`;
+  try { await sendDomainEmail({to:{address:supplier.email,name:supplier.name},subject:`Purchase Order ${po.po_number} - Kialla Computers`,html}); }
+  catch(e:any){ throw createError({statusCode:502,statusMessage:`Purchase order was not marked as sent because email failed: ${e.message}`}); }
+  const {data,error:ue}=await s.from("accounting_purchase_orders").update({status:"sent",updated_at:new Date().toISOString()}).eq("id",id).eq("status","draft").select().single();
+  if(ue||!data) throw createError({statusCode:400,statusMessage:ue?.message||"Email sent, but purchase order status could not be updated."}); return {...data,email_sent_to:supplier.email};
 });
