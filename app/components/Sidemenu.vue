@@ -1,20 +1,20 @@
 <template>
-  <div>
+  <div class="relative z-[200] overflow-visible">
     <button @click="mobileOpen = !mobileOpen" class="md:hidden w-full flex items-center justify-between kc-panel px-4 py-3 mb-4 text-[#0b1f3a] font-extrabold">
       <span>Browse Categories</span><span class="text-lg">{{ mobileOpen ? '−' : '+' }}</span>
     </button>
-    <aside class="w-full kc-panel overflow-visible" :class="[mobileOpen ? 'block' : 'hidden', 'md:block']">
+    <aside class="relative z-[210] w-full kc-panel overflow-visible" :class="[mobileOpen ? 'block' : 'hidden', 'md:block']">
       <div class="bg-[#0b1f3a] px-5 py-4">
         <p class="text-xs font-black uppercase tracking-[.16em] text-cyan-300">Browse</p>
         <h2 class="mt-1 text-lg font-black text-white">Categories</h2>
       </div>
-      <div class="p-3">
+      <div class="relative z-[220] overflow-visible p-3">
         <div v-if="categories.length === 0" class="p-3 text-sm text-slate-500">No categories found.</div>
-        <ul v-else class="space-y-1">
+        <ul v-else class="relative z-[230] space-y-1 overflow-visible">
           <li
             v-for="category in categories"
             :key="category.id"
-            class="relative"
+            class="relative z-[240]"
             @mouseenter="openDesktopMenu(category.id)"
             @mouseleave="scheduleDesktopClose(category.id)"
           >
@@ -46,7 +46,7 @@
             <div
               v-if="category.items.length"
               v-show="desktopMenu === category.id"
-              class="hidden md:block absolute left-full top-0 z-[80] pl-2 min-w-[240px]"
+              class="hidden md:block absolute left-full top-0 z-[9999] pl-2 min-w-[240px] isolate"
               @mouseenter="cancelDesktopClose"
               @mouseleave="scheduleDesktopClose(category.id)"
             >
