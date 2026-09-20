@@ -19,7 +19,7 @@ export default defineEventHandler(async(event)=>{
   } else if(issue==="category"){
     const id=Number(body.value); if(!id) throw createError({statusCode:400,statusMessage:"Choose a category"});
     const {error}=await s.from("products").update({category_id:id}).eq("id",productId); if(error) throw createError({statusCode:400,statusMessage:error.message});
-  } else if(["target","levels"].includes(issue)){
+  } else if(["target","levels","stock_levels","stock-levels"].includes(issue)){
     const low=num(body.low_stock_level), reorder=num(body.reorder_level), target=num(body.target_stock_level);
     if(!Number.isInteger(low)||low<0||!Number.isInteger(reorder)||reorder<0||!Number.isInteger(target)||target<0) throw createError({statusCode:400,statusMessage:"Stock levels must be whole numbers of 0 or more"});
     if(reorder<low) throw createError({statusCode:400,statusMessage:"Reorder level must be equal to or higher than Low Stock"});
