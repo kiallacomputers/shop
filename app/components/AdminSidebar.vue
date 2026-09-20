@@ -20,8 +20,9 @@
       <NavGroup title="Store" group-key="store" :active="groupActive('store')" :open="openGroup === 'store'" @toggle="toggleGroup('store')" @mouseenter="openHoverGroup('store')" @mouseleave="scheduleCloseGroup('store')">
         <NuxtLink to="/admin/products" :class="linkClass('/admin/products', true)" @click="closeMenuAndNavigate"><NavIcon path="M3 6h18M6 6v14h12V6M9 10h6"/>Products</NuxtLink>
         <NuxtLink to="/admin/products/stock-levels" :class="linkClass('/admin/products/stock-levels')" @click="closeMenuAndNavigate"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Bulk Stock Levels</NuxtLink>
-        <NuxtLink to="/admin/products/data-health" :class="linkClass('/admin/products/data-health')" @click="closeMenuAndNavigate"><NavIcon path="M4 12l5 5L20 6M4 6h5M4 18h5"/>Product Data Health</NuxtLink>
-        <NuxtLink v-if="isSuperAdmin" to="/admin/products/reorder-centre" :class="linkClass('/admin/products/reorder-centre')" @click="closeMenuAndNavigate"><NavIcon path="M3 7h18l-2 13H5L3 7Zm4 0 2-3h6l2 3"/>Reorder Centre</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/products/data-health" :class="linkClass('/admin/products/data-health')" @click="closeMenuAndNavigate"><NavIcon path="M4 12h4l2-6 4 12 2-6h4"/>Data Health</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/products/reorder-centre" :class="linkClass('/admin/products/reorder-centre')" @click="closeMenuAndNavigate"><NavIcon path="M4 7h16M6 7l1 13h10l1-13M9 11h6"/>Reorder Centre</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/products/stocktake" :class="linkClass('/admin/products/stocktake')" @click="closeMenuAndNavigate"><NavIcon path="M5 4h14v16H5V4Zm3 4h8M8 12h3m2 0h3M8 16h3m2 0h3"/>Stocktake</NuxtLink>
         <NuxtLink to="/admin/categories" :class="linkClass('/admin/categories')" @click="closeMenuAndNavigate"><NavIcon path="M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z"/>Categories</NuxtLink>
         <NuxtLink to="/admin/ads" :class="linkClass('/admin/ads')" @click="closeMenuAndNavigate"><NavIcon path="M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5"/>Advertisements</NuxtLink>
         <NuxtLink to="/admin/reviews" :class="linkClass('/admin/reviews')" @click="closeMenuAndNavigate"><NavIcon path="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>Product Reviews</NuxtLink>
