@@ -15,7 +15,36 @@
 
         <nav class="hidden md:flex items-center gap-1 ml-5">
           <NuxtLink to="/" class="desktop-nav">Home</NuxtLink>
-          <NuxtLink to="/#categories" class="desktop-nav">Categories</NuxtLink>
+          <div class="category-hover-menu relative" @mouseenter="desktopCategoriesOpen = true" @mouseleave="desktopCategoriesOpen = false">
+            <button
+              type="button"
+              class="desktop-nav inline-flex items-center gap-1.5"
+              :aria-expanded="desktopCategoriesOpen"
+              aria-haspopup="true"
+              @focus="desktopCategoriesOpen = true"
+              @keydown.escape="desktopCategoriesOpen = false"
+            >
+              Categories
+              <svg class="h-3.5 w-3.5 transition-transform" :class="desktopCategoriesOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7" /></svg>
+            </button>
+            <Transition enter-active-class="transition duration-150" enter-from-class="opacity-0 translate-y-1" leave-active-class="transition duration-100" leave-to-class="opacity-0 translate-y-1">
+              <div v-if="desktopCategoriesOpen" class="absolute left-0 top-full z-[90] pt-2" @focusin="desktopCategoriesOpen = true">
+                <div class="w-[620px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
+                  <div class="grid grid-cols-2 gap-2">
+                    <div v-for="category in rootCategories" :key="category.id" class="group/category relative rounded-xl border border-transparent p-1 hover:border-slate-200 hover:bg-slate-50">
+                      <NuxtLink :to="`/category/${category.slug}`" class="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 font-black text-[#0b1f3a] hover:text-blue-600" @click="desktopCategoriesOpen = false">
+                        <span>{{ category.name }}</span><span class="text-slate-300">›</span>
+                      </NuxtLink>
+                      <div v-if="childrenFor(category.id).length" class="px-3 pb-2">
+                        <NuxtLink v-for="child in childrenFor(category.id)" :key="child.id" :to="`/category/${child.slug}`" class="block rounded-md px-2 py-1.5 text-sm font-semibold text-slate-500 hover:bg-white hover:text-blue-600" @click="desktopCategoriesOpen = false">{{ child.name }}</NuxtLink>
+                      </div>
+                    </div>
+                  </div>
+                  <p v-if="!rootCategories.length" class="px-3 py-5 text-sm font-semibold text-slate-500">No categories are available.</p>
+                </div>
+              </div>
+            </Transition>
+          </div>
           <NuxtLink to="/#shop" class="desktop-nav">Shop</NuxtLink>
           <NuxtLink to="/#featured" class="desktop-nav">Featured</NuxtLink>
           <NuxtLink to="/search" class="desktop-nav xl:hidden">Search</NuxtLink>
@@ -151,7 +180,17 @@
               <p class="mt-0.5 font-extrabold text-[#0b1f3a]">{{ firstName || user.email }}</p>
             </div>
             <NuxtLink to="/" class="mobile-menu-item" @click="closeMobileMenu">Home</NuxtLink>
-            <NuxtLink to="/#categories" class="mobile-menu-item" @click="closeMobileMenu">Categories</NuxtLink>
+            <button type="button" class="mobile-menu-item justify-between text-left" @click="mobileCategoriesOpen = !mobileCategoriesOpen">
+              <span>Categories</span><span class="text-slate-400">{{ mobileCategoriesOpen ? '−' : '+' }}</span>
+            </button>
+            <div v-if="mobileCategoriesOpen" class="mb-1 ml-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+              <div v-for="category in rootCategories" :key="`mobile-cat-${category.id}`" class="mb-1 last:mb-0">
+                <NuxtLink :to="`/category/${category.slug}`" class="block rounded-lg px-3 py-2 font-black text-[#0b1f3a] hover:bg-white hover:text-blue-600" @click="closeMobileMenu">{{ category.name }}</NuxtLink>
+                <div v-if="childrenFor(category.id).length" class="ml-3 border-l border-slate-200 pl-2">
+                  <NuxtLink v-for="child in childrenFor(category.id)" :key="`mobile-sub-${child.id}`" :to="`/category/${child.slug}`" class="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-white hover:text-blue-600" @click="closeMobileMenu">{{ child.name }}</NuxtLink>
+                </div>
+              </div>
+            </div>
             <NuxtLink to="/#shop" class="mobile-menu-item" @click="closeMobileMenu">Shop</NuxtLink>
             <NuxtLink to="/#featured" class="mobile-menu-item" @click="closeMobileMenu">Featured</NuxtLink>
             <NuxtLink v-if="!user" to="/auth/signin" class="mobile-menu-item" @click="closeMobileMenu">Signup / Login</NuxtLink>
@@ -178,6 +217,20 @@ const supabase = useSupabaseClient();
 
 const cart = useCartStore();
 const { applyToProducts } = useCustomerPricing();
+const { visibleCategories } = useStorefrontCategories();
+
+const desktopCategoriesOpen = ref(false);
+const mobileCategoriesOpen = ref(false);
+const rootCategories = computed(() =>
+  (visibleCategories.value || [])
+    .filter((category) => category?.slug)
+    .filter((category) => category.parent_id === null || category.parent_id === undefined || category.parent_id === "")
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0) || String(a.name || "").localeCompare(String(b.name || ""))),
+);
+const childrenFor = (parentId) =>
+  (visibleCategories.value || [])
+    .filter((category) => String(category.parent_id ?? "") === String(parentId) && category?.slug)
+    .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
 
 // ========================================
 // PRODUCT SEARCH
@@ -274,6 +327,7 @@ const desktopAccountMenuRef = ref(null);
 
 const closeMobileMenu = () => {
   mobileMenuOpen.value = false;
+  mobileCategoriesOpen.value = false;
 };
 
 const closeDesktopAccountMenu = () => {

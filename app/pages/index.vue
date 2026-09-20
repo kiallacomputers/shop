@@ -9,7 +9,6 @@
           <p class="mt-5 max-w-2xl text-base md:text-lg leading-8 text-slate-300">Quality computers, components, upgrades and practical support from a local independent business. Straightforward advice, secure checkout and Australian delivery.</p>
           <div class="mt-7 grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
             <a href="#shop" class="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-cyan-400 px-6 py-3.5 font-black text-[#0b1f3a] hover:bg-cyan-300 transition">Shop products</a>
-            <a href="#categories" class="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/25 bg-white/10 px-6 py-3.5 font-black text-white hover:bg-white/15 transition">Browse categories</a>
           </div>
         </div>
 
@@ -71,18 +70,6 @@
     </section>
 
     <div class="max-w-7xl mx-auto px-4 py-8 sm:py-10 md:py-14">
-      <section id="categories" class="mb-12">
-        <div class="flex items-end justify-between gap-4 mb-5">
-          <div><p class="kc-eyebrow">Find what you need</p><h2 class="kc-title mt-1 text-2xl md:text-3xl">Shop by category</h2></div>
-        </div>
-        <div v-if="shopCategories.length" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <NuxtLink v-for="category in shopCategories" :key="category.id" :to="`/category/${category.slug}`" class="group kc-panel p-4 min-h-[110px] flex flex-col justify-between hover:-translate-y-1 hover:border-cyan-300 transition duration-200">
-            <div class="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-[#2367d1] group-hover:bg-blue-50">⌁</div>
-            <p class="mt-4 font-extrabold text-[#0b1f3a] group-hover:text-blue-600 transition">{{ category.name }}</p>
-          </NuxtLink>
-        </div>
-      </section>
-
       <section id="shop" class="grid gap-7 lg:grid-cols-[240px_1fr] items-start">
         <aside class="lg:sticky lg:top-28"><Sidemenu /></aside>
         <div id="featured">
@@ -130,7 +117,6 @@ useHead({
 });
 
 const supabase = useSupabaseClient();
-const { visibleCategories } = useStorefrontCategories();
 
 const { data: featuredProducts } = await useAsyncData("featured-products", async () => {
   const { data, error } = await supabase
@@ -180,17 +166,6 @@ watch(
 );
 
 
-const shopCategories = computed(() =>
-  (visibleCategories.value || [])
-    .filter((category) => category.slug)
-    .filter(
-      (category) =>
-        category.parent_id === null ||
-        category.parent_id === undefined ||
-        category.parent_id === "",
-    )
-    .slice(0, 6),
-);
 const loadads = import.meta.glob("~/assets/images/ads/*", { eager: true, import: "default" });
 const fallbackAds = [
   { title: "Computer Builds", image: loadads["/assets/images/ads/computers.png"], link: "#shop" },
