@@ -76,9 +76,6 @@
             </Transition>
           </li>
         </ul>
-            </Transition>
-          </li>
-        </ul>
       </div>
     </aside>
   </div>
