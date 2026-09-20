@@ -2,6 +2,10 @@
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: process.env.NODE_ENV !== "production" },
+  experimental: {
+    // Immediately recover from stale/missing hashed chunks after a deployment.
+    emitRouteChunkError: "automatic-immediate",
+  },
   app: {
     head: {
       title: "Kialla Computers",
