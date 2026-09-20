@@ -32,6 +32,7 @@
             <nav class="product-nav-links" aria-label="Product editor sections">
               <a href="#product-details">📝 Product details</a>
               <a href="#pricing-stock">💰 Pricing & stock</a>
+              <a href="#suppliers">🚚 Suppliers</a>
               <a href="#related-products">🔗 Related products</a>
               <a href="#freight">📦 Freight</a>
               <a href="#product-images">🖼️ Images</a>
@@ -156,6 +157,24 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Stock *</span>
             <input v-model="form.stock" required min="0" step="1" type="number" class="input" />
           </label>
+
+          <label>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Low Stock Level *</span>
+            <input v-model="form.low_stock_level" required min="0" step="1" type="number" class="input" />
+            <span class="mt-1 block text-xs text-slate-500">At or below this level the product is shown as Low Stock.</span>
+          </label>
+
+          <label>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Reorder Level *</span>
+            <input v-model="form.reorder_level" required min="0" step="1" type="number" class="input" />
+            <span class="mt-1 block text-xs text-slate-500">When available stock reaches this level, purchasing recommends a reorder.</span>
+          </label>
+
+          <label>
+            <span class="mb-1.5 block text-sm font-semibold text-slate-700">Target Stock Level *</span>
+            <input v-model="form.target_stock_level" required min="0" step="1" type="number" class="input" />
+            <span class="mt-1 block text-xs text-slate-500">Reorder quantity aims to restore stock to this level.</span>
+          </label>
         </div>
 
         <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -192,6 +211,27 @@
         </div>
       </section>
 
+
+      <section id="suppliers" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Product Suppliers</h2>
+            <p class="mt-1 text-sm text-slate-500">Choose the default supplier used for purchase orders and add alternate suppliers with their own SKU and buy price.</p>
+          </div>
+          <button type="button" class="admin-btn-secondary" @click="addSupplierRow">+ Add Supplier</button>
+        </div>
+        <div v-if="!supplierRows.length" class="mt-4 rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500">No suppliers assigned yet.</div>
+        <div v-else class="mt-4 space-y-3">
+          <div v-for="(row,index) in supplierRows" :key="row.key" class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.4fr_1fr_1fr_auto_auto] lg:items-end">
+            <label><span class="mb-1 block text-xs font-bold uppercase text-slate-500">Supplier</span><select v-model="row.supplier_id" class="input"><option value="">Select supplier</option><option v-for="supplier in suppliers" :key="supplier.id" :value="String(supplier.id)">{{supplier.name}}</option></select></label>
+            <label><span class="mb-1 block text-xs font-bold uppercase text-slate-500">Supplier SKU</span><input v-model="row.supplier_sku" class="input" placeholder="Supplier code" /></label>
+            <label><span class="mb-1 block text-xs font-bold uppercase text-slate-500">Buy Price ex GST</span><input v-model="row.buy_price_ex_gst" min="0" step="0.01" type="number" class="input" placeholder="Use product buy price" /></label>
+            <label class="flex h-10 items-center gap-2 whitespace-nowrap text-sm font-semibold text-slate-700"><input :checked="row.is_primary" type="radio" name="primary-supplier" @change="setPrimarySupplier(index)" /> Default</label>
+            <button type="button" class="h-10 rounded-lg border border-red-200 bg-white px-3 text-sm font-bold text-red-600 hover:bg-red-50" @click="removeSupplierRow(index)">Remove</button>
+          </div>
+        </div>
+        <p v-if="supplierRows.length" class="mt-3 text-xs text-slate-500">The Default supplier is automatically preferred by Stock Intelligence and when creating purchase orders. Alternate suppliers remain available for price or availability choices.</p>
+      </section>
 
       <section id="related-products" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
@@ -496,6 +536,12 @@ const standardPricingLevelName = ref("Standard");
 const allProducts = ref<any[]>([]);
 const relatedProductIds = ref<number[]>([]);
 const relatedSearch = ref("");
+const suppliers = ref<any[]>([]);
+const supplierRows = ref<any[]>([]);
+let supplierRowKey = 0;
+const addSupplierRow = () => supplierRows.value.push({ key: ++supplierRowKey, supplier_id: "", supplier_sku: "", buy_price_ex_gst: "", is_primary: supplierRows.value.length === 0 });
+const removeSupplierRow = (index: number) => { supplierRows.value.splice(index, 1); if (supplierRows.value.length && !supplierRows.value.some((x:any) => x.is_primary)) supplierRows.value[0].is_primary = true; };
+const setPrimarySupplier = (index: number) => supplierRows.value.forEach((x:any, i:number) => x.is_primary = i === index);
 
 const sortProductCategories = (items: ProductCategory[]) =>
   [...items].sort((a, b) => {
@@ -533,6 +579,9 @@ const form = reactive({
   buy_price_ex_gst: "",
   rrp_markup_percent: "",
   stock: "0",
+  low_stock_level: "2",
+  reorder_level: "3",
+  target_stock_level: "5",
   weight_kg: "1.000",
   length_cm: "30.0",
   width_cm: "20.0",
@@ -703,13 +752,15 @@ const loadForm = async () => {
   errorMessage.value = "";
 
   try {
-    const [categoryRows, standardPricing, productRows] = await Promise.all([
+    const [categoryRows, standardPricing, productRows, supplierList] = await Promise.all([
       adminFetch("/api/admin/categories"),
       adminFetch<{ key: string; name: string; markup_percent: number }>("/api/admin/pricing/standard"),
       adminFetch("/api/admin/products"),
+      adminFetch("/api/admin/products/suppliers"),
     ]);
     categories.value = Array.isArray(categoryRows) ? categoryRows as ProductCategory[] : [];
     allProducts.value = Array.isArray(productRows) ? productRows as any[] : [];
+    suppliers.value = Array.isArray(supplierList) ? supplierList as any[] : [];
     standardPricingLevelName.value = standardPricing?.name || "Standard";
     const loadedStandardMarkup = Number(standardPricing?.markup_percent);
     standardMarkupPercent.value = Number.isFinite(loadedStandardMarkup) ? loadedStandardMarkup : 20;
@@ -726,6 +777,11 @@ const loadForm = async () => {
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
       form.stock = product.stock == null ? "0" : String(product.stock);
+      form.low_stock_level = product.low_stock_level == null ? "2" : String(product.low_stock_level);
+      form.reorder_level = product.reorder_level == null ? "3" : String(product.reorder_level);
+      form.target_stock_level = product.target_stock_level == null ? "5" : String(product.target_stock_level);
+      const mappings: any = await adminFetch(`/api/admin/products/${props.productId}/suppliers`);
+      supplierRows.value = (Array.isArray(mappings) ? mappings : []).map((x:any) => ({ key: ++supplierRowKey, supplier_id: String(x.supplier_id), supplier_sku: x.supplier_sku || "", buy_price_ex_gst: x.buy_price_ex_gst == null ? "" : String(x.buy_price_ex_gst), is_primary: x.is_primary === true }));
       form.weight_kg = product.weight_kg == null ? "1.000" : String(product.weight_kg);
       form.length_cm = product.length_cm == null ? "30.0" : String(product.length_cm);
       form.width_cm = product.width_cm == null ? "20.0" : String(product.width_cm);
@@ -775,6 +831,9 @@ const saveProduct = async () => {
       buy_price_ex_gst: Number(form.buy_price_ex_gst),
       rrp_markup_percent: Number(form.rrp_markup_percent),
       stock: Number(form.stock),
+      low_stock_level: Number(form.low_stock_level),
+      reorder_level: Number(form.reorder_level),
+      target_stock_level: Number(form.target_stock_level),
       weight_kg: Number(form.weight_kg),
       length_cm: Number(form.length_cm),
       width_cm: Number(form.width_cm),
@@ -784,18 +843,19 @@ const saveProduct = async () => {
       related_product_ids: relatedProductIds.value,
     };
 
+    let savedProduct: any;
     if (props.mode === "create") {
-      await adminFetch("/api/admin/products", {
-        method: "POST",
-        body: payload,
-      });
+      savedProduct = await adminFetch("/api/admin/products", { method: "POST", body: payload });
     } else {
-      await adminFetch(`/api/admin/products/${props.productId}`, {
+      savedProduct = await adminFetch(`/api/admin/products/${props.productId}`, { method: "PUT", body: payload });
+    }
+    const savedId = Number(savedProduct?.id || props.productId);
+    if (savedId) {
+      await adminFetch(`/api/admin/products/${savedId}/suppliers`, {
         method: "PUT",
-        body: payload,
+        body: { suppliers: supplierRows.value.filter((x:any) => x.supplier_id).map((x:any) => ({ supplier_id: Number(x.supplier_id), supplier_sku: x.supplier_sku || null, buy_price_ex_gst: x.buy_price_ex_gst === "" ? null : Number(x.buy_price_ex_gst), is_primary: x.is_primary === true })) },
       });
     }
-
     await router.push("/admin/products");
   } catch (error: any) {
     errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to save product.";

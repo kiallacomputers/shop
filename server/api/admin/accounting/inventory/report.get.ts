@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: products, error: productError } = await s
     .from("products")
-    .select("id,name,product_code,buy_price_ex_gst,price,stock,active")
+    .select("id,name,product_code,buy_price_ex_gst,price,stock,low_stock_level,reorder_level,target_stock_level,active")
     .order("name");
 
   if (productError) {
@@ -51,6 +51,10 @@ export default defineEventHandler(async (event) => {
       name: p.name,
       sku: p.product_code || "",
       stock: qty,
+      low_stock_level: n(p.low_stock_level),
+      reorder_level: n(p.reorder_level),
+      target_stock_level: n(p.target_stock_level),
+      stock_status: qty <= 0 ? "out" : qty <= n(p.low_stock_level) ? "low" : qty <= n(p.reorder_level) ? "reorder" : "healthy",
       unit_cost: unit,
       value,
       retail_value: sell,
@@ -96,7 +100,8 @@ export default defineEventHandler(async (event) => {
       retail_value: r(valuation.reduce((a: number, x: any) => a + x.retail_value, 0)),
       units_on_hand: r(valuation.reduce((a: number, x: any) => a + x.stock, 0)),
       period_cogs: r(sales.reduce((a: number, x: any) => a + Math.abs(n(x.total_cost)), 0)),
-      low_stock_products: valuation.filter((x: any) => x.active && n(x.stock) <= 5).length,
+      low_stock_products: valuation.filter((x: any) => x.active && x.stock_status === "low").length,
+      reorder_products: valuation.filter((x: any) => x.active && ["low", "reorder", "out"].includes(x.stock_status)).length,
       out_of_stock_products: valuation.filter((x: any) => x.active && n(x.stock) <= 0).length,
       potential_margin: r(valuation.reduce((a: number, x: any) => a + x.potential_margin, 0)),
     },

@@ -1,0 +1,2 @@
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+export default defineEventHandler(async (event) => { await requireAdmin(event); const { data, error } = await getAdminSupabase().from("accounting_suppliers").select("id,name,active").order("name"); if (error) throw createError({statusCode:500,statusMessage:error.message}); return (data||[]).filter((x:any)=>x.active!==false); });

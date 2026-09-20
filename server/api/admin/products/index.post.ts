@@ -38,6 +38,9 @@ export default defineEventHandler(async (event) => {
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
   const stock = Number(body?.stock);
+  const lowStockLevel = Number(body?.low_stock_level);
+  const reorderLevel = Number(body?.reorder_level);
+  const targetStockLevel = Number(body?.target_stock_level);
   const weightKg = Number(body?.weight_kg);
   const lengthCm = Number(body?.length_cm);
   const widthCm = Number(body?.width_cm);
@@ -62,6 +65,11 @@ export default defineEventHandler(async (event) => {
   if (!Number.isInteger(stock) || stock < 0) {
     throw createError({ statusCode: 400, statusMessage: "Stock must be a whole number of 0 or more" });
   }
+  for (const [label, value] of [["Low stock level", lowStockLevel], ["Reorder level", reorderLevel], ["Target stock level", targetStockLevel]] as const) {
+    if (!Number.isInteger(value) || value < 0) throw createError({ statusCode: 400, statusMessage: `${label} must be a whole number of 0 or more` });
+  }
+  if (reorderLevel < lowStockLevel) throw createError({ statusCode: 400, statusMessage: "Reorder level must be equal to or higher than the low stock level" });
+  if (targetStockLevel < reorderLevel) throw createError({ statusCode: 400, statusMessage: "Target stock level must be equal to or higher than the reorder level" });
 
   for (const [label, value] of [
     ["Weight", weightKg], ["Length", lengthCm], ["Width", widthCm], ["Height", heightCm],
@@ -89,6 +97,9 @@ export default defineEventHandler(async (event) => {
     price,
     oldPrice,
     stock,
+    low_stock_level: lowStockLevel,
+    reorder_level: reorderLevel,
+    target_stock_level: targetStockLevel,
     weight_kg: weightKg,
     length_cm: lengthCm,
     width_cm: widthCm,
