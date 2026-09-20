@@ -5,7 +5,7 @@
         <p class="text-[11px] font-black uppercase tracking-[.18em] text-blue-600">Purchasing workspace</p>
         <p class="mt-1 text-sm text-slate-500">Supplier → Purchase Order → Receive Stock → Supplier Bill → Payment → Inventory</p>
       </div>
-      <NuxtLink to="/admin/accounting/purchases" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-blue-700">+ Purchase Order</NuxtLink>
+      <NuxtLink to="/admin/accounting/purchases/new" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-bold text-white hover:bg-blue-700">+ Purchase Order</NuxtLink>
     </div>
     <nav class="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6" aria-label="Purchasing workflow">
       <NuxtLink v-for="item in items" :key="item.to" :to="item.to" class="group rounded-xl border px-3 py-3 transition" :class="active(item) ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-slate-50'">
