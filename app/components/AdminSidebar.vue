@@ -83,7 +83,9 @@ const groupRoutes: Record<string, string[]> = {
 };
 const groupActive = (key: string) => groupRoutes[key]?.some((path) => route.path.startsWith(path)) ?? false;
 const activeGroupForRoute = () => Object.keys(groupRoutes).find((key) => groupActive(key)) ?? null;
-const openGroup = ref<string | null>(activeGroupForRoute());
+// Active-route highlighting is separate from fly-out visibility.
+// Fly-outs start closed and only open from hover/click interaction.
+const openGroup = ref<string | null>(null);
 
 const toggleGroup = (key: string) => {
   openGroup.value = openGroup.value === key ? null : key;
@@ -106,7 +108,7 @@ const openHoverGroup = (key: string) => {
 const scheduleCloseGroup = (key: string) => {
   cancelCloseGroup();
   closeTimer = setTimeout(() => {
-    if (openGroup.value === key && !groupActive(key)) openGroup.value = null;
+    if (openGroup.value === key) openGroup.value = null;
     closeTimer = null;
   }, 260);
 };
@@ -123,15 +125,11 @@ const closeMenuAndNavigate = () => {
 };
 
 watch(() => route.path, () => {
-  if (closeAfterNavigation) {
-    closeAfterNavigation = false;
-    openGroup.value = null;
-    return;
-  }
-  // Route changes that did not come from a sidebar click can still reveal
-  // the relevant section (for example browser back/forward navigation).
-  const active = activeGroupForRoute();
-  if (active) openGroup.value = active;
+  // A route can remain highlighted without keeping its fly-out visible.
+  // Always close the fly-out after navigation, including back/forward.
+  closeAfterNavigation = false;
+  cancelCloseGroup();
+  openGroup.value = null;
 });
 
 const backToStore = () => {
