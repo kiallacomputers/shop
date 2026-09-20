@@ -18,7 +18,8 @@
       </NuxtLink>
 
       <NavGroup title="Store" group-key="store" :active="groupActive('store')" :open="openGroup === 'store'" @toggle="toggleGroup('store')" @mouseenter="openHoverGroup('store')" @mouseleave="scheduleCloseGroup('store')">
-        <NuxtLink to="/admin/products" :class="linkClass('/admin/products')" @click="closeMenuAndNavigate"><NavIcon path="M3 6h18M6 6v14h12V6M9 10h6"/>Products</NuxtLink>
+        <NuxtLink to="/admin/products" :class="linkClass('/admin/products', true)" @click="closeMenuAndNavigate"><NavIcon path="M3 6h18M6 6v14h12V6M9 10h6"/>Products</NuxtLink>
+        <NuxtLink to="/admin/products/stock-levels" :class="linkClass('/admin/products/stock-levels')" @click="closeMenuAndNavigate"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Bulk Stock Levels</NuxtLink>
         <NuxtLink to="/admin/categories" :class="linkClass('/admin/categories')" @click="closeMenuAndNavigate"><NavIcon path="M4 5h6v6H4V5Zm10 0h6v6h-6V5ZM4 15h6v4H4v-4Zm10 0h6v4h-6v-4Z"/>Categories</NuxtLink>
         <NuxtLink to="/admin/ads" :class="linkClass('/admin/ads')" @click="closeMenuAndNavigate"><NavIcon path="M3 5h18v14H3V5Zm4 10 3-3 2 2 3-4 3 5"/>Advertisements</NuxtLink>
         <NuxtLink to="/admin/reviews" :class="linkClass('/admin/reviews')" @click="closeMenuAndNavigate"><NavIcon path="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/>Product Reviews</NuxtLink>
