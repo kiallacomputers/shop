@@ -19,7 +19,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
               <!-- Gallery -->
               <div class="min-w-0 border-b border-slate-200 lg:border-b-0 lg:border-r">
-                <div class="relative bg-slate-50">
+                <div class="relative bg-white">
                   <span
                     v-if="product.featured"
                     class="absolute left-4 top-4 z-20 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm"
