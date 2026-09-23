@@ -139,7 +139,7 @@
                       v-for="variant in activeVariants"
                       :key="variant.id"
                       type="button"
-                      @click="selectedVariantId = Number(variant.id)"
+                      @click="selectVariant(variant)"
                       class="rounded-lg border px-3 py-2.5 text-left text-sm transition"
                       :class="selectedVariantId === Number(variant.id) ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-400'"
                     >
@@ -745,6 +745,11 @@ watch(selectedVariantId, () => { backInStockMessage.value = ""; backInStockError
 
 const activeVariants = computed(() => (product.value?.product_variants || []).filter((v) => v.active !== false));
 const selectedVariant = computed(() => activeVariants.value.find((v) => Number(v.id) === Number(selectedVariantId.value)) || null);
+const selectVariant = (variant) => {
+  selectedVariantId.value = Number(variant.id);
+  currentImageIndex.value = 0;
+};
+
 const effectivePrice = computed(() => {
   if (selectedVariant.value) {
     const quotedVariantPrice = Number(
@@ -1230,23 +1235,47 @@ watch(selectedVariantId, () => { currentImageIndex.value = 0; });
 |--------------------------------------------------------------------------
 */
 
-const images = computed(() => {
-  const variantImages = selectedVariant.value?.images;
-  const source = Array.isArray(variantImages) && variantImages.length
-    ? variantImages
-    : product.value?.images;
-
+const normaliseImages = (source) => {
   if (!source) return [];
-  if (Array.isArray(source)) return source.filter(Boolean);
+
+  if (Array.isArray(source)) {
+    return source.filter((image) => typeof image === "string" && image.trim());
+  }
+
   if (typeof source === "string") {
+    const value = source.trim();
+    if (!value) return [];
+
     try {
-      const parsed = JSON.parse(source);
-      if (Array.isArray(parsed)) return parsed.filter(Boolean);
-    } catch (error) {
-      console.error("PRODUCT IMAGE JSON ERROR:", error);
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((image) => typeof image === "string" && image.trim());
+      }
+      if (typeof parsed === "string" && parsed.trim()) {
+        return [parsed.trim()];
+      }
+    } catch {
+      // A plain image URL is also valid.
+      return [value];
     }
   }
+
   return [];
+};
+
+const images = computed(() => {
+  // When a variation is selected, its image/gallery takes priority.
+  // If that variation has no image, retain the parent product gallery.
+  const variantImages = normaliseImages(selectedVariant.value?.images);
+  if (variantImages.length) return variantImages;
+
+  // Also support older/single-image variant records if present.
+  const variantSingleImage = normaliseImages(
+    selectedVariant.value?.image_url || selectedVariant.value?.image,
+  );
+  if (variantSingleImage.length) return variantSingleImage;
+
+  return normaliseImages(product.value?.images);
 });
 
 /*
