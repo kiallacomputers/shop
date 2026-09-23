@@ -1272,8 +1272,10 @@ const images = computed(() => {
 
   if (!selectedVariantImage) return productImages;
 
-  // Put the variant's chosen image first, but keep every main product image.
-  return [selectedVariantImage, ...productImages.filter((image) => image !== selectedVariantImage)];
+  return [
+    selectedVariantImage,
+    ...productImages.filter((image) => image !== selectedVariantImage),
+  ];
 });
 
 /*
