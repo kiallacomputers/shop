@@ -387,6 +387,28 @@
               </button>
             </div>
 
+            <label
+              class="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/50 px-5 py-5 text-center transition hover:bg-blue-50"
+              :class="uploadingDownloadsKey === block._key ? 'pointer-events-none opacity-60' : ''"
+            >
+              <span class="text-sm font-bold text-blue-700">
+                {{ uploadingDownloadsKey === block._key ? 'Uploading files...' : 'Choose Download Files' }}
+              </span>
+              <input
+                type="file"
+                multiple
+                class="hidden"
+                :disabled="uploadingDownloadsKey === block._key"
+                @change="uploadDownloadFiles($event, block)"
+              />
+            </label>
+            <p class="-mt-2 text-xs text-slate-500">
+              You can select multiple files at once. Description, size and type are filled automatically and can be edited afterwards.
+            </p>
+            <div v-if="downloadUploadError && downloadUploadErrorKey === block._key" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {{ downloadUploadError }}
+            </div>
+
             <div
               v-if="!block.downloads?.length"
               class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500"
@@ -1054,6 +1076,9 @@ const blocks = ref<DescriptionBlock[]>([]);
 const uploadingImageKey = ref<string | null>(null);
 const imageUploadError = ref("");
 const imageUploadErrorKey = ref<string | null>(null);
+const uploadingDownloadsKey = ref<string | null>(null);
+const downloadUploadError = ref("");
+const downloadUploadErrorKey = ref<string | null>(null);
 
 let syncingFromParent = false;
 
@@ -1512,6 +1537,57 @@ const moveBlock = (index: number, direction: number) => {
 // ========================================
 // DOWNLOADS
 // ========================================
+
+const uploadDownloadFiles = async (event: Event, block: DescriptionBlock) => {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+
+  uploadingDownloadsKey.value = block._key || null;
+  downloadUploadError.value = "";
+  downloadUploadErrorKey.value = block._key || null;
+
+  try {
+    if (!Array.isArray(block.downloads)) block.downloads = [];
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await adminFetch<{ path: string; url: string; filename: string; size: number; fileType: string }>(
+        "/api/admin/products/upload-download",
+        { method: "POST", body: formData },
+      );
+
+      const baseName = (result.filename || file.name)
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .trim();
+
+      const bytes = Number(result.size || file.size || 0);
+      const sizeText = bytes >= 1024 * 1024
+        ? `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 1 : 2)} MB`
+        : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+      block.downloads.push({
+        _key: makeKey(),
+        description: baseName,
+        size: sizeText,
+        fileType: result.fileType || (file.name.split(".").pop() || "FILE").toUpperCase(),
+        url: result.url,
+      });
+    }
+  } catch (error: any) {
+    console.error("DOWNLOAD UPLOAD ERROR:", error);
+    downloadUploadError.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to upload download file.";
+  } finally {
+    uploadingDownloadsKey.value = null;
+    input.value = "";
+  }
+};
 
 const addDownloadRow = (block: DescriptionBlock) => {
   if (!Array.isArray(block.downloads)) block.downloads = [];
