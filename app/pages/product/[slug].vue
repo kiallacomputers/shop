@@ -1264,18 +1264,16 @@ const normaliseImages = (source) => {
 };
 
 const images = computed(() => {
-  // When a variation is selected, its image/gallery takes priority.
-  // If that variation has no image, retain the parent product gallery.
+  const productImages = normaliseImages(product.value?.images);
   const variantImages = normaliseImages(selectedVariant.value?.images);
-  if (variantImages.length) return variantImages;
+  const selectedVariantImage = variantImages[0]
+    || normaliseImages(selectedVariant.value?.image_url || selectedVariant.value?.image)[0]
+    || "";
 
-  // Also support older/single-image variant records if present.
-  const variantSingleImage = normaliseImages(
-    selectedVariant.value?.image_url || selectedVariant.value?.image,
-  );
-  if (variantSingleImage.length) return variantSingleImage;
+  if (!selectedVariantImage) return productImages;
 
-  return normaliseImages(product.value?.images);
+  // Put the variant's chosen image first, but keep every main product image.
+  return [selectedVariantImage, ...productImages.filter((image) => image !== selectedVariantImage)];
 });
 
 /*
