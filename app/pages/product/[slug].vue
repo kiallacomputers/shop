@@ -324,6 +324,25 @@
                   </p>
                 </div>
 
+                <!-- Link -->
+                <div
+                  v-else-if="section.type === 'link'"
+                  class="mb-4"
+                  :class="section.textAlign === 'center' ? 'text-center' : section.textAlign === 'right' ? 'text-right' : 'text-left'"
+                >
+                  <a
+                    v-if="section.linkUrl"
+                    :href="section.linkUrl"
+                    :target="section.linkNewTab ? '_blank' : undefined"
+                    :rel="section.linkNewTab ? 'noopener noreferrer' : undefined"
+                    :class="section.linkStyle === 'button'
+                      ? 'inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700'
+                      : 'font-semibold text-blue-600 underline decoration-1 underline-offset-2 hover:text-blue-800'"
+                  >
+                    {{ section.linkText || section.linkUrl }}
+                  </a>
+                </div>
+
                 <!-- Quote -->
                 <blockquote
                   v-else-if="section.type === 'quote'"

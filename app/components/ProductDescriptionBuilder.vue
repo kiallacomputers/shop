@@ -17,6 +17,7 @@
         >
           <option value="heading">Heading</option>
           <option value="paragraph">Paragraph</option>
+          <option value="link">Link</option>
           <option value="image">Image</option>
           <option value="list">List</option>
           <option value="table">Table</option>
@@ -266,6 +267,80 @@
                     </label>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- ======================================== -->
+        <!-- LINK -->
+        <!-- ======================================== -->
+
+        <template v-else-if="block.type === 'link'">
+          <div class="space-y-4">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label>
+                <span class="field-label">Link Text</span>
+                <input
+                  v-model="block.linkText"
+                  type="text"
+                  class="input"
+                  placeholder="e.g. View manufacturer website"
+                />
+              </label>
+
+              <label>
+                <span class="field-label">Link URL</span>
+                <input
+                  v-model="block.linkUrl"
+                  type="text"
+                  class="input"
+                  placeholder="https://example.com"
+                />
+              </label>
+
+              <label>
+                <span class="field-label">Display Style</span>
+                <select v-model="block.linkStyle" class="input">
+                  <option value="text">Text Link</option>
+                  <option value="button">Button</option>
+                </select>
+              </label>
+
+              <label>
+                <span class="field-label">Alignment</span>
+                <select v-model="block.textAlign" class="input">
+                  <option value="left">Left</option>
+                  <option value="center">Centre</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <input
+                v-model="block.linkNewTab"
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">Open in a new tab</span>
+                <span class="block text-xs text-slate-500">Recommended for links to another website.</span>
+              </span>
+            </label>
+
+            <div v-if="block.linkText || block.linkUrl" class="rounded-xl border border-slate-200 bg-white p-4">
+              <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Preview</p>
+              <div :class="block.textAlign === 'center' ? 'text-center' : block.textAlign === 'right' ? 'text-right' : 'text-left'">
+                <span
+                  v-if="block.linkStyle === 'button'"
+                  class="inline-flex rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
+                >
+                  {{ block.linkText || block.linkUrl || 'Link' }}
+                </span>
+                <span v-else class="font-semibold text-blue-600 underline">
+                  {{ block.linkText || block.linkUrl || 'Link' }}
+                </span>
               </div>
             </div>
           </div>
@@ -801,6 +876,10 @@ type DescriptionBlock = {
   paragraphImageAlt?: string;
   paragraphImagePosition?: "left" | "right";
   paragraphImageWidth?: "25" | "35" | "40" | "50";
+  linkText?: string;
+  linkUrl?: string;
+  linkStyle?: "text" | "button";
+  linkNewTab?: boolean;
 };
 
 const props = defineProps<{
@@ -1029,6 +1108,14 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.paragraphImageWidth = ["25", "35", "40", "50"].includes(String(input?.paragraphImageWidth))
       ? String(input.paragraphImageWidth) as DescriptionBlock["paragraphImageWidth"]
       : "35";
+  } else if (type === "link") {
+    base.linkText = input?.linkText || "";
+    base.linkUrl = input?.linkUrl || "";
+    base.linkStyle = input?.linkStyle === "button" ? "button" : "text";
+    base.linkNewTab = input?.linkNewTab === true;
+    base.textAlign = ["left", "center", "right"].includes(input?.textAlign)
+      ? input.textAlign
+      : "left";
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -1150,6 +1237,17 @@ const createBlock = (type: string): DescriptionBlock => {
     return normaliseBlock({
       type,
       text: "",
+    });
+  }
+
+  if (type === "link") {
+    return normaliseBlock({
+      type,
+      linkText: "",
+      linkUrl: "",
+      linkStyle: "text",
+      linkNewTab: true,
+      textAlign: "left",
     });
   }
 
@@ -1399,6 +1497,7 @@ const blockLabel = (type: string) =>
   ({
     heading: "Heading",
     paragraph: "Paragraph",
+    link: "Link",
     image: "Image",
     list: "List",
     table: "Table",
