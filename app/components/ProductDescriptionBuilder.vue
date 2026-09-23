@@ -161,16 +161,114 @@
         <!-- ======================================== -->
 
         <template v-else-if="block.type === 'paragraph'">
-          <label>
-            <span class="field-label">Paragraph</span>
+          <div class="space-y-4">
+            <label>
+              <span class="field-label">Paragraph</span>
+              <textarea
+                v-model="block.text"
+                rows="5"
+                class="input"
+                placeholder="Enter product information..."
+              ></textarea>
+            </label>
 
-            <textarea
-              v-model="block.text"
-              rows="5"
-              class="input"
-              placeholder="Enter product information..."
-            ></textarea>
-          </label>
+            <div class="rounded-xl border border-slate-200 bg-white p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p class="text-sm font-bold text-slate-800">Paragraph Image</p>
+                  <p class="mt-1 text-xs text-slate-500">
+                    Optional image displayed beside this paragraph.
+                  </p>
+                </div>
+
+                <button
+                  v-if="block.paragraphImageUrl"
+                  type="button"
+                  class="rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+                  @click="removeParagraphImage(block)"
+                >
+                  Remove Image
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-[180px_1fr]">
+                <div class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  <div class="flex h-36 items-center justify-center bg-white p-2">
+                    <img
+                      v-if="block.paragraphImageUrl"
+                      :src="block.paragraphImageUrl"
+                      :alt="block.paragraphImageAlt || ''"
+                      class="h-full w-full object-contain"
+                    />
+                    <span v-else class="px-3 text-center text-xs font-semibold text-slate-400">
+                      No paragraph image
+                    </span>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  <label
+                    class="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-4 text-center transition hover:border-blue-400 hover:bg-blue-50/40"
+                    :class="uploadingImageKey === block._key ? 'pointer-events-none opacity-60' : ''"
+                  >
+                    <span class="text-sm font-semibold text-slate-700">
+                      {{
+                        uploadingImageKey === block._key
+                          ? "Uploading image..."
+                          : block.paragraphImageUrl
+                            ? "Replace Paragraph Image"
+                            : "Add Paragraph Image"
+                      }}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      class="hidden"
+                      :disabled="uploadingImageKey === block._key"
+                      @change="uploadParagraphImage($event, index)"
+                    />
+                  </label>
+
+                  <div
+                    v-if="imageUploadError && imageUploadErrorKey === block._key"
+                    class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  >
+                    {{ imageUploadError }}
+                  </div>
+
+                  <div v-if="block.paragraphImageUrl" class="grid gap-4 sm:grid-cols-2">
+                    <label>
+                      <span class="field-label">Image Position</span>
+                      <select v-model="block.paragraphImagePosition" class="input">
+                        <option value="left">Left of paragraph</option>
+                        <option value="right">Right of paragraph</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      <span class="field-label">Image Width</span>
+                      <select v-model="block.paragraphImageWidth" class="input">
+                        <option value="25">25%</option>
+                        <option value="35">35%</option>
+                        <option value="40">40%</option>
+                        <option value="50">50%</option>
+                      </select>
+                    </label>
+
+                    <label class="sm:col-span-2">
+                      <span class="field-label">Image Alt Text</span>
+                      <input
+                        v-model="block.paragraphImageAlt"
+                        type="text"
+                        class="input"
+                        placeholder="Describe the image..."
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </template>
 
         <!-- ======================================== -->
@@ -698,6 +796,11 @@ type DescriptionBlock = {
   captionBackgroundColor?: string;
   captionPosition?: "above" | "below";
   width?: "small" | "medium" | "large" | "full";
+  paragraphImageUrl?: string;
+  paragraphImagePath?: string;
+  paragraphImageAlt?: string;
+  paragraphImagePosition?: "left" | "right";
+  paragraphImageWidth?: "25" | "35" | "40" | "50";
 };
 
 const props = defineProps<{
@@ -917,6 +1020,15 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.level = Number(input?.level || 2);
     base.headingColor = base.fontColor;
     base.underline = input?.underline === true;
+  } else if (type === "paragraph") {
+    base.text = input?.text || "";
+    base.paragraphImageUrl = input?.paragraphImageUrl || "";
+    base.paragraphImagePath = input?.paragraphImagePath || "";
+    base.paragraphImageAlt = input?.paragraphImageAlt || "";
+    base.paragraphImagePosition = input?.paragraphImagePosition === "right" ? "right" : "left";
+    base.paragraphImageWidth = ["25", "35", "40", "50"].includes(String(input?.paragraphImageWidth))
+      ? String(input.paragraphImageWidth) as DescriptionBlock["paragraphImageWidth"]
+      : "35";
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -1114,6 +1226,62 @@ const moveBlock = (index: number, direction: number) => {
   const [item] = blocks.value.splice(index, 1);
 
   blocks.value.splice(target, 0, item);
+};
+
+// ========================================
+// PARAGRAPH IMAGE
+// ========================================
+
+const uploadParagraphImage = async (event: Event, index: number) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  const block = blocks.value[index];
+  if (!block || block.type !== "paragraph") {
+    input.value = "";
+    return;
+  }
+
+  uploadingImageKey.value = block._key;
+  imageUploadError.value = "";
+  imageUploadErrorKey.value = block._key;
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const result = await adminFetch<{ path: string; url: string }>(
+      "/api/admin/products/upload-image",
+      { method: "POST", body: formData },
+    );
+
+    block.paragraphImageUrl = result.url;
+    block.paragraphImagePath = result.path;
+
+    if (!block.paragraphImageAlt) {
+      block.paragraphImageAlt = file.name
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .trim();
+    }
+  } catch (error: any) {
+    console.error("PARAGRAPH IMAGE UPLOAD ERROR:", error);
+    imageUploadError.value =
+      error?.data?.statusMessage ||
+      error?.message ||
+      "Unable to upload paragraph image.";
+  } finally {
+    uploadingImageKey.value = null;
+    input.value = "";
+  }
+};
+
+const removeParagraphImage = (block: DescriptionBlock) => {
+  block.paragraphImageUrl = "";
+  block.paragraphImagePath = "";
+  block.paragraphImageAlt = "";
 };
 
 // ========================================

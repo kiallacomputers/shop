@@ -281,19 +281,48 @@
                 </component>
 
                 <!-- Paragraph -->
-                <p
+                <div
                   v-else-if="section.type === 'paragraph'"
-                  class="leading-7 mb-4 whitespace-pre-line rounded-lg px-3 py-2"
+                  class="mb-4 rounded-lg px-3 py-2"
                   :style="descriptionTextBlockStyle(section, '#374151', '#ffffff', 'left')"
                 >
-                  <template
-                    v-for="(part, partIndex) in parseBoldText(section.text)"
-                    :key="partIndex"
+                  <div
+                    v-if="section.paragraphImageUrl"
+                    class="flex flex-col gap-5 md:flex-row md:items-start"
+                    :class="section.paragraphImagePosition === 'right' ? 'md:flex-row-reverse' : ''"
                   >
-                    <strong v-if="part.bold">{{ part.text }}</strong>
-                    <span v-else>{{ part.text }}</span>
-                  </template>
-                </p>
+                    <div
+                      class="w-full shrink-0 overflow-hidden rounded-lg bg-white md:w-[var(--paragraph-image-width)]"
+                      :style="{ '--paragraph-image-width': `${section.paragraphImageWidth || 35}%` }"
+                    >
+                      <img
+                        :src="section.paragraphImageUrl"
+                        :alt="section.paragraphImageAlt || ''"
+                        class="h-auto w-full object-contain"
+                      />
+                    </div>
+
+                    <p class="min-w-0 flex-1 whitespace-pre-line leading-7">
+                      <template
+                        v-for="(part, partIndex) in parseBoldText(section.text)"
+                        :key="partIndex"
+                      >
+                        <strong v-if="part.bold">{{ part.text }}</strong>
+                        <span v-else>{{ part.text }}</span>
+                      </template>
+                    </p>
+                  </div>
+
+                  <p v-else class="whitespace-pre-line leading-7">
+                    <template
+                      v-for="(part, partIndex) in parseBoldText(section.text)"
+                      :key="partIndex"
+                    >
+                      <strong v-if="part.bold">{{ part.text }}</strong>
+                      <span v-else>{{ part.text }}</span>
+                    </template>
+                  </p>
+                </div>
 
                 <!-- Quote -->
                 <blockquote
