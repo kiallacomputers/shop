@@ -177,6 +177,20 @@ const load=async()=>{
     loading.value=false;
   }
 };
+const fresh=()=>({
+  _key:`new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  id:null,
+  name:'',
+  product_code:'',
+  price:'',
+  old_price:'',
+  stock:'0',
+  active:true,
+  images:[],
+  sort_order:variants.value.length,
+  saving:false,
+  uploading:false
+});
 const addVariant=()=>variants.value.push(fresh());
 const resetAllToBase=async()=>{
   if(!variants.value.length)return;
