@@ -18,6 +18,7 @@
           <option value="heading">Heading</option>
           <option value="paragraph">Paragraph</option>
           <option value="link">Link</option>
+          <option value="downloads">Downloads</option>
           <option value="image">Image</option>
           <option value="list">List</option>
           <option value="table">Table</option>
@@ -329,6 +330,18 @@
               </span>
             </label>
 
+            <label class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <input
+                v-model="block.linkDownloadIcon"
+                type="checkbox"
+                class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                <span class="block text-sm font-semibold text-slate-700">Show Download Icon</span>
+                <span class="block text-xs text-slate-500">Adds a download icon beside the link text. Useful for manuals, drivers, PDFs and other downloads.</span>
+              </span>
+            </label>
+
             <div v-if="block.linkText || block.linkUrl" class="rounded-xl border border-slate-200 bg-white p-4">
               <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Preview</p>
               <div :class="block.textAlign === 'center' ? 'text-center' : block.textAlign === 'right' ? 'text-right' : 'text-left'">
@@ -336,10 +349,145 @@
                   v-if="block.linkStyle === 'button'"
                   class="inline-flex rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
                 >
+                  <svg v-if="block.linkDownloadIcon" class="mr-2 inline-block h-4 w-4 align-[-2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                  </svg>
                   {{ block.linkText || block.linkUrl || 'Link' }}
                 </span>
                 <span v-else class="font-semibold text-blue-600 underline">
+                  <svg v-if="block.linkDownloadIcon" class="mr-2 inline-block h-4 w-4 align-[-2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                  </svg>
                   {{ block.linkText || block.linkUrl || 'Link' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- ======================================== -->
+        <!-- DOWNLOADS -->
+        <!-- ======================================== -->
+
+        <template v-else-if="block.type === 'downloads'">
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-bold text-slate-800">Product Downloads</p>
+                <p class="mt-1 text-xs text-slate-500">
+                  Add manuals, drivers, brochures, firmware and other downloadable files.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+                @click="addDownloadRow(block)"
+              >
+                + Add Download
+              </button>
+            </div>
+
+            <div
+              v-if="!block.downloads?.length"
+              class="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm text-slate-500"
+            >
+              No downloads added yet.
+            </div>
+
+            <div
+              v-for="(download, downloadIndex) in block.downloads"
+              :key="download._key || downloadIndex"
+              class="rounded-xl border border-slate-200 bg-white p-4"
+            >
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <p class="font-bold text-slate-800">Download {{ downloadIndex + 1 }}</p>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg border px-2.5 py-1.5 text-xs font-bold disabled:opacity-40"
+                    :disabled="downloadIndex === 0"
+                    @click="moveDownloadRow(block, downloadIndex, -1)"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg border px-2.5 py-1.5 text-xs font-bold disabled:opacity-40"
+                    :disabled="downloadIndex === block.downloads.length - 1"
+                    @click="moveDownloadRow(block, downloadIndex, 1)"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
+                    @click="removeDownloadRow(block, downloadIndex)"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <label>
+                  <span class="field-label">Description</span>
+                  <input
+                    v-model="download.description"
+                    type="text"
+                    class="input"
+                    placeholder="e.g. User Manual"
+                  />
+                </label>
+
+                <label>
+                  <span class="field-label">File URL</span>
+                  <input
+                    v-model="download.url"
+                    type="text"
+                    class="input"
+                    placeholder="https://..."
+                  />
+                </label>
+
+                <label>
+                  <span class="field-label">Size</span>
+                  <input
+                    v-model="download.size"
+                    type="text"
+                    class="input"
+                    placeholder="e.g. 4.2 MB"
+                  />
+                </label>
+
+                <label>
+                  <span class="field-label">Type</span>
+                  <input
+                    v-model="download.fileType"
+                    type="text"
+                    class="input"
+                    placeholder="e.g. PDF, ZIP, EXE"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div v-if="block.downloads?.length" class="overflow-hidden rounded-xl border border-slate-200">
+              <div class="grid grid-cols-[minmax(0,1fr)_90px_90px_130px] bg-slate-100 px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">
+                <span>Description</span><span>Size</span><span>Type</span><span>Download</span>
+              </div>
+              <div
+                v-for="(download, downloadIndex) in block.downloads"
+                :key="`preview-${download._key || downloadIndex}`"
+                class="grid grid-cols-[minmax(0,1fr)_90px_90px_130px] items-center border-t px-3 py-3 text-sm"
+              >
+                <span class="truncate">{{ download.description || 'Untitled download' }}</span>
+                <span>{{ download.size || '—' }}</span>
+                <span>{{ download.fileType || '—' }}</span>
+                <span class="inline-flex items-center gap-2 font-bold text-blue-600">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                  </svg>
+                  Download
                 </span>
               </div>
             </div>
@@ -880,6 +1028,14 @@ type DescriptionBlock = {
   linkUrl?: string;
   linkStyle?: "text" | "button";
   linkNewTab?: boolean;
+  linkDownloadIcon?: boolean;
+  downloads?: Array<{
+    _key?: string;
+    description: string;
+    size: string;
+    fileType: string;
+    url: string;
+  }>;
 };
 
 const props = defineProps<{
@@ -1113,9 +1269,20 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.linkUrl = input?.linkUrl || "";
     base.linkStyle = input?.linkStyle === "button" ? "button" : "text";
     base.linkNewTab = input?.linkNewTab === true;
+    base.linkDownloadIcon = input?.linkDownloadIcon === true;
     base.textAlign = ["left", "center", "right"].includes(input?.textAlign)
       ? input.textAlign
       : "left";
+  } else if (type === "downloads") {
+    base.downloads = Array.isArray(input?.downloads)
+      ? input.downloads.map((item: any) => ({
+          _key: item?._key || makeKey(),
+          description: item?.description || "",
+          size: item?.size || "",
+          fileType: item?.fileType || item?.type || "",
+          url: item?.url || "",
+        }))
+      : [];
   } else if (type === "image") {
     base.url = input?.url || "";
     base.path = input?.path || "";
@@ -1247,7 +1414,23 @@ const createBlock = (type: string): DescriptionBlock => {
       linkUrl: "",
       linkStyle: "text",
       linkNewTab: true,
+      linkDownloadIcon: false,
       textAlign: "left",
+    });
+  }
+
+  if (type === "downloads") {
+    return normaliseBlock({
+      type,
+      downloads: [
+        {
+          _key: makeKey(),
+          description: "",
+          size: "",
+          fileType: "",
+          url: "",
+        },
+      ],
     });
   }
 
@@ -1324,6 +1507,34 @@ const moveBlock = (index: number, direction: number) => {
   const [item] = blocks.value.splice(index, 1);
 
   blocks.value.splice(target, 0, item);
+};
+
+// ========================================
+// DOWNLOADS
+// ========================================
+
+const addDownloadRow = (block: DescriptionBlock) => {
+  if (!Array.isArray(block.downloads)) block.downloads = [];
+  block.downloads.push({
+    _key: makeKey(),
+    description: "",
+    size: "",
+    fileType: "",
+    url: "",
+  });
+};
+
+const removeDownloadRow = (block: DescriptionBlock, index: number) => {
+  if (!Array.isArray(block.downloads)) return;
+  block.downloads.splice(index, 1);
+};
+
+const moveDownloadRow = (block: DescriptionBlock, index: number, direction: -1 | 1) => {
+  if (!Array.isArray(block.downloads)) return;
+  const target = index + direction;
+  if (target < 0 || target >= block.downloads.length) return;
+  const [item] = block.downloads.splice(index, 1);
+  block.downloads.splice(target, 0, item);
 };
 
 // ========================================
@@ -1498,6 +1709,7 @@ const blockLabel = (type: string) =>
     heading: "Heading",
     paragraph: "Paragraph",
     link: "Link",
+    downloads: "Downloads",
     image: "Image",
     list: "List",
     table: "Table",

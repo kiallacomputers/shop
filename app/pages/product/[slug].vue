@@ -324,6 +324,53 @@
                   </p>
                 </div>
 
+                <!-- Downloads -->
+                <div
+                  v-else-if="section.type === 'downloads'"
+                  class="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white"
+                >
+                  <div class="hidden grid-cols-[minmax(0,1fr)_100px_90px_150px] bg-slate-100 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600 sm:grid">
+                    <span>Description</span>
+                    <span>Size</span>
+                    <span>Type</span>
+                    <span>Download</span>
+                  </div>
+
+                  <div
+                    v-for="(download, downloadIndex) in section.downloads || []"
+                    :key="download._key || downloadIndex"
+                    class="grid gap-2 border-t border-slate-200 px-4 py-4 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_100px_90px_150px] sm:items-center sm:gap-0"
+                  >
+                    <div class="font-semibold text-slate-800">
+                      {{ download.description || 'Download' }}
+                    </div>
+
+                    <div class="text-sm text-slate-600">
+                      <span class="mr-2 font-bold sm:hidden">Size:</span>{{ download.size || '—' }}
+                    </div>
+
+                    <div class="text-sm font-semibold uppercase text-slate-600">
+                      <span class="mr-2 normal-case font-bold sm:hidden">Type:</span>{{ download.fileType || '—' }}
+                    </div>
+
+                    <div>
+                      <a
+                        v-if="download.url"
+                        :href="download.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 font-bold text-blue-600 transition hover:bg-blue-50 hover:text-blue-800"
+                      >
+                        <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                        </svg>
+                        <span>Download</span>
+                      </a>
+                      <span v-else class="text-sm text-slate-400">Unavailable</span>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Link -->
                 <div
                   v-else-if="section.type === 'link'"
@@ -339,6 +386,17 @@
                       ? 'inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white transition hover:bg-blue-700'
                       : 'font-semibold text-blue-600 underline decoration-1 underline-offset-2 hover:text-blue-800'"
                   >
+                    <svg
+                      v-if="section.linkDownloadIcon"
+                      class="mr-2 inline-block h-4 w-4 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                    </svg>
                     {{ section.linkText || section.linkUrl }}
                   </a>
                 </div>
