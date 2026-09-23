@@ -66,10 +66,39 @@
               <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="variant.uploading" @change="uploadVariantImages($event, variant)" />
             </label>
           </div>
-          <div v-if="variant.images?.length" class="mt-3 flex flex-wrap gap-3">
-            <div v-for="(image,index) in variant.images" :key="image" class="relative h-20 w-20 overflow-hidden rounded-lg border bg-white">
-              <img :src="image" class="h-full w-full object-contain p-1" />
-              <button type="button" class="absolute right-1 top-1 h-5 w-5 rounded-full bg-red-600 text-xs font-bold text-white" @click="variant.images.splice(index,1)">×</button>
+          <div v-if="variant.images?.length" class="mt-3">
+            <p class="mb-2 text-xs font-semibold text-slate-600">The first image is the <strong>Main Variant Image</strong>. Click another image to make it the main image.</p>
+            <div class="flex flex-wrap gap-3">
+              <div
+                v-for="(image,index) in variant.images"
+                :key="image"
+                class="relative h-24 w-24 overflow-hidden rounded-lg border-2 bg-white transition"
+                :class="index === 0 ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200 hover:border-blue-400'"
+              >
+                <button type="button" class="h-full w-full" @click="makeMainVariantImage(variant,index)" :title="index === 0 ? 'Main variant image' : 'Make this the main variant image'">
+                  <img :src="image" class="h-full w-full object-contain p-1" />
+                </button>
+                <span v-if="index === 0" class="pointer-events-none absolute bottom-1 left-1 rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-bold text-white">MAIN</span>
+                <button type="button" class="absolute right-1 top-1 h-5 w-5 rounded-full bg-red-600 text-xs font-bold text-white" @click.stop="variant.images.splice(index,1)">×</button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="productImages.length" class="mt-4 border-t border-slate-200 pt-4">
+            <p class="text-sm font-bold text-slate-800">Choose From Product Images</p>
+            <p class="mt-0.5 text-xs text-slate-500">Click an existing product image to assign it as this variant's main image.</p>
+            <div class="mt-3 flex flex-wrap gap-3">
+              <button
+                v-for="image in productImages"
+                :key="image"
+                type="button"
+                class="relative h-20 w-20 overflow-hidden rounded-lg border-2 bg-white transition hover:border-blue-500"
+                :class="variant.images?.[0] === image ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'"
+                @click="assignProductImageToVariant(variant,image)"
+              >
+                <img :src="image" class="h-full w-full object-contain p-1" />
+                <span v-if="variant.images?.[0] === image" class="absolute bottom-1 left-1 rounded bg-blue-600 px-1 py-0.5 text-[9px] font-bold text-white">MAIN</span>
+              </button>
             </div>
           </div>
         </div>
@@ -92,6 +121,36 @@ const variants=ref<any[]>([]), baseProduct=ref<any>(null), loading=ref(true), er
 
 const numeric=(value:any)=>{const n=Number(value);return Number.isFinite(n)?n:0;};
 const money=(value:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(numeric(value));
+
+const normaliseImages=(source:any)=>{
+  if(!source)return [];
+  if(Array.isArray(source))return source.filter((x:any)=>typeof x==='string'&&x.trim());
+  if(typeof source==='string'){
+    const value=source.trim();
+    if(!value)return [];
+    try{
+      const parsed=JSON.parse(value);
+      if(Array.isArray(parsed))return parsed.filter((x:any)=>typeof x==='string'&&x.trim());
+      if(typeof parsed==='string'&&parsed.trim())return [parsed.trim()];
+    }catch{
+      return [value];
+    }
+  }
+  return [];
+};
+const productImages=computed(()=>normaliseImages(baseProduct.value?.images));
+
+const makeMainVariantImage=(variant:any,index:number)=>{
+  if(!Array.isArray(variant.images)||index<=0||index>=variant.images.length)return;
+  const selected=variant.images[index];
+  variant.images.splice(index,1);
+  variant.images.unshift(selected);
+};
+
+const assignProductImageToVariant=(variant:any,image:string)=>{
+  variant.images=Array.isArray(variant.images)?variant.images.filter((x:any)=>x!==image):[];
+  variant.images.unshift(image);
+};
 
 const fresh=()=>({
   _key:crypto.randomUUID(),
