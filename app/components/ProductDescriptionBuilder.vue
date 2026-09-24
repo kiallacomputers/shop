@@ -279,7 +279,7 @@
         <template v-else-if="block.type === 'link'">
           <div class="grid gap-4 sm:grid-cols-2">
             <label><span class="field-label">Link Text</span><input v-model="block.linkText" class="input" type="text" placeholder="e.g. Manufacturer website" /></label>
-            <label><span class="field-label">Link URL</span><input v-model="block.linkUrl" class="input" type="text" placeholder="https://..." /></label>
+            <label><span class="field-label">Link URL</span><input v-model="block.linkUrl" class="input" type="text" placeholder="https://manufacturer.com/download/file.pdf" /></label>
             <label><span class="field-label">Display Style</span><select v-model="block.linkStyle" class="input"><option value="text">Text Link</option><option value="button">Button</option></select></label>
             <label><span class="field-label">Alignment</span><select v-model="block.textAlign" class="input"><option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option></select></label>
           </div>
@@ -291,7 +291,7 @@
         <template v-else-if="block.type === 'downloads'">
           <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <div><p class="font-bold text-slate-800">Product Downloads</p><p class="text-xs text-slate-500">Add as many files as this product needs.</p></div>
+              <div><p class="font-bold text-slate-800">Product Downloads</p><p class="text-xs text-slate-500">Add as many external download links as this product needs.</p></div>
               <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700" @click="addDownloadRow(block)">+ Add Download</button>
             </div>
             <label class="flex cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-blue-300 bg-blue-50/50 px-5 py-5 hover:bg-blue-50">
@@ -301,12 +301,15 @@
             <p class="text-xs text-slate-500">You can select multiple files at once. Description, size and type are filled automatically.</p>
             <div v-if="downloadUploadError && downloadUploadErrorKey === block._key" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ downloadUploadError }}</div>
 
-            <div v-if="!block.downloads?.length" class="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No downloads added yet.</div>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+              External links only — enter the description, displayed file size, file type and external URL for each download.
+            </div>
+            <div v-if="!block.downloads?.length" class="rounded-xl border-2 border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">No external downloads added yet.</div>
             <div v-for="(download, downloadIndex) in block.downloads" :key="download._key || downloadIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <div class="mb-3 flex items-center justify-between"><strong>Download {{ downloadIndex + 1 }}</strong><button type="button" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600" @click="removeDownloadRow(block, downloadIndex)">Remove</button></div>
               <div class="grid gap-4 md:grid-cols-2">
                 <label><span class="field-label">Description</span><input v-model="download.description" class="input" type="text" placeholder="e.g. User Manual" /></label>
-                <label><span class="field-label">File URL</span><input v-model="download.url" class="input" type="text" placeholder="https://..." /></label>
+                <label><span class="field-label">External Download URL</span><input v-model="download.url" class="input" type="text" placeholder="https://manufacturer.com/download/file.pdf" /></label>
                 <label><span class="field-label">File Size</span><input v-model="download.size" class="input" type="text" placeholder="e.g. 4.2 MB" /></label>
                 <label><span class="field-label">File Type</span><input v-model="download.fileType" class="input" type="text" placeholder="e.g. PDF" /></label>
               </div>
@@ -877,9 +880,6 @@ const blocks = ref<DescriptionBlock[]>([]);
 const uploadingImageKey = ref<string | null>(null);
 const imageUploadError = ref("");
 const imageUploadErrorKey = ref<string | null>(null);
-const uploadingDownloadsKey = ref<string | null>(null);
-const downloadUploadError = ref("");
-const downloadUploadErrorKey = ref<string | null>(null);
 
 let syncingFromParent = false;
 
@@ -1316,22 +1316,6 @@ const moveDownloadRow = (block: DescriptionBlock, index: number, direction: numb
   if (!block.downloads) return; const target=index+direction; if(target<0||target>=block.downloads.length)return;
   const [item]=block.downloads.splice(index,1); block.downloads.splice(target,0,item);
 };
-const uploadDownloadFiles = async (event: Event, block: DescriptionBlock) => {
-  const input=event.target as HTMLInputElement; const files=Array.from(input.files || []); if(!files.length)return;
-  uploadingDownloadsKey.value=block._key; downloadUploadError.value=""; downloadUploadErrorKey.value=block._key;
-  try {
-    if(!Array.isArray(block.downloads)) block.downloads=[];
-    for(const file of files){
-      const fd=new FormData(); fd.append("file",file);
-      const result=await adminFetch<{url:string;filename:string;size:number;fileType:string}>("/api/admin/products/upload-download",{method:"POST",body:fd});
-      const bytes=Number(result.size||file.size||0);
-      const size=bytes>=1048576 ? `${(bytes/1048576).toFixed(bytes>=10485760?1:2)} MB` : `${Math.max(1,Math.round(bytes/1024))} KB`;
-      block.downloads.push({_key:makeKey(),description:(result.filename||file.name).replace(/\.[^/.]+$/,'').replace(/[-_]+/g,' '),size,fileType:result.fileType||((file.name.split('.').pop()||'FILE').toUpperCase()),url:result.url});
-    }
-  } catch(error:any){ downloadUploadError.value=error?.data?.statusMessage||error?.message||"Unable to upload download file."; }
-  finally { uploadingDownloadsKey.value=null; input.value=""; }
-};
-
 // ========================================
 // PARAGRAPH IMAGE
 // ========================================
