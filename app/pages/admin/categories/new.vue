@@ -31,6 +31,13 @@
     </div>
 
     <div
+      v-if="successMessage"
+      class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800"
+    >
+      {{ successMessage }}
+    </div>
+
+    <div
       v-if="errorMessage"
       class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700"
     >
@@ -50,6 +57,7 @@
       :initial-parent-id="initialParentId"
       submit-label="Create Category"
       @saved="handleSaved"
+      @saved-and-add-another="handleSavedAndAddAnother"
     />
   </main>
 </template>
@@ -84,9 +92,28 @@ const selectedParent = computed(() =>
 
 const loading = ref(true);
 const errorMessage = ref("");
+const successMessage = ref("");
 
 const handleSaved = async () => {
   await navigateTo("/admin/categories");
+};
+
+const handleSavedAndAddAnother = ({ parentId }: { parentId: string }) => {
+  const parent = categories.value.find(
+    (category) => String(category.id) === String(parentId),
+  );
+
+  successMessage.value = parent
+    ? `Subcategory saved under ${parent.name}. Add another subcategory below.`
+    : "Main category saved. Add another main category below.";
+
+  // Put the cursor straight back in the Category Name field after Vue updates.
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>(
+      'input[type="text"][required]',
+    );
+    input?.focus();
+  });
 };
 
 onMounted(async () => {

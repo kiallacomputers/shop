@@ -90,11 +90,21 @@
       </NuxtLink>
 
       <button
+        v-if="!props.category"
+        type="button"
+        :disabled="saving"
+        class="admin-btn-secondary"
+        @click="submitForm('add-another')"
+      >
+        {{ saving && saveMode === "add-another" ? "Saving..." : "Save & Add Another" }}
+      </button>
+
+      <button
         type="submit"
         :disabled="saving"
         class="admin-btn-primary"
       >
-        {{ saving ? "Saving..." : buttonText }}
+        {{ saving && saveMode === "save" ? "Saving..." : buttonText }}
       </button>
     </div>
   </form>
@@ -125,11 +135,13 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   saved: [];
+  savedAndAddAnother: [{ parentId: string }];
 }>();
 
 const { adminFetch } = useAdminFetch();
 
 const saving = ref(false);
+const saveMode = ref<"save" | "add-another">("save");
 const errorMessage = ref("");
 
 const form = reactive({
@@ -208,8 +220,11 @@ const generateSlug = () => {
   }
 };
 
-const submitForm = async () => {
+const submitForm = async (mode: "save" | "add-another" = "save") => {
+  if (saving.value) return;
+
   saving.value = true;
+  saveMode.value = mode;
   errorMessage.value = "";
 
   try {
@@ -235,7 +250,20 @@ const submitForm = async () => {
       });
     }
 
-    emit("saved");
+    if (!props.category && mode === "add-another") {
+      const parentId = String(form.parent_id || "");
+
+      // Keep the same category type. For subcategories this preserves the
+      // selected parent; for main categories it remains blank.
+      form.name = "";
+      form.slug = "";
+      form.parent_id = parentId;
+      form.active = true;
+
+      emit("savedAndAddAnother", { parentId });
+    } else {
+      emit("saved");
+    }
   } catch (error: any) {
     console.error("SAVE CATEGORY ERROR:", error);
 
