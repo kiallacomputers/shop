@@ -49,6 +49,7 @@
       <NavGroup title="Business" group-key="business" :active="groupActive('business')" :open="openGroup === 'business'" @toggle="toggleGroup('business')" @mouseenter="openHoverGroup('business')" @mouseleave="scheduleCloseGroup('business')">
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounting" :class="linkClass('/admin/accounting')" @click="closeMenuAndNavigate"><NavIcon path="M4 5h16v14H4V5Zm4 4h8M8 13h3m2 0h3M8 17h3m2 0h3"/>Accounting</NuxtLink>
         <NuxtLink to="/admin/analytics" :class="linkClass('/admin/analytics')" @click="closeMenuAndNavigate"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Analytics</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/marketing-seo" :class="linkClass('/admin/marketing-seo')" @click="closeMenuAndNavigate"><NavIcon path="M4 18V6m4 12V9m4 9V4m4 14v-6m4 6V8"/>Marketing &amp; SEO</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/reports" :class="linkClass('/admin/reports')" @click="closeMenuAndNavigate"><NavIcon path="M4 19V5h16v14H4Zm4-4 3-3 2 2 3-4"/>Reports</NuxtLink>
         <NuxtLink to="/admin/facebook-share" :class="linkClass('/admin/facebook-share')" @click="closeMenuAndNavigate"><NavIcon path="M13 22v-8h3l1-4h-4V8c0-1 .5-2 2-2h2V2h-3c-3 0-5 2-5 5v3H6v4h3v8"/>Facebook Share</NuxtLink>
       </NavGroup>
@@ -82,7 +83,7 @@ const groupRoutes: Record<string, string[]> = {
   store: ["/admin/products", "/admin/categories", "/admin/ads", "/admin/reviews", "/admin/back-in-stock"],
   sales: ["/admin/orders", "/admin/manual-quotes", "/admin/quotes", "/admin/customers", "/admin/freight"],
   purchasing: ["/admin/purchasing"],
-  business: ["/admin/accounting", "/admin/analytics", "/admin/reports", "/admin/facebook-share"],
+  business: ["/admin/accounting", "/admin/analytics", "/admin/marketing-seo", "/admin/reports", "/admin/facebook-share"],
   administration: ["/admin/chat", "/admin/accounts", "/admin/pricing-levels", "/admin/storage-cleanup"],
 };
 const groupActive = (key: string) => groupRoutes[key]?.some((path) => route.path.startsWith(path)) ?? false;

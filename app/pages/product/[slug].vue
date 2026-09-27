@@ -1035,7 +1035,9 @@ const { data: product } = await useAsyncData(
   },
 );
 
-const productCanonical = computed(() => `https://shop.kiallacomputers.com.au/product/${encodeURIComponent(String(product.value?.slug || route.params.slug || ""))}`);
+const runtimeConfig = useRuntimeConfig();
+const productSiteUrl = computed(() => String(runtimeConfig.public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/, ""));
+const productCanonical = computed(() => `${productSiteUrl.value}/product/${encodeURIComponent(String(product.value?.slug || route.params.slug || ""))}`);
 const productSeoDescription = computed(() => {
   const text = String(product.value?.blurb || "").replace(/\s+/g, " ").trim();
   return text
@@ -1055,7 +1057,7 @@ const productSeoImage = computed(() => {
 });
 
 useSeoMeta({
-  title: () => product.value?.name || "Product",
+  title: () => `${product.value?.name || "Product"} | Kialla Computers`,
   description: () => productSeoDescription.value,
   ogTitle: () => `${product.value?.name || "Product"} | Kialla Computers`,
   ogDescription: () => productSeoDescription.value,
