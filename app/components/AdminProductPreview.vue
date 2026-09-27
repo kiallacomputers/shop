@@ -66,6 +66,51 @@
           <div v-else-if="section.type==='warning'" class="whitespace-pre-line rounded-lg border border-yellow-300 p-4" :style="textStyle(section)">{{section.text}}</div>
           <div v-else-if="section.type==='info'" class="whitespace-pre-line rounded-lg border border-blue-200 p-4" :style="textStyle(section)">{{section.text}}</div>
           <figure v-else-if="section.type==='image'&&section.url" class="my-8"><img :src="section.url" :alt="section.alt||''" class="mx-auto max-w-full rounded-xl"><figcaption v-if="section.caption" class="mt-2 text-center text-xs text-slate-500">{{section.caption}}</figcaption></figure>
+          <div
+            v-else-if="section.type==='table'"
+            class="mb-6 overflow-x-auto rounded-lg border border-gray-200"
+            :style="{ backgroundColor: section.backgroundColor || '#ffffff' }"
+          >
+            <table
+              class="w-full min-w-[520px]"
+              :style="{ color: section.fontColor || '#374151', backgroundColor: section.backgroundColor || '#ffffff' }"
+            >
+              <thead>
+                <tr>
+                  <th
+                    v-for="(header, headerIndex) in section.headers || []"
+                    :key="headerIndex"
+                    class="whitespace-pre-line border-b border-gray-200 p-3 font-semibold"
+                    :style="{ textAlign: section.textAlign || 'left' }"
+                  >
+                    <template v-for="(part, partIndex) in parseBoldText(header)" :key="partIndex">
+                      <strong v-if="part.bold">{{ part.text }}</strong>
+                      <span v-else>{{ part.text }}</span>
+                    </template>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, rowIndex) in section.rows || []"
+                  :key="rowIndex"
+                  class="border-t border-gray-200"
+                >
+                  <td
+                    v-for="(cell, cellIndex) in row"
+                    :key="cellIndex"
+                    class="whitespace-pre-line p-3"
+                    :style="{ textAlign: section.textAlign || 'left' }"
+                  >
+                    <template v-for="(part, partIndex) in parseBoldText(cell)" :key="partIndex">
+                      <strong v-if="part.bold">{{ part.text }}</strong>
+                      <span v-else>{{ part.text }}</span>
+                    </template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <hr v-else-if="section.type==='divider'" class="my-6 border-slate-200">
         </div>
       </div>
@@ -86,4 +131,25 @@ const nextImage=()=>{if(images.value.length)imageIndex.value=(imageIndex.value+1
 const currency=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
 const textStyle=(s:any)=>({color:s.fontColor||"#374151",backgroundColor:s.backgroundColor||"#fff",textAlign:s.textAlign||"left",textDecoration:s.underline?"underline":"none"});
 const alignClass=(v:string)=>v==="center"?"text-center":v==="right"?"text-right":"text-left";
+const parseBoldText = (value: unknown) => {
+  const text = String(value ?? "");
+  const parts: Array<{ text: string; bold: boolean }> = [];
+  const regex = /\*\*(.+?)\*\*/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: text.slice(lastIndex, match.index), bold: false });
+    }
+    parts.push({ text: match[1], bold: true });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ text: text.slice(lastIndex), bold: false });
+  }
+
+  return parts.length ? parts : [{ text, bold: false }];
+};
 </script>
