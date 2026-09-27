@@ -39,7 +39,7 @@
                 >
                   <div
                     v-if="section.paragraphImageUrl"
-                    class="flex flex-col gap-5 md:flex-row md:items-start"
+                    class="flex flex-col gap-5 md:flex-row md:items-center"
                     :class="section.paragraphImagePosition === 'right' ? 'md:flex-row-reverse' : ''"
                   >
                     <div
