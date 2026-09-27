@@ -247,47 +247,16 @@
       </Teleport>
 
       <Teleport to="body">
-        <div
-          v-if="previewProduct"
-          class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          :aria-label="`Preview ${previewProduct.name}`"
-          @click.self="closeProductPreview"
-        >
-          <div class="flex h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl">
-            <div class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
-              <div class="min-w-0">
-                <p class="text-xs font-bold uppercase tracking-wider text-blue-600">Product Preview</p>
-                <p class="truncate font-bold text-slate-900">{{ previewProduct.name }}</p>
-              </div>
-              <div class="flex shrink-0 items-center gap-2">
-                <a
-                  :href="`/product/${previewProduct.slug}`"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="hidden rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
-                >
-                  Open Full Page
-                </a>
-                <button
-                  type="button"
-                  class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-2xl leading-none text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-                  aria-label="Close product preview"
-                  @click="closeProductPreview"
-                >
-                  ×
-                </button>
-              </div>
+        <div v-if="previewProduct" class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" @click.self="closeProductPreview">
+          <div class="flex h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-[#f5f8fc] shadow-2xl">
+            <div class="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+              <div class="min-w-0"><p class="text-xs font-bold uppercase tracking-wider text-blue-600">Admin Product Preview</p><p class="truncate font-bold text-slate-900">{{ previewProduct.name }}</p></div>
+              <button type="button" class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-2xl text-slate-600 hover:bg-slate-100" aria-label="Close preview" @click="closeProductPreview">×</button>
             </div>
-
-            <div class="min-h-0 flex-1 bg-[#f5f8fc]">
-              <iframe
-                :key="previewProduct.id"
-                :src="previewUrl"
-                :title="`Preview of ${previewProduct.name}`"
-                class="h-full w-full border-0 bg-[#f5f8fc]"
-              ></iframe>
+            <div class="min-h-0 flex-1 overflow-y-auto">
+              <div v-if="previewLoading" class="flex h-full items-center justify-center p-10 text-slate-500">Loading product preview…</div>
+              <div v-else-if="previewError" class="m-6 rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">{{ previewError }}</div>
+              <AdminProductPreview v-else :product="previewProduct" :category-name="previewCategoryName" />
             </div>
           </div>
         </div>
@@ -338,12 +307,13 @@ const actionsMenuProduct = ref<Product | null>(null);
 const actionsMenuRef = ref<HTMLElement | null>(null);
 const actionsMenuStyle = ref<Record<string, string>>({});
 
-const previewProduct = ref<Product | null>(null);
-const previewUrl = computed(() =>
-  previewProduct.value?.slug
-    ? `/product/${encodeURIComponent(previewProduct.value.slug)}?adminPreview=1`
-    : "",
-);
+const previewProduct = ref<any | null>(null);
+const previewLoading = ref(false);
+const previewError = ref("");
+const previewCategoryName = computed(() => {
+  if (!previewProduct.value) return "";
+  return categoryMap.value.get(String(previewProduct.value.category_id ?? ""))?.name || "";
+});
 
 const search = ref("");
 const categoryFilter = ref("");
@@ -571,16 +541,31 @@ const shareFacebookFromMenu = async () => {
   });
 };
 
-const viewFromMenu = () => {
-  const product = actionsMenuProduct.value;
-  if (!product?.slug) return;
+const viewFromMenu = async () => {
+  const selected = actionsMenuProduct.value;
+  if (!selected) return;
+
   closeActionsMenu();
-  previewProduct.value = product;
+  previewProduct.value = selected;
+  previewLoading.value = true;
+  previewError.value = "";
   document.body.style.overflow = "hidden";
+
+  try {
+    // Admin API only: this does NOT load /product/[slug], so storefront
+    // page-view, recently-viewed and recommendation tracking are not triggered.
+    previewProduct.value = await adminFetch(`/api/admin/products/${selected.id}`);
+  } catch (error: any) {
+    previewError.value = error?.data?.statusMessage || error?.message || "Unable to load product preview.";
+  } finally {
+    previewLoading.value = false;
+  }
 };
 
 const closeProductPreview = () => {
   previewProduct.value = null;
+  previewLoading.value = false;
+  previewError.value = "";
   document.body.style.overflow = "";
 };
 
