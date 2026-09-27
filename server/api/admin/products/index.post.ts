@@ -34,6 +34,9 @@ export default defineEventHandler(async (event) => {
   const name = String(body?.name || "").trim();
   const slug = cleanSlug(body?.slug || name);
   const productCode = String(body?.product_code || "").trim();
+  const brand = String(body?.brand || "").trim();
+  const gtin = String(body?.gtin || "").replace(/\s+/g, "").trim();
+  const mpn = String(body?.mpn || "").trim();
   const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
@@ -52,6 +55,9 @@ export default defineEventHandler(async (event) => {
   if (!name) throw createError({ statusCode: 400, statusMessage: "Product name is required" });
   if (!slug) throw createError({ statusCode: 400, statusMessage: "Product slug is required" });
   if (!hasVariants && !productCode) throw createError({ statusCode: 400, statusMessage: "Product code is required for a product without variants" });
+  if (gtin && !/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/.test(gtin)) {
+    throw createError({ statusCode: 400, statusMessage: "GTIN must contain 8, 12, 13 or 14 digits" });
+  }
 
   for (const [label, value] of [
     ["Buy price ex GST", buyPriceExGst],
@@ -88,6 +94,9 @@ export default defineEventHandler(async (event) => {
     name,
     slug,
     product_code: productCode || null,
+    brand: brand || null,
+    gtin: gtin || null,
+    mpn: mpn || null,
     has_variants: hasVariants,
     blurb: String(body?.blurb || "").trim() || null,
     description: body?.description ?? [],

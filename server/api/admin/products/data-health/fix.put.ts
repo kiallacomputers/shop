@@ -16,6 +16,14 @@ export default defineEventHandler(async(event)=>{
     ]);
     if(p||v) throw createError({statusCode:409,statusMessage:"That product code is already in use"});
     const {error}=await s.from("products").update({product_code:value}).eq("id",productId); if(error) throw createError({statusCode:400,statusMessage:error.message});
+  } else if(issue==="brand"){
+    const value=text(body.value); if(!value) throw createError({statusCode:400,statusMessage:"Brand is required"});
+    const {error}=await s.from("products").update({brand:value}).eq("id",productId); if(error) throw createError({statusCode:400,statusMessage:error.message});
+  } else if(issue==="identifier"){
+    const gtin=text(body.gtin).replace(/\s+/g,""), mpn=text(body.mpn);
+    if(!gtin&&!mpn) throw createError({statusCode:400,statusMessage:"Enter a GTIN or MPN"});
+    if(gtin&&!/^\d{8}$|^\d{12}$|^\d{13}$|^\d{14}$/.test(gtin)) throw createError({statusCode:400,statusMessage:"GTIN must contain 8, 12, 13 or 14 digits"});
+    const {error}=await s.from("products").update({gtin:gtin||null,mpn:mpn||null}).eq("id",productId); if(error) throw createError({statusCode:400,statusMessage:error.message});
   } else if(issue==="category"){
     const id=Number(body.value); if(!id) throw createError({statusCode:400,statusMessage:"Choose a category"});
     const {error}=await s.from("products").update({category_id:id}).eq("id",productId); if(error) throw createError({statusCode:400,statusMessage:error.message});

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
   const s = getAdminSupabase();
   const { data, error } = await s.from("products")
-    .select("id,name,slug,product_code,blurb,description,price,stock,active,refurbished,images,category_id,categories(id,name,slug)")
+    .select("id,name,slug,product_code,brand,gtin,mpn,blurb,description,price,stock,active,refurbished,images,category_id,categories(id,name,slug)")
     .order("name");
   if (error) throw createError({ statusCode: 500, statusMessage: error.message });
 
@@ -18,10 +18,12 @@ export default defineEventHandler(async (event) => {
     if (!firstProductImage(p.images)) issues.push("Missing product image");
     if (!String(p.product_code || "").trim()) issues.push("Missing product code");
     if (!p.category_id) issues.push("Missing category");
+    if (!String(p.brand || "").trim()) issues.push("Missing brand");
+    if (!String(p.gtin || "").trim() && !String(p.mpn || "").trim()) issues.push("Missing GTIN / MPN");
     if (!(Number(p.price) > 0)) issues.push("Price is not configured");
     return {
       id: p.id, name: p.name, slug: p.slug, product_code: p.product_code,
-      category: p.categories?.name || "", price: Number(p.price || 0), stock: Number(p.stock || 0),
+      category: p.categories?.name || "", brand: p.brand || "", gtin: p.gtin || "", mpn: p.mpn || "", price: Number(p.price || 0), stock: Number(p.stock || 0),
       seo_title: seoTitle(p), seo_description: seoDescription(p), image: firstProductImage(p.images), issues,
       score: Math.max(0, 100 - issues.length * 20),
     };
@@ -40,6 +42,8 @@ export default defineEventHandler(async (event) => {
       missing_code: count("Missing product code"),
       missing_category: count("Missing category"),
       missing_price: count("Price is not configured"),
+      missing_brand: count("Missing brand"),
+      missing_identifier: count("Missing GTIN / MPN"),
     },
     endpoints: {
       sitemap: `${siteUrl}/sitemap.xml`,

@@ -11,6 +11,8 @@
 <div class="flex items-start justify-between border-b p-5"><div><p class="text-xs font-black uppercase tracking-wider text-blue-600">Quick Fix</p><h2 class="text-xl font-black text-slate-900">{{modal.issue.label}}</h2><p class="mt-1 text-sm text-slate-500">{{modal.product.name}}</p></div><button class="rounded-lg px-3 py-1 text-xl text-slate-500 hover:bg-slate-100" @click="closeFix">×</button></div>
 <form class="space-y-4 p-5" @submit.prevent="saveFix">
 <div v-if="modal.issue.key==='sku'"><label class="label">Product Code / SKU</label><input v-model="fix.value" class="input w-full" required placeholder="Enter product code"></div>
+<div v-else-if="modal.issue.key==='brand'"><label class="label">Brand</label><input v-model="fix.value" class="input w-full" required placeholder="e.g. TP-Link"></div>
+<div v-else-if="modal.issue.key==='identifier'" class="space-y-4"><div><label class="label">GTIN / Barcode</label><input v-model="fix.gtin" inputmode="numeric" class="input w-full" placeholder="8, 12, 13 or 14 digits"></div><div><label class="label">MPN</label><input v-model="fix.mpn" class="input w-full" placeholder="Manufacturer part number"></div><p class="hint">Enter the identifier supplied by the manufacturer. A GTIN is preferred when the product has one.</p></div>
 <div v-else-if="modal.issue.key==='category'"><label class="label">Category</label><select v-model="fix.value" class="input w-full" required><option value="">Choose category…</option><option v-for="c in categories" :key="c.id" :value="c.id">{{categoryName(c)}}</option></select></div>
 <div v-else-if="isStockLevelIssue(modal.issue)" class="grid grid-cols-3 gap-3"><div><label class="label">Low Stock</label><input v-model.number="fix.low_stock_level" type="number" min="0" step="1" class="input w-full"></div><div><label class="label">Reorder</label><input v-model.number="fix.reorder_level" type="number" min="0" step="1" class="input w-full"></div><div><label class="label">Target</label><input v-model.number="fix.target_stock_level" type="number" min="0" step="1" class="input w-full"></div></div>
 <div v-else-if="modal.issue.key==='sell_price'"><label class="label">Sell Price (inc GST)</label><input v-model.number="fix.value" type="number" min="0.01" step="0.01" class="input w-full" required></div>
@@ -21,11 +23,11 @@
 </div></div></Teleport>
 </main></template>
 <script setup lang="ts">
-definePageMeta({layout:"admin",middleware:["admin"]});const{adminFetch}=useAdminFetch();const loading=ref(true),saving=ref(false),err=ref(""),modalError=ref(""),search=ref(""),status=ref("issues"),issueFilter=ref(""),products=ref<any[]>([]),categories=ref<any[]>([]),suppliers=ref<any[]>([]),summary=ref<any>({total:0,healthy:0,warning:0,critical:0,issues:0});const modal=ref<any>(null),fix=reactive<any>({value:"",supplier_id:0,supplier_sku:"",buy_price_ex_gst:"",low_stock_level:0,reorder_level:0,target_stock_level:0});const money=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
+definePageMeta({layout:"admin",middleware:["admin"]});const{adminFetch}=useAdminFetch();const loading=ref(true),saving=ref(false),err=ref(""),modalError=ref(""),search=ref(""),status=ref("issues"),issueFilter=ref(""),products=ref<any[]>([]),categories=ref<any[]>([]),suppliers=ref<any[]>([]),summary=ref<any>({total:0,healthy:0,warning:0,critical:0,issues:0});const modal=ref<any>(null),fix=reactive<any>({value:"",supplier_id:0,supplier_sku:"",buy_price_ex_gst:"",low_stock_level:0,reorder_level:0,target_stock_level:0,gtin:"",mpn:""});const money=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
 const issueTypes=computed(()=>{const m=new Map();for(const p of products.value)for(const x of p.issues)m.set(x.key,{key:x.key,label:x.label});return[...m.values()].sort((a:any,b:any)=>a.label.localeCompare(b.label))});const filtered=computed(()=>{const q=search.value.toLowerCase().trim();return products.value.filter((p:any)=>{if(q&&!p.name.toLowerCase().includes(q)&&!String(p.sku||"").toLowerCase().includes(q))return false;if(status.value==="issues"&&!p.issues.length)return false;if(["critical","warning","healthy"].includes(status.value)&&p.health!==status.value)return false;if(issueFilter.value&&!p.issues.some((x:any)=>x.key===issueFilter.value))return false;return true})});
 const categoryName=(c:any)=>{const parent=categories.value.find((x:any)=>String(x.id)===String(c.parent_id));return parent?`${parent.name} → ${c.name}`:c.name};
 const isStockLevelIssue=(i:any)=>["target","levels","stock_levels","stock-levels"].includes(String(i?.key||""))||/stock levels?/i.test(String(i?.label||""));
-function openFix(p:any,i:any){modal.value={product:p,issue:i};modalError.value="";Object.assign(fix,{value:"",supplier_id:0,supplier_sku:"",buy_price_ex_gst:"",low_stock_level:p.low_stock_level,reorder_level:p.reorder_level,target_stock_level:p.target_stock_level});if(i.key==="sku")fix.value=p.sku||"";if(i.key==="sell_price")fix.value=p.sell_price||"";if(i.key==="buy_price"){fix.value=p.buy_price||"";fix.supplier_id=Number(p.suppliers?.find((x:any)=>x.is_primary)?.supplier_id||0)}const current=p.suppliers?.find((x:any)=>x.is_primary)||p.suppliers?.[0];if(["primary_supplier","supplier_sku"].includes(i.key)&&current){fix.supplier_id=Number(current.supplier_id);fix.supplier_sku=current.supplier_sku||"";fix.buy_price_ex_gst=current.buy_price_ex_gst??""}}
+function openFix(p:any,i:any){modal.value={product:p,issue:i};modalError.value="";Object.assign(fix,{value:"",supplier_id:0,supplier_sku:"",buy_price_ex_gst:"",low_stock_level:p.low_stock_level,reorder_level:p.reorder_level,target_stock_level:p.target_stock_level,gtin:p.gtin||"",mpn:p.mpn||""});if(i.key==="sku")fix.value=p.sku||"";if(i.key==="brand")fix.value=p.brand||"";if(i.key==="sell_price")fix.value=p.sell_price||"";if(i.key==="buy_price"){fix.value=p.buy_price||"";fix.supplier_id=Number(p.suppliers?.find((x:any)=>x.is_primary)?.supplier_id||0)}const current=p.suppliers?.find((x:any)=>x.is_primary)||p.suppliers?.[0];if(["primary_supplier","supplier_sku"].includes(i.key)&&current){fix.supplier_id=Number(current.supplier_id);fix.supplier_sku=current.supplier_sku||"";fix.buy_price_ex_gst=current.buy_price_ex_gst??""}}
 function supplierChanged(){const row=modal.value?.product?.suppliers?.find((x:any)=>Number(x.supplier_id)===Number(fix.supplier_id));fix.supplier_sku=row?.supplier_sku||"";fix.buy_price_ex_gst=row?.buy_price_ex_gst??""}
 function closeFix(){if(!saving.value)modal.value=null}
 async function saveFix() {
@@ -40,12 +42,16 @@ async function saveFix() {
       issue: key,
     };
 
-    if (["sku", "category", "sell_price", "buy_price"].includes(key)) {
+    if (["sku", "brand", "category", "sell_price", "buy_price"].includes(key)) {
       body.value = fix.value;
     }
 
     if (key === "buy_price") {
       body.supplier_id = fix.supplier_id;
+    }
+    if (key === "identifier") {
+      body.gtin = fix.gtin;
+      body.mpn = fix.mpn;
     }
 
     if (isStockLevelIssue(modal.value.issue)) {

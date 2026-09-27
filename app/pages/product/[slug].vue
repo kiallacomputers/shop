@@ -1079,6 +1079,9 @@ useHead(() => {
     name: product.value.name,
     description: productSeoDescription.value,
     sku: product.value.product_code || undefined,
+    brand: product.value.brand ? { "@type": "Brand", name: product.value.brand } : undefined,
+    gtin: product.value.gtin || undefined,
+    mpn: product.value.mpn || undefined,
     image: productSeoImage.value ? [productSeoImage.value] : undefined,
     category: product.value.categories?.name || undefined,
     offers: {
