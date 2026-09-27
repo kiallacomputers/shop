@@ -18,7 +18,7 @@
       Loading product...
     </div>
 
-    <form id="product-admin-form" v-else class="space-y-6" @submit.prevent="saveProduct">
+    <form id="product-admin-form" v-else class="space-y-6" @submit.prevent="saveProduct('save')">
       <div class="product-workspace">
         <aside class="product-nav">
           <div class="product-nav-card">
@@ -45,6 +45,9 @@
           </div>
         </aside>
         <div class="product-editor">
+      <div v-if="successMessage" class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        {{ successMessage }}
+      </div>
       <div v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
         {{ errorMessage }}
       </div>
@@ -52,8 +55,17 @@
       <div class="admin-action-bar">
         <NuxtLink v-if="mode === 'edit' && productId" :to="`/admin/products/${productId}/addons`" class="admin-btn-secondary">Manage Add-ons</NuxtLink>
         <NuxtLink to="/admin/products" class="admin-btn-secondary">Cancel</NuxtLink>
+        <button
+          v-if="mode === 'create'"
+          type="button"
+          :disabled="saving"
+          class="admin-btn-secondary"
+          @click="saveProduct('add-another')"
+        >
+          {{ saving && saveMode === "add-another" ? "Saving..." : "Save & Add Another" }}
+        </button>
         <button type="submit" :disabled="saving" class="admin-btn-primary">
-          {{ saving ? "Saving..." : (mode === "create" ? "Create Product" : "Save Changes") }}
+          {{ saving && saveMode === "save" ? "Saving..." : (mode === "create" ? "Create Product" : "Save Changes") }}
         </button>
       </div>
 
@@ -111,28 +123,6 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Short Description</span>
             <textarea v-model="form.blurb" rows="3" class="input" placeholder="Short description shown on product cards"></textarea>
           </label>
-
-          <div class="md:col-span-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-            <div>
-              <p class="text-xs font-black uppercase tracking-wider text-blue-700">Google & Product Identifiers</p>
-              <p class="mt-1 text-sm text-slate-600">Used by Google Merchant, structured product data and search engines.</p>
-            </div>
-            <div class="mt-4 grid gap-4 md:grid-cols-3">
-              <label>
-                <span class="mb-1.5 block text-sm font-semibold text-slate-700">Brand</span>
-                <input v-model="form.brand" type="text" class="input" placeholder="e.g. TP-Link" />
-              </label>
-              <label>
-                <span class="mb-1.5 block text-sm font-semibold text-slate-700">GTIN / Barcode</span>
-                <input v-model="form.gtin" type="text" inputmode="numeric" class="input" placeholder="e.g. 4897098682760" />
-                <span class="mt-1 block text-xs text-slate-500">EAN, UPC or other manufacturer GTIN. Leave blank if the product genuinely has none.</span>
-              </label>
-              <label>
-                <span class="mb-1.5 block text-sm font-semibold text-slate-700">MPN</span>
-                <input v-model="form.mpn" type="text" class="input" placeholder="Manufacturer part number" />
-              </label>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -543,6 +533,8 @@ type ProductCategory = {
 const categories = ref<ProductCategory[]>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
+const saveMode = ref<"save" | "add-another">("save");
+const successMessage = ref("");
 const errorMessage = ref("");
 const slugTouched = ref(props.mode === "edit");
 const imageUrls = ref<string[]>([]);
@@ -597,9 +589,6 @@ const form = reactive({
   category_id: "",
   blurb: "",
   product_code: "",
-  brand: "",
-  gtin: "",
-  mpn: "",
   has_variants: false,
   buy_price_ex_gst: "",
   rrp_markup_percent: "",
@@ -798,9 +787,6 @@ const loadForm = async () => {
       form.category_id = product.category_id == null ? "" : String(product.category_id);
       form.blurb = product.blurb || "";
       form.product_code = product.product_code || "";
-      form.brand = product.brand || "";
-      form.gtin = product.gtin || "";
-      form.mpn = product.mpn || "";
       form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
@@ -846,8 +832,54 @@ const loadForm = async () => {
   }
 };
 
-const saveProduct = async () => {
+const resetForAnotherProduct = () => {
+  const keptCategoryId = form.category_id;
+  const keptMarkup = form.rrp_markup_percent;
+  const keptLowStock = form.low_stock_level;
+  const keptReorder = form.reorder_level;
+  const keptTarget = form.target_stock_level;
+  const keptWeight = form.weight_kg;
+  const keptLength = form.length_cm;
+  const keptWidth = form.width_cm;
+  const keptHeight = form.height_cm;
+  const keptActive = form.active;
+
+  Object.assign(form, {
+    name: "",
+    slug: "",
+    category_id: keptCategoryId,
+    blurb: "",
+    product_code: "",
+    has_variants: false,
+    buy_price_ex_gst: "",
+    rrp_markup_percent: keptMarkup,
+    stock: "0",
+    low_stock_level: keptLowStock,
+    reorder_level: keptReorder,
+    target_stock_level: keptTarget,
+    weight_kg: keptWeight,
+    length_cm: keptLength,
+    width_cm: keptWidth,
+    height_cm: keptHeight,
+    active: keptActive,
+    featured: false,
+    refurbished: false,
+  });
+
+  imageUrls.value = [];
+  descriptionBlocks.value = [];
+  relatedProductIds.value = [];
+  relatedSearch.value = "";
+  slugTouched.value = false;
+  uploadError.value = "";
+};
+
+const saveProduct = async (mode: "save" | "add-another" = "save") => {
+  if (saving.value) return;
+
   errorMessage.value = "";
+  successMessage.value = "";
+  saveMode.value = mode;
   saving.value = true;
 
   try {
@@ -884,7 +916,16 @@ const saveProduct = async () => {
         body: { suppliers: supplierRows.value.filter((x:any) => x.supplier_id).map((x:any) => ({ supplier_id: Number(x.supplier_id), supplier_sku: x.supplier_sku || null, buy_price_ex_gst: x.buy_price_ex_gst === "" ? null : Number(x.buy_price_ex_gst), is_primary: x.is_primary === true })) },
       });
     }
-    await router.push("/admin/products");
+    if (props.mode === "create" && mode === "add-another") {
+      resetForAnotherProduct();
+      successMessage.value = "Product saved. Add another product below.";
+
+      await nextTick();
+      document.querySelector<HTMLInputElement>('input[type="text"][required]')?.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      await router.push("/admin/products");
+    }
   } catch (error: any) {
     errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to save product.";
     window.scrollTo({ top: 0, behavior: "smooth" });
