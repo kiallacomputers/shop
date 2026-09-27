@@ -42,79 +42,7 @@
       </div>
     </section>
 
-    <section v-if="description.length" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-      <div class="mb-5 border-b border-slate-200 pb-4"><h2 class="text-xl font-bold text-slate-900">Product Details</h2></div>
-      <div class="text-sm text-[#566C9D]">
-        <div v-for="(section,index) in description" :key="index" :class="section.type==='heading'?'mb-2':'mb-6'">
-          <component :is="section.level===4?'h4':section.level===3?'h3':'h2'" v-if="section.type==='heading'" class="mb-1 rounded-lg px-3 py-1 font-semibold" :style="{color:section.fontColor||section.headingColor||'#566C9D',backgroundColor:section.backgroundColor||'#fff',textAlign:section.textAlign||'center',textDecoration:section.underline?'underline':'none',fontSize:section.level===4?'1.875rem':section.level===3?'2.25rem':'3rem'}">{{ section.text }}</component>
-          <div v-else-if="section.type==='paragraph'" class="mb-4 rounded-lg px-3 py-2" :style="textStyle(section)">
-            <div v-if="section.paragraphImageUrl" class="flex flex-col gap-5 md:flex-row md:items-start" :class="section.paragraphImagePosition==='right'?'md:flex-row-reverse':''">
-              <div class="w-full shrink-0 overflow-hidden rounded-lg bg-white" :style="{width:`${section.paragraphImageWidth||35}%`}"><img :src="section.paragraphImageUrl" :alt="section.paragraphImageAlt||''" class="h-auto w-full object-contain"></div>
-              <p class="min-w-0 flex-1 whitespace-pre-line leading-7">{{ section.text }}</p>
-            </div>
-            <p v-else class="whitespace-pre-line leading-7">{{ section.text }}</p>
-          </div>
-          <div v-else-if="section.type==='link'" class="mb-4" :class="alignClass(section.textAlign)"><a v-if="section.linkUrl" :href="section.linkUrl" target="_blank" rel="noopener noreferrer external" class="font-semibold text-blue-600 underline">{{ section.linkText||section.linkUrl }}</a></div>
-          <div v-else-if="section.type==='downloads'" class="mb-6 overflow-x-auto rounded-xl border border-slate-200">
-            <table class="w-full min-w-[620px] border-collapse text-left text-sm"><thead class="bg-slate-100 text-xs font-bold uppercase text-slate-600"><tr><th class="px-4 py-3">Description</th><th class="px-4 py-3">Size</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Download</th></tr></thead><tbody>
-              <tr v-for="(d,di) in section.downloads||[]" :key="di" class="border-t border-slate-200"><td class="px-4 py-3 font-semibold text-slate-800">{{d.description||'Download'}}</td><td class="px-4 py-3">{{d.size||'—'}}</td><td class="px-4 py-3 font-semibold uppercase">{{d.fileType||'—'}}</td><td class="px-4 py-3"><a v-if="d.url" :href="d.url" target="_blank" rel="noopener noreferrer external" class="inline-flex items-center gap-2 font-bold text-blue-600"><img src="/icons/download.svg" alt="" class="h-5 w-5"><span>Download</span></a></td></tr>
-            </tbody></table>
-          </div>
-          <blockquote v-else-if="section.type==='quote'" class="mb-4 whitespace-pre-line rounded-r-lg border-l-4 border-blue-500 px-4 py-3 italic" :style="textStyle(section)">{{section.text}}</blockquote>
-          <ol v-else-if="section.type==='list'&&section.style==='number'" class="list-inside list-decimal space-y-2 rounded-lg p-4" :style="textStyle(section)"><li v-for="(item,i) in section.items" :key="i">{{item}}</li></ol>
-          <ul v-else-if="section.type==='list'" class="space-y-2 rounded-lg p-4" :style="textStyle(section)"><li v-for="(item,i) in section.items" :key="i" class="flex gap-2"><span class="font-bold">{{section.style==='check'?'✓':'•'}}</span><span>{{item}}</span></li></ul>
-          <div v-else-if="section.type==='warning'" class="whitespace-pre-line rounded-lg border border-yellow-300 p-4" :style="textStyle(section)">{{section.text}}</div>
-          <div v-else-if="section.type==='info'" class="whitespace-pre-line rounded-lg border border-blue-200 p-4" :style="textStyle(section)">{{section.text}}</div>
-          <figure v-else-if="section.type==='image'&&section.url" class="my-8"><img :src="section.url" :alt="section.alt||''" class="mx-auto max-w-full rounded-xl"><figcaption v-if="section.caption" class="mt-2 text-center text-xs text-slate-500">{{section.caption}}</figcaption></figure>
-          <div
-            v-else-if="section.type==='table'"
-            class="mb-6 overflow-x-auto rounded-lg border border-gray-200"
-            :style="{ backgroundColor: section.backgroundColor || '#ffffff' }"
-          >
-            <table
-              class="w-full min-w-[520px]"
-              :style="{ color: section.fontColor || '#374151', backgroundColor: section.backgroundColor || '#ffffff' }"
-            >
-              <thead>
-                <tr>
-                  <th
-                    v-for="(header, headerIndex) in section.headers || []"
-                    :key="headerIndex"
-                    class="whitespace-pre-line border-b border-gray-200 p-3 font-semibold"
-                    :style="{ textAlign: section.textAlign || 'left' }"
-                  >
-                    <template v-for="(part, partIndex) in parseBoldText(header)" :key="partIndex">
-                      <strong v-if="part.bold">{{ part.text }}</strong>
-                      <span v-else>{{ part.text }}</span>
-                    </template>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, rowIndex) in section.rows || []"
-                  :key="rowIndex"
-                  class="border-t border-gray-200"
-                >
-                  <td
-                    v-for="(cell, cellIndex) in row"
-                    :key="cellIndex"
-                    class="whitespace-pre-line p-3"
-                    :style="{ textAlign: section.textAlign || 'left' }"
-                  >
-                    <template v-for="(part, partIndex) in parseBoldText(cell)" :key="partIndex">
-                      <strong v-if="part.bold">{{ part.text }}</strong>
-                      <span v-else>{{ part.text }}</span>
-                    </template>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <hr v-else-if="section.type==='divider'" class="my-6 border-slate-200">
-        </div>
-      </div>
-    </section>
+    <ProductDescriptionRenderer :description="description" />
   </div>
 </template>
 
@@ -129,27 +57,4 @@ watch(()=>props.product?.id,()=>{imageIndex.value=0});
 const previousImage=()=>{if(images.value.length)imageIndex.value=(imageIndex.value-1+images.value.length)%images.value.length};
 const nextImage=()=>{if(images.value.length)imageIndex.value=(imageIndex.value+1)%images.value.length};
 const currency=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
-const textStyle=(s:any)=>({color:s.fontColor||"#374151",backgroundColor:s.backgroundColor||"#fff",textAlign:s.textAlign||"left",textDecoration:s.underline?"underline":"none"});
-const alignClass=(v:string)=>v==="center"?"text-center":v==="right"?"text-right":"text-left";
-const parseBoldText = (value: unknown) => {
-  const text = String(value ?? "");
-  const parts: Array<{ text: string; bold: boolean }> = [];
-  const regex = /\*\*(.+?)\*\*/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ text: text.slice(lastIndex, match.index), bold: false });
-    }
-    parts.push({ text: match[1], bold: true });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ text: text.slice(lastIndex), bold: false });
-  }
-
-  return parts.length ? parts : [{ text, bold: false }];
-};
 </script>
