@@ -56,6 +56,69 @@
           </p>
         </div>
 
+        <div
+          v-if="form.parent_id"
+          class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p class="text-sm font-bold text-slate-800">
+                Existing Subcategories
+                <template v-if="selectedParentName"> under {{ selectedParentName }}</template>
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                These subcategories already exist under the selected parent category.
+              </p>
+            </div>
+            <span class="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+              {{ existingSubcategories.length }}
+            </span>
+          </div>
+
+          <div
+            v-if="existingSubcategories.length"
+            class="mt-4 flex flex-wrap gap-2"
+          >
+            <span
+              v-for="subcategory in existingSubcategories"
+              :key="subcategory.id"
+              class="rounded-lg border px-3 py-2 text-sm font-semibold"
+              :class="isSimilarSubcategory(subcategory.name)
+                ? 'border-amber-300 bg-amber-50 text-amber-900'
+                : 'border-slate-200 bg-white text-slate-700'"
+            >
+              {{ subcategory.name }}
+              <span
+                v-if="isSimilarSubcategory(subcategory.name)"
+                class="ml-1 text-xs font-bold text-amber-700"
+              >
+                Similar
+              </span>
+            </span>
+          </div>
+
+          <div
+            v-else
+            class="mt-4 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-5 text-center text-sm text-slate-500"
+          >
+            No subcategories yet under this category.
+          </div>
+
+          <div
+            v-if="exactDuplicate"
+            class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+          >
+            A subcategory named “{{ exactDuplicate.name }}” already exists under {{ selectedParentName }}.
+          </div>
+          <div
+            v-else-if="similarSubcategories.length && form.name.trim()"
+            class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          >
+            Similar subcategory name{{ similarSubcategories.length === 1 ? "" : "s" }} already exist:
+            <strong>{{ similarSubcategories.map((item) => item.name).join(", ") }}</strong>.
+          </div>
+        </div>
+
         <div class="flex items-end">
           <label
             class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-4 py-3"
@@ -207,6 +270,48 @@ const availableParents = computed(() =>
     ),
 );
 
+const selectedParentName = computed(() =>
+  props.categories.find((category) => String(category.id) === String(form.parent_id))?.name || "",
+);
+
+const existingSubcategories = computed(() =>
+  props.categories
+    .filter((category) =>
+      String(category.parent_id ?? "") === String(form.parent_id || "") &&
+      (!props.category || String(category.id) !== String(props.category.id)),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+);
+
+const normaliseCategoryName = (value: string) =>
+  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ");
+
+const exactDuplicate = computed(() => {
+  const entered = normaliseCategoryName(form.name);
+  if (!entered || !form.parent_id) return null;
+  return existingSubcategories.value.find(
+    (category) => normaliseCategoryName(category.name) === entered,
+  ) || null;
+});
+
+const similarSubcategories = computed(() => {
+  const entered = normaliseCategoryName(form.name);
+  if (!entered || entered.length < 3 || !form.parent_id) return [];
+
+  return existingSubcategories.value.filter((category) => {
+    const existing = normaliseCategoryName(category.name);
+    if (existing === entered) return false;
+    return existing.includes(entered) || entered.includes(existing);
+  });
+});
+
+const isSimilarSubcategory = (name: string) => {
+  const entered = normaliseCategoryName(form.name);
+  if (!entered || entered.length < 3) return false;
+  const existing = normaliseCategoryName(name);
+  return existing === entered || existing.includes(entered) || entered.includes(existing);
+};
+
 const slugify = (value: string) =>
   value
     .toLowerCase()
@@ -222,6 +327,11 @@ const generateSlug = () => {
 
 const submitForm = async (mode: "save" | "add-another" = "save") => {
   if (saving.value) return;
+
+  if (exactDuplicate.value) {
+    errorMessage.value = `A subcategory named "${exactDuplicate.value.name}" already exists under ${selectedParentName.value}.`;
+    return;
+  }
 
   saving.value = true;
   saveMode.value = mode;
