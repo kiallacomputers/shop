@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-7 md:py-9 space-y-4 sm:space-y-5">
-    <nav class="kc-breadcrumb" aria-label="Breadcrumb">
+    <nav v-if="!isAdminPreview" class="kc-breadcrumb" aria-label="Breadcrumb">
       <NuxtLink to="/">Home</NuxtLink><span class="kc-breadcrumb-sep">/</span>
       <NuxtLink to="/#categories">Categories</NuxtLink><span class="kc-breadcrumb-sep">/</span>
       <NuxtLink v-if="product?.categories?.slug" :to="`/category/${product.categories.slug}`">{{ product.categories.name }}</NuxtLink>
@@ -8,7 +8,7 @@
       <span class="max-w-[280px] truncate text-slate-700 sm:max-w-md">{{ product?.name }}</span>
     </nav>
 <div class="flex flex-col md:flex-row gap-6">
-      <aside class="w-full md:w-64 shrink-0">
+      <aside v-if="!isAdminPreview" class="w-full md:w-64 shrink-0">
         <Sidemenu />
       </aside>
 
@@ -752,6 +752,7 @@
 <script setup lang="ts">
 const supabase = useSupabaseClient();
 const route = useRoute();
+const isAdminPreview = computed(() => route.query.adminPreview === "1");
 
 const cart = useCartStore();
 const customerUser = useSupabaseUser();

@@ -192,6 +192,16 @@
         >
           <button
             type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+            role="menuitem"
+            @click="viewFromMenu"
+          >
+            <span class="w-5 text-center text-base" aria-hidden="true">◉</span>
+            <span>View Product</span>
+          </button>
+
+          <button
+            type="button"
             class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-blue-700"
             role="menuitem"
             @click="editFromMenu"
@@ -233,6 +243,53 @@
             <span class="w-5 text-center text-base" aria-hidden="true">🗑</span>
             <span>{{ deletingId === String(actionsMenuProduct.id) ? "Deleting..." : "Delete" }}</span>
           </button>
+        </div>
+      </Teleport>
+
+      <Teleport to="body">
+        <div
+          v-if="previewProduct"
+          class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="`Preview ${previewProduct.name}`"
+          @click.self="closeProductPreview"
+        >
+          <div class="flex h-[94vh] w-full max-w-[1500px] flex-col overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-2xl">
+            <div class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+              <div class="min-w-0">
+                <p class="text-xs font-bold uppercase tracking-wider text-blue-600">Product Preview</p>
+                <p class="truncate font-bold text-slate-900">{{ previewProduct.name }}</p>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <a
+                  :href="`/product/${previewProduct.slug}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="hidden rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
+                >
+                  Open Full Page
+                </a>
+                <button
+                  type="button"
+                  class="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-2xl leading-none text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                  aria-label="Close product preview"
+                  @click="closeProductPreview"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div class="min-h-0 flex-1 bg-[#f5f8fc]">
+              <iframe
+                :key="previewProduct.id"
+                :src="previewUrl"
+                :title="`Preview of ${previewProduct.name}`"
+                class="h-full w-full border-0 bg-[#f5f8fc]"
+              ></iframe>
+            </div>
+          </div>
         </div>
       </Teleport>
     </div>
@@ -280,6 +337,13 @@ const actionsMenuProductId = ref<string | null>(null);
 const actionsMenuProduct = ref<Product | null>(null);
 const actionsMenuRef = ref<HTMLElement | null>(null);
 const actionsMenuStyle = ref<Record<string, string>>({});
+
+const previewProduct = ref<Product | null>(null);
+const previewUrl = computed(() =>
+  previewProduct.value?.slug
+    ? `/product/${encodeURIComponent(previewProduct.value.slug)}?adminPreview=1`
+    : "",
+);
 
 const search = ref("");
 const categoryFilter = ref("");
@@ -507,6 +571,19 @@ const shareFacebookFromMenu = async () => {
   });
 };
 
+const viewFromMenu = () => {
+  const product = actionsMenuProduct.value;
+  if (!product?.slug) return;
+  closeActionsMenu();
+  previewProduct.value = product;
+  document.body.style.overflow = "hidden";
+};
+
+const closeProductPreview = () => {
+  previewProduct.value = null;
+  document.body.style.overflow = "";
+};
+
 const editFromMenu = async () => {
   const product = actionsMenuProduct.value;
   if (!product) return;
@@ -536,7 +613,12 @@ const handleActionsMenuOutside = (event: MouseEvent) => {
 };
 
 const handleActionsMenuKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") closeActionsMenu();
+  if (event.key !== "Escape") return;
+  if (previewProduct.value) {
+    closeProductPreview();
+    return;
+  }
+  closeActionsMenu();
 };
 
 const duplicateProduct = async (product: Product) => {
@@ -600,6 +682,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  document.body.style.overflow = "";
   document.removeEventListener("click", handleActionsMenuOutside);
   document.removeEventListener("keydown", handleActionsMenuKeydown);
   window.removeEventListener("resize", closeActionsMenu);
