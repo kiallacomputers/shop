@@ -123,6 +123,28 @@
             <span class="mb-1.5 block text-sm font-semibold text-slate-700">Short Description</span>
             <textarea v-model="form.blurb" rows="3" class="input" placeholder="Short description shown on product cards"></textarea>
           </label>
+
+          <div class="md:col-span-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-wider text-blue-700">Google & Product Identifiers</p>
+              <p class="mt-1 text-sm text-slate-600">Used by Google Merchant, structured product data and search engines.</p>
+            </div>
+            <div class="mt-4 grid gap-4 md:grid-cols-3">
+              <label>
+                <span class="mb-1.5 block text-sm font-semibold text-slate-700">Brand</span>
+                <input v-model="form.brand" type="text" class="input" placeholder="e.g. TP-Link" />
+              </label>
+              <label>
+                <span class="mb-1.5 block text-sm font-semibold text-slate-700">GTIN / Barcode</span>
+                <input v-model="form.gtin" type="text" inputmode="numeric" class="input" placeholder="e.g. 4897098682760" />
+                <span class="mt-1 block text-xs text-slate-500">EAN, UPC or other manufacturer GTIN. Leave blank if the product genuinely has none.</span>
+              </label>
+              <label>
+                <span class="mb-1.5 block text-sm font-semibold text-slate-700">MPN</span>
+                <input v-model="form.mpn" type="text" class="input" placeholder="Manufacturer part number" />
+              </label>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -589,6 +611,9 @@ const form = reactive({
   category_id: "",
   blurb: "",
   product_code: "",
+  brand: "",
+  gtin: "",
+  mpn: "",
   has_variants: false,
   buy_price_ex_gst: "",
   rrp_markup_percent: "",
@@ -787,6 +812,9 @@ const loadForm = async () => {
       form.category_id = product.category_id == null ? "" : String(product.category_id);
       form.blurb = product.blurb || "";
       form.product_code = product.product_code || "";
+      form.brand = product.brand || "";
+      form.gtin = product.gtin || "";
+      form.mpn = product.mpn || "";
       form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
@@ -850,6 +878,9 @@ const resetForAnotherProduct = () => {
     category_id: keptCategoryId,
     blurb: "",
     product_code: "",
+    brand: "",
+    gtin: "",
+    mpn: "",
     has_variants: false,
     buy_price_ex_gst: "",
     rrp_markup_percent: keptMarkup,
