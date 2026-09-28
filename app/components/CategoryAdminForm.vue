@@ -137,6 +137,47 @@
       </div>
     </div>
 
+    <div class="rounded-xl border border-violet-200 bg-white p-6 shadow-sm">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Category SEO & Search Content</h2>
+        <p class="mt-1 text-sm text-slate-500">Optional fields for search engines and useful category landing-page content.</p>
+      </div>
+
+      <div class="mt-5 grid gap-5">
+        <label>
+          <span class="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
+            <span>SEO Title</span><span class="text-xs font-medium text-slate-400">{{ form.seo_title.length }}/60</span>
+          </span>
+          <input v-model="form.seo_title" type="text" maxlength="100" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" :placeholder="`${form.name || 'Category'} | Kialla Computers`" />
+        </label>
+
+        <label>
+          <span class="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
+            <span>Meta Description</span><span class="text-xs font-medium text-slate-400">{{ form.seo_description.length }}/160</span>
+          </span>
+          <textarea v-model="form.seo_description" rows="3" maxlength="220" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" placeholder="Description shown to search engines for this category."></textarea>
+        </label>
+
+        <label>
+          <span class="mb-2 block text-sm font-semibold text-slate-700">Category Introduction</span>
+          <textarea v-model="form.seo_intro" rows="3" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" placeholder="Short useful introduction shown above the product list."></textarea>
+        </label>
+
+        <label>
+          <span class="mb-2 block text-sm font-semibold text-slate-700">Category Content</span>
+          <textarea v-model="form.seo_content" rows="7" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" placeholder="Longer helpful content shown below the products. Explain the category, buying considerations, compatibility or common uses."></textarea>
+          <span class="mt-1 block text-xs text-slate-500">Write for customers first. Avoid repeating keywords unnaturally.</span>
+        </label>
+
+        <div class="rounded-lg border border-violet-200 bg-violet-50/50 p-4">
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Search preview</p>
+          <p class="mt-2 text-lg font-medium text-[#1a0dab]">{{ form.seo_title.trim() || `${form.name || 'Category'} | Kialla Computers` }}</p>
+          <p class="mt-1 text-sm text-green-700">shop.kiallacomputers.com.au/category/{{ form.slug || 'category-slug' }}</p>
+          <p class="mt-1 text-sm leading-5 text-slate-600">{{ form.seo_description.trim() || `Shop ${form.name || 'this category'} from Kialla Computers. Browse our current range with secure checkout and Australian delivery.` }}</p>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="errorMessage"
       class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700"
@@ -180,6 +221,10 @@ type Category = {
   slug: string;
   parent_id: string | number | null;
   active: boolean;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_intro?: string | null;
+  seo_content?: string | null;
 };
 
 const props = withDefaults(
@@ -214,6 +259,10 @@ const form = reactive({
     ? String(props.category.parent_id)
     : String(props.initialParentId || ""),
   active: props.category?.active ?? true,
+  seo_title: props.category?.seo_title ?? "",
+  seo_description: props.category?.seo_description ?? "",
+  seo_intro: props.category?.seo_intro ?? "",
+  seo_content: props.category?.seo_content ?? "",
 });
 
 const buttonText = computed(() => {
@@ -237,6 +286,10 @@ watch(
       ? String(category.parent_id)
       : "";
     form.active = category.active ?? true;
+    form.seo_title = category.seo_title ?? "";
+    form.seo_description = category.seo_description ?? "";
+    form.seo_intro = category.seo_intro ?? "";
+    form.seo_content = category.seo_content ?? "";
   },
 );
 
@@ -343,6 +396,10 @@ const submitForm = async (mode: "save" | "add-another" = "save") => {
       slug: form.slug.trim() || slugify(form.name),
       parent_id: form.parent_id || null,
       active: form.active,
+      seo_title: form.seo_title.trim() || null,
+      seo_description: form.seo_description.trim() || null,
+      seo_intro: form.seo_intro.trim() || null,
+      seo_content: form.seo_content.trim() || null,
     };
 
     if (props.category) {
@@ -369,6 +426,10 @@ const submitForm = async (mode: "save" | "add-another" = "save") => {
       form.slug = "";
       form.parent_id = parentId;
       form.active = true;
+      form.seo_title = "";
+      form.seo_description = "";
+      form.seo_intro = "";
+      form.seo_content = "";
 
       emit("savedAndAddAnother", { parentId });
     } else {

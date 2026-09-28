@@ -5,7 +5,7 @@ export default defineCachedEventHandler(async (event) => {
   const supabase = getAdminSupabase();
   const { data, error } = await supabase
     .from("categories")
-    .select("id,name,slug,parent_id,active")
+    .select("id,name,slug,parent_id,active,seo_title,seo_description,seo_intro,seo_content")
     .order("name", { ascending: true });
 
   if (error) {

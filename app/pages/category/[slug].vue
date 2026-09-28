@@ -28,8 +28,8 @@
                 {{ category?.name }}
               </h1>
 
-              <p class="mt-2 text-sm text-slate-300">
-                Browse our current products in {{ category?.name }}. <span v-if="products?.length" class="text-slate-400">{{ products.length }} product{{ products.length === 1 ? "" : "s" }} available.</span>
+              <p class="mt-2 max-w-3xl whitespace-pre-line text-sm leading-6 text-slate-300">
+                {{ category?.seo_intro || `Browse our current products in ${category?.name}.` }} <span v-if="products?.length" class="text-slate-400">{{ products.length }} product{{ products.length === 1 ? "" : "s" }} available.</span>
               </p>
             </div>
 
@@ -104,6 +104,11 @@
           <p class="mt-2 text-sm">Try another category or search the full catalogue.</p>
           <NuxtLink to="/search" class="kc-btn-secondary mt-5">Search products</NuxtLink>
         </div>
+
+        <article v-if="category?.seo_content" class="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <h2 class="text-xl font-black text-[#0b1f3a]">About {{ category.name }}</h2>
+          <div class="mt-4 whitespace-pre-line text-sm leading-7 text-slate-600">{{ category.seo_content }}</div>
+        </article>
       </section>
     </div>
   </main>
@@ -122,21 +127,33 @@ const category = computed(() =>
   (visibleCategories.value || []).find((item) => String(item.slug || "") === slug.value) || null,
 );
 
-const categorySeoTitle = computed(() => category.value?.name ? `${category.value.name} — Shop Online` : "Shop Category");
-const categorySeoDescription = computed(() =>
-  category.value?.name
-    ? `Shop ${category.value.name} from Kialla Computers. Browse our current range with secure checkout and Australian delivery.`
-    : "Browse products from Kialla Computers."
+const parentCategory = computed(() =>
+  category.value?.parent_id != null
+    ? (visibleCategories.value || []).find((item) => String(item.id) === String(category.value.parent_id)) || null
+    : null,
 );
-const categoryCanonical = computed(() => `https://shop.kiallacomputers.com.au/category/${encodeURIComponent(slug.value)}`);
+
+const categorySeoTitle = computed(() => {
+  const custom = String(category.value?.seo_title || "").replace(/\s+/g, " ").trim();
+  return custom || (category.value?.name ? `${category.value.name} | Kialla Computers` : "Shop Category | Kialla Computers");
+});
+const categorySeoDescription = computed(() => {
+  const custom = String(category.value?.seo_description || "").replace(/\s+/g, " ").trim();
+  if (custom) return custom.slice(0, 220);
+  return category.value?.name
+    ? `Shop ${category.value.name} from Kialla Computers. Browse our current range with secure checkout and Australian delivery.`
+    : "Browse products from Kialla Computers.";
+});
+const categorySiteUrl = computed(() => String(useRuntimeConfig().public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/, ""));
+const categoryCanonical = computed(() => `${categorySiteUrl.value}/category/${encodeURIComponent(slug.value)}`);
 
 useSeoMeta({
   title: () => categorySeoTitle.value,
   description: () => categorySeoDescription.value,
-  ogTitle: () => `${category.value?.name || "Shop"} | Kialla Computers`,
+  ogTitle: () => categorySeoTitle.value,
   ogDescription: () => categorySeoDescription.value,
   ogUrl: () => categoryCanonical.value,
-  twitterTitle: () => `${category.value?.name || "Shop"} | Kialla Computers`,
+  twitterTitle: () => categorySeoTitle.value,
   twitterDescription: () => categorySeoDescription.value,
 });
 
@@ -148,8 +165,14 @@ useHead(() => ({
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://shop.kiallacomputers.com.au/" },
-        { "@type": "ListItem", position: 2, name: category.value.name, item: categoryCanonical.value }
+        { "@type": "ListItem", position: 1, name: "Home", item: `${String(useRuntimeConfig().public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/, "")}/` },
+        ...(parentCategory.value ? [{
+          "@type": "ListItem",
+          position: 2,
+          name: parentCategory.value.name,
+          item: `${String(useRuntimeConfig().public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/, "")}/category/${encodeURIComponent(parentCategory.value.slug)}`
+        }] : []),
+        { "@type": "ListItem", position: parentCategory.value ? 3 : 2, name: category.value.name, item: categoryCanonical.value }
       ]
     })
   }] : []

@@ -36,6 +36,10 @@ export default defineEventHandler(async (event) => {
     slug,
     parent_id: body?.parent_id || null,
     active: body?.active !== false,
+    seo_title: String(body?.seo_title ?? "").trim() || null,
+    seo_description: String(body?.seo_description ?? "").trim() || null,
+    seo_intro: String(body?.seo_intro ?? "").trim() || null,
+    seo_content: String(body?.seo_content ?? "").trim() || null,
   };
 
   const { data, error } = await supabase

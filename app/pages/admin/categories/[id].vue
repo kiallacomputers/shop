@@ -62,6 +62,10 @@ type Category = {
   slug: string;
   parent_id: string | number | null;
   active: boolean;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_intro?: string | null;
+  seo_content?: string | null;
 };
 
 const route = useRoute();

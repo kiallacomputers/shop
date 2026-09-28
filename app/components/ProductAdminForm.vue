@@ -145,6 +145,35 @@
               </label>
             </div>
           </div>
+
+          <div class="md:col-span-2 mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-wider text-violet-700">Search Engine Listing</p>
+              <p class="mt-1 text-sm text-slate-600">Optional. Leave these blank to use the automatic product name and short-description defaults.</p>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <label>
+                <span class="mb-1.5 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+                  <span>SEO Title</span>
+                  <span class="text-xs font-medium" :class="form.seo_title.length > 60 ? 'text-amber-700' : 'text-slate-400'">{{ form.seo_title.length }}/60</span>
+                </span>
+                <input v-model="form.seo_title" type="text" maxlength="100" class="input" :placeholder="`${form.name || 'Product'} | Kialla Computers`" />
+              </label>
+              <label>
+                <span class="mb-1.5 flex items-center justify-between gap-3 text-sm font-semibold text-slate-700">
+                  <span>Meta Description</span>
+                  <span class="text-xs font-medium" :class="form.seo_description.length > 160 ? 'text-amber-700' : 'text-slate-400'">{{ form.seo_description.length }}/160</span>
+                </span>
+                <textarea v-model="form.seo_description" rows="3" maxlength="220" class="input" placeholder="Short search-result description for this product."></textarea>
+              </label>
+              <div class="rounded-lg border border-violet-200 bg-white p-4">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Search preview</p>
+                <p class="mt-2 text-lg font-medium text-[#1a0dab]">{{ form.seo_title.trim() || `${form.name || 'Product'} | Kialla Computers` }}</p>
+                <p class="mt-1 text-sm text-green-700">shop.kiallacomputers.com.au/product/{{ form.slug || 'product-slug' }}</p>
+                <p class="mt-1 text-sm leading-5 text-slate-600">{{ form.seo_description.trim() || form.blurb.trim() || `Shop ${form.name || 'this product'} from Kialla Computers with secure checkout and Australian delivery.` }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -614,6 +643,8 @@ const form = reactive({
   brand: "",
   gtin: "",
   mpn: "",
+  seo_title: "",
+  seo_description: "",
   has_variants: false,
   buy_price_ex_gst: "",
   rrp_markup_percent: "",
@@ -815,6 +846,8 @@ const loadForm = async () => {
       form.brand = product.brand || "";
       form.gtin = product.gtin || "";
       form.mpn = product.mpn || "";
+      form.seo_title = product.seo_title || "";
+      form.seo_description = product.seo_description || "";
       form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
@@ -881,6 +914,8 @@ const resetForAnotherProduct = () => {
     brand: "",
     gtin: "",
     mpn: "",
+    seo_title: "",
+    seo_description: "",
     has_variants: false,
     buy_price_ex_gst: "",
     rrp_markup_percent: keptMarkup,

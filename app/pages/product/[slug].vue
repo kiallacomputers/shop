@@ -633,7 +633,7 @@ const { data: product } = await useAsyncData(
       .from("products")
       .select(
         `
-        id, name, slug, product_code, has_variants, brand, gtin, mpn, blurb, description,
+        id, name, slug, product_code, has_variants, brand, gtin, mpn, seo_title, seo_description, blurb, description,
         price, oldPrice, stock, active, featured, refurbished, images, category_id,
         categories (name, slug),
         product_addon_groups (id,name,selection_type,required,sort_order,active,product_addon_options(id,name,price,sort_order,active)),
@@ -654,10 +654,16 @@ const { data: product } = await useAsyncData(
 const runtimeConfig = useRuntimeConfig();
 const productSiteUrl = computed(() => String(runtimeConfig.public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/, ""));
 const productCanonical = computed(() => `${productSiteUrl.value}/product/${encodeURIComponent(String(product.value?.slug || route.params.slug || ""))}`);
+const productSeoTitle = computed(() => {
+  const custom = String(product.value?.seo_title || "").replace(/\s+/g, " ").trim();
+  return custom || `${product.value?.name || "Product"} | Kialla Computers`;
+});
 const productSeoDescription = computed(() => {
+  const custom = String(product.value?.seo_description || "").replace(/\s+/g, " ").trim();
+  if (custom) return custom.slice(0, 220);
   const text = String(product.value?.blurb || "").replace(/\s+/g, " ").trim();
   return text
-    ? text.slice(0, 155)
+    ? text.slice(0, 160)
     : `Shop ${product.value?.name || "this product"} from Kialla Computers with secure checkout and Australian delivery.`;
 });
 const productSeoImage = computed(() => {
@@ -673,14 +679,14 @@ const productSeoImage = computed(() => {
 });
 
 useSeoMeta({
-  title: () => `${product.value?.name || "Product"} | Kialla Computers`,
+  title: () => productSeoTitle.value,
   description: () => productSeoDescription.value,
-  ogTitle: () => `${product.value?.name || "Product"} | Kialla Computers`,
+  ogTitle: () => productSeoTitle.value,
   ogDescription: () => productSeoDescription.value,
   ogUrl: () => productCanonical.value,
   ogType: "website",
   ogImage: () => productSeoImage.value,
-  twitterTitle: () => `${product.value?.name || "Product"} | Kialla Computers`,
+  twitterTitle: () => productSeoTitle.value,
   twitterDescription: () => productSeoDescription.value,
   twitterImage: () => productSeoImage.value,
 });
@@ -716,7 +722,23 @@ useHead(() => {
 
   return {
     link: [{ rel: "canonical", href: productCanonical.value }],
-    script: [{ type: "application/ld+json", children: JSON.stringify(structuredData) }]
+    script: [
+      { type: "application/ld+json", children: JSON.stringify(structuredData) },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: `${productSiteUrl.value}/` },
+            ...(product.value.categories?.name && product.value.categories?.slug
+              ? [{ "@type": "ListItem", position: 2, name: product.value.categories.name, item: `${productSiteUrl.value}/category/${encodeURIComponent(product.value.categories.slug)}` }]
+              : []),
+            { "@type": "ListItem", position: product.value.categories?.name ? 3 : 2, name: product.value.name, item: productCanonical.value }
+          ]
+        })
+      }
+    ]
   };
 });
 
