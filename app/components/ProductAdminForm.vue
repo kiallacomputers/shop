@@ -64,8 +64,17 @@
         >
           {{ saving && saveMode === "add-another" ? "Saving..." : "Save & Add Another" }}
         </button>
+        <button
+          v-if="mode === 'edit'"
+          type="button"
+          :disabled="saving"
+          class="admin-btn-secondary"
+          @click="saveProduct('continue')"
+        >
+          {{ saving && saveMode === "continue" ? "Saving..." : "Save & Continue" }}
+        </button>
         <button type="submit" :disabled="saving" class="admin-btn-primary">
-          {{ saving && saveMode === "save" ? "Saving..." : (mode === "create" ? "Create Product" : "Save Changes") }}
+          {{ saving && saveMode === "close" ? "Saving..." : (mode === "create" ? "Create Product" : "Save & Close") }}
         </button>
       </div>
 
@@ -554,8 +563,17 @@
         <NuxtLink to="/admin/products" class="rounded-lg border border-slate-300 px-5 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50">
           Cancel
         </NuxtLink>
+        <button
+          v-if="mode === 'edit'"
+          type="button"
+          :disabled="saving"
+          class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="saveProduct('continue')"
+        >
+          {{ saving && saveMode === "continue" ? "Saving..." : "Save & Continue" }}
+        </button>
         <button type="submit" :disabled="saving" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {{ saving ? "Saving..." : mode === "create" ? "Create Product" : "Save Changes" }}
+          {{ saving && saveMode === "close" ? "Saving..." : mode === "create" ? "Create Product" : "Save & Close" }}
         </button>
       </div>
         </div>
@@ -584,7 +602,7 @@ type ProductCategory = {
 const categories = ref<ProductCategory[]>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
-const saveMode = ref<"save" | "add-another">("save");
+const saveMode = ref<"close" | "continue" | "add-another">("close");
 const successMessage = ref("");
 const errorMessage = ref("");
 const slugTouched = ref(props.mode === "edit");
@@ -940,7 +958,7 @@ const resetForAnotherProduct = () => {
   uploadError.value = "";
 };
 
-const saveProduct = async (mode: "save" | "add-another" = "save") => {
+const saveProduct = async (mode: "close" | "continue" | "add-another" = "close") => {
   if (saving.value) return;
 
   errorMessage.value = "";
@@ -988,6 +1006,9 @@ const saveProduct = async (mode: "save" | "add-another" = "save") => {
 
       await nextTick();
       document.querySelector<HTMLInputElement>('input[type="text"][required]')?.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (props.mode === "edit" && mode === "continue") {
+      successMessage.value = "Product saved successfully.";
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       await router.push("/admin/products");
