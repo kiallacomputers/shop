@@ -17,14 +17,18 @@ export const plainDescriptionText = (value: unknown) => {
 };
 
 export const seoDescription = (product: any, max = 155) => {
+  const custom = String(product?.seo_description || "").replace(/\s+/g, " ").trim();
   const blurb = String(product?.blurb || "").replace(/\s+/g, " ").trim();
   const description = plainDescriptionText(product?.description);
   const fallback = `Shop ${product?.name || "this product"} from Kialla Computers with secure checkout and Australian delivery.`;
-  const text = blurb || description || fallback;
+  const text = custom || blurb || description || fallback;
   return text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 };
 
-export const seoTitle = (product: any) => `${String(product?.name || "Product").trim()} | Kialla Computers`;
+export const seoTitle = (product: any) => {
+  const custom = String(product?.seo_title || "").replace(/\s+/g, " ").trim();
+  return custom || `${String(product?.name || "Product").trim()} | Kialla Computers`;
+};
 
 export const firstProductImage = (value: unknown) => {
   if (Array.isArray(value)) return String(value.find(Boolean) || "").trim();
