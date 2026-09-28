@@ -164,6 +164,74 @@
 
         <template v-else-if="block.type === 'paragraph'">
           <div class="space-y-4">
+            <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+              <div>
+                <p class="text-sm font-bold text-slate-800">Paragraph Heading</p>
+                <p class="mt-1 text-xs text-slate-500">Optional heading displayed above the paragraph text. It can have its own size and colour.</p>
+              </div>
+
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="sm:col-span-2">
+                  <span class="field-label">Heading Text</span>
+                  <input
+                    v-model="block.paragraphHeading"
+                    type="text"
+                    class="input"
+                    placeholder="e.g. Inbuilt Microphone"
+                  />
+                </label>
+
+                <label>
+                  <span class="field-label">Heading Size</span>
+                  <select v-model="block.paragraphHeadingSize" class="input">
+                    <option value="sm">Small</option>
+                    <option value="base">Normal</option>
+                    <option value="lg">Large</option>
+                    <option value="xl">Extra Large</option>
+                    <option value="2xl">2X Large</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span class="field-label">Heading Colour</span>
+                  <div class="flex gap-2">
+                    <input
+                      v-model="block.paragraphHeadingColor"
+                      type="color"
+                      class="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-slate-300 bg-white p-1"
+                    />
+                    <input
+                      v-model="block.paragraphHeadingColor"
+                      type="text"
+                      class="input"
+                      placeholder="#1f2937"
+                    />
+                  </div>
+                </label>
+
+                <label class="sm:col-span-2">
+                  <span class="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                    <input
+                      v-model="block.paragraphHeadingBold"
+                      type="checkbox"
+                      class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span class="text-sm font-medium text-slate-700">Bold heading</span>
+                    <span class="ml-auto text-xs font-semibold text-slate-500">{{ block.paragraphHeadingBold ? "On" : "Off" }}</span>
+                  </span>
+                </label>
+
+                <div v-if="block.paragraphHeading" class="sm:col-span-2 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                  <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Heading Preview</p>
+                  <div
+                    class="mt-2"
+                    :class="paragraphHeadingSizeClass(block.paragraphHeadingSize)"
+                    :style="{ color: block.paragraphHeadingColor || '#1f2937', fontWeight: block.paragraphHeadingBold === false ? '400' : '700' }"
+                  >{{ block.paragraphHeading }}</div>
+                </div>
+              </div>
+            </div>
+
             <label>
               <span class="field-label">Paragraph</span>
               <textarea
@@ -858,6 +926,10 @@ type DescriptionBlock = {
   paragraphImageAlt?: string;
   paragraphImagePosition?: "left" | "right";
   paragraphImageWidth?: "25" | "35" | "40" | "50";
+  paragraphHeading?: string;
+  paragraphHeadingSize?: "sm" | "base" | "lg" | "xl" | "2xl";
+  paragraphHeadingColor?: string;
+  paragraphHeadingBold?: boolean;
   linkText?: string;
   linkUrl?: string;
   linkStyle?: "text" | "button";
@@ -1045,6 +1117,14 @@ const applyCaptionFontSize = (block: DescriptionBlock) => {
   applyCaptionInlineStyle(block, "fontSize", size);
 };
 
+const paragraphHeadingSizeClass = (size?: string) => {
+  if (size === "sm") return "text-sm";
+  if (size === "base") return "text-base";
+  if (size === "xl") return "text-xl";
+  if (size === "2xl") return "text-2xl";
+  return "text-lg";
+};
+
 // ========================================
 // NORMALISE BLOCK
 // ========================================
@@ -1085,6 +1165,12 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     base.underline = input?.underline === true;
   } else if (type === "paragraph") {
     base.text = input?.text || "";
+    base.paragraphHeading = input?.paragraphHeading || "";
+    base.paragraphHeadingSize = ["sm", "base", "lg", "xl", "2xl"].includes(String(input?.paragraphHeadingSize))
+      ? input.paragraphHeadingSize
+      : "lg";
+    base.paragraphHeadingColor = input?.paragraphHeadingColor || "#1f2937";
+    base.paragraphHeadingBold = input?.paragraphHeadingBold !== false;
     base.paragraphImageUrl = input?.paragraphImageUrl || "";
     base.paragraphImagePath = input?.paragraphImagePath || "";
     base.paragraphImageAlt = input?.paragraphImageAlt || "";
@@ -1223,6 +1309,10 @@ const createBlock = (type: string): DescriptionBlock => {
     return normaliseBlock({
       type,
       text: "",
+      paragraphHeading: "",
+      paragraphHeadingSize: "lg",
+      paragraphHeadingColor: "#1f2937",
+      paragraphHeadingBold: true,
     });
   }
 

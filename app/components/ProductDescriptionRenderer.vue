@@ -53,7 +53,43 @@
                       />
                     </div>
 
-                    <p class="min-w-0 flex-1 whitespace-pre-line leading-7">
+                    <div class="min-w-0 flex-1">
+                      <div
+                        v-if="section.paragraphHeading"
+                        class="mb-2 leading-tight"
+                        :class="paragraphHeadingSizeClass(section.paragraphHeadingSize)"
+                        :style="{
+                          color: section.paragraphHeadingColor || '#1f2937',
+                          fontWeight: section.paragraphHeadingBold === false ? '400' : '700',
+                        }"
+                      >
+                        {{ section.paragraphHeading }}
+                      </div>
+                      <p class="whitespace-pre-line leading-7">
+                        <template
+                          v-for="(part, partIndex) in parseBoldText(section.text)"
+                          :key="partIndex"
+                        >
+                          <strong v-if="part.bold">{{ part.text }}</strong>
+                          <span v-else>{{ part.text }}</span>
+                        </template>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div v-else>
+                    <div
+                      v-if="section.paragraphHeading"
+                      class="mb-2 leading-tight"
+                      :class="paragraphHeadingSizeClass(section.paragraphHeadingSize)"
+                      :style="{
+                        color: section.paragraphHeadingColor || '#1f2937',
+                        fontWeight: section.paragraphHeadingBold === false ? '400' : '700',
+                      }"
+                    >
+                      {{ section.paragraphHeading }}
+                    </div>
+                    <p class="whitespace-pre-line leading-7">
                       <template
                         v-for="(part, partIndex) in parseBoldText(section.text)"
                         :key="partIndex"
@@ -63,16 +99,6 @@
                       </template>
                     </p>
                   </div>
-
-                  <p v-else class="whitespace-pre-line leading-7">
-                    <template
-                      v-for="(part, partIndex) in parseBoldText(section.text)"
-                      :key="partIndex"
-                    >
-                      <strong v-if="part.bold">{{ part.text }}</strong>
-                      <span v-else>{{ part.text }}</span>
-                    </template>
-                  </p>
                 </div>
 
                 <!-- Link -->
@@ -285,6 +311,14 @@
 
 <script setup lang="ts">
 const props = defineProps<{ description?: any[] | null }>();
+
+const paragraphHeadingSizeClass = (size?: string) => {
+  if (size === "sm") return "text-sm";
+  if (size === "base") return "text-base";
+  if (size === "xl") return "text-xl";
+  if (size === "2xl") return "text-2xl";
+  return "text-lg";
+};
 
 const parseBoldText = (text = "") => {
   const parts = [];
