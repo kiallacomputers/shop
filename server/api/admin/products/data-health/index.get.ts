@@ -4,7 +4,7 @@ export default defineEventHandler(async(event)=>{
   await requireSuperAdmin(event);
   const s=getAdminSupabase();
   const [pr,mp]=await Promise.all([
-    s.from("products").select("id,name,product_code,brand,gtin,mpn,stock,price,buy_price_ex_gst,active,category_id,low_stock_level,reorder_level,target_stock_level").order("name"),
+    s.from("products").select("id,name,product_code,has_variants,brand,gtin,mpn,stock,price,buy_price_ex_gst,active,category_id,low_stock_level,reorder_level,target_stock_level,product_variants(id,name,product_code,gtin,mpn,active)").order("name"),
     s.from("accounting_product_suppliers").select("product_id,supplier_id,supplier_sku,buy_price_ex_gst,is_primary,accounting_suppliers(id,name,active)")
   ]);
   if(pr.error) throw createError({statusCode:500,statusMessage:pr.error.message});
@@ -18,7 +18,18 @@ export default defineEventHandler(async(event)=>{
     if(!String(p.product_code||"").trim())issues.push({key:"sku",label:"Missing product code / SKU",severity:"critical"});
     if(!p.category_id)issues.push({key:"category",label:"No category assigned",severity:"warning"});
     if(!String(p.brand||"").trim())issues.push({key:"brand",label:"Missing brand",severity:"warning"});
-    if(!String(p.gtin||"").trim()&&!String(p.mpn||"").trim())issues.push({key:"identifier",label:"Missing GTIN / MPN",severity:"warning"});
+    if(p.has_variants){
+      const activeVariants=Array.isArray(p.product_variants)?p.product_variants.filter((v:any)=>v.active!==false):[];
+      const missingIdentifiers=activeVariants.filter((v:any)=>!String(v.gtin||"").trim()&&!String(v.mpn||"").trim());
+      if(missingIdentifiers.length)issues.push({
+        key:"variant_identifier",
+        label:`${missingIdentifiers.length} variant${missingIdentifiers.length===1?"":"s"} missing GTIN / MPN`,
+        severity:"warning",
+        variants:missingIdentifiers.map((v:any)=>({id:v.id,name:v.name,product_code:v.product_code}))
+      });
+    } else if(!String(p.gtin||"").trim()&&!String(p.mpn||"").trim()){
+      issues.push({key:"identifier",label:"Missing GTIN / MPN",severity:"warning"});
+    }
     if(!maps.length)issues.push({key:"supplier",label:"No supplier assigned",severity:"critical"});
     else if(!primary)issues.push({key:"primary_supplier",label:"No primary supplier",severity:"warning"});
     const preferred=primary||maps[0]||null;

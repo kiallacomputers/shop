@@ -58,6 +58,28 @@
           </label>
           <label><span class="label">Stock *</span><input v-model="variant.stock" type="number" min="0" step="1" class="input" /></label>
         </div>
+
+        <div class="mt-4 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+          <label>
+            <span class="label">GTIN / Barcode</span>
+            <input
+              v-model="variant.gtin"
+              inputmode="numeric"
+              class="input"
+              placeholder="8, 12, 13 or 14 digits"
+            />
+            <span class="mt-1 block text-xs text-slate-500">Use the barcode assigned to this exact variant.</span>
+          </label>
+          <label>
+            <span class="label">MPN</span>
+            <input
+              v-model="variant.mpn"
+              class="input"
+              placeholder="Manufacturer part number"
+            />
+            <span class="mt-1 block text-xs text-slate-500">Use the manufacturer's part number for this exact variant.</span>
+          </label>
+        </div>
         <div class="mt-4 rounded-lg bg-slate-50 p-4">
           <p class="text-sm font-bold text-slate-800">Variant Main Image</p>
           <p class="mt-0.5 text-xs text-slate-500">Choose an image already loaded in the main product. It will display first when this variant is selected.</p>
@@ -167,6 +189,8 @@ const load=async()=>{
       price:v.price==null?'':String(v.price),
       old_price:v.old_price==null?'':String(v.old_price),
       stock:String(v.stock),
+      gtin:v.gtin||'',
+      mpn:v.mpn||'',
       images:Array.isArray(v.images)?v.images:[],
       saving:false,
       uploading:false
@@ -185,6 +209,8 @@ const fresh=()=>({
   price:'',
   old_price:'',
   stock:'0',
+  gtin:'',
+  mpn:'',
   active:true,
   images:[],
   sort_order:variants.value.length,
@@ -220,6 +246,8 @@ const saveVariant=async(v:any)=>{
       price:v.price==null||String(v.price).trim()===''?null:Number(v.price),
       old_price:v.old_price==null||String(v.old_price).trim()===''?null:Number(v.old_price),
       stock:Number(v.stock),
+      gtin:String(v.gtin||'').replace(/\s+/g,'').trim(),
+      mpn:String(v.mpn||'').trim(),
       active:v.active,
       images:v.images||[],
       sort_order:v.sort_order||0
@@ -233,6 +261,8 @@ const saveVariant=async(v:any)=>{
       price:saved.price==null?'':String(saved.price),
       old_price:saved.old_price==null?'':String(saved.old_price),
       stock:String(saved.stock),
+      gtin:saved.gtin||'',
+      mpn:saved.mpn||'',
       images:Array.isArray(saved.images)?saved.images:[],
       saving:false,
       uploading:false

@@ -633,11 +633,11 @@ const { data: product } = await useAsyncData(
       .from("products")
       .select(
         `
-        id, name, slug, product_code, has_variants, blurb, description,
+        id, name, slug, product_code, has_variants, brand, gtin, mpn, blurb, description,
         price, oldPrice, stock, active, featured, refurbished, images, category_id,
         categories (name, slug),
         product_addon_groups (id,name,selection_type,required,sort_order,active,product_addon_options(id,name,price,sort_order,active)),
-        product_variants (id, product_id, name, product_code, price, old_price, stock, active, images)
+        product_variants (id, product_id, name, product_code, gtin, mpn, price, old_price, stock, active, images)
         `,
       )
       .eq("slug", route.params.slug)
@@ -688,23 +688,25 @@ useSeoMeta({
 useHead(() => {
   if (!product.value) return { link: [{ rel: "canonical", href: productCanonical.value }] };
 
-  const stock = Number(product.value.stock || 0);
+  const schemaVariant = selectedVariant.value;
+  const stock = Number(schemaVariant?.stock ?? product.value.stock ?? 0);
+  const schemaPrice = Number(schemaVariant?.price ?? product.value.price ?? 0);
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.value.name,
     description: productSeoDescription.value,
-    sku: product.value.product_code || undefined,
+    sku: schemaVariant?.product_code || product.value.product_code || undefined,
     brand: product.value.brand ? { "@type": "Brand", name: product.value.brand } : undefined,
-    gtin: product.value.gtin || undefined,
-    mpn: product.value.mpn || undefined,
+    gtin: schemaVariant?.gtin || (!product.value.has_variants ? product.value.gtin : undefined),
+    mpn: schemaVariant?.mpn || (!product.value.has_variants ? product.value.mpn : undefined),
     image: productSeoImage.value ? [productSeoImage.value] : undefined,
     category: product.value.categories?.name || undefined,
     offers: {
       "@type": "Offer",
       url: productCanonical.value,
       priceCurrency: "AUD",
-      price: Number(product.value.price || 0).toFixed(2),
+      price: schemaPrice.toFixed(2),
       availability: stock > 0 ? "https://schema.org/InStock" : "https://schema.org/BackOrder",
       itemCondition: product.value.refurbished
         ? "https://schema.org/RefurbishedCondition"
@@ -801,7 +803,7 @@ const refreshRecentlyViewedProducts = async () => {
       id, name, slug, blurb, product_code, has_variants,
       price, oldPrice, stock, active, featured, refurbished, images, category_id,
       categories (id, name, slug, parent_id),
-      product_variants (id, product_id, name, product_code, price, old_price, stock, active, images)
+      product_variants (id, product_id, name, product_code, gtin, mpn, price, old_price, stock, active, images)
     `)
     .in("id", ids)
     .eq("active", true);

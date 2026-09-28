@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
   const s = getAdminSupabase();
   const { data, error } = await s.from("products")
-    .select("id,name,slug,product_code,brand,gtin,mpn,blurb,description,price,stock,active,refurbished,images,category_id,categories(id,name,slug)")
+    .select("id,name,slug,product_code,has_variants,brand,gtin,mpn,blurb,description,price,stock,active,refurbished,images,category_id,categories(id,name,slug),product_variants(id,name,gtin,mpn,active)")
     .order("name");
   if (error) throw createError({ statusCode: 500, statusMessage: error.message });
 
@@ -19,7 +19,13 @@ export default defineEventHandler(async (event) => {
     if (!String(p.product_code || "").trim()) issues.push("Missing product code");
     if (!p.category_id) issues.push("Missing category");
     if (!String(p.brand || "").trim()) issues.push("Missing brand");
-    if (!String(p.gtin || "").trim() && !String(p.mpn || "").trim()) issues.push("Missing GTIN / MPN");
+    if (p.has_variants) {
+      const variants = Array.isArray(p.product_variants) ? p.product_variants.filter((v:any) => v.active !== false) : [];
+      const missing = variants.filter((v:any) => !String(v.gtin || "").trim() && !String(v.mpn || "").trim()).length;
+      if (missing) issues.push(`${missing} variant${missing === 1 ? "" : "s"} missing GTIN / MPN`);
+    } else if (!String(p.gtin || "").trim() && !String(p.mpn || "").trim()) {
+      issues.push("Missing GTIN / MPN");
+    }
     if (!(Number(p.price) > 0)) issues.push("Price is not configured");
     return {
       id: p.id, name: p.name, slug: p.slug, product_code: p.product_code,
