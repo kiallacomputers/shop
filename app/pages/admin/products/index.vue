@@ -86,6 +86,7 @@
                 <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
                 <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
                 <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
+                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">RRP</th>
                 <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Pricing Override</th>
                 <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
                 <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
@@ -96,7 +97,7 @@
             <tbody>
               <template v-for="main in groupedProducts" :key="main.name">
                 <tr class="admin-group-row bg-slate-200 border-y border-slate-300">
-                  <td colspan="7" class="px-5 py-3">
+                  <td colspan="8" class="px-5 py-3">
                     <p class="font-bold text-slate-900">{{ main.name }}</p>
                     <p class="text-xs text-slate-500">
                       {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
@@ -106,7 +107,7 @@
 
                 <template v-for="sub in main.subcategories" :key="`${main.name}-${sub.name}`">
                   <tr v-if="sub.name !== main.name" class="bg-blue-50 border-b border-blue-100">
-                    <td colspan="7" class="px-5 py-2.5 pl-10">
+                    <td colspan="8" class="px-5 py-2.5 pl-10">
                       <p class="font-bold text-blue-800">{{ sub.name }}</p>
                       <p class="text-xs text-blue-600">
                         {{ sub.products.length }}
@@ -145,6 +146,9 @@
                     </td>
                     <td class="px-5 py-4 text-right font-semibold text-slate-900 whitespace-nowrap">
                       {{ currency(product.price) }}
+                    </td>
+                    <td class="px-5 py-4 text-right font-semibold text-slate-600 whitespace-nowrap">
+                      {{ currency(product.rrp_price) }}
                     </td>
                     <td class="px-5 py-4 text-center whitespace-nowrap">
                       <div class="inline-flex items-center gap-1.5">
@@ -305,6 +309,7 @@ type Product = {
   slug?: string | null;
   category_id?: string | number | null;
   price?: number | string | null;
+  rrp_price?: number | string | null;
   pricing_level_markup_override_percent?: number | string | null;
   stock?: number | string | null;
   active?: boolean | null;
