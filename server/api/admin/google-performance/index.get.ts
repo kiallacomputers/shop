@@ -33,7 +33,7 @@ FROM product_performance_view
 WHERE date BETWEEN '${d(start)}' AND '${d(end)}'
 ORDER BY impressions DESC`;
 
-  const endpoint=`https://merchantapi.googleapis.com/reports/v1beta/accounts/${encodeURIComponent(merchantId)}/reports:search`;
+  const endpoint=`https://merchantapi.googleapis.com/reports/v1/accounts/${encodeURIComponent(merchantId)}/reports:search`;
 
   const allResults:any[]=[];
   let pageToken="";
