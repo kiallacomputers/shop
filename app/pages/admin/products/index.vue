@@ -86,6 +86,7 @@
                 <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
                 <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
                 <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
+                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Pricing Override</th>
                 <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
                 <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
                 <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Actions</th>
@@ -95,7 +96,7 @@
             <tbody>
               <template v-for="main in groupedProducts" :key="main.name">
                 <tr class="admin-group-row bg-slate-200 border-y border-slate-300">
-                  <td colspan="6" class="px-5 py-3">
+                  <td colspan="7" class="px-5 py-3">
                     <p class="font-bold text-slate-900">{{ main.name }}</p>
                     <p class="text-xs text-slate-500">
                       {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
@@ -105,7 +106,7 @@
 
                 <template v-for="sub in main.subcategories" :key="`${main.name}-${sub.name}`">
                   <tr v-if="sub.name !== main.name" class="bg-blue-50 border-b border-blue-100">
-                    <td colspan="6" class="px-5 py-2.5 pl-10">
+                    <td colspan="7" class="px-5 py-2.5 pl-10">
                       <p class="font-bold text-blue-800">{{ sub.name }}</p>
                       <p class="text-xs text-blue-600">
                         {{ sub.products.length }}
@@ -144,6 +145,29 @@
                     </td>
                     <td class="px-5 py-4 text-right font-semibold text-slate-900 whitespace-nowrap">
                       {{ currency(product.price) }}
+                    </td>
+                    <td class="px-5 py-4 text-center whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5">
+                        <div class="relative w-24">
+                          <input
+                            v-model="overrideDrafts[String(product.id)]"
+                            type="number"
+                            step="0.1"
+                            class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-2.5 pr-7 text-right text-sm font-bold focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            :class="Number(product.pricing_level_markup_override_percent || 0) !== 0 ? 'text-blue-700' : 'text-slate-600'"
+                            :disabled="savingOverrideId === String(product.id)"
+                            @keyup.enter="savePricingOverride(product)"
+                          />
+                          <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs font-bold text-slate-400">%</span>
+                        </div>
+                        <button
+                          type="button"
+                          class="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
+                          :disabled="savingOverrideId === String(product.id) || !overrideChanged(product)"
+                          @click="savePricingOverride(product)"
+                        >{{ savingOverrideId === String(product.id) ? "..." : "Save" }}</button>
+                      </div>
+                      <p v-if="overrideSavedId === String(product.id)" class="mt-1 text-[11px] font-bold text-emerald-600">Saved</p>
                     </td>
                     <td class="px-5 py-4 text-center">
                       <span v-if="product.has_variants" class="inline-flex justify-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">Variants</span>
@@ -281,6 +305,7 @@ type Product = {
   slug?: string | null;
   category_id?: string | number | null;
   price?: number | string | null;
+  pricing_level_markup_override_percent?: number | string | null;
   stock?: number | string | null;
   active?: boolean | null;
   featured?: boolean | null;
@@ -301,6 +326,9 @@ const loading = ref(true);
 const errorMessage = ref("");
 const deletingId = ref<string | null>(null);
 const duplicatingId = ref<string | null>(null);
+const savingOverrideId = ref<string | null>(null);
+const overrideSavedId = ref<string | null>(null);
+const overrideDrafts = ref<Record<string,string>>({});
 
 const actionsMenuProductId = ref<string | null>(null);
 const actionsMenuProduct = ref<Product | null>(null);
@@ -464,12 +492,50 @@ const firstImage = (product: Product) => {
   }
 };
 
+const overrideChanged = (product: Product) => {
+  const draft = Number(overrideDrafts.value[String(product.id)] ?? 0);
+  const saved = Number(product.pricing_level_markup_override_percent || 0);
+  return Number.isFinite(draft) && Math.abs(draft - saved) > 0.000001;
+};
+
+const savePricingOverride = async (product: Product) => {
+  const id = String(product.id);
+  const value = Number(overrideDrafts.value[id]);
+  if (!Number.isFinite(value)) {
+    errorMessage.value = `Pricing override for ${product.name} must be a valid percentage.`;
+    return;
+  }
+
+  savingOverrideId.value = id;
+  overrideSavedId.value = null;
+  errorMessage.value = "";
+  try {
+    const updated:any = await adminFetch(`/api/admin/products/${id}/pricing-override`, {
+      method: "PATCH",
+      body: { pricing_level_markup_override_percent: value },
+    });
+    product.pricing_level_markup_override_percent = Number(updated.pricing_level_markup_override_percent || 0);
+    product.price = updated.price;
+    overrideDrafts.value[id] = String(Number(updated.pricing_level_markup_override_percent || 0));
+    overrideSavedId.value = id;
+    window.setTimeout(() => { if (overrideSavedId.value === id) overrideSavedId.value = null; }, 1800);
+  } catch (error:any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to save pricing override.";
+  } finally {
+    savingOverrideId.value = null;
+  }
+};
+
 const loadProducts = async () => {
   loading.value = true;
   errorMessage.value = "";
 
   try {
     products.value = (await adminFetch<Product[]>("/api/admin/products")) || [];
+    overrideDrafts.value = Object.fromEntries(products.value.map((product) => [
+      String(product.id),
+      String(Number(product.pricing_level_markup_override_percent || 0)),
+    ]));
   } catch (error: any) {
     console.error("LOAD PRODUCTS ERROR:", error);
     errorMessage.value =
