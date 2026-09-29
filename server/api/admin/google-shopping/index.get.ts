@@ -4,7 +4,7 @@ export default defineEventHandler(async(event)=>{
   await requireAdmin(event);
   const s=getAdminSupabase();
   const {data,error}=await s.from("products")
-    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,product_variants(id,name,product_code,gtin,mpn,price,stock,active,images)")
+    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,weight_kg,product_variants(id,name,product_code,gtin,mpn,price,stock,active,images)")
     .eq("active",true).order("name");
   if(error) {
     console.error("GOOGLE SHOPPING PRODUCT QUERY ERROR:", error);
@@ -31,6 +31,7 @@ export default defineEventHandler(async(event)=>{
       missing_brand:products.filter((x:any)=>x.issues.some((i:any)=>i.key==="missing_brand")).length,
       missing_identifier:products.filter((x:any)=>x.issues.some((i:any)=>i.key==="missing_identifier")).length,
       missing_image:products.filter((x:any)=>x.issues.some((i:any)=>i.key==="missing_image")).length,
+      missing_shipping_weight:products.filter((x:any)=>x.issues.some((i:any)=>i.key==="missing_shipping_weight")).length,
     }, products
   };
 });

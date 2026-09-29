@@ -11,16 +11,17 @@
         <Stat label="Feed Items" :value="data.summary.feed_items"/><Stat label="Ready" :value="data.summary.ready"/>
         <Stat label="Needs Attention" :value="data.summary.attention"/><Stat label="Not Eligible" :value="data.summary.not_eligible"/>
       </div>
-      <div class="grid gap-3 sm:grid-cols-3">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <button class="chip" @click="filter='missing_brand'"><b>{{data.summary.missing_brand}}</b><span>Missing Brand</span></button>
         <button class="chip" @click="filter='missing_identifier'"><b>{{data.summary.missing_identifier}}</b><span>Missing GTIN / MPN</span></button>
         <button class="chip" @click="filter='missing_image'"><b>{{data.summary.missing_image}}</b><span>Missing Image</span></button>
+        <button class="chip" @click="filter='missing_shipping_weight'"><b>{{data.summary.missing_shipping_weight}}</b><span>Missing Shipping Weight</span></button>
       </div>
       <section class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
         <div class="p-4 border-b flex flex-col gap-3 lg:flex-row">
           <input v-model="search" class="input flex-1" placeholder="Search product, SKU or brand…"/>
           <select v-model="status" class="input lg:max-w-[200px]"><option value="all">All statuses</option><option value="ready">Ready</option><option value="attention">Needs attention</option><option value="not_eligible">Not eligible</option></select>
-          <select v-model="filter" class="input lg:max-w-[220px]"><option value="all">All issues</option><option value="missing_brand">Missing brand</option><option value="missing_identifier">Missing GTIN / MPN</option><option value="missing_image">Missing image</option><option value="invalid_price">Invalid price</option><option value="missing_description">Missing description</option></select>
+          <select v-model="filter" class="input lg:max-w-[220px]"><option value="all">All issues</option><option value="missing_brand">Missing brand</option><option value="missing_identifier">Missing GTIN / MPN</option><option value="missing_image">Missing image</option><option value="missing_shipping_weight">Missing shipping weight</option><option value="invalid_price">Invalid price</option><option value="missing_description">Missing description</option></select>
         </div>
         <div class="overflow-x-auto"><table class="w-full min-w-[950px] text-sm"><thead class="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th class="p-4">Product</th><th class="p-4">Feed Items</th><th class="p-4">Status</th><th class="p-4">Issues</th><th class="p-4"></th></tr></thead>
         <tbody><tr v-for="p in rows" :key="p.id" class="border-t align-top"><td class="p-4"><b>{{p.name}}</b><div class="text-xs text-slate-500 mt-1">SKU: {{p.product_code||"Missing"}} · {{p.brand||"No brand"}}</div></td>

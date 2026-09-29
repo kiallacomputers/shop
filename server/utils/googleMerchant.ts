@@ -30,6 +30,7 @@ export const merchantHealthIssues=(p:any,v?:any)=>{
   const brand=clean(p?.brand);
   const gtin=clean(v?.gtin || (!v ? p?.gtin : ""));
   const mpn=clean(v?.mpn || (!v ? p?.mpn : ""));
+  const shippingWeight=Number(p?.weight_kg || 0);
   if(!code) issues.push(["missing_id","Missing SKU / ID","error"]);
   if(!title) issues.push(["missing_title","Missing title","error"]);
   if(!clean(p?.slug)) issues.push(["missing_link","Missing product URL","error"]);
@@ -38,6 +39,7 @@ export const merchantHealthIssues=(p:any,v?:any)=>{
   if(!(price>0)) issues.push(["invalid_price","Missing or zero public price","error"]);
   if(!brand) issues.push(["missing_brand","Missing brand","warning"]);
   if(!gtin && !mpn) issues.push(["missing_identifier","Missing GTIN / MPN","warning"]);
+  if(!(shippingWeight>0)) issues.push(["missing_shipping_weight","Missing shipping weight","error"]);
   if(v && !clean(p?.product_code)) issues.push(["missing_item_group","Missing parent SKU for item_group_id","warning"]);
   return issues.map(([key,label,severity])=>({key,label,severity}));
 };
@@ -54,11 +56,13 @@ export const merchantItemsForProduct=(p:any,site:string)=>{
     const gtin=clean(v?.gtin || (!v ? p.gtin : ""));
     const mpn=clean(v?.mpn || (!v ? p.mpn : ""));
     const price=Number(v?.price ?? p.price ?? 0);
+    const shippingWeightKg=Number(p?.weight_kg || 0);
     const item:any={
       id,title,description:seoDescription(p,5000),link:`${site}/product/${encodeURIComponent(clean(p.slug))}`,
       image_link:absUrl(site,primary),additional_image_link:extras.map(x=>absUrl(site,x)),
       availability:availability(p,v),price:money(price),condition:condition(p),brand:clean(p.brand),
       gtin,mpn,item_group_id:v?clean(p.product_code || p.id):"",
+      shipping_weight:shippingWeightKg>0 ? `${shippingWeightKg.toFixed(3)} kg` : "",
       issues:merchantHealthIssues(p,v),product_id:p.id,variant_id:v?.id || null,
     };
     return item;
@@ -76,6 +80,6 @@ ${items.map(i=>`<item>
 ${i.additional_image_link.map((x:string)=>`<g:additional_image_link>${xml(x)}</g:additional_image_link>`).join("")}
 <g:availability>${xml(i.availability)}</g:availability><g:price>${xml(i.price)}</g:price><g:condition>${xml(i.condition)}</g:condition>
 ${i.brand?`<g:brand>${xml(i.brand)}</g:brand>`:""}${i.gtin?`<g:gtin>${xml(i.gtin)}</g:gtin>`:""}${i.mpn?`<g:mpn>${xml(i.mpn)}</g:mpn>`:""}
-${i.item_group_id?`<g:item_group_id>${xml(i.item_group_id)}</g:item_group_id>`:""}
+${i.item_group_id?`<g:item_group_id>${xml(i.item_group_id)}</g:item_group_id>`:""}${i.shipping_weight?`<g:shipping_weight>${xml(i.shipping_weight)}</g:shipping_weight>`:""}
 </item>`).join("\n")}
 </channel></rss>`;
