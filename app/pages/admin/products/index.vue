@@ -148,7 +148,7 @@
                       {{ currency(product.price) }}
                     </td>
                     <td class="px-5 py-4 text-right font-semibold text-slate-600 whitespace-nowrap">
-                      {{ currency(product.rrp_price) }}
+                      {{ currency(calculatedProductRrp(product)) }}
                     </td>
                     <td class="px-5 py-4 text-center whitespace-nowrap">
                       <div class="inline-flex items-center gap-1.5">
@@ -309,6 +309,8 @@ type Product = {
   slug?: string | null;
   category_id?: string | number | null;
   price?: number | string | null;
+  buy_price_ex_gst?: number | string | null;
+  rrp_markup_percent?: number | string | null;
   rrp_price?: number | string | null;
   pricing_level_markup_override_percent?: number | string | null;
   stock?: number | string | null;
@@ -495,6 +497,15 @@ const firstImage = (product: Product) => {
   } catch {
     return product.images;
   }
+};
+
+const calculatedProductRrp = (product: Product) => {
+  const buyExGst = Number(product.buy_price_ex_gst || 0);
+  const rrpMarkup = Number(product.rrp_markup_percent || 0);
+  if (!Number.isFinite(buyExGst) || buyExGst <= 0) return Number(product.rrp_price || 0);
+  const rrpExGst = Math.round((buyExGst * (1 + rrpMarkup / 100) + Number.EPSILON) * 100) / 100;
+  const rrpIncGst = rrpExGst * 1.1;
+  return rrpIncGst <= 0 ? 0 : Math.max(1, Math.round(rrpIncGst));
 };
 
 const overrideChanged = (product: Product) => {
