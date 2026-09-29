@@ -22,6 +22,12 @@ export const roundToNearestFive = (value: number) => {
   return Math.max(1, Math.round(value));
 };
 
+export const effectivePricingMarkupPercent = (levelMarkupPercent: unknown, productOverridePercent: unknown) => {
+  const level = Number(levelMarkupPercent);
+  const override = Number(productOverridePercent);
+  return (Number.isFinite(level) ? level : 0) + (Number.isFinite(override) ? override : 0);
+};
+
 export const calculateBaseCustomerPrice = (
   buyPriceExGst: unknown,
   markupPercent: number,

@@ -8,6 +8,7 @@ import {
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
   getStandardPricingLevel,
+  effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 import { throwInternalError } from "~~/server/utils/internalError";
 
@@ -95,7 +96,7 @@ export default defineEventHandler(async (event) => {
   const productIds = [...new Set(requestedItems.map((item: any) => item.id))];
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id, name, price, buy_price_ex_gst, stock, active, has_variants, product_code")
+    .select("id, name, price, buy_price_ex_gst, pricing_level_markup_override_percent, stock, active, has_variants, product_code")
     .in("id", productIds);
 
   if (productError) {
@@ -150,9 +151,9 @@ export default defineEventHandler(async (event) => {
     // cannot choose or submit its own price.
     const baseCustomerPrice = calculateBaseCustomerPrice(
       product.buy_price_ex_gst,
-      pricingLevel.markupPercent,
+      effectivePricingMarkupPercent(pricingLevel.markupPercent, product.pricing_level_markup_override_percent),
       product.price,
-      standardPricingLevel.markupPercent,
+      effectivePricingMarkupPercent(standardPricingLevel.markupPercent, product.pricing_level_markup_override_percent),
     );
     const price = variant
       ? calculateVariantCustomerPrice({

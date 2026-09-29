@@ -1,5 +1,5 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
-import { calculateBaseCustomerPrice, calculateVariantCustomerPrice, getPricingLevelForUser, getPricingLevelByKey, getStandardPricingLevel } from "~~/server/utils/customerPricing";
+import { calculateBaseCustomerPrice, calculateVariantCustomerPrice, getPricingLevelForUser, getPricingLevelByKey, getStandardPricingLevel, effectivePricingMarkupPercent } from "~~/server/utils/customerPricing";
 
 export async function manualQuotePricingMap(q:any) {
   const items=(q?.manual_quote_items||[]).filter((i:any)=>i.product_id);
@@ -8,7 +8,7 @@ export async function manualQuotePricingMap(q:any) {
   if(!ids.length)return result;
   const supabase=getAdminSupabase();
   const [{data:products},standard]=await Promise.all([
-    supabase.from("products").select("id,buy_price_ex_gst,price").in("id",ids),
+    supabase.from("products").select("id,buy_price_ex_gst,price,pricing_level_markup_override_percent").in("id",ids),
     getStandardPricingLevel()
   ]);
   const level=q?.sales_customers?.pricing_level_key?await getPricingLevelByKey(q.sales_customers.pricing_level_key):await getPricingLevelForUser(q?.sales_customers?.user_id||null);
@@ -16,8 +16,8 @@ export async function manualQuotePricingMap(q:any) {
   const {data:variantRows}=variants.length?await supabase.from("product_variants").select("id,product_id,price").in("id",variants):{data:[] as any[]};
   for(const item of items){
     const p:any=(products||[]).find((x:any)=>Number(x.id)===Number(item.product_id)); if(!p)continue;
-    const currentBase=calculateBaseCustomerPrice(p.buy_price_ex_gst,level.markupPercent,p.price,standard.markupPercent);
-    const standardBase=calculateBaseCustomerPrice(p.buy_price_ex_gst,standard.markupPercent,p.price,standard.markupPercent);
+    const currentBase=calculateBaseCustomerPrice(p.buy_price_ex_gst,effectivePricingMarkupPercent(level.markupPercent,p.pricing_level_markup_override_percent),p.price,effectivePricingMarkupPercent(standard.markupPercent,p.pricing_level_markup_override_percent));
+    const standardBase=calculateBaseCustomerPrice(p.buy_price_ex_gst,effectivePricingMarkupPercent(standard.markupPercent,p.pricing_level_markup_override_percent),p.price,effectivePricingMarkupPercent(standard.markupPercent,p.pricing_level_markup_override_percent));
     let current=currentBase,std=standardBase;
     if(item.variant_id){
       const v:any=(variantRows||[]).find((x:any)=>Number(x.id)===Number(item.variant_id));

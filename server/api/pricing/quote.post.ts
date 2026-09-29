@@ -4,6 +4,7 @@ import {
   calculateVariantCustomerPrice,
   getPricingLevelForEvent,
   getStandardPricingLevel,
+  effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 
 type QuoteItem = { productId?: number | string; variantId?: number | string | null };
@@ -30,7 +31,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getAdminSupabase();
   const { data: products, error: productError } = await supabase
     .from("products")
-    .select("id,buy_price_ex_gst,price,active")
+    .select("id,buy_price_ex_gst,price,pricing_level_markup_override_percent,active")
     .in("id", productIds);
 
   if (productError) throw createError({ statusCode: 500, statusMessage: productError.message });
@@ -42,9 +43,9 @@ export default defineEventHandler(async (event) => {
     if (product.active === false) continue;
     productPrices[String(product.id)] = calculateBaseCustomerPrice(
       product.buy_price_ex_gst,
-      level.markupPercent,
+      effectivePricingMarkupPercent(level.markupPercent, product.pricing_level_markup_override_percent),
       product.price,
-      standardLevel.markupPercent,
+      effectivePricingMarkupPercent(standardLevel.markupPercent, product.pricing_level_markup_override_percent),
     );
   }
 

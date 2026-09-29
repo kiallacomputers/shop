@@ -46,6 +46,7 @@ export default defineEventHandler(async (event) => {
   const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
+  const pricingLevelMarkupOverridePercent = Number(body?.pricing_level_markup_override_percent ?? 0);
   const stock = Number(body?.stock);
   const lowStockLevel = Number(body?.low_stock_level);
   const reorderLevel = Number(body?.reorder_level);
@@ -74,6 +75,10 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  if (!Number.isFinite(pricingLevelMarkupOverridePercent)) {
+    throw createError({ statusCode: 400, statusMessage: "Pricing level override must be a valid percentage" });
+  }
+
   if (!Number.isInteger(stock) || stock < 0) {
     throw createError({ statusCode: 400, statusMessage: "Stock must be a whole number of 0 or more" });
   }
@@ -91,7 +96,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const sellExGst = roundMoney(buyPriceExGst * (1 + sellMarkupPercent / 100));
+  const effectiveStandardMarkupPercent = sellMarkupPercent + pricingLevelMarkupOverridePercent;
+  const sellExGst = roundMoney(buyPriceExGst * (1 + effectiveStandardMarkupPercent / 100));
   const rrpExGst = roundMoney(buyPriceExGst * (1 + rrpMarkupPercent / 100));
   const price = roundToNearestFive(sellExGst * 1.1);
   const oldPrice = roundToNearestFive(rrpExGst * 1.1);
@@ -109,7 +115,8 @@ export default defineEventHandler(async (event) => {
     blurb: String(body?.blurb || "").trim() || null,
     description: body?.description ?? [],
     buy_price_ex_gst: roundMoney(buyPriceExGst),
-    sell_markup_percent: sellMarkupPercent,
+    sell_markup_percent: effectiveStandardMarkupPercent,
+    pricing_level_markup_override_percent: pricingLevelMarkupOverridePercent,
     rrp_markup_percent: rrpMarkupPercent,
     price,
     oldPrice,

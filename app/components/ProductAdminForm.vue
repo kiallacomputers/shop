@@ -253,13 +253,39 @@
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Standard Sell Price</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} markup {{ standardMarkupPercent }}% · GST inclusive · rounded to nearest dollar · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
+            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} effective markup {{ effectiveStandardMarkupPercent }}% · GST inclusive · rounded to nearest dollar · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Calculated RRP</p>
             <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedRrpPrice) }}</p>
             <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest dollar · {{ currency(calculatedRrpPriceExGst) }} ex GST before rounding</p>
+          </div>
+        </div>
+
+        <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50/50 p-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <label class="block lg:max-w-xs">
+              <span class="mb-1 block text-sm font-bold text-slate-800">Pricing Level Override</span>
+              <div class="relative">
+                <input v-model="form.pricing_level_markup_override_percent" type="number" step="0.1" class="input !pr-9" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center font-bold text-slate-500">%</span>
+              </div>
+              <span class="mt-1 block text-xs leading-5 text-slate-600">Adds percentage points to every pricing level for this product. Staff 2% + 10% override becomes 12%.</span>
+            </label>
+            <button v-if="numeric(form.pricing_level_markup_override_percent) !== 0" type="button" class="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50" @click="form.pricing_level_markup_override_percent = '0'">Reset to global levels</button>
+          </div>
+          <div class="mt-4 overflow-x-auto rounded-lg border border-blue-100 bg-white">
+            <table class="w-full min-w-[650px] text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-3 py-2">Pricing Level</th><th class="px-3 py-2">Global %</th><th class="px-3 py-2">Override</th><th class="px-3 py-2">Effective %</th><th class="px-3 py-2">Customer Price</th></tr></thead>
+              <tbody>
+                <tr v-for="level in pricingLevels" :key="level.key" class="border-t border-slate-100">
+                  <td class="px-3 py-2 font-bold">{{ level.name }}</td><td class="px-3 py-2">{{ level.markup_percent }}%</td>
+                  <td class="px-3 py-2 font-bold text-blue-700">{{ signedPercent(numeric(form.pricing_level_markup_override_percent)) }}</td>
+                  <td class="px-3 py-2 font-black">{{ effectiveLevelPercent(level) }}%</td><td class="px-3 py-2 font-black">{{ currency(levelCustomerPrice(level)) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -616,6 +642,7 @@ const dragOverImageIndex = ref<number | null>(null);
 const descriptionBlocks = ref<any[]>([]);
 const standardMarkupPercent = ref(20);
 const standardPricingLevelName = ref("Standard");
+const pricingLevels = ref<Array<{key:string;name:string;markup_percent:number}>>([]);
 const allProducts = ref<any[]>([]);
 const relatedProductIds = ref<number[]>([]);
 const relatedSearch = ref("");
@@ -665,6 +692,7 @@ const form = reactive({
   seo_description: "",
   has_variants: false,
   buy_price_ex_gst: "",
+  pricing_level_markup_override_percent: "0",
   rrp_markup_percent: "",
   stock: "0",
   low_stock_level: "2",
@@ -690,9 +718,13 @@ const numeric = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const effectiveStandardMarkupPercent = computed(() => standardMarkupPercent.value + numeric(form.pricing_level_markup_override_percent));
 const calculatedSellPriceExGst = computed(() =>
-  roundMoney(numeric(form.buy_price_ex_gst) * (1 + standardMarkupPercent.value / 100)),
+  roundMoney(numeric(form.buy_price_ex_gst) * (1 + effectiveStandardMarkupPercent.value / 100)),
 );
+const effectiveLevelPercent = (level:any) => roundMoney(Number(level?.markup_percent || 0) + numeric(form.pricing_level_markup_override_percent));
+const levelCustomerPrice = (level:any) => roundToNearestFive(numeric(form.buy_price_ex_gst) * (1 + effectiveLevelPercent(level) / 100) * 1.1);
+const signedPercent = (value:number) => `${value > 0 ? "+" : ""}${roundMoney(value)}%`;
 const calculatedSellPrice = computed(() => roundToNearestFive(calculatedSellPriceExGst.value * 1.1));
 const calculatedRrpPriceExGst = computed(() =>
   roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.rrp_markup_percent) / 100)),
@@ -840,15 +872,17 @@ const loadForm = async () => {
   errorMessage.value = "";
 
   try {
-    const [categoryRows, standardPricing, productRows, supplierList] = await Promise.all([
+    const [categoryRows, standardPricing, productRows, supplierList, pricingLevelRows] = await Promise.all([
       adminFetch("/api/admin/categories"),
       adminFetch<{ key: string; name: string; markup_percent: number }>("/api/admin/pricing/standard"),
       adminFetch("/api/admin/products"),
       adminFetch("/api/admin/products/suppliers"),
+      adminFetch("/api/admin/products/pricing-levels"),
     ]);
     categories.value = Array.isArray(categoryRows) ? categoryRows as ProductCategory[] : [];
     allProducts.value = Array.isArray(productRows) ? productRows as any[] : [];
     suppliers.value = Array.isArray(supplierList) ? supplierList as any[] : [];
+    pricingLevels.value = Array.isArray(pricingLevelRows) ? pricingLevelRows as any[] : [];
     standardPricingLevelName.value = standardPricing?.name || "Standard";
     const loadedStandardMarkup = Number(standardPricing?.markup_percent);
     standardMarkupPercent.value = Number.isFinite(loadedStandardMarkup) ? loadedStandardMarkup : 20;
@@ -868,6 +902,7 @@ const loadForm = async () => {
       form.seo_description = product.seo_description || "";
       form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
+      form.pricing_level_markup_override_percent = product.pricing_level_markup_override_percent == null ? "0" : String(product.pricing_level_markup_override_percent);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
       form.stock = product.stock == null ? "0" : String(product.stock);
       form.low_stock_level = product.low_stock_level == null ? "2" : String(product.low_stock_level);
@@ -973,6 +1008,7 @@ const saveProduct = async (mode: "close" | "continue" | "add-another" = "close")
       ...form,
       category_id: form.category_id || null,
       buy_price_ex_gst: Number(form.buy_price_ex_gst),
+      pricing_level_markup_override_percent: Number(form.pricing_level_markup_override_percent || 0),
       rrp_markup_percent: Number(form.rrp_markup_percent),
       stock: Number(form.stock),
       low_stock_level: Number(form.low_stock_level),

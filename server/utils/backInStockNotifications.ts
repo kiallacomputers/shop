@@ -4,6 +4,7 @@ import {
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
   getStandardPricingLevel,
+  effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 import { sendBackInStockEmail } from "~~/server/utils/backInStockEmail";
 
@@ -25,7 +26,7 @@ export async function processBackInStockNotifications({
   const supabase = getAdminSupabase();
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id,name,slug,product_code,buy_price_ex_gst,price,stock,active,images")
+    .select("id,name,slug,product_code,buy_price_ex_gst,price,pricing_level_markup_override_percent,stock,active,images")
     .eq("id", productId)
     .maybeSingle();
   if (productError || !product || product.active === false) return { sent: 0, waiting: 0 };
@@ -95,9 +96,9 @@ export async function processBackInStockNotifications({
       const level = await getPricingLevelForUser(rowUserId);
       const basePrice = calculateBaseCustomerPrice(
         product.buy_price_ex_gst,
-        level.markupPercent,
+        effectivePricingMarkupPercent(level.markupPercent, product.pricing_level_markup_override_percent),
         product.price,
-        standard.markupPercent,
+        effectivePricingMarkupPercent(standard.markupPercent, product.pricing_level_markup_override_percent),
       );
       const finalPrice = variant
         ? calculateVariantCustomerPrice({

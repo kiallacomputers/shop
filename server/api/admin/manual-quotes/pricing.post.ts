@@ -5,6 +5,7 @@ import {
   getPricingLevelForUser,
   getPricingLevelByKey,
   getStandardPricingLevel,
+  effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 
 export default defineEventHandler(async (event) => {
@@ -25,17 +26,17 @@ export default defineEventHandler(async (event) => {
   const [level, standardLevel, productResult] = await Promise.all([
     customer.pricing_level_key ? getPricingLevelByKey(customer.pricing_level_key) : getPricingLevelForUser(customer.user_id ? String(customer.user_id) : null),
     getStandardPricingLevel(),
-    supabase.from("products").select("id,buy_price_ex_gst,price,active").eq("id", productId).single(),
+    supabase.from("products").select("id,buy_price_ex_gst,price,pricing_level_markup_override_percent,active").eq("id", productId).single(),
   ]);
   const product:any = productResult.data;
   if (productResult.error || !product || product.active === false)
     throw createError({ statusCode: 400, statusMessage: "Product is not available." });
 
   const basePrice = calculateBaseCustomerPrice(
-    product.buy_price_ex_gst, level.markupPercent, product.price, standardLevel.markupPercent
+    product.buy_price_ex_gst, effectivePricingMarkupPercent(level.markupPercent, product.pricing_level_markup_override_percent), product.price, effectivePricingMarkupPercent(standardLevel.markupPercent, product.pricing_level_markup_override_percent)
   );
   const standardBasePrice = calculateBaseCustomerPrice(
-    product.buy_price_ex_gst, standardLevel.markupPercent, product.price, standardLevel.markupPercent
+    product.buy_price_ex_gst, effectivePricingMarkupPercent(standardLevel.markupPercent, product.pricing_level_markup_override_percent), product.price, effectivePricingMarkupPercent(standardLevel.markupPercent, product.pricing_level_markup_override_percent)
   );
   let price = basePrice;
   let standardPrice = standardBasePrice;

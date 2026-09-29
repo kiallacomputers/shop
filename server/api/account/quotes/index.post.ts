@@ -6,6 +6,7 @@ import {
   calculateVariantCustomerPrice,
   getPricingLevelForUser,
   getStandardPricingLevel,
+  effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 
 export default defineEventHandler(async (event) => {
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getAdminSupabase();
 
   const [{ data: products, error: productError }, pricingLevel, standardLevel] = await Promise.all([
-    supabase.from("products").select("id,name,product_code,buy_price_ex_gst,price,active").in("id", productIds),
+    supabase.from("products").select("id,name,product_code,buy_price_ex_gst,price,pricing_level_markup_override_percent,active").in("id", productIds),
     getPricingLevelForUser(user.id),
     getStandardPricingLevel(),
   ]);
@@ -61,9 +62,9 @@ export default defineEventHandler(async (event) => {
 
     const basePrice = calculateBaseCustomerPrice(
       product.buy_price_ex_gst,
-      pricingLevel.markupPercent,
+      effectivePricingMarkupPercent(pricingLevel.markupPercent, product.pricing_level_markup_override_percent),
       product.price,
-      standardLevel.markupPercent,
+      effectivePricingMarkupPercent(standardLevel.markupPercent, product.pricing_level_markup_override_percent),
     );
 
     let requestedPrice = basePrice;
