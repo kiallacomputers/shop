@@ -536,7 +536,13 @@ const savePricingOverride = async (product: Product) => {
     overrideSavedId.value = id;
     window.setTimeout(() => { if (overrideSavedId.value === id) overrideSavedId.value = null; }, 1800);
   } catch (error:any) {
-    errorMessage.value = error?.data?.statusMessage || error?.message || "Unable to save pricing override.";
+    console.error("PRICING OVERRIDE SAVE ERROR:", error);
+    errorMessage.value =
+      error?.data?.statusMessage ||
+      error?.data?.message ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to save pricing override.";
   } finally {
     savingOverrideId.value = null;
   }
