@@ -42,6 +42,10 @@ export default defineNuxtConfig({
     facebookPageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
     facebookGraphVersion: process.env.FACEBOOK_GRAPH_VERSION || "v24.0",
 
+    googleMerchantId: process.env.GOOGLE_MERCHANT_ID,
+    googleMerchantServiceAccountEmail: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_EMAIL,
+    googleMerchantServiceAccountPrivateKey: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_PRIVATE_KEY,
+
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://shop.kiallacomputers.com.au",
       supabaseUrl: process.env.SUPABASE_URL,
