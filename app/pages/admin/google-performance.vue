@@ -27,7 +27,22 @@
 <script setup lang="ts">
 definePageMeta({layout:"admin",middleware:["admin"]});
 const {adminFetch}=useAdminFetch();const data=ref<any>(null),error=ref(""),loading=ref(false),days=ref(28),search=ref("");
-async function load(){loading.value=true;error.value="";try{data.value=await adminFetch(`/api/admin/google-performance?days=${days.value}`)}catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.message||"Unable to load Google performance."}finally{loading.value=false}}
+async function load(){
+  loading.value=true; error.value="";
+  try{
+    data.value=await adminFetch(`/api/admin/google-performance?days=${days.value}`);
+  }catch(e:any){
+    console.error("GOOGLE PERFORMANCE LOAD ERROR:",e);
+    error.value=
+      e?.data?.statusMessage ||
+      e?.data?.message ||
+      e?.statusMessage ||
+      e?.message ||
+      "Unable to load Google performance.";
+  }finally{
+    loading.value=false;
+  }
+}
 onMounted(load);
 const rows=computed(()=>{const q=search.value.toLowerCase().trim();return (data.value?.products||[]).filter((p:any)=>!q||`${p.title} ${p.offer_id}`.toLowerCase().includes(q))});
 const num=(v:any)=>Number(v||0).toLocaleString("en-AU");
