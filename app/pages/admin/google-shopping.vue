@@ -36,7 +36,14 @@
 <script setup lang="ts">
 definePageMeta({layout:"admin",middleware:["admin"]});
 const {adminFetch}=useAdminFetch(); const data=ref<any>(null),error=ref(""),search=ref(""),status=ref("all"),filter=ref("all");
-async function load(){error.value="";try{data.value=await adminFetch("/api/admin/google-shopping")}catch(e:any){error.value=e?.data?.statusMessage||e?.message||"Unable to load Google Shopping health."}}
+async function load(){
+  error.value="";
+  try{ data.value=await adminFetch("/api/admin/google-shopping") }
+  catch(e:any){
+    console.error("GOOGLE SHOPPING LOAD ERROR:",e);
+    error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||"Unable to load Google Shopping health.";
+  }
+}
 onMounted(load);
 const rows=computed(()=>{const q=search.value.toLowerCase().trim();return (data.value?.products||[]).filter((p:any)=>(status.value==="all"||p.status===status.value)&&(filter.value==="all"||p.issues.some((i:any)=>i.key===filter.value))&&(!q||`${p.name} ${p.product_code||""} ${p.brand||""}`.toLowerCase().includes(q)))});
 const uniqueIssues=(issues:any[])=>Array.from(new Map(issues.map(i=>[i.key,i])).values());

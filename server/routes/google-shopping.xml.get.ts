@@ -4,7 +4,7 @@ import { merchantItemsForProduct, merchantXml } from "~~/server/utils/googleMerc
 export default defineEventHandler(async (event) => {
   const supabase=getAdminSupabase();
   const {data,error}=await supabase.from("products")
-    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,backorder,allow_backorder,product_variants(id,name,product_code,gtin,mpn,price,stock,active,image,image_url,backorder)")
+    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,product_variants(id,name,product_code,gtin,mpn,price,stock,active,images)")
     .eq("active",true).order("name");
   if(error) throw createError({statusCode:500,statusMessage:error.message});
   const site=String(useRuntimeConfig(event).public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/,"");

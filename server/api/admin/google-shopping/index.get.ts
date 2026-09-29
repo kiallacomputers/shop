@@ -4,9 +4,12 @@ export default defineEventHandler(async(event)=>{
   await requireAdmin(event);
   const s=getAdminSupabase();
   const {data,error}=await s.from("products")
-    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,backorder,allow_backorder,product_variants(id,name,product_code,gtin,mpn,price,stock,active,image,image_url,backorder)")
+    .select("id,name,slug,product_code,brand,gtin,mpn,seo_description,blurb,description,price,stock,active,refurbished,images,product_variants(id,name,product_code,gtin,mpn,price,stock,active,images)")
     .eq("active",true).order("name");
-  if(error) throw createError({statusCode:500,statusMessage:error.message});
+  if(error) {
+    console.error("GOOGLE SHOPPING PRODUCT QUERY ERROR:", error);
+    throw createError({statusCode:500,statusMessage:error.message || "Unable to load Google Shopping product data"});
+  }
   const site=String(useRuntimeConfig(event).public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/$/,"");
   const products=(data||[]).map((p:any)=>{
     const items=merchantItemsForProduct(p,site);

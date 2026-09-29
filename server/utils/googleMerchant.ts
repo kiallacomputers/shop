@@ -15,9 +15,7 @@ const allImages=(value:unknown)=>{
 };
 const availability=(p:any,v?:any)=>{
   const stock=Number(v?.stock ?? p?.stock ?? 0);
-  const backorder=Boolean(v?.backorder ?? p?.backorder ?? p?.allow_backorder);
   if(stock>0) return "in_stock";
-  if(backorder) return "backorder";
   return "out_of_stock";
 };
 const condition=(p:any)=>p?.refurbished ? "refurbished" : "new";
@@ -27,7 +25,7 @@ export const merchantHealthIssues=(p:any,v?:any)=>{
   const code=clean(v?.product_code || p?.product_code);
   const title=clean(v?.name ? `${p?.name || ""} - ${v.name}` : p?.name);
   const desc=clean(seoDescription(p,5000) || plainDescriptionText(p?.description));
-  const image=clean(v?.image_url || v?.image || firstProductImage(p?.images));
+  const image=clean(firstProductImage(v?.images) || firstProductImage(p?.images));
   const price=Number(v?.price ?? p?.price ?? 0);
   const brand=clean(p?.brand);
   const gtin=clean(v?.gtin || (!v ? p?.gtin : ""));
@@ -49,7 +47,7 @@ export const merchantItemsForProduct=(p:any,site:string)=>{
   const rows=variants.length ? variants : [null];
   return rows.map((v:any)=>{
     const images=allImages(p.images);
-    const primary=clean(v?.image_url || v?.image || firstProductImage(images));
+    const primary=clean(firstProductImage(v?.images) || firstProductImage(images));
     const extras=images.filter(x=>x!==primary).slice(0,10);
     const id=clean(v?.product_code || p.product_code || `${p.id}${v?`-${v.id}`:""}`);
     const title=clean(v?.name ? `${p.name} - ${v.name}` : p.name);
