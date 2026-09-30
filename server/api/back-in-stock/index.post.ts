@@ -1,7 +1,13 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "back-in-stock",
+    max: 20,
+    windowSeconds: 3600,
+  });
   const user = await requireRequestUser(event);
   const body = await readBody(event);
   const productId = Number(body?.product_id);

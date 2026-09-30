@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
@@ -16,6 +17,11 @@ const text = (value: unknown) => String(value ?? "").trim();
 const PROCESSING_FEE = 2;
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "checkout-create",
+    max: 20,
+    windowSeconds: 600,
+  });
   const config = useRuntimeConfig();
 
   if (!config.stripeSecretKey) {

@@ -1,6 +1,12 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "review-submit",
+    max: 10,
+    windowSeconds: 3600,
+  });
   const user = await requireRequestUser(event); const productId = Number(getRouterParam(event,"productId")); const body = await readBody(event);
   const rating=Number(body?.rating), title=String(body?.title||"").trim(), review=String(body?.review||"").trim();
   if(!Number.isInteger(productId)||productId<=0) throw createError({statusCode:400,statusMessage:"Invalid product."});

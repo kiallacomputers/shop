@@ -1,8 +1,14 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { readBody } from "h3";
 import { getAdminSupabase } from "../../utils/adminAuth";
 import { sendPasswordRecoveryEmail } from "../../utils/authEmail";
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "auth-recovery",
+    max: 5,
+    windowSeconds: 3600,
+  });
   const body = await readBody(event);
   const email = String(body?.email || "").trim().toLowerCase();
 

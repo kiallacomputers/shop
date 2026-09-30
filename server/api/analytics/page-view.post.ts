@@ -1,3 +1,4 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 
 const cleanText = (value: unknown, max = 300) =>
@@ -97,6 +98,11 @@ const countryFromRequest = (event: any) => {
 };
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "analytics-page-view",
+    max: 180,
+    windowSeconds: 60,
+  });
   const body = await readBody(event);
 
   const sessionId = cleanText(body?.sessionId, 80);

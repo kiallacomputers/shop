@@ -1,9 +1,15 @@
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { readBody, getRequestURL } from "h3";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { cleanChatMessage, getOptionalUser, hashChatToken, newChatToken } from "~~/server/utils/chat";
 import { notifyAdminsOfChat } from "~~/server/utils/chatPush";
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, {
+    bucket: "chat-start",
+    max: 10,
+    windowSeconds: 900,
+  });
   const body = await readBody(event);
   const message = cleanChatMessage(body?.message);
   if (!message) {
