@@ -35,7 +35,16 @@ export default defineNuxtPlugin(() => {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: {
-          items: cart.items,
+          // Send identifiers only. The server rebuilds names, prices, images
+          // and add-on details from trusted database records.
+          items: cart.items.map((item: any) => ({
+            id: Number(item.id),
+            variantId: item.variantId == null ? null : Number(item.variantId),
+            quantity: Number(item.quantity),
+            addonOptionIds: Array.isArray(item.selectedAddons)
+              ? item.selectedAddons.map((addon: any) => Number(addon.id)).filter(Number.isInteger)
+              : [],
+          })),
         },
       });
 
