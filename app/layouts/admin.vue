@@ -43,6 +43,8 @@
 
       <main class="admin-content min-h-[calc(100vh-72px)]"><slot /></main>
     </div>
+
+    <AdminSessionTimeout />
   </div>
 </template>
 
