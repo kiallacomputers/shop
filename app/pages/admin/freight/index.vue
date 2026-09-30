@@ -446,7 +446,7 @@ const addBulkPostcodes = async () => {
 };
 
 const removePostcode = async (postcode: LocalPostcode) => {
-  if (!await dialog.confirm(`Remove local delivery for ${postcode.postcode}?`)) {
+  if (!await dialog.confirm(`Remove local delivery for ${postcode.postcode}?`,{title:'Remove local delivery?',confirmText:'Remove',danger:true})) {
     return;
   }
 

@@ -730,7 +730,7 @@ const duplicateProduct = async (product: Product) => {
 // ========================================
 
 const deleteProduct = async (product: Product) => {
-  if (!await dialog.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
+  if (!await dialog.confirm(`Are you sure you want to delete \"${product.name}\"?`,{title:'Delete product?',confirmText:'Delete',danger:true})) return;
 
   deletingId.value = String(product.id);
   errorMessage.value = "";

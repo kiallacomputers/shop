@@ -238,7 +238,7 @@ const saveAd = async () => {
 };
 
 const deleteAd = async (ad: AdRecord) => {
-  if (!await dialog.confirm(`Delete advertisement “${ad.title}”?`)) return;
+  if (!await dialog.confirm(`Delete advertisement “${ad.title}”?`,{title:'Delete advertisement?',confirmText:'Delete',danger:true})) return;
   deletingId.value = String(ad.id);
   errorMessage.value = "";
   try {

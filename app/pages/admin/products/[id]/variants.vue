@@ -272,7 +272,7 @@ const saveVariant=async(v:any)=>{
     v.saving=false;
   }
 };
-const removeVariant=async(v:any)=>{if(!await dialog.confirm(`Delete ${v.name||'this variant'}?`))return;if(v.id)await adminFetch(`/api/admin/products/${productId}/variants/${v.id}`,{method:'DELETE'});variants.value=variants.value.filter(x=>x._key!==v._key);};
+const removeVariant=async(v:any)=>{if(!await dialog.confirm(`Delete ${v.name||'this variant'}?`,{title:'Delete variant?',confirmText:'Delete',danger:true}))return;if(v.id)await adminFetch(`/api/admin/products/${productId}/variants/${v.id}`,{method:'DELETE'});variants.value=variants.value.filter(x=>x._key!==v._key);};
 onMounted(load);
 </script>
 <style scoped>.label{display:block;margin-bottom:.375rem;font-size:.875rem;font-weight:600;color:#334155}.input{width:100%;border:1px solid #cbd5e1;border-radius:.5rem;padding:.625rem .75rem;background:#fff}</style>
