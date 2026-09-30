@@ -2,6 +2,7 @@ import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { readBody } from "h3";
 import { getAdminSupabase } from "../../utils/adminAuth";
 import { sendSignupVerificationEmail } from "../../utils/authEmail";
+import { assertAllowedKeys, cleanInputText, rejectOversizedContentLength, requireEmail, requireObjectBody } from "~~/server/utils/inputValidation";
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, {
@@ -9,19 +10,18 @@ export default defineEventHandler(async (event) => {
     max: 5,
     windowSeconds: 3600,
   });
-  const body = await readBody(event);
-  const email = String(body?.email || "").trim().toLowerCase();
-  const password = String(body?.password || "");
-  const fullName = String(body?.fullName || "").trim();
+  rejectOversizedContentLength(event, 16 * 1024);
+  const body = requireObjectBody(await readBody(event));
+  assertAllowedKeys(body, ["email", "password", "fullName"]);
+  const email = requireEmail(body.email);
+  const password = String(body.password || "");
+  const fullName = cleanInputText(body.fullName, 120);
 
-  if (!email || !email.includes("@")) {
-    throw createError({ statusCode: 400, statusMessage: "A valid email address is required." });
-  }
-  if (password.length < 8) {
-    throw createError({ statusCode: 400, statusMessage: "Password must be at least 8 characters." });
+  if (password.length < 8 || password.length > 128) {
+    throw createError({ statusCode: 422, statusMessage: "Password must be between 8 and 128 characters." });
   }
   if (!fullName) {
-    throw createError({ statusCode: 400, statusMessage: "Your name is required." });
+    throw createError({ statusCode: 422, statusMessage: "Your name is required." });
   }
 
   const config = useRuntimeConfig();

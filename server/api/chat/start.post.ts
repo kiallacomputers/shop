@@ -3,6 +3,7 @@ import { readBody, getRequestURL } from "h3";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { cleanChatMessage, getOptionalUser, hashChatToken, newChatToken } from "~~/server/utils/chat";
 import { notifyAdminsOfChat } from "~~/server/utils/chatPush";
+import { cleanInputText, optionalEmail, rejectOversizedContentLength, requireObjectBody } from "~~/server/utils/inputValidation";
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, {
@@ -10,7 +11,8 @@ export default defineEventHandler(async (event) => {
     max: 10,
     windowSeconds: 900,
   });
-  const body = await readBody(event);
+  rejectOversizedContentLength(event, 32 * 1024);
+  const body = requireObjectBody(await readBody(event));
   const message = cleanChatMessage(body?.message);
   if (!message) {
     throw createError({ statusCode: 400, statusMessage: "Please enter a message." });
@@ -18,11 +20,11 @@ export default defineEventHandler(async (event) => {
 
   const user = await getOptionalUser(event);
   const userId = user?.id || user?.sub || null;
-  const email = String(body?.email || user?.email || "").trim().toLowerCase().slice(0, 320);
-  const name = String(body?.name || user?.user_metadata?.display_name || "").trim().slice(0, 160);
+  const email = optionalEmail(body?.email || user?.email || "");
+  const name = cleanInputText(body?.name || user?.user_metadata?.display_name || "", 160);
 
-  if (!userId && (!email || !email.includes("@"))) {
-    throw createError({ statusCode: 400, statusMessage: "Please enter a valid email address." });
+  if (!userId && !email) {
+    throw createError({ statusCode: 422, statusMessage: "Please enter a valid email address." });
   }
 
   const token = newChatToken();
@@ -34,8 +36,8 @@ export default defineEventHandler(async (event) => {
       visitor_token_hash: hashChatToken(token),
       customer_name: name || null,
       customer_email: email || null,
-      page_url: String(body?.pageUrl || "").slice(0, 1000) || null,
-      page_title: String(body?.pageTitle || "").slice(0, 300) || null,
+      page_url: cleanInputText(body?.pageUrl || "", 1000) || null,
+      page_title: cleanInputText(body?.pageTitle || "", 300) || null,
       unread_admin: 1,
       last_message_at: new Date().toISOString(),
     })

@@ -2,11 +2,13 @@ import { readBody } from "h3";
 import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { cleanChatMessage, requireCustomerConversation } from "~~/server/utils/chat";
 import { notifyAdminsOfChat } from "~~/server/utils/chatPush";
+import { rejectOversizedContentLength, requireObjectBody } from "~~/server/utils/inputValidation";
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, { bucket: "chat-message", max: 30, windowSeconds: 300 });
   const id = String(event.context.params?.id || "");
-  const body = await readBody(event);
+  rejectOversizedContentLength(event, 16 * 1024);
+  const body = requireObjectBody(await readBody(event));
   const message = cleanChatMessage(body?.message);
   if (!message) throw createError({ statusCode: 400, statusMessage: "Please enter a message." });
 

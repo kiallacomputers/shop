@@ -12,6 +12,7 @@ import {
   effectivePricingMarkupPercent,
 } from "~~/server/utils/customerPricing";
 import { throwInternalError } from "~~/server/utils/internalError";
+import { rejectOversizedContentLength, requireArray, requireObjectBody } from "~~/server/utils/inputValidation";
 
 const text = (value: unknown) => String(value ?? "").trim();
 const PROCESSING_FEE = 2;
@@ -31,9 +32,11 @@ export default defineEventHandler(async (event) => {
   const stripe = new Stripe(config.stripeSecretKey);
   const user: any = await requireRequestUser(event);
   const userId = String(user.id || "");
-  const body = await readBody(event);
+  rejectOversizedContentLength(event, 128 * 1024);
+  const body = requireObjectBody(await readBody(event));
+  const cartItems = requireArray(body.items, "Cart", 100);
 
-  if (!Array.isArray(body?.items) || body.items.length === 0) {
+  if (cartItems.length === 0) {
     throw createError({ statusCode: 400, statusMessage: "Cart is empty" });
   }
 
@@ -43,7 +46,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Please choose a delivery address." });
   }
 
-  const requestedItems = body.items.map((item: any) => ({
+  const requestedItems = cartItems.map((item: any) => ({
     id: Number(item?.id),
     variantId: item?.variantId == null ? null : Number(item.variantId),
     quantity: Number(item?.quantity),
@@ -52,7 +55,7 @@ export default defineEventHandler(async (event) => {
       : [],
   }));
 
-  if (requestedItems.some((item: any) => !Number.isInteger(item.id) || item.id <= 0 || (item.variantId !== null && (!Number.isInteger(item.variantId) || item.variantId <= 0)) || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+  if (requestedItems.some((item: any) => !Number.isInteger(item.id) || item.id <= 0 || (item.variantId !== null && (!Number.isInteger(item.variantId) || item.variantId <= 0)) || !Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > 100)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid cart item" });
   }
 

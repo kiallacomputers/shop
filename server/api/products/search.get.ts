@@ -1,5 +1,6 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { throwInternalError } from "~~/server/utils/internalError";
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 
 const PRODUCT_SELECT = `
   id, name, slug, product_code, has_variants, blurb, description,
@@ -99,6 +100,7 @@ const scoreProduct = (product: any, query: string) => {
 };
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, { bucket: "product-search", max: 120, windowSeconds: 60 });
   const params = getQuery(event);
   const query = String(params.q || "").trim().slice(0, 120);
   const requestedLimit = Number(params.limit || 100);

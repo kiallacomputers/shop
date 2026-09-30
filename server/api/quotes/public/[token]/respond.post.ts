@@ -1,6 +1,7 @@
 import { postManualQuoteToAccounting } from "~~/server/utils/manualQuoteAccounting";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { enforceRateLimit } from "~~/server/utils/rateLimit";
+import { cleanInputText, rejectOversizedContentLength, requireObjectBody } from "~~/server/utils/inputValidation";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -18,7 +19,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: "Quote not found." });
   }
 
-  const body = await readBody(event);
+  rejectOversizedContentLength(event, 16 * 1024);
+  const body = requireObjectBody(await readBody(event));
   const response = String(body?.response || "").toLowerCase();
 
   if (!["accepted", "declined"].includes(response)) {
@@ -63,7 +65,7 @@ export default defineEventHandler(async (event) => {
       status: response,
       customer_responded_at: now,
       customer_response_note:
-        String(body?.note || "").trim().slice(0, 1000) || null,
+        cleanInputText(body?.note || "", 1000, { multiline: true }) || null,
       accepted_at: response === "accepted" ? now : null,
       updated_at: now,
     })

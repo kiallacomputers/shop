@@ -2,6 +2,7 @@ import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { readBody } from "h3";
 import { getAdminSupabase } from "../../utils/adminAuth";
 import { sendPasswordRecoveryEmail } from "../../utils/authEmail";
+import { assertAllowedKeys, rejectOversizedContentLength, requireEmail, requireObjectBody } from "~~/server/utils/inputValidation";
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, {
@@ -9,12 +10,10 @@ export default defineEventHandler(async (event) => {
     max: 5,
     windowSeconds: 3600,
   });
-  const body = await readBody(event);
-  const email = String(body?.email || "").trim().toLowerCase();
-
-  if (!email || !email.includes("@")) {
-    throw createError({ statusCode: 400, statusMessage: "A valid email address is required." });
-  }
+  rejectOversizedContentLength(event, 8 * 1024);
+  const body = requireObjectBody(await readBody(event));
+  assertAllowedKeys(body, ["email"]);
+  const email = requireEmail(body.email);
 
   const config = useRuntimeConfig();
   const siteUrl = String(config.public.siteUrl || "https://shop.kiallacomputers.com.au").replace(/\/+$/, "");
