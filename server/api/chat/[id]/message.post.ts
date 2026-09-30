@@ -1,8 +1,10 @@
 import { readBody } from "h3";
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { cleanChatMessage, requireCustomerConversation } from "~~/server/utils/chat";
 import { notifyAdminsOfChat } from "~~/server/utils/chatPush";
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, { bucket: "chat-message", max: 30, windowSeconds: 300 });
   const id = String(event.context.params?.id || "");
   const body = await readBody(event);
   const message = cleanChatMessage(body?.message);

@@ -1,4 +1,5 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import {
   calculateBaseCustomerPrice,
   calculateVariantCustomerPrice,
@@ -10,6 +11,7 @@ import {
 type QuoteItem = { productId?: number | string; variantId?: number | string | null };
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, { bucket: "pricing-quote", max: 120, windowSeconds: 300 });
   const body = await readBody(event);
   const requested: QuoteItem[] = Array.isArray(body?.items) ? body.items.slice(0, 250) : [];
 

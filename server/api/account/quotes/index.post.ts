@@ -1,5 +1,6 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 import { sendQuoteRequestEmails } from "~~/server/utils/quoteEmail";
 import {
   calculateBaseCustomerPrice,
@@ -11,6 +12,7 @@ import {
 
 export default defineEventHandler(async (event) => {
   const user = await requireRequestUser(event);
+  await enforceRateLimit(event, { bucket: "customer-quote-request", max: 10, windowSeconds: 3600, identity: user.id });
   const body = await readBody(event);
   const requested = Array.isArray(body?.items) ? body.items.slice(0, 100) : [];
 
