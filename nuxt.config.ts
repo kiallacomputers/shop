@@ -46,6 +46,7 @@ export default defineNuxtConfig({
     googleMerchantServiceAccountEmail: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_EMAIL,
     googleMerchantServiceAccountPrivateKey: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_PRIVATE_KEY,
     googleMerchantDeveloperEmail: process.env.GOOGLE_MERCHANT_DEVELOPER_EMAIL,
+    googleSearchConsoleSiteUrl: process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL || "sc-domain:kiallacomputers.com.au",
 
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://shop.kiallacomputers.com.au",

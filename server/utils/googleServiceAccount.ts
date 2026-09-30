@@ -1,0 +1,20 @@
+import crypto from "node:crypto";
+const b64url=(input:string|Buffer)=>Buffer.from(input).toString("base64url");
+export const getGoogleServiceAccountToken=async(event:any,scope:string)=>{
+  const c=useRuntimeConfig(event);
+  const email=String(c.googleMerchantServiceAccountEmail||"").trim();
+  const rawKey=String(c.googleMerchantServiceAccountPrivateKey||"").trim();
+  if(!email||!rawKey) throw createError({statusCode:503,statusMessage:"Google service-account credentials are not configured"});
+  const privateKey=rawKey.replace(/\\n/g,"\n");
+  const now=Math.floor(Date.now()/1000);
+  const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));
+  const payload=b64url(JSON.stringify({iss:email,scope,aud:"https://oauth2.googleapis.com/token",iat:now,exp:now+3600}));
+  const unsigned=`${header}.${payload}`;
+  const signature=crypto.sign("RSA-SHA256",Buffer.from(unsigned),privateKey);
+  const assertion=`${unsigned}.${b64url(signature)}`;
+  const body=new URLSearchParams({grant_type:"urn:ietf:params:oauth:grant-type:jwt-bearer",assertion});
+  const response=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body});
+  const json:any=await response.json().catch(()=>({}));
+  if(!response.ok||!json.access_token) throw createError({statusCode:502,statusMessage:json?.error_description||"Unable to authenticate with Google"});
+  return String(json.access_token);
+};

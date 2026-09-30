@@ -59,7 +59,7 @@ const names: Record<string,string> = {
   'pricing-levels':'Pricing Levels', 'storage-cleanup':'Storage Cleanup', purchases:'Suppliers & Purchases', receivables:'Accounts Receivable', payables:'Accounts Payable',
   'bank-reconciliation':'Bank Reconciliation', 'financial-statements':'Financial Statements', 'period-close':'Period Close', 'year-end-export':'Accountant Export',
   'cash-flow':'Cash Flow & Forecasting', profitability:'Sales & Profitability', 'stock-intelligence':'Purchasing & Stock Intelligence', 'management-report':'Business Management Report',
-  'accounting-health':'Accounting Health', 'google-shopping':'Google Shopping', 'google-performance':'Google Performance', 'google-merchant-registration':'Google API Setup', invoices:'Sales & Invoices', 'chart-of-accounts':'Chart of Accounts', journal:'General Journal', new:'New', edit:'Edit'
+  'accounting-health':'Accounting Health', 'google-shopping':'Google Shopping', 'google-performance':'Google Performance', 'google-search':'Google Search', 'google-merchant-registration':'Google API Setup', invoices:'Sales & Invoices', 'chart-of-accounts':'Chart of Accounts', journal:'General Journal', new:'New', edit:'Edit'
 };
 const prettify = (s:string) => names[s] || (s.length > 22 ? 'Detail' : s.replaceAll('-', ' ').replace(/\b\w/g,c=>c.toUpperCase()));
 const pathParts = computed(() => route.path.split('/').filter(Boolean).slice(1));
