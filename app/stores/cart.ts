@@ -88,6 +88,10 @@ export const useCartStore = defineStore(
       items.value = [];
     }
 
+    function restoreCart(savedItems: any[]) {
+      items.value = Array.isArray(savedItems) ? savedItems : [];
+    }
+
     return {
       items,
       notification,
@@ -99,6 +103,7 @@ export const useCartStore = defineStore(
       decrease,
       setPrice,
       clearCart,
+      restoreCart,
     };
   },
   {

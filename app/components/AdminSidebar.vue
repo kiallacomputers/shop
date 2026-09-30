@@ -48,6 +48,7 @@
 
       <NavGroup title="Business" group-key="business" :active="groupActive('business')" :open="openGroup === 'business'" @toggle="toggleGroup('business')" @mouseenter="openHoverGroup('business')" @mouseleave="scheduleCloseGroup('business')">
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounting" :class="linkClass('/admin/accounting')" @click="closeMenuAndNavigate"><NavIcon path="M4 5h16v14H4V5Zm4 4h8M8 13h3m2 0h3M8 17h3m2 0h3"/>Accounting</NuxtLink>
+        <NuxtLink to="/admin/abandoned-carts" :class="linkClass('/admin/abandoned-carts')" @click="closeMenuAndNavigate"><NavIcon path="M3 5h18l-2 10H6L3 5Zm4 14h.01M17 19h.01"/>Abandoned Carts</NuxtLink>
         <NuxtLink to="/admin/analytics" :class="linkClass('/admin/analytics')" @click="closeMenuAndNavigate"><NavIcon path="M4 19V9m6 10V5m6 14v-7m4 7H2"/>Analytics</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/marketing-seo" :class="linkClass('/admin/marketing-seo')" @click="closeMenuAndNavigate"><NavIcon path="M4 18V6m4 12V9m4 9V4m4 14v-6m4 6V8"/>Marketing &amp; SEO</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/google-shopping" :class="linkClass('/admin/google-shopping')" @click="closeMenuAndNavigate"><NavIcon path="M3 5h18l-2 10H6L3 5Zm4 14a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm10 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/>Google Shopping</NuxtLink>
@@ -87,7 +88,7 @@ const groupRoutes: Record<string, string[]> = {
   store: ["/admin/products", "/admin/categories", "/admin/ads", "/admin/reviews", "/admin/back-in-stock"],
   sales: ["/admin/orders", "/admin/manual-quotes", "/admin/quotes", "/admin/customers", "/admin/freight"],
   purchasing: ["/admin/purchasing"],
-  business: ["/admin/accounting", "/admin/analytics", "/admin/marketing-seo", "/admin/google-shopping", "/admin/google-performance", "/admin/google-search", "/admin/google-merchant-registration", "/admin/reports", "/admin/facebook-share"],
+  business: ["/admin/accounting", "/admin/abandoned-carts", "/admin/analytics", "/admin/marketing-seo", "/admin/google-shopping", "/admin/google-performance", "/admin/google-search", "/admin/google-merchant-registration", "/admin/reports", "/admin/facebook-share"],
   administration: ["/admin/chat", "/admin/accounts", "/admin/pricing-levels", "/admin/storage-cleanup"],
 };
 const groupActive = (key: string) => groupRoutes[key]?.some((path) => route.path.startsWith(path)) ?? false;

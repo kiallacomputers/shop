@@ -123,6 +123,14 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getAdminSupabase();
 
+  const trackedCartId = String(session.metadata?.abandoned_cart_id || "");
+  if (trackedCartId) {
+    const now = new Date().toISOString();
+    await supabase.from("abandoned_carts").update({
+      status: "converted", converted_at: now, stripe_session_id: session.id, updated_at: now,
+    }).eq("id", trackedCartId).eq("user_id", userId);
+  }
+
   // ========================================
   // IDEMPOTENCY / DUPLICATE CHECK
   // ========================================

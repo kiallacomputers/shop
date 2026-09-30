@@ -266,6 +266,15 @@ export default defineEventHandler(async (event) => {
 
   const siteOrigin = getSiteOrigin(event);
 
+  // Link this Stripe checkout to the customer's currently tracked cart so a
+  // successful payment can mark it converted.
+  const { data: trackedCart } = await supabase
+    .from("abandoned_carts")
+    .select("id")
+    .eq("user_id", userId)
+    .in("status", ["active", "abandoned", "recovered"])
+    .maybeSingle();
+
   // Snapshot the chosen address into Stripe metadata so the paid order retains
   // the exact delivery destination even if the customer later edits My Account.
   let session: Stripe.Checkout.Session;
@@ -301,6 +310,7 @@ export default defineEventHandler(async (event) => {
       processing_fee: PROCESSING_FEE.toFixed(2),
       pricing_level: pricingLevel.key,
       pricing_level_name: pricingLevel.name,
+      abandoned_cart_id: trackedCart?.id ? String(trackedCart.id) : "",
     },
     customer_email: user.email || undefined,
     success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
