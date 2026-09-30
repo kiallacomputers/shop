@@ -205,6 +205,18 @@ const updatePassword = async () => {
       throw error;
     }
 
+    // A recovery link creates a temporary authenticated session. End that
+    // session immediately after the password is changed so possession of an
+    // already-open recovery tab cannot leave the account signed in. The
+    // customer then signs in normally with the new password.
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      console.error("POST-RESET SIGN OUT ERROR:", signOutError);
+      throw new Error(
+        "Your password was changed, but the recovery session could not be closed. Please close this browser and sign in again.",
+      );
+    }
+
     passwordChanged.value = true;
 
     password.value = "";

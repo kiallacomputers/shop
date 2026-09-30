@@ -52,7 +52,20 @@ const loading = ref(false);
 const errorMessage = ref("");
 const redirectTo = computed(() => {
   const redirect = route.query.redirect;
-  return typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
+
+  // Only allow local application paths. In particular, reject protocol-relative
+  // URLs (//example.com) and backslash variants so a login redirect can never
+  // be turned into an external redirect.
+  if (
+    typeof redirect !== "string" ||
+    !redirect.startsWith("/") ||
+    redirect.startsWith("//") ||
+    redirect.includes("\\")
+  ) {
+    return "/";
+  }
+
+  return redirect;
 });
 const login = async () => {
   loading.value = true;
