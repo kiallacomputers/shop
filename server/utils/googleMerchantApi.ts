@@ -5,7 +5,7 @@ const b64url=(input:string|Buffer)=>Buffer.from(input).toString("base64url");
 export const getGoogleMerchantAccessToken=async(event:any)=>{
   const c=useRuntimeConfig(event);
   const email=String(c.googleMerchantServiceAccountEmail||"").trim();
-  const rawKey=String(c.googleMerchantServiceAccountPrivateKey||"").trim();
+  const rawKey=String(process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_PRIVATE_KEY||c.googleMerchantServiceAccountPrivateKey||"").trim();
   if(!email||!rawKey) throw createError({statusCode:503,statusMessage:"Google Merchant API credentials are not configured"});
   const privateKey=rawKey.replace(/\\n/g,"\n");
   const now=Math.floor(Date.now()/1000);

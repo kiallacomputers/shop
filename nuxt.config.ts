@@ -32,26 +32,26 @@ export default defineNuxtConfig({
     storesDirs: ["./stores/**"],
   },
   runtimeConfig: {
-    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
+    supabaseSecretKey: "",
 
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeSecretKey: "",
 
-    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    stripeWebhookSecret: "",
 
     // Server-only Microsoft Graph credentials. Never move these under `public`.
     microsoftTenantId: process.env.MICROSOFT_TENANT_ID,
     microsoftClientId: process.env.MICROSOFT_CLIENT_ID,
-    microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+    microsoftClientSecret: "",
     microsoftSenderEmail: process.env.MICROSOFT_SENDER_EMAIL,
     microsoftSenderName: process.env.MICROSOFT_SENDER_NAME || "Kialla Computers",
 
     facebookPageId: process.env.FACEBOOK_PAGE_ID,
-    facebookPageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
+    facebookPageAccessToken: "",
     facebookGraphVersion: process.env.FACEBOOK_GRAPH_VERSION || "v24.0",
 
     googleMerchantId: process.env.GOOGLE_MERCHANT_ID,
     googleMerchantServiceAccountEmail: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_EMAIL,
-    googleMerchantServiceAccountPrivateKey: process.env.GOOGLE_MERCHANT_SERVICE_ACCOUNT_PRIVATE_KEY,
+    googleMerchantServiceAccountPrivateKey: "",
     googleMerchantDeveloperEmail: process.env.GOOGLE_MERCHANT_DEVELOPER_EMAIL,
     googleSearchConsoleSiteUrl: process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL || "sc-domain:kiallacomputers.com.au",
 

@@ -11,8 +11,10 @@ export default defineEventHandler(async (event) => {
   console.log("=================================");
 
   const config = useRuntimeConfig();
+  const stripeSecretKey = String(process.env.STRIPE_SECRET_KEY || config.stripeSecretKey || "").trim();
+  const stripeWebhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || config.stripeWebhookSecret || "").trim();
 
-  if (!config.stripeSecretKey) {
+  if (!stripeSecretKey) {
     console.error("❌ STRIPE_SECRET_KEY IS MISSING");
 
     throw createError({
@@ -21,7 +23,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (!config.stripeWebhookSecret) {
+  if (!stripeWebhookSecret) {
     console.error("❌ STRIPE_WEBHOOK_SECRET IS MISSING");
 
     throw createError({
@@ -30,7 +32,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const stripe = new Stripe(config.stripeSecretKey);
+  const stripe = new Stripe(stripeSecretKey);
 
   // ========================================
   // RAW BODY + SIGNATURE
@@ -59,7 +61,7 @@ export default defineEventHandler(async (event) => {
     stripeEvent = stripe.webhooks.constructEvent(
       body,
       signature,
-      config.stripeWebhookSecret,
+      stripeWebhookSecret,
     );
   } catch (error: any) {
     console.error(

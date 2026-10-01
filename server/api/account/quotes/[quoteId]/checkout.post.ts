@@ -12,7 +12,8 @@ const text = (value: unknown) => String(value ?? "").trim();
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, { bucket: "quote-checkout-create", max: 10, windowSeconds: 600 });
   const config = useRuntimeConfig();
-  if (!config.stripeSecretKey) {
+  const stripeSecretKey = String(process.env.STRIPE_SECRET_KEY || config.stripeSecretKey || "").trim();
+  if (!stripeSecretKey) {
     throw createError({ statusCode: 500, statusMessage: "Stripe is not configured." });
   }
 
@@ -82,7 +83,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const expectedAmountCents = Math.round((total + processingFee) * 100);
-  const stripe = new Stripe(config.stripeSecretKey);
+  const stripe = new Stripe(stripeSecretKey);
   const siteOrigin = getSiteOrigin(event);
 
   const session = await stripe.checkout.sessions.create({
