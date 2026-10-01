@@ -53,44 +53,41 @@ export default defineEventHandler(async (event) => {
   const verificationUrl =
     `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
 
-  // If this email already belongs to a manually-created sales customer,
-  // link the new website account automatically. Email is the identity key.
+  // Keep the website login and sales/customer record connected. Existing manual
+  // customers are matched by a unique email; otherwise create the customer profile.
   const newUserId = String(data?.user?.id || "");
+  let createdSalesCustomerId: string | number | null = null;
   if (newUserId) {
-    const { data: manualCustomers, error: manualCustomerError } = await supabase
+    const { data: matches, error: lookupError } = await supabase
       .from("sales_customers")
-      .select("id,user_id,pricing_level_key")
+      .select("id,auth_user_id,pricing_level_key")
       .ilike("email", email);
 
-    if (manualCustomerError) {
-      console.error("MANUAL CUSTOMER LINK LOOKUP ERROR:", manualCustomerError);
-    } else if ((manualCustomers || []).length > 1) {
-      console.warn(`MANUAL CUSTOMER LINK SKIPPED: multiple sales_customers rows use ${email}`);
-    } else {
-      const manualCustomer: any = manualCustomers?.[0];
-      if (manualCustomer && (!manualCustomer.user_id || String(manualCustomer.user_id) === newUserId)) {
-        const { error: linkError } = await supabase
-          .from("sales_customers")
-          .update({ user_id: newUserId, updated_at: new Date().toISOString() })
-          .eq("id", manualCustomer.id)
-          .or(`user_id.is.null,user_id.eq.${newUserId}`);
-        if (linkError) {
-          console.error("MANUAL CUSTOMER LINK UPDATE ERROR:", linkError);
-        }
-
-        // Carry the manual customer's chosen website pricing level into
-        // their signed-in storefront account as well.
-        if (manualCustomer.pricing_level_key) {
-          const { error: pricingError } = await supabase
-            .from("customer_pricing_assignments")
-            .upsert({
-              user_id: newUserId,
-              pricing_level_key: manualCustomer.pricing_level_key,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: "user_id" });
-          if (pricingError) console.error("MANUAL CUSTOMER PRICING LINK ERROR:", pricingError);
+    if (lookupError) {
+      console.error("CUSTOMER LINK LOOKUP ERROR:", lookupError);
+    } else if ((matches || []).length > 1) {
+      console.warn(`CUSTOMER LINK SKIPPED: multiple sales_customers rows use ${email}`);
+    } else if (matches?.length === 1) {
+      const customer: any = matches[0];
+      if (!customer.auth_user_id || String(customer.auth_user_id) === newUserId) {
+        const { error: linkError } = await supabase.from("sales_customers")
+          .update({ auth_user_id: newUserId, updated_at: new Date().toISOString() })
+          .eq("id", customer.id);
+        if (linkError) console.error("CUSTOMER LINK UPDATE ERROR:", linkError);
+        if (customer.pricing_level_key) {
+          const { error: pricingError } = await supabase.from("customer_pricing_assignments").upsert({
+            user_id: newUserId, pricing_level_key: customer.pricing_level_key, updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+          if (pricingError) console.error("CUSTOMER PRICING LINK ERROR:", pricingError);
         }
       }
+    } else {
+      const { data: created, error: createErrorValue } = await supabase.from("sales_customers").insert({
+        customer_type: "individual", pricing_level_key: "standard", full_name: fullName, email,
+        auth_user_id: newUserId, processing_fee_enabled: true,
+      }).select("id").single();
+      if (createErrorValue) console.error("CUSTOMER PROFILE CREATE ERROR:", createErrorValue);
+      else createdSalesCustomerId = created?.id ?? null;
     }
   }
 
@@ -107,6 +104,11 @@ export default defineEventHandler(async (event) => {
     if (userId) {
       try {
         await supabase.auth.admin.deleteUser(userId);
+        if (createdSalesCustomerId != null) {
+          await supabase.from("sales_customers").delete().eq("id", createdSalesCustomerId).eq("auth_user_id", userId);
+        } else {
+          await supabase.from("sales_customers").update({ auth_user_id: null, updated_at: new Date().toISOString() }).eq("auth_user_id", userId);
+        }
       } catch (cleanupError) {
         console.error("SIGNUP CLEANUP ERROR:", cleanupError);
       }
