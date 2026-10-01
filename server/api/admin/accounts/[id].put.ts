@@ -2,6 +2,7 @@ import {
   getAdminSupabase,
   requireSuperAdmin,
 } from "~~/server/utils/adminAuth";
+import { assertAllowedKeys, rejectOversizedContentLength, requireObjectBody } from "~~/server/utils/inputValidation";
 
 const allowedRoles = [
   "user",
@@ -14,19 +15,19 @@ export default defineEventHandler(
     const currentUser =
       await requireSuperAdmin(event);
 
-    const userId =
-      getRouterParam(event, "id");
+    rejectOversizedContentLength(event, 4 * 1024);
+    const userId = getRouterParam(event, "id");
 
-    if (!userId) {
+    if (!userId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
       throw createError({
         statusCode: 400,
         statusMessage:
-          "User ID is required.",
+          "A valid user ID is required.",
       });
     }
 
-    const body =
-      await readBody(event);
+    const body = requireObjectBody(await readBody(event));
+    assertAllowedKeys(body, ["role"]);
 
     const role = String(
       body?.role ?? "",

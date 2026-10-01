@@ -167,9 +167,9 @@ const establishRecoverySession = async () => {
 const updatePassword = async () => {
   errorMessage.value = "";
 
-  if (password.value.length < 8) {
+  if (password.value.length < 8 || password.value.length > 128) {
     errorMessage.value =
-      "Your password must be at least 8 characters long.";
+      "Your password must be between 8 and 128 characters long.";
     return;
   }
 

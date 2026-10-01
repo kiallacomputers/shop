@@ -3,6 +3,7 @@ import type { H3Event } from "h3";
 import { serverSupabaseUser } from "#supabase/server";
 import { getHeader } from "h3";
 
+
 export type AdminRole = "superadmin" | "admin";
 
 export const getAdminSupabase = () => {
@@ -158,6 +159,7 @@ export const requireAdmin = async (
     await getAdminUser(event);
 
   if (!result.user) {
+    await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, { action: "admin.access", outcome: "denied", severity: "warning", details: { reason: "unauthenticated" } });
     throw createError({
       statusCode: 401,
       statusMessage:
@@ -166,6 +168,11 @@ export const requireAdmin = async (
   }
 
   if (!result.isAdmin) {
+    await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, {
+      action: "admin.access", outcome: "denied", severity: "warning",
+      actorId: (result.user as any)?.id || (result.user as any)?.sub || null,
+      actorEmail: (result.user as any)?.email || null, details: { reason: "not_admin" },
+    });
     throw createError({
       statusCode: 403,
       statusMessage:
@@ -189,6 +196,7 @@ export const requireSuperAdmin = async (
     await getAdminUser(event);
 
   if (!result.user) {
+    await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, { action: "superadmin.access", outcome: "denied", severity: "warning", details: { reason: "unauthenticated" } });
     throw createError({
       statusCode: 401,
       statusMessage:
@@ -197,6 +205,11 @@ export const requireSuperAdmin = async (
   }
 
   if (!result.isSuperAdmin) {
+    await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, {
+      action: "superadmin.access", outcome: "denied", severity: "critical",
+      actorId: (result.user as any)?.id || (result.user as any)?.sub || null,
+      actorEmail: (result.user as any)?.email || null, details: { reason: "insufficient_role" },
+    });
     throw createError({
       statusCode: 403,
       statusMessage:

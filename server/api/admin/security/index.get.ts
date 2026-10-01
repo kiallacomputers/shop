@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
     },
     protections: [
       { key: "admin_auth", label: "Admin role enforcement", enabled: true },
+      { key: "auth_hardening", label: "Authentication & session hardening", enabled: true },
       { key: "security_headers", label: "Security headers / CSP", enabled: true },
       { key: "csrf", label: "Same-origin mutation protection", enabled: true },
       { key: "validation", label: "Server-side input validation", enabled: true },

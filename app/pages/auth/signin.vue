@@ -71,8 +71,16 @@ const login = async () => {
   loading.value = true;
   errorMessage.value = "";
   try {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.value.trim(), password: password.value });
-    if (error) { errorMessage.value = error.message; return; }
+    const result = await $fetch<{ access_token: string; refresh_token: string }>("/api/auth/signin", {
+      method: "POST",
+      body: { email: email.value.trim(), password: password.value },
+    });
+    const { error } = await supabase.auth.setSession({
+      access_token: result.access_token,
+      refresh_token: result.refresh_token,
+    });
+    if (error) throw error;
+    password.value = "";
     await nextTick();
     await router.push(redirectTo.value);
   } catch (error: any) {

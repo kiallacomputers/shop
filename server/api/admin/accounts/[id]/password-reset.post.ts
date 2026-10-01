@@ -18,10 +18,10 @@ export default defineEventHandler(async (event) => {
   // ========================================
   const id = getRouterParam(event, "id");
 
-  if (!id) {
+  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     throw createError({
       statusCode: 400,
-      statusMessage: "User ID is required.",
+      statusMessage: "A valid user ID is required.",
     });
   }
 
