@@ -26,20 +26,6 @@ export default defineEventHandler(async(event)=>{
     const {error:ue}=await s.from("products").update({stock:newQty,landed_cost_ex_gst:newLanded}).eq("id",productId);if(ue)throw createError({statusCode:500,statusMessage:ue.message});
     const {error:le}=await s.from("accounting_inventory_receipt_lines").insert({receipt_id:receipt.id,purchase_order_line_id:l.id,product_id:productId,quantity:qty,unit_cost:landed,supplier_unit_cost_ex_gst:supplierCost,allocated_freight_ex_gst:Math.round((qty*freightPerUnit+Number.EPSILON)*10000)/10000,landed_unit_cost_ex_gst:landed});if(le)throw createError({statusCode:500,statusMessage:le.message});
     const {error:me}=await s.from("accounting_inventory_movements").insert({product_id:productId,order_id:null,movement_type:"purchase",quantity:qty,unit_cost:landed,total_cost:r(qty*landed),reference:`${po.po_number||`PO-${id}`} / Receipt ${receipt.id}`,notes:body?.notes||null,movement_date:receipt.received_date});if(me)throw createError({statusCode:500,statusMessage:me.message});
-    // Persist the supplier's actual item price separately from freight/landed cost.
-    // Future POs for this Product + Supplier will suggest this price, never the landed cost.
-    const supplierId=Number(po.supplier_id);
-    if(supplierId){
-      const now=new Date().toISOString();
-      const {data:mapping}=await s.from("accounting_product_suppliers").select("id").eq("product_id",productId).eq("supplier_id",supplierId).maybeSingle();
-      if(mapping?.id){
-        const {error:se}=await s.from("accounting_product_suppliers").update({last_purchase_price_ex_gst:supplierCost,last_purchase_at:receipt.received_date,last_purchase_order_id:id,updated_at:now}).eq("id",mapping.id);
-        if(se)throw createError({statusCode:500,statusMessage:se.message});
-      }else{
-        const {error:se}=await s.from("accounting_product_suppliers").insert({product_id:productId,supplier_id:supplierId,buy_price_ex_gst:supplierCost,last_purchase_price_ex_gst:supplierCost,last_purchase_at:receipt.received_date,last_purchase_order_id:id,is_primary:false,updated_at:now});
-        if(se)throw createError({statusCode:500,statusMessage:se.message});
-      }
-    }
   }
   const {data:allReceipts}=await s.from("accounting_inventory_receipt_lines").select("purchase_order_line_id,quantity").in("purchase_order_line_id",lineIds);const totals=new Map<number,number>();for(const x of allReceipts||[])totals.set(Number(x.purchase_order_line_id),n(totals.get(Number(x.purchase_order_line_id)))+n(x.quantity));
   const stockLines=poLines.filter(x=>x.product_id);const complete=stockLines.length>0&&stockLines.every(x=>n(totals.get(Number(x.id)))>=n(x.quantity)-0.0001);const nextStatus=complete?(po.status==="billed"?"billed":"received"):(po.status==="billed"?"billed":"part_received");
