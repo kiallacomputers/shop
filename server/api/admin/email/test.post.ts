@@ -1,5 +1,6 @@
 import { requireAdmin } from "~~/server/utils/adminAuth";
 import { escapeHtml, sendDomainEmail } from "~~/server/utils/domainEmail";
+import { redactSensitive } from "~~/server/utils/secretRedaction";
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
     });
     return { success: true, message: `Test email sent to ${email}.` };
   } catch (error: any) {
-    console.error("MICROSOFT GRAPH TEST EMAIL ERROR:", error?.message || error);
-    throw createError({ statusCode: 503, statusMessage: error?.message || "Unable to send test email." });
+    console.error("MICROSOFT GRAPH TEST EMAIL ERROR:", redactSensitive(error));
+    throw createError({ statusCode: 503, statusMessage: "Unable to send test email." });
   }
 });

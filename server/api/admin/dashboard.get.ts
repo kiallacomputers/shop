@@ -1,4 +1,4 @@
-import { getAdminSupabase, getAdminUser } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, getAdminUser, requireAdmin } from "~~/server/utils/adminAuth";
 
 type AnyRow = Record<string, any>;
 
@@ -33,6 +33,7 @@ const chunk = <T>(values: T[], size = 250) => {
 };
 
 export default defineEventHandler(async (event) => {
+  await requireAdmin(event);
   const adminContext = await getAdminUser(event);
   if (!adminContext.user) {
     throw createError({ statusCode: 401, statusMessage: "Authentication required" });
@@ -373,9 +374,15 @@ export default defineEventHandler(async (event) => {
     .slice(0, 8)
     .map((item) => ({ ...item, revenue: money2(item.revenue) }));
 
+  const canSales = adminContext.isSuperAdmin || adminContext.permissions?.["sales.orders.view"] === true;
+  const canCustomers = adminContext.isSuperAdmin || adminContext.permissions?.["sales.customers.view"] === true;
+  const canInventory = adminContext.isSuperAdmin || ["product.view", "product.stock", "purchase.inventory", "purchase.stock_intelligence"].some((key) => adminContext.permissions?.[key] === true);
+  const canFinancials = adminContext.isSuperAdmin || ["accounting.dashboard", "accounting.invoices", "accounting.reports", "business.analytics", "business.reports"].some((key) => adminContext.permissions?.[key] === true);
+  const canQuotes = adminContext.isSuperAdmin || adminContext.permissions?.["sales.quotes.view"] === true || adminContext.permissions?.["sales.quote_requests"] === true;
+
   return {
     generated_at: now.toISOString(),
-    sales: {
+    sales: (canSales || canFinancials) ? {
       periods: periodSales,
       allTimeRevenue: money2(allRevenue),
       allTimeOrders: revenueOrders.length,
@@ -385,8 +392,8 @@ export default defineEventHandler(async (event) => {
         estimatedGrossProfitExGst: profitForOrders(last30Orders),
       },
       chart,
-    },
-    orders: {
+    } : { periods: {}, allTimeRevenue: 0, allTimeOrders: 0, last30: { revenue: 0, gst: 0, estimatedGrossProfitExGst: 0 }, chart: [] },
+    orders: canSales ? {
       total: orders.length,
       statuses: statusCounts,
       newPaid: statusCounts.paid,
@@ -394,8 +401,8 @@ export default defineEventHandler(async (event) => {
       shipping: statusCounts.shipping,
       delivered: statusCounts.delivered,
       backorderRisk: stockRiskOrderIds.size,
-    },
-    inventory: {
+    } : { total: 0, statuses: {}, newPaid: 0, processing: 0, shipping: 0, delivered: 0, backorderRisk: 0 },
+    inventory: canInventory ? {
       products: products.length,
       activeProducts: products.filter((product) => product.active !== false).length,
       categories: categoriesResult.count ?? 0,
@@ -405,13 +412,13 @@ export default defineEventHandler(async (event) => {
       outOfStock: outOfStockItems.length,
       waitingCustomers: waitingRows.length,
       attention: inventoryAttention,
-    },
-    quotes: quoteStats,
-    customers: {
+    } : { products: 0, activeProducts: 0, categories: 0, stockUnits: 0, stockValueExGst: 0, lowStock: 0, outOfStock: 0, waitingCustomers: 0, attention: [] },
+    quotes: canQuotes ? quoteStats : { visible: false, awaitingAction: 0, sent: 0, accepted: 0, expired: 0 },
+    customers: canCustomers ? {
       total: customers.length,
       new30d: newCustomers30d,
-    },
-    topProducts,
-    recentOrders: recentOrdersResult.data || [],
+    } : { total: 0, new30d: 0 },
+    topProducts: (canSales || canInventory) ? topProducts : [],
+    recentOrders: canSales ? (recentOrdersResult.data || []) : [],
   };
 });

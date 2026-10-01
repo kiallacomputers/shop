@@ -1,3 +1,4 @@
+import { redactString } from "~~/server/utils/secretRedaction";
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook("error", (error, context) => {
     const event = context?.event;
@@ -10,7 +11,7 @@ export default defineNitroPlugin((nitroApp) => {
     // cookies, Stripe metadata or other customer information into logs.
     console.error(`[${requestId}] ${method} ${path} -> ${status}`, {
       name: (error as any)?.name || "Error",
-      message: (error as any)?.message || "Unexpected server error",
+      message: redactString((error as any)?.message || "Unexpected server error", 2000),
     });
 
     // Never return raw database, Stripe, Microsoft Graph or infrastructure

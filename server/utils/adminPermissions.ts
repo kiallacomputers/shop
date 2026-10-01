@@ -57,6 +57,9 @@ export function adminPermissionForRequest(pathname: string, method = "GET"): str
   const p = String(pathname || "").split("?")[0].toLowerCase().replace(/^\/api/, "");
   const m = String(method || "GET").toUpperCase();
 
+  // Intentionally permission-neutral endpoints used to establish the current admin session.
+  if (p === "/admin/check" || p === "/admin/dashboard") return null;
+
   // Product
   if (/^\/admin\/products\/data-health(\/|$)/.test(p)) return "product.data_health";
   if (/^\/admin\/products\/stock-levels(\/|$)/.test(p)) return "product.stock";
@@ -122,6 +125,7 @@ export function adminPermissionForRequest(pathname: string, method = "GET"): str
   if (/^\/admin\/security-groups(\/|$)/.test(p)) return "administration.security_groups";
   if (/^\/admin\/security(\/|$)/.test(p)) return "administration.security_centre";
   if (/^\/admin\/storage-cleanup(\/|$)/.test(p)) return "administration.storage_cleanup";
+  if (/^\/admin\/email\/test(\/|$)/.test(p)) return "administration.admin_accounts";
 
   // Business
   if (/^\/admin\/ads(\/|$)/.test(p)) return "business.ads";
@@ -136,6 +140,9 @@ export function adminPermissionForRequest(pathname: string, method = "GET"): str
   if (/^\/admin\/google-search(\/|$)/.test(p)) return "business.google_search";
   if (/^\/admin\/google-merchant-registration(\/|$)/.test(p)) return "business.google_api";
   if (/^\/admin\/facebook(\/|$)/.test(p)) return "business.facebook";
+  // Fail closed for future /api/admin endpoints. A newly added admin API must be
+  // deliberately mapped above before a restricted Admin can call it.
+  if (p === "/admin" || p.startsWith("/admin/")) return "__unmapped_admin_route__";
   return null;
 }
 
