@@ -34,9 +34,9 @@
         </div>
         <div class="overflow-x-auto">
           <table class="min-w-[900px] w-full text-left text-sm">
-            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Time</th><th class="px-4 py-3">Administrator</th><th class="px-4 py-3">Action</th><th class="px-4 py-3">Resource</th><th class="px-4 py-3">Severity</th><th class="px-4 py-3">Outcome</th></tr></thead>
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Time</th><th class="px-4 py-3">Actor</th><th class="px-4 py-3">Action</th><th class="px-4 py-3">Resource</th><th class="px-4 py-3">Severity</th><th class="px-4 py-3">Outcome</th></tr></thead>
             <tbody>
-              <tr v-for="row in audit.rows" :key="row.id" class="border-t border-slate-100"><td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ formatDate(row.created_at) }}</td><td class="px-4 py-3 font-semibold text-slate-800">{{ row.actor_email || 'Administrator' }}</td><td class="px-4 py-3 font-mono text-xs text-slate-700">{{ row.action }}</td><td class="max-w-[330px] truncate px-4 py-3 text-slate-600">{{ row.resource }}</td><td class="px-4 py-3"><span :class="badge(row.severity)">{{ row.severity }}</span></td><td class="px-4 py-3 capitalize text-slate-700">{{ row.outcome }}</td></tr>
+              <tr v-for="row in audit.rows" :key="row.id" class="border-t border-slate-100"><td class="whitespace-nowrap px-4 py-3 text-slate-600">{{ formatDate(row.created_at) }}</td><td class="px-4 py-3 font-semibold text-slate-800">{{ actorLabel(row) }}</td><td class="px-4 py-3 font-mono text-xs text-slate-700">{{ row.action }}</td><td class="max-w-[330px] truncate px-4 py-3 text-slate-600">{{ row.resource }}</td><td class="px-4 py-3"><span :class="badge(row.severity)">{{ row.severity }}</span></td><td class="px-4 py-3 capitalize text-slate-700">{{ row.outcome }}</td></tr>
               <tr v-if="!audit.rows.length"><td colspan="6" class="px-4 py-10 text-center text-slate-500">No security events recorded yet.</td></tr>
             </tbody>
           </table>
@@ -69,6 +69,11 @@ const load = async () => {
   finally { loading.value = false }
 }
 const formatDate = (value: string) => new Intl.DateTimeFormat('en-AU', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const actorLabel = (row: any) => {
+  if (row?.actor_email) return row.actor_email
+  if (String(row?.action || '').startsWith('auth.')) return 'Customer / User'
+  return 'Administrator'
+}
 const badge = (value: string) => value === 'critical' ? 'rounded-full bg-red-100 px-2 py-1 text-xs font-bold text-red-700' : value === 'warning' ? 'rounded-full bg-amber-100 px-2 py-1 text-xs font-bold text-amber-700' : 'rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700'
 onMounted(load)
 </script>

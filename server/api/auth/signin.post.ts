@@ -37,6 +37,13 @@ export default defineEventHandler(async (event) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const maskEmail = (value: string) => {
+    const [local, domain] = value.split("@");
+    if (!local || !domain) return "Customer / User";
+    const visible = local.slice(0, Math.min(2, local.length));
+    return `${visible}${"*".repeat(Math.max(3, Math.min(8, local.length - visible)))}@${domain}`;
+  };
+
   const { data, error } = await auth.auth.signInWithPassword({ email, password });
   if (error || !data.session || !data.user) {
     await writeSecurityAudit(event, {
@@ -44,7 +51,8 @@ export default defineEventHandler(async (event) => {
       outcome: "denied",
       severity: "warning",
       resource: "/api/auth/signin",
-      details: { reason: "invalid_credentials" },
+      actorEmail: maskEmail(email),
+      details: { reason: "invalid_credentials", actor_type: "customer" },
     });
     throw createError({ statusCode: 401, statusMessage: "Email or password is incorrect." });
   }
@@ -56,6 +64,7 @@ export default defineEventHandler(async (event) => {
     resource: "/api/auth/signin",
     actorId: data.user.id,
     actorEmail: data.user.email || email,
+    details: { actor_type: "customer" },
   });
 
   return {
