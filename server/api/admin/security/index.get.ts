@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
       { key: "validation", label: "Server-side input validation", enabled: true },
       { key: "rate_limit", label: "Persistent abuse rate limiting", enabled: true },
       { key: "audit", label: "Admin security audit logging", enabled: true },
+      { key: "upload_security", label: "File upload & storage validation", enabled: true },
     ],
     recent: recent.data || [],
   };

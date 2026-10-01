@@ -1,84 +1,49 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { extensionForImageMime, imageBytesMatchMime } from "~~/server/utils/imageUpload";
+import { auditRejectedUpload, filenameLooksDangerous, safeUploadBaseName } from "~~/server/utils/fileUploadSecurity";
 
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event);
-
   const parts = await readMultipartFormData(event);
-  const file = parts?.find((part) => part.name === "file" && part.filename);
+  const files = parts?.filter((part) => part.name === "file" && part.filename) || [];
+  const file = files[0];
 
-  if (!file?.data || !file.filename) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "No image file was supplied",
-    });
+  if (files.length !== 1 || !file?.data || !file.filename) {
+    await auditRejectedUpload(event, files.length > 1 ? "multiple_files" : "missing_file");
+    throw createError({ statusCode: 400, statusMessage: "Supply exactly one image file" });
+  }
+  if (filenameLooksDangerous(file.filename)) {
+    await auditRejectedUpload(event, "unsafe_filename", file.filename);
+    throw createError({ statusCode: 400, statusMessage: "The image filename is not allowed" });
   }
 
-  const mimeType = file.type || "application/octet-stream";
-
+  const mimeType = String(file.type || "application/octet-stream").toLowerCase();
   if (!ALLOWED_TYPES.has(mimeType)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Only JPG, PNG, WEBP and GIF images are allowed",
-    });
+    await auditRejectedUpload(event, "disallowed_image_type", file.filename);
+    throw createError({ statusCode: 415, statusMessage: "Only JPG, PNG, WEBP and GIF images are allowed" });
   }
-
-  // Keep individual uploads reasonably small for product photography.
-  const maxSize = 10 * 1024 * 1024;
-  if (file.data.length > maxSize) {
-    throw createError({
-      statusCode: 413,
-      statusMessage: "Each image must be 10 MB or smaller",
-    });
+  if (file.data.length > MAX_FILE_SIZE) {
+    await auditRejectedUpload(event, "image_too_large", file.filename);
+    throw createError({ statusCode: 413, statusMessage: "Each image must be 10 MB or smaller" });
   }
-
   if (!imageBytesMatchMime(file.data, mimeType)) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "The uploaded file does not match its image type.",
-    });
+    await auditRejectedUpload(event, "image_signature_mismatch", file.filename);
+    throw createError({ statusCode: 415, statusMessage: "The uploaded file does not match its image type" });
   }
 
   const ext = extensionForImageMime(mimeType);
-  const safeBase = file.filename
-    .replace(/\.[^.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || "product";
-
-  const unique = `${Date.now()}-${crypto.randomUUID()}`;
-  const storagePath = `${safeBase}-${unique}.${ext}`;
-
+  const storagePath = `${safeUploadBaseName(file.filename, "product", 60)}-${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const supabase = getAdminSupabase();
-
-  const { error: uploadError } = await supabase.storage
-    .from("products")
-    .upload(storagePath, file.data, {
-      contentType: mimeType,
-      cacheControl: "3600",
-      upsert: false,
-    });
-
-  if (uploadError) {
-    console.error("ADMIN PRODUCT IMAGE UPLOAD ERROR:", uploadError);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to upload product image",
-    });
+  const { error } = await supabase.storage.from("products").upload(storagePath, file.data, {
+    contentType: mimeType, cacheControl: "3600", upsert: false,
+  });
+  if (error) {
+    console.error("ADMIN PRODUCT IMAGE UPLOAD ERROR:", error);
+    throw createError({ statusCode: 500, statusMessage: "Unable to upload product image" });
   }
-
   const { data } = supabase.storage.from("products").getPublicUrl(storagePath);
-
-  return {
-    path: storagePath,
-    url: data.publicUrl,
-  };
+  return { path: storagePath, url: data.publicUrl };
 });
