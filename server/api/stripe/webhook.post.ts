@@ -3,6 +3,7 @@ import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { sendOrderEmails } from "~~/server/utils/orderEmail";
 import { throwInternalError } from "~~/server/utils/internalError";
 import { postPaidOrderToAccounting } from "~~/server/utils/accountingSales";
+import { auditPaymentSecurity } from "~~/server/utils/paymentSecurity";
 
 export default defineEventHandler(async (event) => {
   console.log("=================================");
@@ -40,6 +41,7 @@ export default defineEventHandler(async (event) => {
 
   if (!body || !signature) {
     console.error("❌ MISSING WEBHOOK BODY OR SIGNATURE");
+    await auditPaymentSecurity(event, "payment.webhook_rejected", "denied", { reason: "missing_body_or_signature" }, "warning");
 
     throw createError({
       statusCode: 400,
@@ -64,6 +66,7 @@ export default defineEventHandler(async (event) => {
       "❌ STRIPE WEBHOOK SIGNATURE ERROR:",
       error?.message || error,
     );
+    await auditPaymentSecurity(event, "payment.webhook_rejected", "denied", { reason: "invalid_signature" }, "critical");
 
     throw createError({
       statusCode: 400,
@@ -93,8 +96,30 @@ export default defineEventHandler(async (event) => {
   console.log("SESSION ID:", session.id);
   console.log("PAYMENT STATUS:", session.payment_status);
 
+  const expectedAmountCents = Number(session.metadata?.expected_amount_cents || 0);
+  const actualAmountCents = Number(session.amount_total || 0);
+  const sessionCurrency = String(session.currency || "").toLowerCase();
+  const checkoutKind = String(session.metadata?.checkout_kind || "legacy");
+
+  if (session.mode !== "payment" || sessionCurrency !== "aud" || actualAmountCents <= 0) {
+    await auditPaymentSecurity(event, "payment.session_rejected", "denied", {
+      session_id: session.id, reason: "invalid_payment_session", currency: sessionCurrency, mode: session.mode, amount_cents: actualAmountCents, checkout_kind: checkoutKind,
+    }, "critical");
+    throw createError({ statusCode: 400, statusMessage: "Invalid Stripe payment session" });
+  }
+
+  // New checkout sessions carry the exact server-calculated total in signed Stripe
+  // metadata. Legacy sessions created before this security stage remain processable.
+  if (expectedAmountCents > 0 && expectedAmountCents !== actualAmountCents) {
+    await auditPaymentSecurity(event, "payment.amount_mismatch", "denied", {
+      session_id: session.id, expected_amount_cents: expectedAmountCents, actual_amount_cents: actualAmountCents, checkout_kind: checkoutKind,
+    }, "critical");
+    throw createError({ statusCode: 400, statusMessage: "Stripe payment amount does not match checkout" });
+  }
+
   if (session.payment_status !== "paid") {
     console.log("⚠️ SESSION COMPLETED BUT PAYMENT NOT PAID");
+    await auditPaymentSecurity(event, "payment.unpaid_session", "denied", { session_id: session.id, payment_status: session.payment_status, checkout_kind: checkoutKind }, "warning");
 
     return {
       received: true,
@@ -163,6 +188,7 @@ export default defineEventHandler(async (event) => {
       "⚠️ ORDER ALREADY EXISTS:",
       existingOrder.id,
     );
+    await auditPaymentSecurity(event, "payment.webhook_replay", "success", { session_id: session.id, order_id: existingOrder.id, stripe_event_id: stripeEvent.id });
 
     return {
       received: true,
@@ -279,6 +305,16 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (orderError || !order) {
+    // A unique stripe_session_id constraint closes the race where Stripe sends
+    // the same successful session to two serverless instances at once.
+    if ((orderError as any)?.code === "23505") {
+      const { data: racedOrder } = await supabase.from("orders").select("id").eq("stripe_session_id", session.id).maybeSingle();
+      if (racedOrder) {
+        await auditPaymentSecurity(event, "payment.webhook_replay", "success", { session_id: session.id, order_id: racedOrder.id, stripe_event_id: stripeEvent.id, concurrent: true });
+        return { received: true, duplicate: true, orderId: racedOrder.id };
+      }
+    }
+
     console.error(
       "❌ ORDER CREATION FAILED:",
       orderError,
@@ -542,6 +578,8 @@ export default defineEventHandler(async (event) => {
   console.log("SESSION ID:", session.id);
   console.log("EMAIL SENT:", confirmationEmailSent);
   console.log("=================================");
+
+  await auditPaymentSecurity(event, "payment.order_completed", "success", { session_id: session.id, order_id: order.id, stripe_event_id: stripeEvent.id, amount_cents: actualAmountCents, checkout_kind: checkoutKind });
 
   return {
     received: true,

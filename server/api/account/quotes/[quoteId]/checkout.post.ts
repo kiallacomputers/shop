@@ -3,11 +3,13 @@ import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
 import { auditOwnedResourceMiss } from "~~/server/utils/dataAccessSecurity";
+import { enforceRateLimit } from "~~/server/utils/rateLimit";
 
 const text = (value: unknown) => String(value ?? "").trim();
 const PROCESSING_FEE = 2;
 
 export default defineEventHandler(async (event) => {
+  await enforceRateLimit(event, { bucket: "quote-checkout-create", max: 10, windowSeconds: 600 });
   const config = useRuntimeConfig();
   if (!config.stripeSecretKey) {
     throw createError({ statusCode: 500, statusMessage: "Stripe is not configured." });
@@ -77,6 +79,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Please add a delivery address in My Account before paying this quote." });
   }
 
+  const expectedAmountCents = Math.round((total + PROCESSING_FEE) * 100);
   const stripe = new Stripe(config.stripeSecretKey);
   const siteOrigin = getSiteOrigin(event);
 
@@ -121,6 +124,8 @@ export default defineEventHandler(async (event) => {
       shipping_service_code: "quote",
       shipping_cost: "0.00",
       processing_fee: PROCESSING_FEE.toFixed(2),
+      checkout_kind: "quote",
+      expected_amount_cents: String(expectedAmountCents),
     },
     success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteOrigin}/account?quote=${quote.id}`,

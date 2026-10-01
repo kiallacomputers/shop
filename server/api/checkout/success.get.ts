@@ -1,12 +1,13 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { throwInternalError } from "~~/server/utils/internalError";
+import { isStripeCheckoutSessionId } from "~~/server/utils/paymentSecurity";
 
 export default defineEventHandler(async (event) => {
   const user: any = await requireRequestUser(event);
   const sessionId = String(getQuery(event).session_id || "").trim();
 
-  if (!sessionId) {
+  if (!sessionId || !isStripeCheckoutSessionId(sessionId)) {
     throw createError({
       statusCode: 400,
       statusMessage: "Stripe checkout session is required.",

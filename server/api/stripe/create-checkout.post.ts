@@ -13,6 +13,7 @@ import {
 } from "~~/server/utils/customerPricing";
 import { throwInternalError } from "~~/server/utils/internalError";
 import { rejectOversizedContentLength, requireArray, requireObjectBody } from "~~/server/utils/inputValidation";
+import { writeSecurityAudit } from "~~/server/utils/securityAudit";
 
 const text = (value: unknown) => String(value ?? "").trim();
 const PROCESSING_FEE = 2;
@@ -273,6 +274,17 @@ export default defineEventHandler(async (event) => {
     quantity: 1,
   });
 
+  const expectedAmountCents = lineItems.reduce((sum, item: any) => {
+    const unitAmount = Number(item?.price_data?.unit_amount || 0);
+    const quantity = Number(item?.quantity || 0);
+    return sum + (unitAmount * quantity);
+  }, 0);
+
+  if (!Number.isInteger(expectedAmountCents) || expectedAmountCents <= 0) {
+    await writeSecurityAudit(event, { action: "payment.checkout_rejected", severity: "warning", outcome: "denied", actorId: userId, actorEmail: user.email || null, details: { reason: "invalid_server_total" } });
+    throw createError({ statusCode: 400, statusMessage: "The checkout total is invalid." });
+  }
+
   const siteOrigin = getSiteOrigin(event);
 
   // Link this Stripe checkout to the customer's currently tracked cart so a
@@ -320,6 +332,8 @@ export default defineEventHandler(async (event) => {
       pricing_level: pricingLevel.key,
       pricing_level_name: pricingLevel.name,
       abandoned_cart_id: trackedCart?.id ? String(trackedCart.id) : "",
+      checkout_kind: "store",
+      expected_amount_cents: String(expectedAmountCents),
     },
     customer_email: user.email || undefined,
     success_url: `${siteOrigin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
