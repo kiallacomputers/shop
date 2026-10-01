@@ -17,10 +17,10 @@ export default defineEventHandler(async (event) => {
   if (String(current.status).toLowerCase() !== "draft")
     throw createError({ statusCode: 409, statusMessage: "Only draft purchase orders can be edited." });
 
-  const totals = purchaseTotals(lines);
+  const totals = purchaseTotals(lines, Number(body.freight_estimated_ex_gst || 0), body.freight_taxable !== false);
   const { data: po, error } = await s.from("accounting_purchase_orders").update({
     supplier_id: Number(body.supplier_id), expected_date: body.expected_date || null,
-    supplier_reference: body.supplier_reference || null, notes: body.notes || null, ...totals,
+    supplier_reference: body.supplier_reference || null, notes: body.notes || null, freight_estimated_ex_gst:Number(body.freight_estimated_ex_gst||0), freight_taxable:body.freight_taxable!==false, ...totals,
   }).eq("id", id).eq("status", "draft").select().single();
   if (error || !po) throw createError({ statusCode: 400, statusMessage: error?.message || "Unable to update purchase order." });
 

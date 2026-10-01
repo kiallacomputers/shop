@@ -1,75 +1,21 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { postSupplierBill } from "~~/server/utils/accountingPurchases";
-
-export default defineEventHandler(async (event) => {
-  const user:any = await requireAdmin(event);
-  const id = Number(getRouterParam(event, "id"));
-  const body = await readBody(event);
-  const s = getAdminSupabase();
-  if (!id) throw createError({ statusCode: 400, statusMessage: "Invalid purchase order." });
-
-  const { data: existing, error: existingError } = await s
-    .from("accounting_supplier_bills")
-    .select("id,bill_number")
-    .eq("purchase_order_id", id)
-    .maybeSingle();
-  if (existingError) throw createError({ statusCode: 500, statusMessage: existingError.message });
-  if (existing) {
-    // Self-heal older records where the bill was created but the PO status update did not persist.
-    await s.from("accounting_purchase_orders").update({ status: "billed", updated_at: new Date().toISOString() }).eq("id", id);
-    throw createError({ statusCode: 409, statusMessage: `${existing.bill_number} already exists for this purchase order.` });
-  }
-
-  const { data: po, error } = await s
-    .from("accounting_purchase_orders")
-    .select("*,accounting_purchase_order_lines(*)")
-    .eq("id", id)
-    .single();
-  if (error || !po) throw createError({ statusCode: 404, statusMessage: "Purchase order not found." });
-
-  const poStatus = String(po.status || "").toLowerCase();
-  if (["draft", "closed", "billed"].includes(poStatus)) {
-    throw createError({ statusCode: 409, statusMessage: "This purchase order cannot be converted to a supplier bill." });
-  }
-  const lines = po.accounting_purchase_order_lines || [];
-  if (!lines.length) throw createError({ statusCode: 400, statusMessage: "Purchase order has no lines." });
-
-  const { data: bill, error: be } = await s.from("accounting_supplier_bills").insert({
-    supplier_id: po.supplier_id,
-    purchase_order_id: po.id,
-    supplier_invoice_number: body?.supplier_invoice_number || po.supplier_reference || null,
-    bill_date: body?.bill_date || new Date().toISOString().slice(0, 10),
-    due_date: body?.due_date || null,
-    status: "draft",
-    subtotal: po.subtotal,
-    gst_amount: po.gst_amount,
-    total: po.total
-  }).select().single();
-  if (be || !bill) throw createError({ statusCode: 400, statusMessage: be?.message || "Unable to create supplier bill." });
-
-  const rows = lines.map((x:any, n:number) => ({
-    bill_id: bill.id,
-    product_id: x.product_id || null,
-    account_id: null,
-    description: x.description,
-    sku: x.sku || null,
-    quantity: Number(x.quantity),
-    unit_cost_ex_gst: Number(x.unit_cost_ex_gst),
-    gst_amount: Number(x.gst_amount || 0),
-    line_total: Number(x.line_total || 0),
-    sort_order: n
-  }));
-  const { error: le } = await s.from("accounting_supplier_bill_lines").insert(rows);
-  if (le) throw createError({ statusCode: 500, statusMessage: le.message });
-
-  const { error: poUpdateError } = await s
-    .from("accounting_purchase_orders")
-    .update({ status: "billed", updated_at: new Date().toISOString() })
-    .eq("id", po.id);
-  if (poUpdateError) {
-    // The bill already exists, so do not create a duplicate on retry. Surface the actual status problem.
-    throw createError({ statusCode: 500, statusMessage: `Supplier bill ${bill.bill_number} was created, but the purchase order could not be marked as billed: ${poUpdateError.message}` });
-  }
-
-  return await postSupplierBill(Number(bill.id), String(user.id || user.sub || ""));
+import { purchaseTotals } from "~~/server/utils/accountingPurchases";
+import { recordPurchaseOrderActivity } from "~~/server/utils/purchaseOrderLifecycle";
+export default defineEventHandler(async(event)=>{
+ const user:any=await requireAdmin(event),id=Number(getRouterParam(event,"id")),body=await readBody(event),s=getAdminSupabase(); if(!id)throw createError({statusCode:400,statusMessage:"Invalid purchase order."});
+ const {data:existing}=await s.from("accounting_supplier_bills").select("id,bill_number").eq("purchase_order_id",id).maybeSingle();if(existing)throw createError({statusCode:409,statusMessage:`${existing.bill_number} already exists for this purchase order.`});
+ const {data:po,error}=await s.from("accounting_purchase_orders").select("*,accounting_purchase_order_lines(*)").eq("id",id).single();if(error||!po)throw createError({statusCode:404,statusMessage:"Purchase order not found."});
+ const status=String(po.status||'').toLowerCase();if(["draft","closed","billed"].includes(status))throw createError({statusCode:409,statusMessage:"This purchase order cannot be converted to a supplier bill."});const lines=po.accounting_purchase_order_lines||[];if(!lines.length)throw createError({statusCode:400,statusMessage:"Purchase order has no lines."});
+ const actualFreight=Math.max(0,Number(body?.freight_actual_ex_gst ?? po.freight_estimated_ex_gst ?? 0));const totals=purchaseTotals(lines,actualFreight,po.freight_taxable!==false);
+ const {data:bill,error:be}=await s.from("accounting_supplier_bills").insert({supplier_id:po.supplier_id,purchase_order_id:po.id,supplier_invoice_number:body?.supplier_invoice_number||po.supplier_reference||null,bill_date:body?.bill_date||new Date().toISOString().slice(0,10),due_date:body?.due_date||null,status:"draft",subtotal:totals.subtotal,gst_amount:totals.gst_amount,total:totals.total}).select().single();if(be||!bill)throw createError({statusCode:400,statusMessage:be?.message||"Unable to create supplier bill."});
+ const rows=lines.map((x:any,n:number)=>({bill_id:bill.id,product_id:x.product_id||null,account_id:null,description:x.description,sku:x.sku||null,quantity:Number(x.quantity),unit_cost_ex_gst:Number(x.unit_cost_ex_gst),gst_amount:Number(x.gst_amount||0),line_total:Number(x.line_total||0),sort_order:n}));
+ if(actualFreight>0)rows.push({bill_id:bill.id,product_id:null,account_id:null,description:"Freight / landed cost",sku:null,quantity:1,unit_cost_ex_gst:actualFreight,gst_amount:po.freight_taxable===false?0:Math.round(actualFreight*.1*100)/100,line_total:actualFreight+(po.freight_taxable===false?0:Math.round(actualFreight*.1*100)/100),sort_order:rows.length,is_inventory_freight:true} as any);
+ const {error:le}=await s.from("accounting_supplier_bill_lines").insert(rows);if(le)throw createError({statusCode:500,statusMessage:le.message});
+ await s.from("accounting_purchase_orders").update({status:"billed",freight_actual_ex_gst:actualFreight,subtotal:totals.subtotal,gst_amount:totals.gst_amount,total:totals.total,updated_at:new Date().toISOString()}).eq("id",po.id);
+ // Reconcile any already-received stock from estimated freight to the supplier bill's actual freight.
+ const stockLines=lines.filter((x:any)=>x.product_id);const base=stockLines.reduce((z:number,x:any)=>z+Number(x.quantity||0)*Number(x.unit_cost_ex_gst||0),0);
+ if(base>0){for(const l of stockLines){const {data:rl}=await s.from("accounting_inventory_receipt_lines").select("id,quantity,landed_unit_cost_ex_gst").eq("purchase_order_line_id",l.id);const recQty=(rl||[]).reduce((z:number,x:any)=>z+Number(x.quantity||0),0);if(recQty<=0)continue;const alloc=actualFreight*((Number(l.quantity||0)*Number(l.unit_cost_ex_gst||0))/base);const newUnit=Number(l.unit_cost_ex_gst||0)+(Number(l.quantity||0)>0?alloc/Number(l.quantity):0);const oldUnit=(rl||[]).length?Number((rl||[])[0].landed_unit_cost_ex_gst??newUnit):newUnit;const delta=(newUnit-oldUnit)*recQty;const {data:prod}=await s.from("products").select("id,stock,buy_price_ex_gst,landed_cost_ex_gst").eq("id",l.product_id).single();if(prod&&Number(prod.stock||0)>0){const cur=Number((prod.landed_cost_ex_gst ?? prod.buy_price_ex_gst) || 0);const adjusted=Math.max(0,cur+delta/Number(prod.stock));await s.from("products").update({landed_cost_ex_gst:Math.round((adjusted+Number.EPSILON)*10000)/10000}).eq("id",prod.id)}for(const x of rl||[])await s.from("accounting_inventory_receipt_lines").update({allocated_freight_ex_gst:Math.round((Number(x.quantity||0)*(newUnit-Number(l.unit_cost_ex_gst||0))+Number.EPSILON)*10000)/10000,landed_unit_cost_ex_gst:Math.round((newUnit+Number.EPSILON)*10000)/10000,unit_cost:Math.round((newUnit+Number.EPSILON)*10000)/10000}).eq("id",x.id)}}
+ }
+ await recordPurchaseOrderActivity(event,id,"supplier_bill_created",status,"billed",`Actual freight ex GST: ${actualFreight.toFixed(2)}`);return await postSupplierBill(Number(bill.id),String(user.id||user.sub||""));
 });

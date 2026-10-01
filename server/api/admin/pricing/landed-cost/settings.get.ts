@@ -1,0 +1,1 @@
+import{getAdminSupabase,requireAdmin}from"~~/server/utils/adminAuth";export default defineEventHandler(async e=>{await requireAdmin(e);const s=getAdminSupabase();const{data,error}=await s.from("pricing_cost_settings").select("*").eq("id",1).maybeSingle();if(error)throw createError({statusCode:500,statusMessage:error.message});return data||{id:1,use_landed_cost_for_pricing:true}})

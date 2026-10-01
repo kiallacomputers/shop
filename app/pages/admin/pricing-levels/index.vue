@@ -38,6 +38,16 @@
       </section>
 
       <section class="mb-7 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div><h2 class="text-lg font-bold text-slate-900">Landed Cost Pricing</h2><p class="mt-1 text-sm text-slate-500">Use supplier cost plus allocated inbound freight as the cost base for Sell Price and RRP suggestions.</p></div>
+          <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"><input v-model="landedEnabled" type="checkbox" class="h-4 w-4" @change="saveLandedSetting"><span class="font-semibold">Use landed cost for pricing suggestions</span></label>
+        </div>
+        <div class="mt-5 flex flex-wrap items-center gap-3"><button type="button" class="admin-btn-secondary" @click="loadLandedPreview">Preview price changes</button><button v-if="landedPreview.length" type="button" class="admin-btn-primary" :disabled="!selectedLanded.length||applyingLanded" @click="applyLandedPrices">{{applyingLanded?'Applying…':`Apply Selected (${selectedLanded.length})`}}</button></div>
+        <div v-if="landedPreview.length" class="mt-5 overflow-x-auto rounded-xl border"><table class="min-w-[850px] w-full text-sm"><thead class="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th class="p-3"><input type="checkbox" :checked="selectedLanded.length===landedPreview.length" @change="toggleAllLanded"></th><th class="p-3">Product</th><th class="p-3 text-right">Supplier Cost</th><th class="p-3 text-right">Landed Cost</th><th class="p-3 text-right">Current Sell</th><th class="p-3 text-right">New Sell</th><th class="p-3 text-right">New RRP</th></tr></thead><tbody><tr v-for="x in landedPreview" :key="x.id" class="border-t"><td class="p-3"><input v-model="selectedLanded" type="checkbox" :value="Number(x.id)"></td><td class="p-3"><b>{{x.name}}</b><div class="text-xs text-slate-500">{{x.product_code||'—'}}</div></td><td class="p-3 text-right">{{money(x.buy_price_ex_gst)}}</td><td class="p-3 text-right font-bold">{{money(x.landed_cost_ex_gst)}}</td><td class="p-3 text-right">{{money(x.price)}}</td><td class="p-3 text-right font-bold" :class="x.price_change>0?'text-amber-700':x.price_change<0?'text-emerald-700':''">{{money(x.new_price)}}</td><td class="p-3 text-right">{{money(x.new_rrp)}}</td></tr></tbody></table></div>
+        <p v-else-if="landedPreviewLoaded" class="mt-4 text-sm text-emerald-700">No storefront prices currently need changing.</p>
+      </section>
+
+      <section class="mb-7 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-center justify-between gap-4">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Add Pricing Level</h2>
@@ -173,6 +183,14 @@ const creating = ref(false);
 const savingKey = ref<string | null>(null);
 const errorMessage = ref("");
 const successMessage = ref("");
+const landedEnabled=ref(true),landedPreview=ref<any[]>([]),selectedLanded=ref<number[]>([]),landedPreviewLoaded=ref(false),applyingLanded=ref(false);
+const money=(v:any)=>new Intl.NumberFormat("en-AU",{style:"currency",currency:"AUD"}).format(Number(v||0));
+async function loadLandedSetting(){try{const x:any=await adminFetch("/api/admin/pricing/landed-cost/settings");landedEnabled.value=x?.use_landed_cost_for_pricing!==false}catch{}}
+async function saveLandedSetting(){try{await adminFetch("/api/admin/pricing/landed-cost/settings",{method:"PUT",body:{use_landed_cost_for_pricing:landedEnabled.value}});successMessage.value="Landed cost pricing setting saved."}catch(e:any){errorMessage.value=e?.data?.statusMessage||e.message}}
+async function loadLandedPreview(){try{const x:any=await adminFetch("/api/admin/pricing/landed-cost/preview");landedPreview.value=x?.products||[];selectedLanded.value=landedPreview.value.map((p:any)=>Number(p.id));landedPreviewLoaded.value=true}catch(e:any){errorMessage.value=e?.data?.statusMessage||e.message}}
+function toggleAllLanded(e:any){selectedLanded.value=e.target.checked?landedPreview.value.map((p:any)=>Number(p.id)):[]}
+async function applyLandedPrices(){applyingLanded.value=true;try{const x:any=await adminFetch("/api/admin/pricing/landed-cost/apply",{method:"POST",body:{product_ids:selectedLanded.value}});successMessage.value=`Updated ${x.updated} product price${x.updated===1?"":"s"}.`;await loadLandedPreview()}catch(e:any){errorMessage.value=e?.data?.statusMessage||e.message}finally{applyingLanded.value=false}}
+
 
 const newLevel = reactive({
   name: "",
@@ -261,7 +279,7 @@ const createLevel = async () => {
   }
 };
 
-onMounted(loadLevels);
+onMounted(async()=>{await Promise.all([loadLevels(),loadLandedSetting()])});
 </script>
 
 <style scoped>
