@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig(event);
   const supabaseUrl = String(config.public?.supabaseUrl || process.env.SUPABASE_URL || "");
-  const supabaseAnonKey = String(config.public?.supabaseKey || process.env.SUPABASE_KEY || "");
+  const supabaseAnonKey = String(config.public?.supabaseAnonKey || process.env.SUPABASE_ANON_KEY || "");
   if (!supabaseUrl || !supabaseAnonKey) {
     throw createError({ statusCode: 500, statusMessage: "Authentication is not configured." });
   }
