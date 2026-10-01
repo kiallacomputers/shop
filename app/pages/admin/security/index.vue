@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: ['admin'] })
-const adminFetch = useAdminFetch()
+const { adminFetch } = useAdminFetch()
 const loading = ref(true)
 const errorMessage = ref('')
 const severity = ref('')
