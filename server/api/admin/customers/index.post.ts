@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
     email: String(body?.email || "").trim() || null,
     phone: String(body?.phone || "").trim() || null,
     auth_user_id,
+    processing_fee_enabled: body?.processing_fee_enabled !== false,
     billing_address: String(body?.billing_address || "").trim() || null,
     delivery_address: String(body?.delivery_address || "").trim() || null,
     notes: String(body?.notes || "").trim() || null,

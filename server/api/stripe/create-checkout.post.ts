@@ -13,10 +13,11 @@ import {
 } from "~~/server/utils/customerPricing";
 import { throwInternalError } from "~~/server/utils/internalError";
 import { rejectOversizedContentLength, requireArray, requireObjectBody } from "~~/server/utils/inputValidation";
+import { getProcessingFeeForUser } from "~~/server/utils/processingFee";
 import { writeSecurityAudit } from "~~/server/utils/securityAudit";
 
 const text = (value: unknown) => String(value ?? "").trim();
-const PROCESSING_FEE = 2;
+
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, {
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
   const stripe = new Stripe(config.stripeSecretKey);
   const user: any = await requireRequestUser(event);
   const userId = String(user.id || "");
+  const { amount: processingFee } = await getProcessingFeeForUser(userId);
   rejectOversizedContentLength(event, 128 * 1024);
   const body = requireObjectBody(await readBody(event));
   const cartItems = requireArray(body.items, "Cart", 100);
@@ -265,14 +267,16 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  lineItems.push({
-    price_data: {
-      currency: "aud",
-      product_data: { name: "Processing Fee" },
-      unit_amount: Math.round(PROCESSING_FEE * 100),
-    },
-    quantity: 1,
-  });
+  if (processingFee > 0) {
+    lineItems.push({
+      price_data: {
+        currency: "aud",
+        product_data: { name: "Processing Fee" },
+        unit_amount: Math.round(processingFee * 100),
+      },
+      quantity: 1,
+    });
+  }
 
   const expectedAmountCents = lineItems.reduce((sum, item: any) => {
     const unitAmount = Number(item?.price_data?.unit_amount || 0);
@@ -328,7 +332,7 @@ export default defineEventHandler(async (event) => {
       shipping_service_code: selectedRate.code,
       shipping_method: selectedRate.name,
       shipping_cost: selectedRate.price.toFixed(2),
-      processing_fee: PROCESSING_FEE.toFixed(2),
+      processing_fee: processingFee.toFixed(2),
       pricing_level: pricingLevel.key,
       pricing_level_name: pricingLevel.name,
       abandoned_cart_id: trackedCart?.id ? String(trackedCart.id) : "",

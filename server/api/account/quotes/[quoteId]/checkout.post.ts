@@ -4,9 +4,10 @@ import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
 import { auditOwnedResourceMiss } from "~~/server/utils/dataAccessSecurity";
 import { enforceRateLimit } from "~~/server/utils/rateLimit";
+import { getProcessingFeeForUser } from "~~/server/utils/processingFee";
 
 const text = (value: unknown) => String(value ?? "").trim();
-const PROCESSING_FEE = 2;
+
 
 export default defineEventHandler(async (event) => {
   await enforceRateLimit(event, { bucket: "quote-checkout-create", max: 10, windowSeconds: 600 });
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const supabase = getAdminSupabase();
+  const { amount: processingFee } = await getProcessingFeeForUser(String(user.id || ""));
   const { data: quote, error: quoteError } = await supabase
     .from("customer_quote_requests")
     .select("id,quote_number,user_id,status,quoted_total,expires_at,customer_quote_request_items(id,product_id,variant_id,product_name,variant_name,product_code,quantity,requested_price,quoted_price)")
@@ -79,7 +81,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "Please add a delivery address in My Account before paying this quote." });
   }
 
-  const expectedAmountCents = Math.round((total + PROCESSING_FEE) * 100);
+  const expectedAmountCents = Math.round((total + processingFee) * 100);
   const stripe = new Stripe(config.stripeSecretKey);
   const siteOrigin = getSiteOrigin(event);
 
@@ -95,14 +97,14 @@ export default defineEventHandler(async (event) => {
         unit_amount: Math.round(total * 100),
       },
       quantity: 1,
-    }, {
+    }, ...(processingFee > 0 ? [{
       price_data: {
         currency: "aud",
         product_data: { name: "Processing Fee" },
-        unit_amount: Math.round(PROCESSING_FEE * 100),
+        unit_amount: Math.round(processingFee * 100),
       },
       quantity: 1,
-    }],
+    }] : [])],
     client_reference_id: String(user.id),
     customer_email: user.email || undefined,
     metadata: {
@@ -123,7 +125,7 @@ export default defineEventHandler(async (event) => {
       shipping_method: "Quoted order",
       shipping_service_code: "quote",
       shipping_cost: "0.00",
-      processing_fee: PROCESSING_FEE.toFixed(2),
+      processing_fee: processingFee.toFixed(2),
       checkout_kind: "quote",
       expected_amount_cents: String(expectedAmountCents),
     },

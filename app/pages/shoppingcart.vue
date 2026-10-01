@@ -245,7 +245,7 @@
             <span>{{ fulfilmentMethod === "pickup" ? "Pickup" : "Delivery" }}</span>
             <span>{{ fulfilmentMethod === "pickup" ? "FREE" : quoting ? "Calculating..." : selectedRate ? (selectedRate.free ? "FREE" : currency(selectedRate.price)) : "Not calculated" }}</span>
           </div>
-          <div class="flex items-center justify-between text-slate-600"><span>Processing Fee</span><span>{{ currency(PROCESSING_FEE) }}</span></div>
+          <div v-if="processingFee > 0" class="flex items-center justify-between text-slate-600"><span>Processing Fee</span><span>{{ currency(processingFee) }}</span></div><div v-else class="flex items-center justify-between text-emerald-700"><span>Processing Fee</span><span class="font-semibold">Waived</span></div>
           <div class="flex items-center justify-between text-slate-600">
             <span>GST (10%)</span>
             <span>{{ currency(gstIncluded) }}</span>
@@ -369,8 +369,8 @@ const selectedRate = computed<FreightRate | null>(() => {
   }
   return freightRates.value.find((rate) => rate.code === selectedServiceCode.value) || null;
 });
-const PROCESSING_FEE = 2;
-const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0) + PROCESSING_FEE);
+const processingFee = ref(2);
+const grandTotal = computed(() => Number(cart.total || 0) + Number(selectedRate.value?.price || 0) + processingFee.value);
 const gstIncluded = computed(() => grandTotal.value / 11);
 
 const currency = (value: unknown) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(value || 0));
@@ -584,6 +584,12 @@ async function checkout() {
 
 onMounted(async () => {
   await refreshCustomerPrices();
+  try {
+    const settings = await authenticatedFetch<{ processingFee: number }>("/api/account/checkout-settings");
+    processingFee.value = Number(settings?.processingFee || 0);
+  } catch {
+    processingFee.value = 2;
+  }
   try {
     pickupOption.value = await authenticatedFetch<PickupOption>("/api/freight/pickup");
   } catch {
