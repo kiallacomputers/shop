@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { H3Event } from "h3";
 import { serverSupabaseUser } from "#supabase/server";
 import { getHeader } from "h3";
-import { FULL_ADMIN_PERMISSIONS, normaliseAdminPermissions, requestAdminSection } from "~~/server/utils/adminPermissions";
+import { FULL_ADMIN_PERMISSIONS, normaliseAdminPermissions, requestAdminPermission } from "~~/server/utils/adminPermissions";
 
 
 export type AdminRole = "superadmin" | "admin";
@@ -196,15 +196,18 @@ export const requireAdmin = async (
     });
   }
 
-  const requiredSection = requestAdminSection(event);
-  if (!result.isSuperAdmin && requiredSection && result.permissions?.[requiredSection] !== true) {
+  const requiredPermission = requestAdminPermission(event);
+  const allowedByGroup = !requiredPermission || (Array.isArray(requiredPermission)
+    ? requiredPermission.some((permission) => result.permissions?.[permission] === true)
+    : result.permissions?.[requiredPermission] === true);
+  if (!result.isSuperAdmin && !allowedByGroup) {
     await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, {
       action: "admin.permission", outcome: "denied", severity: "warning",
       actorId: (result.user as any)?.id || (result.user as any)?.sub || null,
       actorEmail: (result.user as any)?.email || null,
-      details: { reason: "security_group_denied", section: requiredSection },
+      details: { reason: "security_group_denied", permission: requiredPermission },
     });
-    throw createError({ statusCode: 403, statusMessage: "Your security group does not allow access to this area." });
+    throw createError({ statusCode: 403, statusMessage: "Your security group does not allow this action." });
   }
 
   (event.context as any).securityAuditActor = {

@@ -19,7 +19,7 @@ export function useAdminFetch() {
       () => null,
     );
 
-  const adminPermissions = useState<Record<string, boolean>>("adminPermissions", () => ({ product: true, sales: true, purchase: true, accounting: true, administration: true, business: true }));
+  const adminPermissions = useState<Record<string, boolean>>("adminPermissions", () => ({}));
   const securityGroup = useState<{ id: string; name: string } | null>("adminSecurityGroup", () => null);
 
   const adminChecked =
