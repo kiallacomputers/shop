@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { H3Event } from "h3";
 import { getHeader, getRequestIP, getRequestURL } from "h3";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { redactSensitive } from "~~/server/utils/secretRedaction";
 
 export type SecurityAuditSeverity = "info" | "warning" | "critical";
 
@@ -41,12 +42,12 @@ export const writeSecurityAudit = async (
       request_id: requestId,
       ip_hash: hashIp(event),
       user_agent: clean(getHeader(event, "user-agent"), 500) || null,
-      details: input.details || {},
+      details: redactSensitive(input.details || {}),
     });
 
     if (error) console.error("SECURITY AUDIT INSERT ERROR:", error.message);
   } catch (error) {
     // Security logging must never break the business operation being audited.
-    console.error("SECURITY AUDIT ERROR:", error);
+    console.error("SECURITY AUDIT ERROR:", redactSensitive(error));
   }
 };

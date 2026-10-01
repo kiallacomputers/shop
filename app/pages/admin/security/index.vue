@@ -23,6 +23,16 @@
         </div>
       </section>
 
+      <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-4"><h2 class="text-xl font-black text-slate-900">Production configuration</h2><p class="mt-1 text-sm text-slate-500">Checks whether required integrations are configured. Secret values are never returned to the browser.</p></div>
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div v-for="item in data.configuration?.checks || []" :key="item.key" class="flex items-center justify-between gap-3 rounded-xl border px-4 py-3" :class="item.configured ? 'border-emerald-200 bg-emerald-50' : item.required ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'">
+            <div><p class="font-bold text-slate-900">{{ item.label }}</p><p class="text-xs text-slate-500">{{ item.required ? 'Required' : 'Optional' }}</p></div>
+            <span class="rounded-full px-2.5 py-1 text-xs font-black" :class="item.configured ? 'bg-emerald-600 text-white' : item.required ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'">{{ item.configured ? 'Configured' : 'Missing' }}</span>
+          </div>
+        </div>
+      </section>
+
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div><h2 class="text-xl font-black text-slate-900">Security audit log</h2><p class="text-sm text-slate-500">Administrator changes are logged without request bodies, passwords, tokens or payment details.</p></div>
@@ -53,7 +63,7 @@ const loading = ref(true)
 const errorMessage = ref('')
 const severity = ref('')
 const outcome = ref('')
-const data = ref<any>({ summary: { events_24h: 0, warnings_7d: 0, failures_7d: 0 }, protections: [], recent: [] })
+const data = ref<any>({ summary: { events_24h: 0, warnings_7d: 0, failures_7d: 0 }, protections: [], configuration: { checks: [] }, recent: [] })
 const audit = ref<any>({ rows: [], count: 0 })
 
 const loadAudit = async () => {

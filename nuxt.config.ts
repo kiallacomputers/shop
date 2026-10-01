@@ -38,6 +38,13 @@ export default defineNuxtConfig({
 
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 
+    // Server-only Microsoft Graph credentials. Never move these under `public`.
+    microsoftTenantId: process.env.MICROSOFT_TENANT_ID,
+    microsoftClientId: process.env.MICROSOFT_CLIENT_ID,
+    microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+    microsoftSenderEmail: process.env.MICROSOFT_SENDER_EMAIL,
+    microsoftSenderName: process.env.MICROSOFT_SENDER_NAME || "Kialla Computers",
+
     facebookPageId: process.env.FACEBOOK_PAGE_ID,
     facebookPageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
     facebookGraphVersion: process.env.FACEBOOK_GRAPH_VERSION || "v24.0",

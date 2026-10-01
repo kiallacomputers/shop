@@ -1,3 +1,5 @@
+import { redactString } from "~~/server/utils/secretRedaction";
+
 type EmailRecipient = {
   address: string;
   name?: string | null;
@@ -84,7 +86,8 @@ export async function sendDomainEmail(options: SendDomainEmailOptions) {
 
   if (!tokenResponse.ok) {
     const details = await tokenResponse.text();
-    throw new Error(`Microsoft Graph token request failed (${tokenResponse.status}): ${details}`);
+    console.error(`Microsoft Graph token request failed (${tokenResponse.status}):`, redactString(details));
+    throw new Error(`Microsoft Graph authentication failed (${tokenResponse.status}).`);
   }
 
   const tokenData = await tokenResponse.json() as { access_token?: string };

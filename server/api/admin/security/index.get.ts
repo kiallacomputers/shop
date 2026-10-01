@@ -1,4 +1,5 @@
 import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getProductionConfigChecks } from "~~/server/utils/secureConfig";
 
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
@@ -34,7 +35,12 @@ export default defineEventHandler(async (event) => {
       { key: "upload_security", label: "File upload & storage validation", enabled: true },
       { key: "payment_security", label: "Checkout, Stripe & webhook hardening", enabled: true },
       { key: "database_security", label: "Database & Supabase access hardening", enabled: true },
+      { key: "config_security", label: "Secrets & production configuration hardening", enabled: true },
     ],
+    configuration: {
+      production: process.env.NODE_ENV === "production",
+      checks: getProductionConfigChecks(),
+    },
     recent: recent.data || [],
   };
 });

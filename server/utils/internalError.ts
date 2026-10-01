@@ -1,4 +1,5 @@
 import type { H3Event } from "h3";
+import { redactSensitive } from "~~/server/utils/secretRedaction";
 
 export const throwInternalError = (
   event: H3Event,
@@ -7,7 +8,7 @@ export const throwInternalError = (
   publicMessage = "Something went wrong. Please try again.",
 ): never => {
   const requestId = String(event.context.requestId || "unknown");
-  console.error(`[${requestId}] ${label}:`, error);
+  console.error(`[${requestId}] ${label}:`, redactSensitive(error));
 
   throw createError({
     statusCode: 500,
