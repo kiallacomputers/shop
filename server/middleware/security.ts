@@ -1,3 +1,4 @@
+import { writeSecurityAudit } from "~~/server/utils/securityAudit";
 import { randomUUID } from "node:crypto";
 
 const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
@@ -131,4 +132,22 @@ export default defineEventHandler((event) => {
       });
     }
   }
+  // Record successful administrator mutations without storing request bodies,
+  // passwords, tokens, payment details or other sensitive payload data.
+  if (UNSAFE_METHODS.has(method) && path.startsWith("/api/admin/")) {
+    event.node.res.once("finish", () => {
+      const statusCode = Number(event.node.res.statusCode || 200);
+      const actor = (event.context as any).securityAuditActor;
+      if (!actor || statusCode >= 400) return;
+
+      void writeSecurityAudit(event, {
+        action: `admin.${method.toLowerCase()}`,
+        outcome: "success",
+        severity: path.includes("/accounts") ? "warning" : "info",
+        resource: path,
+        details: { status_code: statusCode },
+      });
+    });
+  }
+
 });

@@ -63,6 +63,7 @@
         <NuxtLink to="/admin/chat" :class="linkClass('/admin/chat')" @click="closeMenuAndNavigate"><NavIcon path="M21 12a8 8 0 0 1-8 8H6l-4 2 1.3-4A8 8 0 1 1 21 12ZM8 10h8M8 14h5"/>Live Chat</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/accounts" :class="linkClass('/admin/accounts')" @click="closeMenuAndNavigate"><NavIcon path="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"/>Accounts</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/pricing-levels" :class="linkClass('/admin/pricing-levels')" @click="closeMenuAndNavigate"><NavIcon path="M12 3v18M7 7c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3"/>Pricing Levels</NuxtLink>
+        <NuxtLink v-if="isSuperAdmin" to="/admin/security" :class="linkClass('/admin/security')" @click="closeMenuAndNavigate"><NavIcon path="M12 3 5 6v5c0 4.8 2.8 8.1 7 10 4.2-1.9 7-5.2 7-10V6l-7-3Zm-3 9 2 2 4-4"/>Security Centre</NuxtLink>
         <NuxtLink v-if="isSuperAdmin" to="/admin/storage-cleanup" :class="linkClass('/admin/storage-cleanup')" @click="closeMenuAndNavigate"><NavIcon path="M4 7h16M9 11v5m6-5v5M8 7l1-3h6l1 3M6 7l1 13h10l1-13"/>Storage Cleanup</NuxtLink>
       </NavGroup>
     </nav>

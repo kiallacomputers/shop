@@ -173,6 +173,12 @@ export const requireAdmin = async (
     });
   }
 
+  (event.context as any).securityAuditActor = {
+    id: (result.user as any)?.id || (result.user as any)?.sub || null,
+    email: (result.user as any)?.email || result.adminUser?.email || null,
+    role: result.role,
+  };
+
   return result.user;
 };
 
@@ -197,6 +203,12 @@ export const requireSuperAdmin = async (
         "SuperAdmin access required",
     });
   }
+
+  (event.context as any).securityAuditActor = {
+    id: (result.user as any)?.id || (result.user as any)?.sub || null,
+    email: (result.user as any)?.email || result.adminUser?.email || null,
+    role: result.role,
+  };
 
   return result.user;
 };
