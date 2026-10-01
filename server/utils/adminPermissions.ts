@@ -12,7 +12,7 @@ export const ADMIN_PERMISSION_GROUPS = {
   ],
   purchase: [
     "purchase.suppliers.view", "purchase.suppliers.manage", "purchase.orders.view", "purchase.orders.manage",
-    "purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.close", "purchase.orders.delete_unapproved",
+    "purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.cancel", "purchase.orders.close", "purchase.orders.delete_unapproved",
     "purchase.receive_stock", "purchase.supplier_bills", "purchase.inventory", "purchase.stock_intelligence",
   ],
   accounting: [
@@ -44,8 +44,9 @@ export function normaliseAdminPermissions(value: any): AdminPermissions {
   for (const [section, keys] of Object.entries(ADMIN_PERMISSION_GROUPS)) {
     const legacyAll = source[section] === true;
     for (const key of keys) {
-      const legacyPurchaseManage = section === "purchase" && ["purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.close", "purchase.orders.delete_unapproved"].includes(key) && source["purchase.orders.manage"] === true;
-      out[key] = legacyAll || source[key] === true || legacyPurchaseManage;
+      const legacyPurchaseManage = section === "purchase" && ["purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.cancel", "purchase.orders.close", "purchase.orders.delete_unapproved"].includes(key) && source["purchase.orders.manage"] === true;
+      const legacyCancelAccess = key === "purchase.orders.cancel" && source["purchase.orders.close"] === true;
+      out[key] = legacyAll || source[key] === true || legacyPurchaseManage || legacyCancelAccess;
     }
   }
   return out;
@@ -101,6 +102,7 @@ export function adminPermissionForRequest(pathname: string, method = "GET"): str
   if (/^\/admin\/accounting\/purchase-orders\/.*\/(submit-approval)(\/|$)/.test(p)) return "purchase.orders.create_edit";
   if (/^\/admin\/accounting\/purchase-orders\/.*\/(approve)(\/|$)/.test(p)) return "purchase.orders.approve";
   if (/^\/admin\/accounting\/purchase-orders\/.*\/(send|mark-ordered)(\/|$)/.test(p)) return "purchase.orders.place";
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(cancel)(\/|$)/.test(p)) return "purchase.orders.cancel";
   if (/^\/admin\/accounting\/purchase-orders\/.*\/(close)(\/|$)/.test(p)) return "purchase.orders.close";
   if (/^\/admin\/accounting\/purchase-orders\/[^/]+$/.test(p) && m === "DELETE") return "purchase.orders.delete_unapproved";
   if (/^\/admin\/accounting\/purchase-orders\/.*\/(bill)(\/|$)/.test(p)) return "purchase.supplier_bills";

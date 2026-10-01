@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...po,
-    accounting_purchase_order_lines: lines.map(l => ({...l, received_quantity: received.get(Number(l.id)) || 0, remaining_quantity: Math.max(0, Number(l.quantity||0) - (received.get(Number(l.id)) || 0))})),
+    accounting_purchase_order_lines: lines.map(l => ({...l, received_quantity: received.get(Number(l.id)) || 0, cancelled_quantity: Number(l.cancelled_quantity || 0), remaining_quantity: Math.max(0, Number(l.quantity||0) - (received.get(Number(l.id)) || 0) - Number(l.cancelled_quantity || 0))})),
     receipts,
     receipt_lines: receiptLines,
     bill,
