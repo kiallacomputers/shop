@@ -19,6 +19,9 @@ export function useAdminFetch() {
       () => null,
     );
 
+  const adminPermissions = useState<Record<string, boolean>>("adminPermissions", () => ({ product: true, sales: true, purchase: true, accounting: true, administration: true, business: true }));
+  const securityGroup = useState<{ id: string; name: string } | null>("adminSecurityGroup", () => null);
+
   const adminChecked =
     useState<boolean>(
       "adminChecked",
@@ -38,6 +41,8 @@ export function useAdminFetch() {
     isAdmin.value = false;
     isSuperAdmin.value = false;
     adminRole.value = null;
+    adminPermissions.value = {};
+    securityGroup.value = null;
   };
 
   const checkAdmin = async () => {
@@ -78,6 +83,8 @@ export function useAdminFetch() {
             | "superadmin"
             | "admin"
             | null;
+          permissions?: Record<string, boolean>;
+          securityGroup?: { id: string; name: string } | null;
           user?: {
             id: string;
             email: string | null;
@@ -97,6 +104,8 @@ export function useAdminFetch() {
 
       adminRole.value =
         result.role || null;
+      adminPermissions.value = result.permissions || {};
+      securityGroup.value = result.securityGroup || null;
 
       adminChecked.value = true;
 
@@ -148,6 +157,8 @@ export function useAdminFetch() {
     isAdmin,
     isSuperAdmin,
     adminRole,
+    adminPermissions,
+    securityGroup,
     adminChecked,
     checkingAdmin,
     clearAdminState,

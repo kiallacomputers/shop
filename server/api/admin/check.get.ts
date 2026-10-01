@@ -10,6 +10,8 @@ export default defineEventHandler(
       isSuperAdmin,
       role,
       adminUser,
+      securityGroup,
+      permissions,
     } = await getAdminUser(event);
 
     const userId =
@@ -30,6 +32,8 @@ export default defineEventHandler(
           }
         : null,
       adminUser,
+      securityGroup,
+      permissions,
     };
   },
 );

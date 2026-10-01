@@ -58,7 +58,7 @@ const names: Record<string,string> = {
   products:'Products', categories:'Categories', inventory:'Inventory', ads:'Advertisements', reviews:'Product Reviews', 'back-in-stock':'Back in Stock',
   orders:'Orders', 'manual-quotes':'Manual Quotes', quotes:'Quote Requests', customers:'Customers', freight:'Freight & Pickup',
   accounting:'Accounting', 'abandoned-carts':'Abandoned Carts', analytics:'Analytics', reports:'Reports', 'facebook-share':'Facebook Share', chat:'Live Chat', accounts:'Accounts',
-  'pricing-levels':'Pricing Levels', 'storage-cleanup':'Storage Cleanup', purchases:'Suppliers & Purchases', receivables:'Accounts Receivable', payables:'Accounts Payable',
+  'pricing-levels':'Pricing Levels', 'security-groups':'Security Groups', 'storage-cleanup':'Storage Cleanup', purchases:'Suppliers & Purchases', receivables:'Accounts Receivable', payables:'Accounts Payable',
   'bank-reconciliation':'Bank Reconciliation', 'financial-statements':'Financial Statements', 'period-close':'Period Close', 'year-end-export':'Accountant Export',
   'cash-flow':'Cash Flow & Forecasting', profitability:'Sales & Profitability', 'stock-intelligence':'Purchasing & Stock Intelligence', 'management-report':'Business Management Report',
   'accounting-health':'Accounting Health', 'google-shopping':'Google Shopping', 'google-performance':'Google Performance', 'google-search':'Google Search', 'google-merchant-registration':'Google API Setup', invoices:'Sales & Invoices', 'chart-of-accounts':'Chart of Accounts', journal:'General Journal', new:'New', edit:'Edit'

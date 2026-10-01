@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { H3Event } from "h3";
 import { serverSupabaseUser } from "#supabase/server";
 import { getHeader } from "h3";
+import { FULL_ADMIN_PERMISSIONS, normaliseAdminPermissions, requestAdminSection } from "~~/server/utils/adminPermissions";
 
 
 export type AdminRole = "superadmin" | "admin";
@@ -83,6 +84,8 @@ export const getAdminUser = async (
       isSuperAdmin: false,
       role: null as AdminRole | null,
       adminUser: null,
+      securityGroup: null,
+      permissions: { ...FULL_ADMIN_PERMISSIONS },
     };
   }
 
@@ -98,6 +101,8 @@ export const getAdminUser = async (
       isSuperAdmin: false,
       role: null as AdminRole | null,
       adminUser: null,
+      securityGroup: null,
+      permissions: { ...FULL_ADMIN_PERMISSIONS },
     };
   }
 
@@ -109,7 +114,7 @@ export const getAdminUser = async (
     error: adminError,
   } = await adminSupabase
     .from("admin_users")
-    .select("id, email, created_at, role")
+    .select("id, email, created_at, role, security_group_id, admin_security_groups(id,name,permissions)")
     .eq("id", userId)
     .maybeSingle();
 
@@ -125,6 +130,8 @@ export const getAdminUser = async (
       isSuperAdmin: false,
       role: null as AdminRole | null,
       adminUser: null,
+      securityGroup: null,
+      permissions: { ...FULL_ADMIN_PERMISSIONS },
     };
   }
 
@@ -143,12 +150,21 @@ export const getAdminUser = async (
   const isSuperAdmin =
     role === "superadmin";
 
+  // Backwards compatible by design: an existing Admin with no security group
+  // keeps the same full access they had before this feature was installed.
+  const group: any = (adminUser as any)?.admin_security_groups || null;
+  const permissions = isSuperAdmin || !(adminUser as any)?.security_group_id
+    ? { ...FULL_ADMIN_PERMISSIONS }
+    : normaliseAdminPermissions(group?.permissions);
+
   return {
     user,
     isAdmin,
     isSuperAdmin,
     role,
     adminUser,
+    securityGroup: group ? { id: group.id, name: group.name } : null,
+    permissions,
   };
 };
 
@@ -178,6 +194,17 @@ export const requireAdmin = async (
       statusMessage:
         "Administrator access required",
     });
+  }
+
+  const requiredSection = requestAdminSection(event);
+  if (!result.isSuperAdmin && requiredSection && result.permissions?.[requiredSection] !== true) {
+    await (await import("~~/server/utils/securityAudit")).writeSecurityAudit(event, {
+      action: "admin.permission", outcome: "denied", severity: "warning",
+      actorId: (result.user as any)?.id || (result.user as any)?.sub || null,
+      actorEmail: (result.user as any)?.email || null,
+      details: { reason: "security_group_denied", section: requiredSection },
+    });
+    throw createError({ statusCode: 403, statusMessage: "Your security group does not allow access to this area." });
   }
 
   (event.context as any).securityAuditActor = {
