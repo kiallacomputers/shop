@@ -1,8 +1,8 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { purchaseTotals } from "~~/server/utils/accountingPurchases";
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const id = Number(getRouterParam(event, "id"));
   if (!id) throw createError({ statusCode: 400, statusMessage: "Invalid purchase order." });
 

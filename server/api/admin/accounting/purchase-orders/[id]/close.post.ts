@@ -1,7 +1,8 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { recordPurchaseOrderActivity } from "~~/server/utils/purchaseOrderLifecycle";
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const id = Number(getRouterParam(event, "id"));
   if (!id) throw createError({ statusCode: 400, statusMessage: "Invalid purchase order." });
 
@@ -13,17 +14,17 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (currentError || !current) throw createError({ statusCode: 404, statusMessage: "Purchase order not found." });
-  if (String(current.status).toLowerCase() !== "draft")
-    throw createError({ statusCode: 409, statusMessage: "Only draft purchase orders can be closed." });
+  if (!["draft","awaiting_approval","approved"].includes(String(current.status).toLowerCase()))
+    throw createError({ statusCode: 409, statusMessage: "Only unplaced purchase orders can be cancelled/closed." });
 
   const { data, error } = await s
     .from("accounting_purchase_orders")
-    .update({ status: "closed", updated_at: new Date().toISOString() })
+    .update({ status: "closed", closed_at: new Date().toISOString(), closed_by: (event.context as any).securityAuditActor?.id || null, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("status", "draft")
     .select()
     .single();
 
   if (error || !data) throw createError({ statusCode: 400, statusMessage: error?.message || "Unable to close purchase order." });
+  await recordPurchaseOrderActivity(event,id,"closed",String(current.status),"closed");
   return data;
 });

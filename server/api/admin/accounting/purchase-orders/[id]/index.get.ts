@@ -1,7 +1,7 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const id = Number(getRouterParam(event, "id"));
   if (!id) throw createError({ statusCode: 400, statusMessage: "Invalid purchase order." });
   const s = getAdminSupabase();
@@ -36,6 +36,8 @@ export default defineEventHandler(async (event) => {
   for (const x of receiptLines) if (x.accounting_inventory_receipts?.id) receiptsById.set(Number(x.accounting_inventory_receipts.id), x.accounting_inventory_receipts);
   const receipts = [...receiptsById.values()].sort((a:any,b:any)=>String(b.received_date||'').localeCompare(String(a.received_date||'')));
 
+  const { data: lifecycleActivity } = await s.from("accounting_purchase_order_activity").select("*").eq("purchase_order_id", id).order("created_at", { ascending:false });
+
   return {
     ...po,
     accounting_purchase_order_lines: lines.map(l => ({...l, received_quantity: received.get(Number(l.id)) || 0, remaining_quantity: Math.max(0, Number(l.quantity||0) - (received.get(Number(l.id)) || 0))})),
@@ -43,5 +45,6 @@ export default defineEventHandler(async (event) => {
     receipt_lines: receiptLines,
     bill,
     payments,
+    lifecycle_activity: lifecycleActivity || [],
   };
 });

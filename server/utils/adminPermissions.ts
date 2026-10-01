@@ -12,6 +12,7 @@ export const ADMIN_PERMISSION_GROUPS = {
   ],
   purchase: [
     "purchase.suppliers.view", "purchase.suppliers.manage", "purchase.orders.view", "purchase.orders.manage",
+    "purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.close",
     "purchase.receive_stock", "purchase.supplier_bills", "purchase.inventory", "purchase.stock_intelligence",
   ],
   accounting: [
@@ -42,7 +43,10 @@ export function normaliseAdminPermissions(value: any): AdminPermissions {
   const out: AdminPermissions = {};
   for (const [section, keys] of Object.entries(ADMIN_PERMISSION_GROUPS)) {
     const legacyAll = source[section] === true;
-    for (const key of keys) out[key] = legacyAll || source[key] === true;
+    for (const key of keys) {
+      const legacyPurchaseManage = section === "purchase" && ["purchase.orders.create_edit", "purchase.orders.approve", "purchase.orders.place", "purchase.orders.close"].includes(key) && source["purchase.orders.manage"] === true;
+      out[key] = legacyAll || source[key] === true || legacyPurchaseManage;
+    }
   }
   return out;
 }
@@ -94,7 +98,12 @@ export function adminPermissionForRequest(pathname: string, method = "GET"): str
   if (/^\/admin\/accounting\/suppliers(\/|$)/.test(p) || /^\/admin\/accounting\/product-suppliers(\/|$)/.test(p) || /^\/admin\/accounting\/products-for-supplier(\/|$)/.test(p)) return readOrManage(m, "purchase.suppliers.view", "purchase.suppliers.manage");
   if (/^\/admin\/accounting\/stocktake(\/|$)/.test(p)) return "product.stocktake";
   if (/^\/admin\/accounting\/purchase-orders\/.*\/receive(\/|$)/.test(p)) return "purchase.receive_stock";
-  if (/^\/admin\/accounting\/purchase-orders(\/|$)/.test(p)) return readOrManage(m, "purchase.orders.view", "purchase.orders.manage");
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(submit-approval)(\/|$)/.test(p)) return "purchase.orders.create_edit";
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(approve)(\/|$)/.test(p)) return "purchase.orders.approve";
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(send|mark-ordered)(\/|$)/.test(p)) return "purchase.orders.place";
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(close)(\/|$)/.test(p)) return "purchase.orders.close";
+  if (/^\/admin\/accounting\/purchase-orders\/.*\/(bill)(\/|$)/.test(p)) return "purchase.supplier_bills";
+  if (/^\/admin\/accounting\/purchase-orders(\/|$)/.test(p)) return readOrManage(m, "purchase.orders.view", "purchase.orders.create_edit");
   if (/^\/admin\/accounting\/supplier-(bills|payments)(\/|$)/.test(p)) return "purchase.supplier_bills";
   if (/^\/admin\/accounting\/inventory(\/|$)/.test(p) || /^\/admin\/accounting\/store-products(\/|$)/.test(p)) return "purchase.inventory";
   if (/^\/admin\/accounting\/stock-intelligence(\/|$)/.test(p)) return "purchase.stock_intelligence";

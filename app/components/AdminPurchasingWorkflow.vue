@@ -15,7 +15,7 @@
     </nav>
     <div class="border-t border-slate-100 bg-slate-50/70 px-4 py-2.5 sm:px-5">
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-slate-500">
-        <span>Draft</span><span>→</span><span>Sent / Ordered</span><span>→</span><span>Partially Received</span><span>→</span><span>Received</span><span>→</span><span>Billed</span><span>→</span><span>Paid</span>
+        <span>Draft</span><span>→</span><span>Awaiting Approval</span><span>→</span><span>Approved</span><span>→</span><span>Ordered</span><span>→</span><span>Partially Received</span><span>→</span><span>Received</span><span>→</span><span>Billed</span><span>→</span><span>Paid</span>
       </div>
     </div>
   </section>

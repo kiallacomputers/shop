@@ -1,8 +1,9 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+import { recordPurchaseOrderActivity } from "~~/server/utils/purchaseOrderLifecycle";
 
 const n=(v:any)=>Number(v||0); const r=(v:number)=>Math.round((v+Number.EPSILON)*100)/100;
 export default defineEventHandler(async(event)=>{
-  const user:any=await requireSuperAdmin(event); const id=Number(getRouterParam(event,"id")); const body=await readBody(event); const s=getAdminSupabase();
+  const user:any=await requireAdmin(event); const id=Number(getRouterParam(event,"id")); const body=await readBody(event); const s=getAdminSupabase();
   if(!id) throw createError({statusCode:400,statusMessage:"Invalid purchase order."});
   const {data:po,error}=await s.from("accounting_purchase_orders").select("*,accounting_purchase_order_lines(*)").eq("id",id).single();
   if(error||!po) throw createError({statusCode:404,statusMessage:"Purchase order not found."});
@@ -26,5 +27,6 @@ export default defineEventHandler(async(event)=>{
   const stockLines=poLines.filter(x=>x.product_id);const complete=stockLines.length>0&&stockLines.every(x=>n(totals.get(Number(x.id)))>=n(x.quantity)-0.0001);
   const nextStatus=complete?(po.status==="billed"?"billed":"received"):(po.status==="billed"?"billed":"part_received");
   await s.from("accounting_purchase_orders").update({status:nextStatus,updated_at:new Date().toISOString()}).eq("id",id);
+  await recordPurchaseOrderActivity(event,id,"stock_received",poStatus,nextStatus,body?.notes||null);
   return {ok:true,receipt_id:receipt.id,status:nextStatus};
 });

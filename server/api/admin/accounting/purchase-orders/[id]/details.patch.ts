@@ -1,6 +1,6 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 export default defineEventHandler(async event => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const id=Number(getRouterParam(event,"id")); const body=await readBody(event); if(!id) throw createError({statusCode:400,statusMessage:"Invalid purchase order."});
   const patch:any={updated_at:new Date().toISOString()};
   if(Object.prototype.hasOwnProperty.call(body,"supplier_reference")) patch.supplier_reference=body.supplier_reference||null;

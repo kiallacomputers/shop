@@ -25,6 +25,7 @@ const adminPermissionForPath = (path: string): string | null => {
 
   // Purchase
   if (/^\/admin\/purchasing\/purchase-orders\/receive-stock(\/|$)/.test(p) || /^\/admin\/purchasing\/receive-stock(\/|$)/.test(p)) return "purchase.receive_stock";
+  if (/^\/admin\/purchasing\/purchase-orders\/new(\/|$)/.test(p)) return "purchase.orders.create_edit";
   if (/^\/admin\/purchasing\/purchase-orders(\/|$)/.test(p)) return "purchase.orders.view";
   if (/^\/admin\/purchasing\/suppliers\/bills(\/|$)/.test(p) || /^\/admin\/purchasing\/supplier-bills(\/|$)/.test(p)) return "purchase.supplier_bills";
   if (/^\/admin\/purchasing\/suppliers(\/|$)/.test(p) || /^\/admin\/suppliers(\/|$)/.test(p)) return "purchase.suppliers.view";

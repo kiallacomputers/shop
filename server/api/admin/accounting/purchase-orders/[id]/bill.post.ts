@@ -1,8 +1,8 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { postSupplierBill } from "~~/server/utils/accountingPurchases";
 
 export default defineEventHandler(async (event) => {
-  const user:any = await requireSuperAdmin(event);
+  const user:any = await requireAdmin(event);
   const id = Number(getRouterParam(event, "id"));
   const body = await readBody(event);
   const s = getAdminSupabase();
