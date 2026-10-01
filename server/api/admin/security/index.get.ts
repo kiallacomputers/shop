@@ -33,6 +33,7 @@ export default defineEventHandler(async (event) => {
       { key: "audit", label: "Admin security audit logging", enabled: true },
       { key: "upload_security", label: "File upload & storage validation", enabled: true },
       { key: "payment_security", label: "Checkout, Stripe & webhook hardening", enabled: true },
+      { key: "database_security", label: "Database & Supabase access hardening", enabled: true },
     ],
     recent: recent.data || [],
   };
