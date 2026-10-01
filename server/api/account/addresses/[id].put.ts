@@ -1,5 +1,6 @@
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { auditOwnedResourceMiss } from "~~/server/utils/dataAccessSecurity";
 
 const states = new Set(["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"]);
 const clean = (value: unknown) => String(value ?? "").trim();
@@ -35,7 +36,10 @@ export default defineEventHandler(async (event) => {
     .maybeSingle();
 
   if (existingError) throw createError({ statusCode: 500, statusMessage: existingError.message });
-  if (!existing) throw createError({ statusCode: 404, statusMessage: "Address not found." });
+  if (!existing) {
+    await auditOwnedResourceMiss(event, { resourceType: "customer_address", resourceId: id, actorId: user.id });
+    throw createError({ statusCode: 404, statusMessage: "Address not found." });
+  }
 
   const makePrimary = body?.is_primary === true;
 

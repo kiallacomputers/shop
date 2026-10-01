@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getSiteOrigin } from "~~/server/utils/siteUrl";
+import { auditOwnedResourceMiss } from "~~/server/utils/dataAccessSecurity";
 
 const text = (value: unknown) => String(value ?? "").trim();
 const PROCESSING_FEE = 2;
@@ -27,7 +28,10 @@ export default defineEventHandler(async (event) => {
     .maybeSingle();
 
   if (quoteError) throw createError({ statusCode: 500, statusMessage: quoteError.message });
-  if (!quote) throw createError({ statusCode: 404, statusMessage: "Quote not found." });
+  if (!quote) {
+    await auditOwnedResourceMiss(event, { resourceType: "customer_quote", resourceId: quoteId, actorId: user.id });
+    throw createError({ statusCode: 404, statusMessage: "Quote not found." });
+  }
   if (quote.status !== "quoted") {
     throw createError({ statusCode: 400, statusMessage: "This quote is not ready for payment." });
   }

@@ -1,9 +1,9 @@
 import { createError, defineEventHandler } from 'h3'
-import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
+import { serverSupabaseServiceRole } from '#supabase/server'
+import { requireRequestUser } from '~~/server/utils/requestUser'
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user?.id) throw createError({ statusCode: 401, statusMessage: 'Please sign in.' })
+  const user = await requireRequestUser(event)
   const db = serverSupabaseServiceRole(event)
   const { data: customer, error: ce } = await db.from('sales_customers').select('*').eq('auth_user_id', user.id).maybeSingle()
   if (ce) throw createError({ statusCode: 500, statusMessage: ce.message })

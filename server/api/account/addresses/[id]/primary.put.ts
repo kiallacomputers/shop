@@ -1,5 +1,6 @@
 import { requireRequestUser } from "~~/server/utils/requestUser";
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
+import { auditOwnedResourceMiss } from "~~/server/utils/dataAccessSecurity";
 
 export default defineEventHandler(async (event) => {
   const user = await requireRequestUser(event);
@@ -18,7 +19,10 @@ export default defineEventHandler(async (event) => {
     .maybeSingle();
 
   if (existingError) throw createError({ statusCode: 500, statusMessage: existingError.message });
-  if (!existing) throw createError({ statusCode: 404, statusMessage: "Address not found." });
+  if (!existing) {
+    await auditOwnedResourceMiss(event, { resourceType: "customer_address", resourceId: id, actorId: user.id });
+    throw createError({ statusCode: 404, statusMessage: "Address not found." });
+  }
 
   const now = new Date().toISOString();
   const { error: clearError } = await supabase
