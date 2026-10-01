@@ -25,7 +25,7 @@
     <section class="panel mt-5 overflow-hidden">
       <div class="border-b border-slate-200 p-5">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 class="text-xl font-black">Products</h2><p class="mt-1 text-sm text-slate-500">Search the complete store catalogue. Supplier-specific SKU and buy price are used automatically when configured.</p></div>
+          <div><h2 class="text-xl font-black">Products</h2><p class="mt-1 text-sm text-slate-500">Search the complete store catalogue. Supplier-specific SKU and last actual purchase price are used automatically when available. Freight is kept separate.</p></div>
           <button class="secondary" type="button" :disabled="!form.supplier_id" @click="showPicker=true">+ Add Product</button>
         </div>
       </div>
@@ -55,7 +55,7 @@
         <div class="overflow-y-auto p-3">
           <button v-for="p in filteredProducts" :key="p.id" type="button" class="mb-2 flex w-full items-center gap-4 rounded-xl border border-slate-200 p-3 text-left hover:border-blue-300 hover:bg-blue-50" @click="addProduct(p)">
             <img v-if="imageFor(p)" :src="imageFor(p)" class="h-14 w-14 shrink-0 rounded-lg border bg-white object-contain">
-            <div class="min-w-0 flex-1"><div class="font-black text-slate-900">{{ p.name }}</div><div class="mt-1 text-xs text-slate-500">Store SKU: {{ p.product_code || '—' }} · Stock: {{ p.stock ?? 0 }}</div><div v-if="mappingFor(p.id)" class="mt-1 text-xs font-bold text-blue-700">Supplier SKU: {{ mappingFor(p.id)?.supplier_sku || '—' }} · Buy: {{ money(mappingFor(p.id)?.buy_price_ex_gst ?? p.buy_price_ex_gst ?? 0) }}</div><div v-else class="mt-1 text-xs text-amber-700">No supplier mapping — store buy price will be used and can be changed on the PO.</div></div>
+            <div class="min-w-0 flex-1"><div class="font-black text-slate-900">{{ p.name }}</div><div class="mt-1 text-xs text-slate-500">Store SKU: {{ p.product_code || '—' }} · Stock: {{ p.stock ?? 0 }}</div><div v-if="mappingFor(p.id)" class="mt-1 text-xs font-bold text-blue-700">Supplier SKU: {{ mappingFor(p.id)?.supplier_sku || '—' }} · Suggested: {{ money(suggestedSupplierPrice(p)) }}<span v-if="mappingFor(p.id)?.last_purchase_price_ex_gst != null"> · Last purchased {{ shortDate(mappingFor(p.id)?.last_purchase_at) }}</span></div><div v-else class="mt-1 text-xs text-amber-700">No supplier mapping — store buy price will be used and can be changed on the PO.</div></div>
             <span class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-black text-white">Add</span>
           </button>
           <div v-if="!filteredProducts.length" class="p-8 text-center text-slate-500">No matching products.</div>
@@ -95,7 +95,9 @@ function mappingFor(productId:any){return mappings.value.find(m=>Number(m.produc
 function imageFor(p:any){const imgs=Array.isArray(p?.images)?p.images:[];const first=imgs[0];return typeof first==='string'?first:(first?.url||first?.src||'')}
 function productImage(id:any){return imageFor(products.value.find(p=>Number(p.id)===Number(id)))}
 function storeSku(id:any){return products.value.find(p=>Number(p.id)===Number(id))?.product_code||''}
-function addProduct(p:any){const m=mappingFor(p.id);const existing=form.lines.find((l:any)=>Number(l.product_id)===Number(p.id));if(existing){existing.quantity=Number(existing.quantity||0)+1}else{form.lines.push({_key:++key,product_id:p.id,description:m?.supplier_product_name||p.name,sku:m?.supplier_sku||p.product_code||'',quantity:1,unit_cost_ex_gst:Number(m?.buy_price_ex_gst??p.buy_price_ex_gst??0)})}showPicker.value=false;search.value=''}
+function suggestedSupplierPrice(p:any){const m=mappingFor(p.id);return Number(m?.last_purchase_price_ex_gst??m?.buy_price_ex_gst??p.buy_price_ex_gst??0)}
+function shortDate(v:any){if(!v)return '';const d=new Date(String(v));return Number.isNaN(d.getTime())?String(v):d.toLocaleDateString('en-AU')}
+function addProduct(p:any){const m=mappingFor(p.id);const existing=form.lines.find((l:any)=>Number(l.product_id)===Number(p.id));if(existing){existing.quantity=Number(existing.quantity||0)+1}else{form.lines.push({_key:++key,product_id:p.id,description:m?.supplier_product_name||p.name,sku:m?.supplier_sku||p.product_code||'',quantity:1,unit_cost_ex_gst:suggestedSupplierPrice(p)})}showPicker.value=false;search.value=''}
 function addCustomLine(){form.lines.push({_key:++key,product_id:null,description:'',sku:'',quantity:1,unit_cost_ex_gst:0})}
 function removeLine(i:number){form.lines.splice(i,1)}
 function supplierChanged(){/* mappings are already loaded; changing supplier changes the values used for newly-added products */}
