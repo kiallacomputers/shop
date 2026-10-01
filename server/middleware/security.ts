@@ -28,10 +28,17 @@ const buildCsp = (event: any) => {
   }
 
   const connect = ["'self'"];
+  const isProduction = process.env.NODE_ENV === "production";
   if (supabaseOrigin) connect.push(supabaseOrigin);
   if (supabaseWsOrigin) connect.push(supabaseWsOrigin);
 
-  return [
+  // Keep Nuxt/Vite hot-module reload working during local development without
+  // weakening the production policy.
+  if (!isProduction) {
+    connect.push("ws://localhost:*", "ws://127.0.0.1:*", "http://localhost:*", "http://127.0.0.1:*");
+  }
+
+  const directives = [
     "default-src 'self'",
     // Nuxt emits inline bootstrap state/scripts. Keep unsafe-inline for compatibility
     // while still restricting scripts to this origin.
@@ -45,9 +52,15 @@ const buildCsp = (event: any) => {
     "frame-ancestors 'none'",
     "form-action 'self' https://checkout.stripe.com",
     "worker-src 'self' blob:",
+    "media-src 'self' blob: https:",
     "manifest-src 'self'",
-    "upgrade-insecure-requests",
-  ].join("; ");
+  ];
+
+  // Only upgrade HTTP subresources on the real HTTPS storefront. Applying this
+  // during local development can turn localhost requests into broken HTTPS.
+  if (isProduction) directives.push("upgrade-insecure-requests");
+
+  return directives.join("; ");
 };
 
 export default defineEventHandler((event) => {
@@ -64,7 +77,12 @@ export default defineEventHandler((event) => {
     "camera=(), microphone=(), geolocation=(), browsing-topics=()",
   );
   setHeader(event, "Content-Security-Policy", buildCsp(event));
-  setHeader(event, "Cross-Origin-Opener-Policy", "same-origin");
+  // allow-popups keeps external authentication/payment popups compatible while
+  // still isolating the storefront from unrelated cross-origin windows.
+  setHeader(event, "Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  setHeader(event, "Cross-Origin-Resource-Policy", "same-origin");
+  setHeader(event, "Origin-Agent-Cluster", "?1");
+  setHeader(event, "X-DNS-Prefetch-Control", "off");
   setHeader(event, "X-Permitted-Cross-Domain-Policies", "none");
 
   const forwardedProto = String(getHeader(event, "x-forwarded-proto") || "").toLowerCase();
