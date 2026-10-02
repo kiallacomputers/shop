@@ -2,181 +2,562 @@
   <main class="mx-auto max-w-[1500px] px-4 py-6 md:px-7 md:py-7">
     <AdminPurchasingWorkflow />
 
-    <div class="mt-2 flex flex-wrap items-end justify-between gap-3">
+    <div class="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <NuxtLink to="/admin/purchasing/purchase-orders" class="text-sm font-bold text-blue-600">← Purchase Orders</NuxtLink>
-        <h1 class="mt-2 text-3xl font-black">Supplier Bills</h1>
-        <p class="text-slate-500">Track supplier invoices from purchase order through payment.</p>
+        <NuxtLink to="/admin/accounting" class="text-sm font-bold text-blue-600 hover:underline">
+          ← Accounting
+        </NuxtLink>
+        <p class="mt-4 text-xs font-black uppercase tracking-[.16em] text-blue-600">
+          Accounts Payable
+        </p>
+        <h1 class="mt-1 text-3xl font-black text-slate-950">Supplier Bills</h1>
+        <p class="mt-1 max-w-3xl text-slate-500">
+          Review supplier invoices, purchase order links, due dates, balances and payment history.
+        </p>
       </div>
-      <div class="flex gap-2">
-        <NuxtLink to="/admin/accounting/payables" class="secondary">Accounts Payable</NuxtLink>
-        <button class="secondary" @click="load">Refresh</button>
+
+      <div class="flex flex-wrap gap-2">
+        <NuxtLink to="/admin/accounting/payables" class="primary">
+          Accounts Payable
+        </NuxtLink>
+        <button class="secondary" type="button" :disabled="loading" @click="load">
+          {{ loading ? 'Refreshing…' : 'Refresh' }}
+        </button>
       </div>
     </div>
 
-    <div v-if="msg" class="my-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold">{{ msg }}</div>
+    <div
+      v-if="msg"
+      class="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+    >
+      {{ msg }}
+    </div>
 
     <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <div class="stat"><span>Open Bills</span><strong>{{ openBills.length }}</strong></div>
-      <div class="stat"><span>Total Outstanding</span><strong>{{ money(totalOutstanding) }}</strong></div>
-      <div class="stat"><span>Overdue</span><strong>{{ overdueBills.length }}</strong><small>{{ money(overdueOutstanding) }}</small></div>
-      <div class="stat"><span>Part Paid</span><strong>{{ partPaidBills.length }}</strong></div>
-      <div class="stat"><span>Paid</span><strong>{{ paidBills.length }}</strong></div>
+      <button class="stat text-left" type="button" @click="filter = 'open'">
+        <span>Outstanding</span>
+        <strong>{{ money(totalOutstanding) }}</strong>
+        <small>{{ openBills.length }} open bill{{ openBills.length === 1 ? '' : 's' }}</small>
+      </button>
+
+      <button class="stat text-left" type="button" @click="filter = 'overdue'">
+        <span>Overdue</span>
+        <strong :class="overdueBills.length ? 'text-red-700' : ''">{{ money(overdueOutstanding) }}</strong>
+        <small>{{ overdueBills.length }} bill{{ overdueBills.length === 1 ? '' : 's' }}</small>
+      </button>
+
+      <button class="stat text-left" type="button" @click="filter = 'due_soon'">
+        <span>Due in 7 Days</span>
+        <strong>{{ money(dueSoonOutstanding) }}</strong>
+        <small>{{ dueSoonBills.length }} bill{{ dueSoonBills.length === 1 ? '' : 's' }}</small>
+      </button>
+
+      <button class="stat text-left" type="button" @click="filter = 'part_paid'">
+        <span>Part Paid</span>
+        <strong>{{ partPaidBills.length }}</strong>
+        <small>{{ money(partPaidOutstanding) }} remaining</small>
+      </button>
+
+      <button class="stat text-left" type="button" @click="filter = 'paid'">
+        <span>Paid</span>
+        <strong>{{ paidBills.length }}</strong>
+        <small>{{ money(paidTotal) }} total</small>
+      </button>
     </section>
 
-    <section class="panel mt-5 p-4 md:p-5">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap gap-2">
-          <button v-for="f in filters" :key="f.key" class="filter" :class="{active:filter===f.key}" @click="filter=f.key">{{ f.label }} <span>{{ f.count }}</span></button>
+    <section class="panel mt-5 overflow-hidden">
+      <div class="border-b border-slate-200 p-4 md:p-5">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <h2 class="text-xl font-black text-slate-950">Bill Register</h2>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ filteredBills.length }} bill{{ filteredBills.length === 1 ? '' : 's' }} in this view
+            </p>
+          </div>
+
+          <div class="flex w-full flex-col gap-2 md:flex-row xl:w-auto">
+            <label class="field md:min-w-[190px]">
+              <span>Status</span>
+              <select v-model="filter" class="input">
+                <option value="open">Open</option>
+                <option value="overdue">Overdue</option>
+                <option value="due_soon">Due in 7 Days</option>
+                <option value="part_paid">Part Paid</option>
+                <option value="paid">Paid</option>
+                <option value="all">All Bills</option>
+              </select>
+            </label>
+
+            <label class="field md:min-w-[190px]">
+              <span>Sort</span>
+              <select v-model="sort" class="input">
+                <option value="due">Due Date</option>
+                <option value="newest">Newest Bill</option>
+                <option value="supplier">Supplier</option>
+                <option value="balance">Highest Balance</option>
+              </select>
+            </label>
+
+            <label class="field md:min-w-[330px]">
+              <span>Search</span>
+              <input
+                v-model="search"
+                class="input"
+                type="search"
+                placeholder="Bill, supplier, invoice or PO…"
+              >
+            </label>
+          </div>
         </div>
-        <input v-model="search" class="search" placeholder="Search bill, supplier, invoice or PO…" />
       </div>
 
-      <div class="mt-4 space-y-3">
-        <article v-for="b in filteredBills" :key="b.id" class="bill-card" :class="{'overdue-card':isOverdue(b)}">
-          <div class="grid gap-4 p-4 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto] lg:items-center">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <strong class="text-lg">{{ b.bill_number }}</strong>
-                <span class="status" :class="statusClass(b)">{{ statusLabel(b) }}</span>
-                <span v-if="isOverdue(b)" class="overdue">OVERDUE</span>
-              </div>
-              <div class="mt-1 font-bold text-slate-700">{{ b.accounting_suppliers?.name || 'Unknown supplier' }}</div>
-              <div class="mt-1 text-xs text-slate-500">Supplier invoice: {{ b.supplier_invoice_number || '—' }}</div>
-            </div>
-            <div>
-              <div class="label">Purchase Order</div>
-              <div v-if="b.purchase_order" class="font-bold">{{ b.purchase_order.po_number }}</div>
-              <div v-else class="text-slate-400">Not linked</div>
-              <div v-if="b.purchase_order" class="mt-1 text-xs text-slate-500">{{ poStatus(b.purchase_order.status) }}</div>
-            </div>
-            <div>
-              <div class="label">Due Date</div>
-              <div class="font-bold" :class="{'text-red-700':isOverdue(b)}">{{ date(b.due_date) }}</div>
-              <div class="mt-1 text-xs text-slate-500">Bill date {{ date(b.bill_date) }}</div>
-            </div>
-            <div>
-              <div class="label">Balance</div>
-              <div class="text-lg font-black">{{ money(owing(b)) }}</div>
-              <div class="mt-1 text-xs text-slate-500">{{ money(b.paid_amount) }} paid of {{ money(b.total) }}</div><div v-if="b.purchase_order && Math.abs(variance(b)) >= 0.01" class="mt-1 text-xs font-bold" :class="variance(b)>0?'text-amber-700':'text-emerald-700'">PO variance {{ variance(b)>0?'+':'' }}{{ money(variance(b)) }}</div>
-            </div>
-            <div class="flex flex-wrap gap-2 lg:justify-end">
-              <NuxtLink v-if="owing(b)>0" to="/admin/accounting/payables" class="primary">Record Payment</NuxtLink>
-              <button class="secondary" @click="toggle(b.id)">{{ expanded===b.id ? 'Hide Details' : 'View Details' }}</button>
-            </div>
-          </div>
+      <div v-if="loading" class="p-12 text-center text-sm font-semibold text-slate-500">
+        Loading supplier bills…
+      </div>
 
-          <div v-if="expanded===b.id" class="details">
-            <div class="grid gap-5 xl:grid-cols-3">
-              <div>
-                <h3 class="detail-title">Bill Summary</h3>
-                <dl class="summary-list">
-                  <div><dt>Subtotal</dt><dd>{{ money(b.subtotal) }}</dd></div>
-                  <div><dt>GST</dt><dd>{{ money(b.gst_amount) }}</dd></div>
-                  <div><dt>Total</dt><dd>{{ money(b.total) }}</dd></div>
-                  <div><dt>Paid</dt><dd>{{ money(b.paid_amount) }}</dd></div>
-                  <div class="font-black"><dt>Outstanding</dt><dd>{{ money(owing(b)) }}</dd></div>
-                </dl>
-              </div>
+      <div v-else-if="!filteredBills.length" class="p-12 text-center">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl">✓</div>
+        <h3 class="mt-3 font-black text-slate-900">No supplier bills match this view</h3>
+        <p class="mt-1 text-sm text-slate-500">Try another status or clear the search field.</p>
+      </div>
 
-              <div>
-                <h3 class="detail-title">Purchase Order</h3>
-                <template v-if="b.purchase_order">
-                  <div class="rounded-xl border border-slate-200 bg-white p-3 text-sm">
-                    <div class="font-black">{{ b.purchase_order.po_number }}</div>
-                    <div class="mt-2 grid grid-cols-2 gap-2 text-slate-600">
-                      <span>Ordered</span><strong class="text-right text-slate-800">{{ date(b.purchase_order.order_date) }}</strong>
-                      <span>Expected</span><strong class="text-right text-slate-800">{{ date(b.purchase_order.expected_date) }}</strong>
-                      <span>PO Total</span><strong class="text-right text-slate-800">{{ money(b.purchase_order.total) }}</strong>
+      <div v-else>
+        <!-- Desktop register -->
+        <div class="hidden overflow-x-auto lg:block">
+          <table class="w-full min-w-[1180px] text-sm">
+            <thead>
+              <tr>
+                <th>Bill / Supplier</th>
+                <th>Supplier Invoice</th>
+                <th>Purchase Order</th>
+                <th>Bill Date</th>
+                <th>Due Date</th>
+                <th class="text-right">Total</th>
+                <th class="text-right">Paid</th>
+                <th class="text-right">Balance</th>
+                <th>Status</th>
+                <th class="w-[125px] text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="b in filteredBills" :key="b.id">
+                <tr :class="{ 'bg-red-50/40': isOverdue(b) }">
+                  <td>
+                    <div class="font-black text-slate-950">{{ b.bill_number }}</div>
+                    <div class="mt-0.5 font-semibold text-slate-600">
+                      {{ b.accounting_suppliers?.name || 'Unknown supplier' }}
                     </div>
-                    <NuxtLink :to="`/admin/purchasing/purchase-orders?po=${b.purchase_order.id}`" class="mt-3 inline-block font-bold text-blue-600">Open Purchase Orders →</NuxtLink>
-                  </div>
-                </template>
-                <div v-else class="text-sm text-slate-500">This bill is not linked to a purchase order.</div>
-              </div>
+                  </td>
+                  <td>{{ b.supplier_invoice_number || '—' }}</td>
+                  <td>
+                    <template v-if="b.purchase_order">
+                      <div class="font-bold text-slate-800">{{ b.purchase_order.po_number }}</div>
+                      <div class="mt-0.5 text-xs text-slate-400">{{ poStatus(b.purchase_order.status) }}</div>
+                    </template>
+                    <span v-else class="text-slate-400">Not linked</span>
+                  </td>
+                  <td>{{ date(b.bill_date) }}</td>
+                  <td>
+                    <div class="font-bold" :class="{ 'text-red-700': isOverdue(b) }">
+                      {{ date(b.due_date) }}
+                    </div>
+                    <div v-if="dueText(b)" class="mt-0.5 text-xs font-semibold" :class="dueTextClass(b)">
+                      {{ dueText(b) }}
+                    </div>
+                  </td>
+                  <td class="text-right font-semibold">{{ money(b.total) }}</td>
+                  <td class="text-right text-slate-500">{{ money(b.paid_amount) }}</td>
+                  <td class="text-right text-base font-black">{{ money(owing(b)) }}</td>
+                  <td>
+                    <span class="status" :class="statusClass(b)">{{ statusLabel(b) }}</span>
+                  </td>
+                  <td class="text-right">
+                    <button class="table-link" type="button" @click="toggle(b.id)">
+                      {{ expanded === b.id ? 'Close' : 'View' }}
+                    </button>
+                  </td>
+                </tr>
 
-              <div>
-                <h3 class="detail-title">Payment History</h3>
-                <div v-if="b.payments?.length" class="space-y-2">
-                  <div v-for="p in b.payments" :key="p.id" class="rounded-xl border border-slate-200 bg-white p-3 text-sm">
-                    <div class="flex justify-between gap-3"><strong>{{ money(p.amount) }}</strong><span>{{ dateTime(p.created_at) }}</span></div>
-                    <div class="mt-1 text-xs text-slate-500">Reference: {{ p.reference || '—' }}</div>
-                  </div>
+                <tr v-if="expanded === b.id">
+                  <td colspan="10" class="!p-0">
+                    <BillDetails
+                      :bill="b"
+                      :money="money"
+                      :date="date"
+                      :date-time="dateTime"
+                      :owing="owing"
+                      :variance="variance"
+                      :po-status="poStatus"
+                    />
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tablet / mobile cards -->
+        <div class="divide-y divide-slate-200 lg:hidden">
+          <article v-for="b in filteredBills" :key="b.id" class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-base font-black text-slate-950">{{ b.bill_number }}</h3>
+                  <span class="status" :class="statusClass(b)">{{ statusLabel(b) }}</span>
                 </div>
-                <div v-else class="text-sm text-slate-500">No payments recorded yet.</div>
+                <p class="mt-1 font-semibold text-slate-600">{{ b.accounting_suppliers?.name || 'Unknown supplier' }}</p>
+                <p class="mt-1 text-xs text-slate-400">Invoice {{ b.supplier_invoice_number || '—' }}</p>
+              </div>
+              <div class="text-right">
+                <div class="text-xs font-bold uppercase tracking-wide text-slate-400">Balance</div>
+                <div class="text-lg font-black">{{ money(owing(b)) }}</div>
               </div>
             </div>
 
-            <div class="mt-5">
-              <h3 class="detail-title">Bill Lines</h3>
-              <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                <table class="w-full min-w-[720px] text-sm">
-                  <thead><tr><th>Description</th><th>SKU</th><th class="text-right">Qty</th><th class="text-right">Unit ex GST</th><th class="text-right">GST</th><th class="text-right">Total</th></tr></thead>
-                  <tbody><tr v-for="line in b.accounting_supplier_bill_lines || []" :key="line.id"><td>{{ line.description }}</td><td>{{ line.sku || '—' }}</td><td class="text-right">{{ line.quantity }}</td><td class="text-right">{{ money(line.unit_cost_ex_gst) }}</td><td class="text-right">{{ money(line.gst_amount) }}</td><td class="text-right font-bold">{{ money(line.line_total) }}</td></tr></tbody>
-                </table>
-              </div>
+            <div class="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <div><div class="label">PO</div><div class="font-bold">{{ b.purchase_order?.po_number || '—' }}</div></div>
+              <div><div class="label">Bill Date</div><div class="font-bold">{{ date(b.bill_date) }}</div></div>
+              <div><div class="label">Due Date</div><div class="font-bold" :class="{ 'text-red-700': isOverdue(b) }">{{ date(b.due_date) }}</div></div>
+              <div><div class="label">Total</div><div class="font-bold">{{ money(b.total) }}</div></div>
             </div>
-          </div>
-        </article>
-        <div v-if="!filteredBills.length" class="p-10 text-center text-slate-500">No supplier bills match this view.</div>
+
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+              <div class="text-xs font-semibold" :class="dueTextClass(b)">{{ dueText(b) }}</div>
+              <button class="secondary !px-3 !py-1.5" type="button" @click="toggle(b.id)">
+                {{ expanded === b.id ? 'Hide Details' : 'View Details' }}
+              </button>
+            </div>
+
+            <div v-if="expanded === b.id" class="-mx-4 -mb-4 mt-4">
+              <BillDetails
+                :bill="b"
+                :money="money"
+                :date="date"
+                :date-time="dateTime"
+                :owing="owing"
+                :variance="variance"
+                :po-status="poStatus"
+              />
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   </main>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout:'admin', middleware:['admin'] })
+definePageMeta({ layout: 'admin', middleware: ['admin'] })
+
 const { adminFetch } = useAdminFetch()
-const dialog = useAppDialog()
+
 const bills = ref<any[]>([])
 const msg = ref('')
+const loading = ref(true)
 const filter = ref('open')
+const sort = ref('due')
 const search = ref('')
-const expanded = ref<number|null>(null)
+const expanded = ref<number | null>(null)
 
-const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
-const owing=(b:any)=>Math.max(0,Math.round((Number(b.total||0)-Number(b.paid_amount||0))*100)/100)
-const variance=(b:any)=>Math.round((Number(b.total||0)-Number(b.purchase_order?.total||0))*100)/100
-const date=(v:any)=>v ? new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${String(v).slice(0,10)}T00:00:00`)) : '—'
-const dateTime=(v:any)=>v ? new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(v)) : '—'
-const today=()=>new Date().toISOString().slice(0,10)
-const isPaid=(b:any)=>owing(b)<=0 || String(b.status).toLowerCase()==='paid'
-const isOverdue=(b:any)=>!isPaid(b) && !!b.due_date && String(b.due_date).slice(0,10)<today()
-const isPartPaid=(b:any)=>!isPaid(b) && Number(b.paid_amount||0)>0
-const statusLabel=(b:any)=>isPaid(b)?'Paid':isPartPaid(b)?'Part Paid':'Unpaid'
-const statusClass=(b:any)=>isPaid(b)?'paid':isPartPaid(b)?'part':'unpaid'
-const poStatus=(v:any)=>String(v||'').replaceAll('_',' ').replace(/\b\w/g,(x:string)=>x.toUpperCase()) || '—'
-const openBills=computed(()=>bills.value.filter(b=>!isPaid(b)))
-const paidBills=computed(()=>bills.value.filter(isPaid))
-const overdueBills=computed(()=>bills.value.filter(isOverdue))
-const partPaidBills=computed(()=>bills.value.filter(isPartPaid))
-const totalOutstanding=computed(()=>openBills.value.reduce((s,b)=>s+owing(b),0))
-const overdueOutstanding=computed(()=>overdueBills.value.reduce((s,b)=>s+owing(b),0))
-const filters=computed(()=>[
-  {key:'open',label:'Open',count:openBills.value.length},
-  {key:'overdue',label:'Overdue',count:overdueBills.value.length},
-  {key:'part_paid',label:'Part Paid',count:partPaidBills.value.length},
-  {key:'paid',label:'Paid',count:paidBills.value.length},
-  {key:'all',label:'All',count:bills.value.length}
-])
-const filteredBills=computed(()=>{
-  const q=search.value.trim().toLowerCase()
-  return bills.value.filter(b=>{
-    const matchesFilter=filter.value==='all'||(filter.value==='open'&&!isPaid(b))||(filter.value==='overdue'&&isOverdue(b))||(filter.value==='part_paid'&&isPartPaid(b))||(filter.value==='paid'&&isPaid(b))
-    const hay=[b.bill_number,b.accounting_suppliers?.name,b.supplier_invoice_number,b.purchase_order?.po_number].join(' ').toLowerCase()
-    return matchesFilter&&(!q||hay.includes(q))
+const money = (value: any) =>
+  new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(value || 0))
+
+const owing = (bill: any) =>
+  Math.max(0, Math.round((Number(bill.total || 0) - Number(bill.paid_amount || 0)) * 100) / 100)
+
+const variance = (bill: any) =>
+  Math.round((Number(bill.total || 0) - Number(bill.purchase_order?.total || 0)) * 100) / 100
+
+const date = (value: any) =>
+  value
+    ? new Intl.DateTimeFormat('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+        .format(new Date(`${String(value).slice(0, 10)}T00:00:00`))
+    : '—'
+
+const dateTime = (value: any) =>
+  value
+    ? new Intl.DateTimeFormat('en-AU', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(new Date(value))
+    : '—'
+
+const todayDate = () => new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00`)
+
+function dayDifference(value: any) {
+  if (!value) return null
+  const due = new Date(`${String(value).slice(0, 10)}T00:00:00`)
+  return Math.round((due.getTime() - todayDate().getTime()) / 86400000)
+}
+
+const isPaid = (bill: any) => owing(bill) <= 0 || String(bill.status || '').toLowerCase() === 'paid'
+const isPartPaid = (bill: any) => !isPaid(bill) && Number(bill.paid_amount || 0) > 0
+const isOverdue = (bill: any) => {
+  const days = dayDifference(bill.due_date)
+  return !isPaid(bill) && days !== null && days < 0
+}
+const isDueSoon = (bill: any) => {
+  const days = dayDifference(bill.due_date)
+  return !isPaid(bill) && days !== null && days >= 0 && days <= 7
+}
+
+function statusLabel(bill: any) {
+  if (isPaid(bill)) return 'Paid'
+  if (isOverdue(bill) && isPartPaid(bill)) return 'Part Paid · Overdue'
+  if (isOverdue(bill)) return 'Overdue'
+  if (isPartPaid(bill)) return 'Part Paid'
+  const raw = String(bill.status || '').toLowerCase()
+  if (raw === 'draft') return 'Draft'
+  if (raw === 'posted') return 'Posted'
+  return 'Unpaid'
+}
+
+function statusClass(bill: any) {
+  if (isPaid(bill)) return 'paid'
+  if (isOverdue(bill)) return 'overdue'
+  if (isPartPaid(bill)) return 'part'
+  if (String(bill.status || '').toLowerCase() === 'draft') return 'draft'
+  return 'open'
+}
+
+function dueText(bill: any) {
+  if (isPaid(bill) || !bill.due_date) return ''
+  const days = dayDifference(bill.due_date)
+  if (days === null) return ''
+  if (days < 0) return `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`
+  if (days === 0) return 'Due today'
+  return `Due in ${days} day${days === 1 ? '' : 's'}`
+}
+
+function dueTextClass(bill: any) {
+  if (isOverdue(bill)) return 'text-red-700'
+  if (isDueSoon(bill)) return 'text-amber-700'
+  return 'text-slate-400'
+}
+
+const poStatus = (value: any) =>
+  String(value || '')
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (x: string) => x.toUpperCase()) || '—'
+
+const openBills = computed(() => bills.value.filter((bill) => !isPaid(bill)))
+const paidBills = computed(() => bills.value.filter(isPaid))
+const overdueBills = computed(() => bills.value.filter(isOverdue))
+const dueSoonBills = computed(() => bills.value.filter(isDueSoon))
+const partPaidBills = computed(() => bills.value.filter(isPartPaid))
+
+const totalOutstanding = computed(() => openBills.value.reduce((sum, bill) => sum + owing(bill), 0))
+const overdueOutstanding = computed(() => overdueBills.value.reduce((sum, bill) => sum + owing(bill), 0))
+const dueSoonOutstanding = computed(() => dueSoonBills.value.reduce((sum, bill) => sum + owing(bill), 0))
+const partPaidOutstanding = computed(() => partPaidBills.value.reduce((sum, bill) => sum + owing(bill), 0))
+const paidTotal = computed(() => paidBills.value.reduce((sum, bill) => sum + Number(bill.total || 0), 0))
+
+const filteredBills = computed(() => {
+  const q = search.value.trim().toLowerCase()
+
+  const rows = bills.value.filter((bill) => {
+    const matchesFilter =
+      filter.value === 'all' ||
+      (filter.value === 'open' && !isPaid(bill)) ||
+      (filter.value === 'overdue' && isOverdue(bill)) ||
+      (filter.value === 'due_soon' && isDueSoon(bill)) ||
+      (filter.value === 'part_paid' && isPartPaid(bill)) ||
+      (filter.value === 'paid' && isPaid(bill))
+
+    const haystack = [
+      bill.bill_number,
+      bill.accounting_suppliers?.name,
+      bill.supplier_invoice_number,
+      bill.purchase_order?.po_number,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return matchesFilter && (!q || haystack.includes(q))
+  })
+
+  return [...rows].sort((a, b) => {
+    if (sort.value === 'supplier') {
+      return String(a.accounting_suppliers?.name || '').localeCompare(String(b.accounting_suppliers?.name || ''))
+    }
+    if (sort.value === 'balance') return owing(b) - owing(a)
+    if (sort.value === 'newest') return String(b.bill_date || '').localeCompare(String(a.bill_date || ''))
+
+    // Due date: overdue/earliest first, bills without a due date last.
+    const aDue = a.due_date ? String(a.due_date).slice(0, 10) : '9999-12-31'
+    const bDue = b.due_date ? String(b.due_date).slice(0, 10) : '9999-12-31'
+    return aDue.localeCompare(bDue)
   })
 })
 
-function toggle(id:number){ expanded.value=expanded.value===id?null:id }
-async function load(){
-  msg.value=''
-  try{ bills.value=await adminFetch('/api/admin/accounting/supplier-bills')||[] }
-  catch(e:any){ msg.value=e?.data?.statusMessage||e.message }
+function toggle(id: number) {
+  expanded.value = expanded.value === id ? null : id
 }
+
+async function load() {
+  loading.value = true
+  msg.value = ''
+  try {
+    bills.value = (await adminFetch('/api/admin/accounting/supplier-bills')) || []
+  } catch (error: any) {
+    msg.value = error?.data?.statusMessage || error?.message || 'Unable to load supplier bills.'
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(load)
 </script>
 
+<script lang="ts">
+import { defineComponent, h } from 'vue'
+
+export const BillDetails = defineComponent({
+  name: 'BillDetails',
+  props: {
+    bill: { type: Object, required: true },
+    money: { type: Function, required: true },
+    date: { type: Function, required: true },
+    dateTime: { type: Function, required: true },
+    owing: { type: Function, required: true },
+    variance: { type: Function, required: true },
+    poStatus: { type: Function, required: true },
+  },
+  setup(props) {
+    return () => h('div', { class: 'bill-details' }, [
+      h('div', { class: 'details-grid' }, [
+        h('section', [
+          h('h3', { class: 'detail-title' }, 'Bill Summary'),
+          h('dl', { class: 'summary-list' }, [
+            row('Subtotal', props.money(props.bill.subtotal)),
+            row('GST', props.money(props.bill.gst_amount)),
+            row('Total', props.money(props.bill.total)),
+            row('Paid', props.money(props.bill.paid_amount)),
+            row('Outstanding', props.money(props.owing(props.bill)), true),
+          ]),
+          Number(props.bill.purchase_order?.total || 0) > 0 && Math.abs(props.variance(props.bill)) >= 0.01
+            ? h('div', { class: 'variance-box' }, [
+                h('span', 'PO variance'),
+                h('strong', `${props.variance(props.bill) > 0 ? '+' : ''}${props.money(props.variance(props.bill))}`),
+              ])
+            : null,
+        ]),
+        h('section', [
+          h('h3', { class: 'detail-title' }, 'Purchase Order'),
+          props.bill.purchase_order
+            ? h('div', { class: 'detail-card' }, [
+                h('div', { class: 'text-base font-black text-slate-950' }, props.bill.purchase_order.po_number),
+                pair('Status', props.poStatus(props.bill.purchase_order.status)),
+                pair('Ordered', props.date(props.bill.purchase_order.order_date)),
+                pair('Expected', props.date(props.bill.purchase_order.expected_date)),
+                pair('PO Total', props.money(props.bill.purchase_order.total)),
+                h(resolveComponent('NuxtLink') as any, {
+                  to: `/admin/purchasing/purchase-orders?po=${props.bill.purchase_order.id}`,
+                  class: 'mt-3 inline-block text-sm font-black text-blue-600 hover:underline',
+                }, () => 'Open Purchase Orders →'),
+              ])
+            : h('div', { class: 'text-sm text-slate-500' }, 'This bill is not linked to a purchase order.'),
+        ]),
+        h('section', [
+          h('div', { class: 'flex items-center justify-between gap-2' }, [
+            h('h3', { class: 'detail-title !mb-0' }, 'Payment History'),
+            Number(props.owing(props.bill)) > 0
+              ? h(resolveComponent('NuxtLink') as any, {
+                  to: '/admin/accounting/payables',
+                  class: 'text-sm font-black text-blue-600 hover:underline',
+                }, () => 'Record Payment →')
+              : null,
+          ]),
+          props.bill.payments?.length
+            ? h('div', { class: 'mt-3 space-y-2' }, props.bill.payments.map((payment: any) =>
+                h('div', { class: 'detail-card', key: payment.id }, [
+                  h('div', { class: 'flex justify-between gap-3' }, [
+                    h('strong', { class: 'text-slate-950' }, props.money(payment.amount)),
+                    h('span', { class: 'text-xs text-slate-500' }, props.dateTime(payment.created_at)),
+                  ]),
+                  h('div', { class: 'mt-1 text-xs text-slate-500' }, `Reference: ${payment.reference || '—'}`),
+                  payment.payment_method
+                    ? h('div', { class: 'mt-1 text-xs text-slate-500' }, `Method: ${String(payment.payment_method).replaceAll('_', ' ')}`)
+                    : null,
+                ])
+              ))
+            : h('div', { class: 'mt-3 text-sm text-slate-500' }, 'No payments recorded yet.'),
+        ]),
+      ]),
+      h('section', { class: 'mt-5' }, [
+        h('h3', { class: 'detail-title' }, 'Bill Lines'),
+        h('div', { class: 'overflow-x-auto rounded-xl border border-slate-200 bg-white' }, [
+          h('table', { class: 'w-full min-w-[720px] text-sm' }, [
+            h('thead', [
+              h('tr', [
+                h('th', 'Description'),
+                h('th', 'SKU'),
+                h('th', { class: 'text-right' }, 'Qty'),
+                h('th', { class: 'text-right' }, 'Unit ex GST'),
+                h('th', { class: 'text-right' }, 'GST'),
+                h('th', { class: 'text-right' }, 'Total'),
+              ]),
+            ]),
+            h('tbody',
+              (props.bill.accounting_supplier_bill_lines || []).map((line: any) =>
+                h('tr', { key: line.id }, [
+                  h('td', line.description || '—'),
+                  h('td', line.sku || '—'),
+                  h('td', { class: 'text-right' }, String(line.quantity ?? '—')),
+                  h('td', { class: 'text-right' }, props.money(line.unit_cost_ex_gst)),
+                  h('td', { class: 'text-right' }, props.money(line.gst_amount)),
+                  h('td', { class: 'text-right font-bold' }, props.money(line.line_total)),
+                ])
+              )
+            ),
+          ]),
+        ]),
+      ]),
+    ])
+
+    function row(label: string, value: any, strong = false) {
+      return h('div', { class: strong ? 'font-black' : '' }, [h('dt', label), h('dd', value)])
+    }
+    function pair(label: string, value: any) {
+      return h('div', { class: 'mt-2 flex justify-between gap-3 text-sm' }, [
+        h('span', { class: 'text-slate-500' }, label),
+        h('strong', { class: 'text-right text-slate-800' }, value),
+      ])
+    }
+  },
+})
+</script>
+
 <style scoped>
-.panel{border:1px solid #e2e8f0;border-radius:1rem;background:white}.primary,.secondary{display:inline-block;border-radius:.7rem;padding:.65rem 1rem;font-weight:800}.primary{background:#0f172a;color:white}.secondary{border:1px solid #cbd5e1;background:white}.stat{border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:1rem}.stat span{display:block;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#64748b}.stat strong{display:block;margin-top:.35rem;font-size:1.35rem}.stat small{display:block;margin-top:.15rem;color:#b91c1c;font-weight:800}.filter{border:1px solid #cbd5e1;border-radius:999px;background:#fff;padding:.45rem .75rem;font-size:.8rem;font-weight:800}.filter span{margin-left:.25rem;color:#64748b}.filter.active{background:#0f172a;color:#fff;border-color:#0f172a}.filter.active span{color:#cbd5e1}.search{min-width:min(100%,320px);border:1px solid #cbd5e1;border-radius:.75rem;padding:.6rem .8rem}.bill-card{overflow:hidden;border:1px solid #e2e8f0;border-radius:1rem;background:#fff}.overdue-card{border-color:#fecaca}.status,.overdue{display:inline-block;border-radius:999px;padding:.25rem .55rem;font-size:.7rem;font-weight:900}.status.paid{background:#dcfce7;color:#166534}.status.part{background:#fef3c7;color:#92400e}.status.unpaid{background:#e2e8f0;color:#334155}.overdue{background:#fee2e2;color:#991b1b}.label{font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8}.details{border-top:1px solid #e2e8f0;background:#f8fafc;padding:1rem}.detail-title{margin-bottom:.65rem;font-weight:900}.summary-list>div{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid #e2e8f0;padding:.45rem 0;font-size:.875rem}.summary-list dt{color:#64748b}.summary-list dd{font-weight:800}th{background:#f8fafc;padding:.65rem;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#64748b}td{border-top:1px solid #e2e8f0;padding:.65rem}
+.panel{@apply rounded-2xl border border-slate-200 bg-white shadow-sm}
+.primary{@apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-700}
+.secondary{@apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50}
+.input{@apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100}
+.field{@apply grid gap-1.5 text-xs font-black uppercase tracking-wide text-slate-500}
+.stat{@apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow}
+.stat span{@apply block text-xs font-black uppercase tracking-wide text-slate-500}
+.stat strong{@apply mt-1 block text-xl font-black text-slate-950}
+.stat small{@apply mt-1 block text-xs font-semibold text-slate-400}
+.label{@apply text-[11px] font-black uppercase tracking-wide text-slate-400}
+.status{@apply inline-flex rounded-full px-2.5 py-1 text-[11px] font-black}
+.status.paid{@apply bg-emerald-100 text-emerald-700}
+.status.part{@apply bg-amber-100 text-amber-800}
+.status.overdue{@apply bg-red-100 text-red-700}
+.status.draft{@apply bg-violet-100 text-violet-700}
+.status.open{@apply bg-slate-100 text-slate-700}
+.table-link{@apply font-black text-blue-600 hover:underline}
+th{@apply border-b border-slate-200 bg-slate-50 px-4 py-3 text-left text-[11px] font-black uppercase tracking-wide text-slate-500}
+td{@apply border-b border-slate-100 px-4 py-3 align-middle text-slate-700}
+.bill-details{@apply border-y border-slate-200 bg-slate-50 p-4 md:p-5}
+.details-grid{@apply grid gap-5 xl:grid-cols-3}
+.detail-title{@apply mb-2 font-black text-slate-950}
+.detail-card{@apply rounded-xl border border-slate-200 bg-white p-3 text-sm}
+.summary-list>div{@apply flex justify-between gap-4 border-b border-slate-200 py-2 text-sm}
+.summary-list dt{@apply text-slate-500}
+.summary-list dd{@apply font-bold text-slate-900}
+.variance-box{@apply mt-3 flex justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800}
 </style>
