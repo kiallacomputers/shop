@@ -166,8 +166,151 @@ function openBalance(){if(!selectedBank.value)return;balanceError.value='';balan
 function closeBalance(){if(balanceSaving.value)return;showBalance.value=false;balanceError.value=''}
 async function saveBalance(){if(!bankId.value)return;balanceSaving.value=true;balanceError.value='';try{const updated:any=await adminFetch(`/api/admin/accounting/bank/accounts/${bankId.value}/balance`,{method:'PATCH',body:balanceForm});const i=banks.value.findIndex(x=>Number(x.id)===Number(bankId.value));if(i>=0)banks.value[i]={...banks.value[i],...updated};showBalance.value=false;notice.value='Current bank balance updated successfully.'}catch(e:any){balanceError.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to update bank balance.'}finally{balanceSaving.value=false}}
 async function saveBank(){bankSaving.value=true;bankError.value='';try{await adminFetch('/api/admin/accounting/bank/accounts',{method:'POST',body:bank});showBank.value=false;banks.value=await adminFetch('/api/admin/accounting/bank/accounts');bankId.value=banks.value.at(-1)?.id||bankId.value;Object.assign(bank,{name:'',bsb:'',account_number:'',accounting_account_id:0,opening_balance:0});await loadTransactions();notice.value='Bank account added successfully.'}catch(e:any){bankError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{bankSaving.value=false}}
-function parseCsv(text:string){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];const split=(line:string)=>{const out:string[]=[];let cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++}else q=!q}else if(c===','&&!q){out.push(cur.trim());cur=''}else cur+=c}out.push(cur.trim());return out};const h=split(lines[0]).map(x=>x.toLowerCase().replace(/[^a-z]/g,''));const idx=(...names:string[])=>h.findIndex(x=>names.includes(x));const di=idx('date','transactiondate'),xi=idx('description','details','narrative'),ri=idx('reference','ref'),ai=idx('amount'),debi=idx('debit','withdrawal'),cri=idx('credit','deposit');return lines.slice(1).map(line=>{const c=split(line);let amount=Number(String(ai>=0?c[ai]:'').replace(/[$,]/g,''));if(ai<0)amount=Number(String(c[cri]||'').replace(/[$,]/g,''))-Number(String(c[debi]||'').replace(/[$,]/g,''));let d=c[di]||'';if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){const [dd,mm,yy]=d.split('/');d=`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`}return{transaction_date:d,description:c[xi]||'',reference:ri>=0?c[ri]:'',amount}}).filter(x=>x.transaction_date&&Number.isFinite(x.amount)&&x.amount!==0)}
-async function importCsv(e:any){const f=e.target.files?.[0];if(!f)return;err.value='';try{const rows=parseCsv(await f.text());const r:any=await adminFetch('/api/admin/accounting/bank/import',{method:'POST',body:{bank_account_id:bankId.value,rows}});notice.value=`Imported ${r.imported} transaction(s); ${r.skipped} duplicate/invalid row(s) skipped.`;await loadTransactions()}catch(x:any){err.value=x?.data?.statusMessage||x?.statusMessage||x.message}finally{e.target.value=''}}
+function parseCsv(text:string){
+  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean)
+  if(lines.length<2)return{rows:[],latestBalance:null as number|null,latestBalanceAsAt:''}
+
+  const split=(line:string)=>{
+    const out:string[]=[];let cur='',q=false
+    for(let i=0;i<line.length;i++){
+      const c=line[i]
+      if(c==='"'){
+        if(q&&line[i+1]==='"'){cur+='"';i++}else q=!q
+      }else if(c===','&&!q){out.push(cur.trim());cur=''}
+      else cur+=c
+    }
+    out.push(cur.trim())
+    return out
+  }
+
+  const headers=split(lines[0])
+  const h=headers.map(x=>x.toLowerCase().replace(/[^a-z]/g,''))
+  const idx=(...names:string[])=>h.findIndex(x=>names.includes(x))
+  const parseAmount=(v:any)=>{
+    const n=Number(String(v??'').replace(/[$,]/g,'').trim())
+    return Number.isFinite(n)?n:0
+  }
+  const isoDate=(raw:any)=>{
+    const d=String(raw||'').trim()
+    if(/^\d{1,2}\s+[A-Za-z]{3}\s+\d{2}$/.test(d)){
+      const [dd,mon,yy]=d.split(/\s+/)
+      const months:any={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'}
+      return `20${yy}-${months[mon.toLowerCase()]}-${dd.padStart(2,'0')}`
+    }
+    if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){
+      const [dd,mm,yy]=d.split('/')
+      return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`
+    }
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d
+    return d
+  }
+
+  // NAB Internet Banking export:
+  // Date, Amount, Account Number, [blank], Transaction Type,
+  // Transaction Details, Balance, Category, Merchant Name, Processed On
+  const isNab=
+    idx('date')>=0 &&
+    idx('amount')>=0 &&
+    idx('accountnumber')>=0 &&
+    idx('transactiontype')>=0 &&
+    idx('transactiondetails')>=0 &&
+    idx('balance')>=0
+
+  if(isNab){
+    const di=idx('date'),ai=idx('amount'),ti=idx('transactiontype')
+    const detailsI=idx('transactiondetails'),bi=idx('balance')
+    const merchantI=idx('merchantname'),processedI=idx('processedon')
+    let latestBalance:number|null=null
+    let latestBalanceAsAt=''
+    let latestSort=''
+
+    const rows=lines.slice(1).map(line=>{
+      const c=split(line)
+      const transactionDate=isoDate(c[di])
+      const amount=parseAmount(c[ai])
+      const type=String(c[ti]||'').trim()
+      const details=String(c[detailsI]||'').replace(/\\,/g,',').trim()
+      const merchant=merchantI>=0?String(c[merchantI]||'').trim():''
+      const description=[type,details||merchant].filter(Boolean).join(' · ')
+      const balance=parseAmount(c[bi])
+      const processed=processedI>=0?isoDate(c[processedI]):transactionDate
+
+      if(transactionDate && Number.isFinite(balance)){
+        const sortKey=processed||transactionDate
+        if(!latestSort || sortKey>=latestSort){
+          latestSort=sortKey
+          latestBalance=balance
+          latestBalanceAsAt=processed||transactionDate
+        }
+      }
+
+      return{
+        transaction_date:transactionDate,
+        description,
+        reference:details||merchant||type,
+        amount
+      }
+    }).filter(x=>x.transaction_date&&Number.isFinite(x.amount)&&x.amount!==0)
+
+    return{rows,latestBalance,latestBalanceAsAt,format:'NAB'}
+  }
+
+  // Generic fallback retained for other banks.
+  const di=idx('date','transactiondate'),xi=idx('description','details','narrative','transactiondetails')
+  const ri=idx('reference','ref'),ai=idx('amount'),debi=idx('debit','withdrawal'),cri=idx('credit','deposit')
+  const rows=lines.slice(1).map(line=>{
+    const c=split(line)
+    let amount=parseAmount(ai>=0?c[ai]:'')
+    if(ai<0)amount=parseAmount(c[cri])-parseAmount(c[debi])
+    return{
+      transaction_date:isoDate(c[di]),
+      description:c[xi]||'',
+      reference:ri>=0?c[ri]:'',
+      amount
+    }
+  }).filter(x=>x.transaction_date&&Number.isFinite(x.amount)&&x.amount!==0)
+
+  return{rows,latestBalance:null as number|null,latestBalanceAsAt:'',format:'Generic'}
+}
+async function importCsv(e:any){
+  const f=e.target.files?.[0]
+  if(!f)return
+  err.value=''
+  try{
+    const parsed:any=parseCsv(await f.text())
+    if(!parsed.rows.length)throw new Error('No valid bank transactions were found in this CSV.')
+
+    const r:any=await adminFetch('/api/admin/accounting/bank/import',{
+      method:'POST',
+      body:{bank_account_id:bankId.value,rows:parsed.rows}
+    })
+
+    let balanceMessage=''
+    if(parsed.format==='NAB' && parsed.latestBalance!==null){
+      const asAt=parsed.latestBalanceAsAt
+        ? `${parsed.latestBalanceAsAt}T23:59`
+        : localDateTimeValue(new Date())
+
+      const updated:any=await adminFetch(`/api/admin/accounting/bank/accounts/${bankId.value}/balance`,{
+        method:'PATCH',
+        body:{
+          current_balance:parsed.latestBalance,
+          current_balance_as_at:asAt
+        }
+      })
+      const i=banks.value.findIndex(x=>Number(x.id)===Number(bankId.value))
+      if(i>=0)banks.value[i]={...banks.value[i],...updated}
+      balanceMessage=` Actual bank balance updated to ${money(parsed.latestBalance)} from the latest NAB transaction.`
+    }
+
+    notice.value=`Imported ${r.imported} transaction(s); ${r.skipped} duplicate/invalid row(s) skipped.${balanceMessage}`
+    await loadTransactions()
+  }catch(x:any){
+    err.value=x?.data?.statusMessage||x?.statusMessage||x.message
+  }finally{
+    e.target.value=''
+  }
+}
 async function openTransaction(t:any){matchTx.value=t;manualAccount.value=0;candidates.value=[];matchError.value='';if(t.status!=='unmatched')return;candidateLoading.value=true;try{candidates.value=await adminFetch(`/api/admin/accounting/bank/candidates?amount=${t.amount}&date=${t.transaction_date}`)}catch(e:any){matchError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{candidateLoading.value=false}}
 function closeMatch(){if(matching.value)return;matchTx.value=null;candidates.value=[];manualAccount.value=0;matchError.value=''}
 async function matchCandidate(c:any){matching.value=true;matchError.value='';try{await adminFetch('/api/admin/accounting/bank/match',{method:'POST',body:{transaction_id:matchTx.value.id,match_type:c.type,match_id:c.id}});notice.value='Bank transaction matched successfully.';closeMatch();await loadTransactions()}catch(e:any){matchError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{matching.value=false}}
