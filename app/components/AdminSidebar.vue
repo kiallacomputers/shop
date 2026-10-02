@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h, ref, watch } from "vue";
 const emit=defineEmits<{navigate:[]}>(); const route=useRoute();
 const { isSuperAdmin, adminPermissions, securityGroup }=useAdminFetch();
 const can=(key:string)=>isSuperAdmin.value || adminPermissions.value?.[key]===true;
@@ -39,9 +39,12 @@ const visibleGroups=computed(()=>groups.value.map(g=>({...g,items:g.items.filter
   if(superOnly.includes(i.to) && !isSuperAdmin.value) return false;
   return can(i.permission);
 })})).filter(g=>g.items.length>0));
-const openGroup=ref<string|null>(null); const toggle=(k:string)=>openGroup.value=openGroup.value===k?null:k;
+const activeGroupKey=()=>visibleGroups.value.find((g:any)=>g.items.some((i:any)=>route.path===i.to||route.path.startsWith(i.to+'/')))?.key||null;
+const openGroup=ref<string|null>(activeGroupKey());
+const toggle=(k:string)=>openGroup.value=openGroup.value===k?null:k;
 const groupActive=(g:any)=>g.items.some((i:any)=>route.path===i.to||route.path.startsWith(i.to+'/'));
+watch(()=>route.path,()=>{const active=activeGroupKey();if(active)openGroup.value=active;},{immediate:true});
 const linkClass=(path:string,exact=false,exclude:string[]=[] )=>{const m=exact?route.path===path:route.path===path||route.path.startsWith(path+'/'); const x=(exclude||[]).some(e=>route.path===e||route.path.startsWith(e+'/')); return ['mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all',m&&!x?'bg-blue-600 text-white shadow-lg shadow-blue-950/20':'text-slate-300 hover:bg-slate-800/90 hover:text-white'];};
-const nav=()=>{openGroup.value=null;emit('navigate')}; const backToStore=()=>{emit('navigate');if(import.meta.client)window.location.assign('/')};
+const nav=()=>{emit('navigate')}; const backToStore=()=>{emit('navigate');if(import.meta.client)window.location.assign('/')};
 const NavGroup=defineComponent({props:{title:{type:String,required:true},open:Boolean,active:Boolean},emits:['toggle'],setup(p,{slots,emit}){return()=>h('div',{class:'mt-2'},[h('button',{type:'button',class:['mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.12em] transition',p.active?'bg-slate-800 text-blue-300':'text-slate-500 hover:bg-slate-800/70 hover:text-slate-300'],onClick:()=>emit('toggle')},[h('span',p.title),h('span',{class:['text-base transition-transform',p.open?'rotate-90':'']},'›')]),h('div',{class:['ml-2 border-l border-slate-800 pl-2',p.open?'block':'hidden']},slots.default?.())])}});
 </script>
