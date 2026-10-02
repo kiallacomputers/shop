@@ -128,7 +128,6 @@ const groups = computed(() => [
       item("Purchase Orders", "/admin/purchasing/purchase-orders", "purchase.orders.view", { exclude: ["/admin/purchasing/purchase-orders/receive-stock"] }),
       item("Receive Stock", "/admin/purchasing/purchase-orders/receive-stock", "purchase.receive_stock"),
       item("Suppliers", "/admin/purchasing/suppliers", "purchase.suppliers.view"),
-      item("Supplier Bills", "/admin/purchasing/suppliers/bills", "purchase.supplier_bills"),
     ],
   },
   {
@@ -138,6 +137,7 @@ const groups = computed(() => [
       item("Accounting Dashboard", "/admin/accounting", "accounting.dashboard", { exact: true }),
       item("Accounts Receivable", "/admin/accounting/receivables", "accounting.receivables"),
       item("Accounts Payable", "/admin/accounting/payables", "accounting.payables"),
+      item("Supplier Bills", "/admin/purchasing/suppliers/bills", "purchase.supplier_bills"),
       sub("banking", "Banking", [
         item("Bank Reconciliation", "/admin/accounting/bank-reconciliation", "accounting.bank_reconciliation"),
         item("Cash Flow", "/admin/accounting/cash-flow", "accounting.cash_flow"),
