@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     supabase
       .from("products")
       .select(`
-        id,name,slug,product_code,stock,active,has_variants,buy_price_ex_gst,price,images,category_id,
+        id,name,slug,product_code,stock,active,has_variants,buy_price_ex_gst,landed_cost_ex_gst,price,images,category_id,
         categories(id,name,slug,parent_id),
         product_variants(id,product_id,name,product_code,stock,active,price,images,sort_order)
       `)
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
   const inventory: AnyRow[] = [];
   for (const product of (productsResult.data || []) as AnyRow[]) {
-    const baseCost = Number(product.buy_price_ex_gst || 0);
+    const baseCost = Number((product.landed_cost_ex_gst ?? product.buy_price_ex_gst) || 0);
     const variants = Array.isArray(product.product_variants)
       ? product.product_variants.filter((variant: AnyRow) => variant?.active !== false)
       : [];
@@ -91,7 +91,10 @@ export default defineEventHandler(async (event) => {
           category: product.categories?.name || "Uncategorised",
           stock,
           active: product.active !== false && variant.active !== false,
-          buy_price_ex_gst: baseCost,
+          buy_price_ex_gst: Number(product.buy_price_ex_gst || 0),
+          landed_cost_ex_gst: baseCost,
+          allocated: demandByKey.get(key) || 0,
+          available: Math.max(0, stock - (demandByKey.get(key) || 0)),
           sell_price: Number(variant.price ?? product.price ?? 0),
           stock_value_ex_gst: Math.round(baseCost * stock * 100) / 100,
           waiting_customers: waitingByKey.get(key) || 0,
@@ -115,7 +118,10 @@ export default defineEventHandler(async (event) => {
         category: product.categories?.name || "Uncategorised",
         stock,
         active: product.active !== false,
-        buy_price_ex_gst: baseCost,
+        buy_price_ex_gst: Number(product.buy_price_ex_gst || 0),
+        landed_cost_ex_gst: baseCost,
+        allocated: demandByKey.get(key) || 0,
+        available: Math.max(0, stock - (demandByKey.get(key) || 0)),
         sell_price: Number(product.price || 0),
         stock_value_ex_gst: Math.round(baseCost * stock * 100) / 100,
         waiting_customers: waitingByKey.get(key) || 0,

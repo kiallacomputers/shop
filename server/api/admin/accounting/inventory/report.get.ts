@@ -1,10 +1,10 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 const n = (v: any) => Number(v || 0);
 const r = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
 
   const q = getQuery(event);
   const now = new Date();
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: products, error: productError } = await s
     .from("products")
-    .select("id,name,product_code,buy_price_ex_gst,price,stock,low_stock_level,reorder_level,target_stock_level,active")
+    .select("id,name,product_code,buy_price_ex_gst,landed_cost_ex_gst,price,stock,low_stock_level,reorder_level,target_stock_level,active")
     .order("name");
 
   if (productError) {
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
 
   const valuation = (products || []).map((p: any) => {
     const qty = n(p.stock);
-    const unit = r(n(p.buy_price_ex_gst));
+    const unit = r(n(p.landed_cost_ex_gst ?? p.buy_price_ex_gst));
     const value = r(qty * unit);
     const sell = r(qty * n(p.price));
     return {

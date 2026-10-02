@@ -1,4 +1,4 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { createPostedJournal } from "~~/server/utils/accounting";
 
 const n=(v:any)=>Number(v||0);
@@ -11,7 +11,7 @@ async function account(s:any,key:string){
 }
 
 export default defineEventHandler(async(event)=>{
-  const user:any=await requireSuperAdmin(event);
+  const user:any=await requireAdmin(event);
   const body=await readBody(event);
   const items=Array.isArray(body?.items)?body.items:[];
   if(!items.length) throw createError({statusCode:400,statusMessage:"No stocktake variances were supplied."});
@@ -28,7 +28,7 @@ export default defineEventHandler(async(event)=>{
   const ids=[...new Set(items.map((x:any)=>Number(x?.product_id)).filter((x:number)=>Number.isInteger(x)&&x>0))];
   if(ids.length!==items.length) throw createError({statusCode:400,statusMessage:"Each stocktake line requires a unique valid product."});
 
-  const {data:products,error:pe}=await s.from("products").select("id,name,product_code,stock,buy_price_ex_gst").in("id",ids);
+  const {data:products,error:pe}=await s.from("products").select("id,name,product_code,stock,buy_price_ex_gst,landed_cost_ex_gst").in("id",ids);
   if(pe) throw createError({statusCode:500,statusMessage:pe.message});
   if((products||[]).length!==ids.length) throw createError({statusCode:404,statusMessage:"One or more stocktake products could not be found."});
   const map=new Map((products||[]).map((p:any)=>[Number(p.id),p]));
@@ -39,7 +39,7 @@ export default defineEventHandler(async(event)=>{
     if(!Number.isInteger(counted)||counted<0) throw createError({statusCode:400,statusMessage:`${p?.name||`Product ${id}`}: counted stock must be a whole number of 0 or more.`});
     const system=n(p.stock), variance=counted-system;
     if(!variance) continue;
-    const unitCost=r(n(p.buy_price_ex_gst)), total=r(Math.abs(variance)*unitCost);
+    const unitCost=r(n(p.landed_cost_ex_gst ?? p.buy_price_ex_gst)), total=r(Math.abs(variance)*unitCost);
     changes.push({p,system,counted,variance,unitCost,total});
   }
   if(!changes.length) return {ok:true,adjustments:0,journals:0};

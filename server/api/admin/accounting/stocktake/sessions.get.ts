@@ -1,0 +1,2 @@
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
+export default defineEventHandler(async(event)=>{await requireAdmin(event);const s=getAdminSupabase();const{data,error}=await s.from("accounting_stocktakes").select("id,stocktake_number,status,reference,notes,created_at,posted_at").order("created_at",{ascending:false}).limit(100);if(error)throw createError({statusCode:500,statusMessage:error.message});return data||[];});

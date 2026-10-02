@@ -1,7 +1,7 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async(event)=>{
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const s=getAdminSupabase();
   const {data:moves,error}=await s
     .from("accounting_inventory_movements")
