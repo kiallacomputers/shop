@@ -9,18 +9,20 @@
   <div v-if="success" class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{{success}}</div>
 
   <section class="panel mt-5 p-5">
-    <div class="grid gap-4 lg:grid-cols-[260px_1fr_auto] lg:items-end">
+    <div class="grid gap-4 lg:grid-cols-[240px_1fr_240px_auto] lg:items-end">
       <label class="field"><span>Supplier</span><select v-model.number="supplierId" class="input"><option :value="0">Select supplier…</option><option v-for="s in suppliers" :key="s.id" :value="Number(s.id)">{{s.name}}</option></select></label>
       <label class="field"><span>Supplier Product URL</span><input v-model.trim="supplierUrl" class="input" type="url" placeholder="https://partner.leadersystems.com.au/products..."></label>
-      <button class="primary" :disabled="fetching||!supplierId||!supplierUrl" @click="fetchSupplier">{{fetching?'Fetching…':'Fetch Supplier Product'}}</button>
+      <label class="field"><span>Leader Product Code</span><input v-model.trim="leaderProductCode" class="input" placeholder="e.g. MNL-32BR50C-B"></label>
+      <button class="primary" :disabled="fetching||!supplierId||!supplierUrl||!leaderProductCode" @click="fetchSupplier">{{fetching?'Fetching…':'Fetch Supplier Product'}}</button>
     </div>
+    <p class="mt-3 text-xs text-slate-500">Use the product code shown on the Leader product page. Leader's product URL is opaque, so the code is used for its GetProducts service.</p>
     <div v-if="supplierData?.warning" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{{supplierData.warning}}</div>
   </section>
 
   <template v-if="supplierData">
     <section class="mt-5 grid gap-5 xl:grid-cols-2">
       <div class="panel p-5"><p class="eyebrow">Private supplier data</p><h2 class="mt-1 text-xl font-black">{{selectedSupplier?.name}}</h2>
-        <dl class="details mt-4"><div><dt>Supplier SKU</dt><dd>{{supplierData.supplier_sku||'—'}}</dd></div><div><dt>Buy Price ex GST</dt><dd>{{supplierData.price_ex_gst==null?'Not detected':money(supplierData.price_ex_gst)}}</dd></div><div><dt>Brand</dt><dd>{{supplierData.brand||'—'}}</dd></div><div><dt>MPN</dt><dd>{{supplierData.mpn||'—'}}</dd></div><div><dt>GTIN</dt><dd>{{supplierData.gtin||'—'}}</dd></div><div><dt>Stock</dt><dd>{{supplierData.stock||'—'}}</dd></div></dl>
+        <dl class="details mt-4"><div><dt>Supplier SKU</dt><dd>{{supplierData.supplier_sku||'—'}}</dd></div><div><dt>Buy Price ex GST</dt><dd>{{supplierData.price_ex_gst==null?'Not detected':money(supplierData.price_ex_gst)}}</dd></div><div><dt>Leader RRP inc GST</dt><dd>{{supplierData.rrp_inc_gst?money(supplierData.rrp_inc_gst):'—'}}</dd></div><div><dt>Brand</dt><dd>{{supplierData.brand||'—'}}</dd></div><div><dt>MPN</dt><dd>{{supplierData.mpn||'—'}}</dd></div><div><dt>Leader Category</dt><dd>{{supplierData.category||'—'}} / {{supplierData.subcategory||'—'}}</dd></div><div><dt>Stock</dt><dd>{{supplierData.stock_total ?? '—'}} total <span v-if="supplierData.stock_by_state" class="font-normal text-slate-500">({{Object.entries(supplierData.stock_by_state).map(([k,v])=>`${k} ${v}`).join(' · ')}})</span></dd></div><div><dt>Box</dt><dd>{{supplierData.box_length_mm||0}} × {{supplierData.box_width_mm||0}} × {{supplierData.box_height_mm||0}} mm</dd></div></dl>
       </div>
       <div class="panel p-5"><p class="eyebrow">Official vendor details</p><h2 class="mt-1 text-xl font-black">Manufacturer Product Page</h2><p class="mt-1 text-sm text-slate-500">Paste the official manufacturer product URL. This keeps customer-facing details separate from private supplier pricing.</p>
         <div class="mt-4 flex gap-2"><input v-model.trim="vendorUrl" class="input" type="url" placeholder="https://www.vendor.com/product/..."><button class="secondary shrink-0" :disabled="vendorFetching||!vendorUrl" @click="fetchVendor">{{vendorFetching?'Fetching…':'Fetch Vendor'}}</button></div>
@@ -58,7 +60,7 @@
 <script setup lang="ts">
 definePageMeta({layout:'admin',middleware:['admin']})
 const route=useRoute(),router=useRouter(),{adminFetch}=useAdminFetch()
-const suppliers=ref<any[]>([]),categories=ref<any[]>([]),supplierId=ref(Number(route.query.supplier||0)),supplierUrl=ref(''),vendorUrl=ref('')
+const suppliers=ref<any[]>([]),categories=ref<any[]>([]),supplierId=ref(Number(route.query.supplier||0)),supplierUrl=ref(''),leaderProductCode=ref(''),vendorUrl=ref('')
 const supplierData=ref<any>(null),vendorData=ref<any>(null),fetching=ref(false),vendorFetching=ref(false),saving=ref(false),error=ref(''),success=ref('')
 const selectedImages=ref<string[]>([])
 const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',category_id:'',buy_price_ex_gst:0,rrp_markup_percent:30,blurb:''})
@@ -81,7 +83,7 @@ function applyBestData(){
 async function fetchSupplier(){
   fetching.value=true;error.value='';success.value='';supplierData.value=null;vendorData.value=null;vendorUrl.value='';selectedImages.value=[]
   try{
-    const result:any=await adminFetch('/api/admin/products/import-url/fetch',{method:'POST',body:{url:supplierUrl.value}})
+    const result:any=await adminFetch('/api/admin/products/import-url/fetch',{method:'POST',body:{url:supplierUrl.value,product_code:leaderProductCode.value}})
     if(!result?.authenticated)throw new Error('The supplier product could not be authenticated.')
     supplierData.value=result
     vendorUrl.value=result.vendor_url||''
