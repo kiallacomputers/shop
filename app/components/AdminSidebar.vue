@@ -127,7 +127,7 @@ const groups = computed(() => [
     entries: [
       item("Purchase Orders", "/admin/purchasing/purchase-orders", "purchase.orders.view", { exclude: ["/admin/purchasing/purchase-orders/receive-stock"] }),
       item("Receive Stock", "/admin/purchasing/purchase-orders/receive-stock", "purchase.receive_stock"),
-      item("Suppliers", "/admin/purchasing/suppliers", "purchase.suppliers.view"),
+      item("Suppliers", "/admin/purchasing/suppliers", "purchase.suppliers.view", { exact: true }),
     ],
   },
   {
