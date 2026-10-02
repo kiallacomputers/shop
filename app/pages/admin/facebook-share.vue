@@ -122,14 +122,13 @@
                 {{ copied ? "Copied!" : "Copy Post Text" }}
               </button>
 
-              <a
-                :href="productUrl"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                @click="openProductPreview"
               >
                 View Product
-              </a>
+              </button>
             </div>
 
             <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
@@ -197,6 +196,59 @@
         </aside>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showProductPreview"
+        class="fixed inset-0 z-[250] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6"
+        @click.self="closeProductPreview"
+      >
+        <section
+          class="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="facebook-product-preview-title"
+        >
+          <header class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[.14em] text-blue-600">Admin Product Preview</p>
+              <h2 id="facebook-product-preview-title" class="mt-1 truncate text-xl font-black text-slate-950">
+                {{ previewProduct?.name || selectedProduct?.name || "Product Preview" }}
+              </h2>
+              <p class="mt-1 text-xs font-semibold text-slate-500">
+                Preview only — this does not open the storefront or record a product visit.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600 hover:bg-slate-50"
+              aria-label="Close product preview"
+              @click="closeProductPreview"
+            >
+              ×
+            </button>
+          </header>
+
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <div v-if="previewLoading" class="flex h-full min-h-[320px] items-center justify-center p-8 text-sm font-semibold text-slate-500">
+              Loading product preview…
+            </div>
+
+            <div v-else-if="previewError" class="p-6">
+              <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+                {{ previewError }}
+              </div>
+            </div>
+
+            <AdminProductPreview
+              v-else-if="previewProduct"
+              :product="previewProduct"
+              :category-name="selectedProduct?.categories?.name || ''"
+            />
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </main>
 </template>
 
@@ -229,6 +281,10 @@ const copied = ref(false);
 const publishing = ref(false);
 const publishSuccess = ref("");
 const facebookStatus = ref<any>(null);
+const showProductPreview = ref(false);
+const previewProduct = ref<any>(null);
+const previewLoading = ref(false);
+const previewError = ref("");
 
 const selectedProduct = computed(() =>
   products.value.find((product) => String(product.id) === selectedProductId.value) || null,
@@ -337,6 +393,41 @@ const publishToFacebook = async () => {
   }
 };
 
+const closeProductPreview = () => {
+  showProductPreview.value = false;
+};
+
+const openProductPreview = async () => {
+  const product = selectedProduct.value;
+  if (!product) return;
+
+  showProductPreview.value = true;
+  previewLoading.value = true;
+  previewError.value = "";
+  previewProduct.value = null;
+
+  try {
+    previewProduct.value = await adminFetch<any>(`/api/admin/products/${product.id}`);
+  } catch (error: any) {
+    previewError.value =
+      error?.data?.statusMessage ||
+      error?.statusMessage ||
+      error?.message ||
+      "Unable to load the product preview.";
+  } finally {
+    previewLoading.value = false;
+  }
+};
+
+const handlePreviewKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape" && showProductPreview.value) closeProductPreview();
+};
+
+watch(showProductPreview, (open) => {
+  if (!import.meta.client) return;
+  document.body.style.overflow = open ? "hidden" : "";
+});
+
 const loadProducts = async () => {
   loading.value = true;
   errorMessage.value = "";
@@ -359,6 +450,12 @@ const loadProducts = async () => {
 };
 
 onMounted(async () => {
+  window.addEventListener("keydown", handlePreviewKeydown);
   await Promise.all([loadProducts(), loadFacebookStatus()]);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handlePreviewKeydown);
+  document.body.style.overflow = "";
 });
 </script>
