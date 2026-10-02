@@ -58,10 +58,10 @@
             <div>
               <div class="label">Balance</div>
               <div class="text-lg font-black">{{ money(owing(b)) }}</div>
-              <div class="mt-1 text-xs text-slate-500">{{ money(b.paid_amount) }} paid of {{ money(b.total) }}</div>
+              <div class="mt-1 text-xs text-slate-500">{{ money(b.paid_amount) }} paid of {{ money(b.total) }}</div><div v-if="b.purchase_order && Math.abs(variance(b)) >= 0.01" class="mt-1 text-xs font-bold" :class="variance(b)>0?'text-amber-700':'text-emerald-700'">PO variance {{ variance(b)>0?'+':'' }}{{ money(variance(b)) }}</div>
             </div>
             <div class="flex flex-wrap gap-2 lg:justify-end">
-              <button v-if="owing(b)>0" class="primary" @click="pay(b)">Record Payment</button>
+              <NuxtLink v-if="owing(b)>0" to="/admin/accounting/payables" class="primary">Record Payment</NuxtLink>
               <button class="secondary" @click="toggle(b.id)">{{ expanded===b.id ? 'Hide Details' : 'View Details' }}</button>
             </div>
           </div>
@@ -136,6 +136,7 @@ const expanded = ref<number|null>(null)
 
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const owing=(b:any)=>Math.max(0,Math.round((Number(b.total||0)-Number(b.paid_amount||0))*100)/100)
+const variance=(b:any)=>Math.round((Number(b.total||0)-Number(b.purchase_order?.total||0))*100)/100
 const date=(v:any)=>v ? new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${String(v).slice(0,10)}T00:00:00`)) : '—'
 const dateTime=(v:any)=>v ? new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(v)) : '—'
 const today=()=>new Date().toISOString().slice(0,10)
@@ -172,20 +173,6 @@ async function load(){
   msg.value=''
   try{ bills.value=await adminFetch('/api/admin/accounting/supplier-bills')||[] }
   catch(e:any){ msg.value=e?.data?.statusMessage||e.message }
-}
-async function pay(b:any){
-  const raw=await dialog.prompt(`Payment amount for ${b.bill_number}`,owing(b).toFixed(2))
-  if(raw===null)return
-  const amount=Number(raw)
-  if(!amount||amount<=0||amount>owing(b)){await dialog.alert('Enter a valid payment amount no greater than the amount owing.');return}
-  const reference=await dialog.prompt('Payment reference','')
-  if(reference===null)return
-  try{
-    await adminFetch('/api/admin/accounting/supplier-payments',{method:'POST',body:{bill_id:b.id,amount,reference:reference||''}})
-    msg.value=`Payment of ${money(amount)} recorded against ${b.bill_number}.`
-    expanded.value=Number(b.id)
-    await load()
-  }catch(e:any){msg.value=e?.data?.statusMessage||e.message}
 }
 onMounted(load)
 </script>

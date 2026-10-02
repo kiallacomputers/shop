@@ -1,7 +1,7 @@
-import { getAdminSupabase, requireSuperAdmin } from "~~/server/utils/adminAuth";
+import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 
 export default defineEventHandler(async (event) => {
-  await requireSuperAdmin(event);
+  await requireAdmin(event);
   const s = getAdminSupabase();
 
   const { data, error } = await s
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (billIds.length) {
     const { data: payments, error: pe } = await s
       .from("accounting_supplier_payments")
-      .select("id,bill_id,amount,reference,journal_id,created_at")
+      .select("id,bill_id,amount,reference,journal_id,created_at,payment_date,payment_method,bank_account_id,notes")
       .in("bill_id", billIds)
       .order("created_at", { ascending: false });
     if (pe) throw createError({ statusCode: 500, statusMessage: pe.message });
