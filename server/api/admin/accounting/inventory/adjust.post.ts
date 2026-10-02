@@ -4,9 +4,12 @@ const n=(v:any)=>Number(v||0); const r=(v:number)=>Math.round((v+Number.EPSILON)
 async function account(s:any,key:string){const{data,error}=await s.from("accounting_accounts").select("id").eq("system_key",key).single();if(error||!data)throw createError({statusCode:500,statusMessage:`Accounting account '${key}' is missing.`});return Number(data.id)}
 export default defineEventHandler(async(event)=>{
  const user:any=await requireAdmin(event),b=await readBody(event),s=getAdminSupabase();
- const productId=Number(b?.product_id),variantId=Number(b?.variant_id||0)||null,qty=Math.abs(n(b?.quantity)),direction=String(b?.direction||"");
+ const productId=Number(b?.product_id),variantId=Number(b?.variant_id||0)||null;
+ const rawQty=Number(b?.quantity),qty=Number.isInteger(rawQty)&&rawQty>0?rawQty:0,direction=String(b?.direction||"");
  const reason=String(b?.reason||"").trim(),notes=String(b?.notes||"").trim();
- if(!productId||qty<=0||!["in","out"].includes(direction))throw createError({statusCode:400,statusMessage:"Product, direction and quantity are required."});
+ if(!productId)throw createError({statusCode:400,statusMessage:"A product is required."});
+ if(!["in","out"].includes(direction))throw createError({statusCode:400,statusMessage:"Select whether stock is being increased or reduced."});
+ if(qty<=0)throw createError({statusCode:400,statusMessage:"Enter a whole adjustment quantity greater than zero."});
  if(reason.length<3)throw createError({statusCode:400,statusMessage:"An adjustment reason is required."});
  const{data:p,error}=await s.from("products").select("id,name,stock,buy_price_ex_gst,landed_cost_ex_gst").eq("id",productId).single();
  if(error||!p)throw createError({statusCode:404,statusMessage:"Product not found."});
