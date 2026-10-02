@@ -78,10 +78,23 @@ function applyBestData(){
   draft.blurb=(v.description||s.description||draft.blurb||'').slice(0,500)
   selectedImages.value=candidateImages.value.slice(0,6)
 }
-async function fetchSupplier(){fetching.value=true;error.value='';try{supplierData.value=await adminFetch('/api/admin/products/import-url/fetch',{method:'POST',body:{url:supplierUrl.value}});vendorUrl.value=supplierData.value.vendor_url||'';applyBestData()}catch(e:any){error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch supplier product.'}finally{fetching.value=false}}
+async function fetchSupplier(){
+  fetching.value=true;error.value='';success.value='';supplierData.value=null;vendorData.value=null;vendorUrl.value='';selectedImages.value=[]
+  try{
+    const result:any=await adminFetch('/api/admin/products/import-url/fetch',{method:'POST',body:{url:supplierUrl.value}})
+    if(!result?.authenticated)throw new Error('The supplier product could not be authenticated.')
+    supplierData.value=result
+    vendorUrl.value=result.vendor_url||''
+    applyBestData()
+  }catch(e:any){
+    supplierData.value=null
+    error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch supplier product.'
+  }finally{fetching.value=false}
+}
 async function fetchVendor(){vendorFetching.value=true;error.value='';try{vendorData.value=await adminFetch('/api/admin/products/import-url/vendor',{method:'POST',body:{url:vendorUrl.value}});applyBestData()}catch(e:any){error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch official vendor product.'}finally{vendorFetching.value=false}}
 async function createProduct(){
   error.value='';success.value=''
+  if(!supplierData.value?.authenticated){error.value='Fetch and authenticate the supplier product before creating it.';return}
   if(!supplierId.value||!draft.name.trim()||!draft.product_code.trim()||!draft.category_id){error.value='Supplier, product name, product code and category are required.';return}
   if(!Number.isFinite(Number(draft.buy_price_ex_gst))||Number(draft.buy_price_ex_gst)<0){error.value='Enter a valid buy price ex GST.';return}
   saving.value=true

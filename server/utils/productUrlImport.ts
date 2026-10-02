@@ -90,10 +90,19 @@ export function extractProduct(html:string,url:string){
   const stock=text(offers.availability).split("/").pop()||labelValue(html,["Availability","Stock","Stock Status"]);
   const canonical=(html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)/i)||[])[1]||url;
   const vendorUrl=labelValue(html,["Manufacturer URL","Vendor URL","Product Website"]);
+  const resolvedVendor=absoluteUrl(vendorUrl,url);
+  let safeVendorUrl="";
+  if(resolvedVendor){
+    try{
+      const sourceHost=new URL(url).hostname.toLowerCase();
+      const vendorHost=new URL(resolvedVendor).hostname.toLowerCase();
+      if(vendorHost!==sourceHost) safeVendorUrl=resolvedVendor;
+    }catch{}
+  }
   return {
     source_url:url,canonical_url:absoluteUrl(canonical,url),name:title,description,brand:detectedBrand,
     supplier_sku:sku,mpn,gtin,price_ex_gst:price,stock,images:imageList(html,url,product),
-    vendor_url:absoluteUrl(vendorUrl,url),
+    vendor_url:safeVendorUrl,
   };
 }
 export const slugify=(v:string)=>text(v).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
