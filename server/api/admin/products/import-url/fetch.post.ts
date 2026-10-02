@@ -23,7 +23,7 @@ export default defineEventHandler(async(event)=>{
 
     if(loginShell){
       throw createError({
-        statusCode:401,
+        statusCode:422,
         statusMessage:
           "Leader authentication required. The server received the Leader Dealershop shell instead of the private product page. Update LEADER_SESSION_COOKIE in Netlify with the Cookie request header from a logged-in Leader product request, then redeploy."
       });
