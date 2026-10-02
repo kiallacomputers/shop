@@ -99,8 +99,6 @@ const accountingToolGroups = [
     { icon:'🏦', label:'Bank Reconciliation', to:'/admin/accounting/bank-reconciliation', color:'tool-indigo' },
   ]},
   { id:'reports', icon:'📈', label:'Reports & Analysis', description:'Financial, tax, profitability, forecasting and management reporting.', tools:[
-    { icon:'🧾', label:'GST & BAS', to:'/admin/accounting/gst-bas', color:'tool-amber' },
-    { icon:'📈', label:'Financial Reports', to:'/admin/accounting/reports', color:'tool-amber' },
     { icon:'🧮', label:'ATO Income Report', to:'/admin/accounting/ato-income', color:'tool-teal' },
     { icon:'📚', label:'Financial Statements', to:'/admin/accounting/financial-statements', color:'tool-sky' },
     { icon:'💵', label:'Cash Flow & Forecasting', to:'/admin/accounting/cash-flow', color:'tool-emerald' },
