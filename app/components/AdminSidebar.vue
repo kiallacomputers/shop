@@ -101,7 +101,6 @@ const groups = computed(() => [
       ]),
       item("Customers", "/admin/customers", "sales.customers.view"),
       item("Invoices", "/admin/accounting/invoices", "accounting.invoices"),
-      item("Accounts Receivable", "/admin/accounting/receivables", "accounting.receivables"),
     ],
   },
   {
@@ -109,7 +108,6 @@ const groups = computed(() => [
     title: "Inventory",
     entries: [
       item("Products", "/admin/products", "product.view", { exact: true }),
-      item("Add Product", "/admin/products/new", "product.create"),
       item("Categories", "/admin/categories", "product.categories"),
       item("Inventory Control", "/admin/products/inventory-control", "product.stock"),
       item("Stocktake", "/admin/products/stocktake", "product.stocktake"),
@@ -128,11 +126,9 @@ const groups = computed(() => [
     title: "Purchasing",
     entries: [
       item("Purchase Orders", "/admin/purchasing/purchase-orders", "purchase.orders.view", { exclude: ["/admin/purchasing/purchase-orders/receive-stock"] }),
-      item("New Purchase Order", "/admin/purchasing/purchase-orders/new", "purchase.orders.view"),
       item("Receive Stock", "/admin/purchasing/purchase-orders/receive-stock", "purchase.receive_stock"),
       item("Suppliers", "/admin/purchasing/suppliers", "purchase.suppliers.view"),
       item("Supplier Bills", "/admin/purchasing/suppliers/bills", "purchase.supplier_bills"),
-      item("Accounts Payable", "/admin/accounting/payables", "accounting.payables"),
     ],
   },
   {
@@ -140,6 +136,8 @@ const groups = computed(() => [
     title: "Accounting",
     entries: [
       item("Accounting Dashboard", "/admin/accounting", "accounting.dashboard", { exact: true }),
+      item("Accounts Receivable", "/admin/accounting/receivables", "accounting.receivables"),
+      item("Accounts Payable", "/admin/accounting/payables", "accounting.payables"),
       sub("banking", "Banking", [
         item("Bank Reconciliation", "/admin/accounting/bank-reconciliation", "accounting.bank_reconciliation"),
         item("Cash Flow", "/admin/accounting/cash-flow", "accounting.cash_flow"),
