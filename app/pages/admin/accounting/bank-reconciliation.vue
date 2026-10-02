@@ -9,6 +9,7 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <button type="button" class="secondary" @click="showBank=true">+ Bank Account</button>
+        <button v-if="bankId" type="button" class="secondary" @click="openBalance">Update Balance</button>
         <button v-if="bankId" type="button" class="primary" @click="fileInput?.click()">Import Bank CSV</button>
         <input ref="fileInput" class="hidden" type="file" accept=".csv,text/csv" @change="importCsv">
         <button type="button" class="secondary" :disabled="loading" @click="loadTransactions">{{loading?'Refreshing…':'Refresh'}}</button>
@@ -27,11 +28,11 @@
 
     <template v-if="bankId">
       <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <button class="stat text-left" type="button" @click="statusFilter='all'"><span>Imported Balance</span><strong>{{money(importedBalance)}}</strong><small>Opening balance + imported activity</small></button>
-        <button class="stat text-left" type="button" @click="statusFilter='unmatched'"><span>Unmatched</span><strong :class="unmatched.length?'!text-amber-700':''">{{money(unmatchedAbsolute)}}</strong><small>{{unmatched.length}} transaction{{unmatched.length===1?'':'s'}} requiring attention</small></button>
-        <button class="stat text-left" type="button" @click="statusFilter='matched'"><span>Matched</span><strong>{{matched.length}}</strong><small>{{money(matchedAbsolute)}} linked to accounting</small></button>
+        <button class="stat text-left" type="button" @click="openBalance"><span>Actual Bank Balance</span><strong>{{hasActualBalance?money(selectedBank.current_balance):'Not Set'}}</strong><small>{{hasActualBalance?'As at '+dateTime(selectedBank.current_balance_as_at):'Update from internet banking'}}</small></button>
+        <button class="stat text-left" type="button" @click="statusFilter='all'"><span>Ledger Balance</span><strong>{{money(importedBalance)}}</strong><small>Opening balance + imported activity</small></button>
+        <div class="stat"><span>Bank Difference</span><strong :class="!hasActualBalance?'!text-slate-400':Math.abs(bankDifference)<=.01?'!text-emerald-700':'!text-red-700'">{{hasActualBalance?money(bankDifference):'—'}}</strong><small>{{!hasActualBalance?'Enter the actual bank balance':Math.abs(bankDifference)<=.01?'Bank and ledger agree':'Requires reconciliation'}}</small></div>
+        <button class="stat text-left" type="button" @click="statusFilter='unmatched'"><span>Unmatched</span><strong :class="unmatched.length?'!text-amber-700':''">{{unmatched.length}}</strong><small>{{money(unmatchedAbsolute)}} requiring attention</small></button>
         <button class="stat text-left" type="button" @click="statusFilter='reconciled'"><span>Reconciled</span><strong>{{reconciled.length}}</strong><small>{{money(reconciledAbsolute)}} completed</small></button>
-        <div class="stat"><span>Reconciliation Status</span><strong :class="unmatched.length?'!text-amber-700':'!text-emerald-700'">{{unmatched.length?'Action Required':'Ready'}}</strong><small>{{unmatched.length?`${unmatched.length} unmatched transaction${unmatched.length===1?'':'s'}`:'All imported transactions matched'}}</small></div>
       </section>
 
       <section class="mt-5 grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
@@ -83,6 +84,22 @@
 
     <section v-else class="panel mt-5 p-12 text-center"><div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-2xl">🏦</div><h2 class="mt-4 text-xl font-black text-slate-950">Choose a bank account</h2><p class="mt-1 text-sm text-slate-500">Select an existing account above, or add your business bank account to begin.</p></section>
 
+    <!-- Current bank balance popup -->
+    <Teleport to="body"><div v-if="showBalance" class="modal" @click.self="closeBalance"><section class="modal-card max-w-lg">
+      <header class="modal-head"><div><p class="eyebrow">Banking</p><h2 class="modal-title">Update Bank Balance</h2><p class="mt-1 text-sm text-slate-500">{{selectedBank?.name}}</p></div><button class="modal-close" @click="closeBalance">×</button></header>
+      <div class="modal-body">
+        <div class="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">Enter the balance shown by your bank. This does not create a journal or change the General Ledger — it is used as a reconciliation comparison.</div>
+        <label class="field mt-4"><span>Current Bank Balance</span><input v-model.number="balanceForm.current_balance" type="number" step="0.01" class="input" placeholder="0.00"></label>
+        <label class="field mt-4"><span>Balance As At</span><input v-model="balanceForm.current_balance_as_at" type="datetime-local" class="input"></label>
+        <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <div class="flex justify-between gap-4 text-sm"><span class="font-bold text-slate-500">Ledger balance</span><strong>{{money(importedBalance)}}</strong></div>
+          <div class="mt-2 flex justify-between gap-4 text-sm"><span class="font-bold text-slate-500">Difference after update</span><strong :class="Math.abs(balancePreviewDifference)<=.01?'text-emerald-700':'text-red-700'">{{money(balancePreviewDifference)}}</strong></div>
+        </div>
+        <div v-if="balanceError" class="error-box mt-4">{{balanceError}}</div>
+      </div>
+      <footer class="modal-foot"><button class="secondary" :disabled="balanceSaving" @click="closeBalance">Cancel</button><button class="primary" :disabled="balanceSaving" @click="saveBalance">{{balanceSaving?'Saving…':'Save Balance'}}</button></footer>
+    </section></div></Teleport>
+
     <!-- Bank account popup -->
     <Teleport to="body"><div v-if="showBank" class="modal" @click.self="showBank=false"><section class="modal-card max-w-xl"><header class="modal-head"><div><p class="eyebrow">Banking</p><h2 class="modal-title">Add Bank Account</h2></div><button class="modal-close" @click="showBank=false">×</button></header><div class="modal-body"><label class="field"><span>Name</span><input v-model="bank.name" class="input" placeholder="Business Transaction Account"></label><div class="mt-4 grid grid-cols-2 gap-3"><label class="field"><span>BSB</span><input v-model="bank.bsb" class="input"></label><label class="field"><span>Account Number</span><input v-model="bank.account_number" class="input"></label></div><label class="field mt-4"><span>Ledger Bank Account</span><select v-model.number="bank.accounting_account_id" class="input"><option :value="0">Select account…</option><option v-for="a in ledgerBanks" :key="a.id" :value="a.id">{{a.code}} · {{a.name}}</option></select></label><label class="field mt-4"><span>Opening Balance</span><input v-model.number="bank.opening_balance" type="number" step="0.01" class="input"></label><div v-if="bankError" class="error-box mt-4">{{bankError}}</div></div><footer class="modal-foot"><button class="secondary" @click="showBank=false">Cancel</button><button class="primary" :disabled="bankSaving" @click="saveBank">{{bankSaving?'Saving…':'Save Bank Account'}}</button></footer></section></div></Teleport>
 
@@ -115,11 +132,13 @@ definePageMeta({layout:'admin',middleware:['admin']})
 const {adminFetch,isSuperAdmin}=useAdminFetch()
 const banks=ref<any[]>([]),accounts=ref<any[]>([]),tx=ref<any[]>([]),history=ref<any[]>([])
 const bankId=ref(0),statusFilter=ref('all'),search=ref(''),err=ref(''),notice=ref(''),loading=ref(false)
-const showBank=ref(false),bankSaving=ref(false),bankError=ref(''),matchTx=ref<any>(null),candidates=ref<any[]>([]),candidateLoading=ref(false),matching=ref(false),matchError=ref(''),manualAccount=ref(0),historySelected=ref<any>(null),fileInput=ref<HTMLInputElement|null>(null),reconciling=ref(false)
+const showBank=ref(false),bankSaving=ref(false),bankError=ref(''),showBalance=ref(false),balanceSaving=ref(false),balanceError=ref(''),matchTx=ref<any>(null),candidates=ref<any[]>([]),candidateLoading=ref(false),matching=ref(false),matchError=ref(''),manualAccount=ref(0),historySelected=ref<any>(null),fileInput=ref<HTMLInputElement|null>(null),reconciling=ref(false)
 const bank=reactive({name:'',bsb:'',account_number:'',accounting_account_id:0,opening_balance:0})
+const balanceForm=reactive({current_balance:0,current_balance_as_at:''})
 const statement=reactive({date:new Date().toISOString().slice(0,10),balance:0})
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const date=(v:any)=>v?new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(`${String(v).slice(0,10)}T00:00:00`)):'—'
+const dateTime=(v:any)=>v?new Intl.DateTimeFormat('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(v)):'—'
 const selectedBank=computed(()=>banks.value.find(x=>Number(x.id)===Number(bankId.value)))
 const ledgerBanks=computed(()=>accounts.value.filter(a=>a.account_type==='asset'))
 const manualAccounts=computed(()=>accounts.value.filter(a=>a.active&&a.id!==selectedBank.value?.accounting_account_id))
@@ -129,6 +148,9 @@ const reconciled=computed(()=>tx.value.filter(x=>x.status==='reconciled'))
 const absSum=(rows:any[])=>rows.reduce((n,x)=>n+Math.abs(Number(x.amount||0)),0)
 const unmatchedAbsolute=computed(()=>absSum(unmatched.value)),matchedAbsolute=computed(()=>absSum(matched.value)),reconciledAbsolute=computed(()=>absSum(reconciled.value))
 const importedBalance=computed(()=>Number(selectedBank.value?.opening_balance||0)+tx.value.reduce((n,x)=>n+Number(x.amount||0),0))
+const hasActualBalance=computed(()=>selectedBank.value?.current_balance!==null&&selectedBank.value?.current_balance!==undefined)
+const bankDifference=computed(()=>hasActualBalance.value?Number(selectedBank.value.current_balance)-importedBalance.value:0)
+const balancePreviewDifference=computed(()=>Number(balanceForm.current_balance||0)-importedBalance.value)
 const calculatedToStatementDate=computed(()=>Number(selectedBank.value?.opening_balance||0)+tx.value.filter(x=>String(x.transaction_date||'').slice(0,10)<=statement.date).reduce((n,x)=>n+Number(x.amount||0),0))
 const statementDifference=computed(()=>Math.round((Number(statement.balance||0)-calculatedToStatementDate.value)*100)/100)
 const unmatchedToStatementDate=computed(()=>unmatched.value.filter(x=>String(x.transaction_date||'').slice(0,10)<=statement.date).length)
@@ -139,6 +161,10 @@ const candidateDate=(c:any)=>date(c.payment_date||c.created_at)
 
 async function init(){if(!isSuperAdmin.value)return navigateTo('/admin');loading.value=true;try{[banks.value,accounts.value]=await Promise.all([adminFetch('/api/admin/accounting/bank/accounts'),adminFetch('/api/admin/accounting/accounts')]);if(banks.value.length){bankId.value=banks.value[0].id;await loadTransactions(false)}}catch(e:any){err.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{loading.value=false}}
 async function loadTransactions(show=true){if(!bankId.value){tx.value=[];history.value=[];return}if(show)loading.value=true;err.value='';try{[tx.value,history.value]=await Promise.all([adminFetch(`/api/admin/accounting/bank/transactions?bank_account_id=${bankId.value}`),adminFetch(`/api/admin/accounting/bank/reconciliations?bank_account_id=${bankId.value}`)])}catch(e:any){err.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{loading.value=false}}
+function localDateTimeValue(v:any){const d=v?new Date(v):new Date();const pad=(n:number)=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function openBalance(){if(!selectedBank.value)return;balanceError.value='';balanceForm.current_balance=hasActualBalance.value?Number(selectedBank.value.current_balance):Number(importedBalance.value);balanceForm.current_balance_as_at=localDateTimeValue(selectedBank.value.current_balance_as_at);showBalance.value=true}
+function closeBalance(){if(balanceSaving.value)return;showBalance.value=false;balanceError.value=''}
+async function saveBalance(){if(!bankId.value)return;balanceSaving.value=true;balanceError.value='';try{const updated:any=await adminFetch(`/api/admin/accounting/bank/accounts/${bankId.value}/balance`,{method:'PATCH',body:balanceForm});const i=banks.value.findIndex(x=>Number(x.id)===Number(bankId.value));if(i>=0)banks.value[i]={...banks.value[i],...updated};showBalance.value=false;notice.value='Current bank balance updated successfully.'}catch(e:any){balanceError.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to update bank balance.'}finally{balanceSaving.value=false}}
 async function saveBank(){bankSaving.value=true;bankError.value='';try{await adminFetch('/api/admin/accounting/bank/accounts',{method:'POST',body:bank});showBank.value=false;banks.value=await adminFetch('/api/admin/accounting/bank/accounts');bankId.value=banks.value.at(-1)?.id||bankId.value;Object.assign(bank,{name:'',bsb:'',account_number:'',accounting_account_id:0,opening_balance:0});await loadTransactions();notice.value='Bank account added successfully.'}catch(e:any){bankError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{bankSaving.value=false}}
 function parseCsv(text:string){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(Boolean);if(lines.length<2)return[];const split=(line:string)=>{const out:string[]=[];let cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++}else q=!q}else if(c===','&&!q){out.push(cur.trim());cur=''}else cur+=c}out.push(cur.trim());return out};const h=split(lines[0]).map(x=>x.toLowerCase().replace(/[^a-z]/g,''));const idx=(...names:string[])=>h.findIndex(x=>names.includes(x));const di=idx('date','transactiondate'),xi=idx('description','details','narrative'),ri=idx('reference','ref'),ai=idx('amount'),debi=idx('debit','withdrawal'),cri=idx('credit','deposit');return lines.slice(1).map(line=>{const c=split(line);let amount=Number(String(ai>=0?c[ai]:'').replace(/[$,]/g,''));if(ai<0)amount=Number(String(c[cri]||'').replace(/[$,]/g,''))-Number(String(c[debi]||'').replace(/[$,]/g,''));let d=c[di]||'';if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){const [dd,mm,yy]=d.split('/');d=`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`}return{transaction_date:d,description:c[xi]||'',reference:ri>=0?c[ri]:'',amount}}).filter(x=>x.transaction_date&&Number.isFinite(x.amount)&&x.amount!==0)}
 async function importCsv(e:any){const f=e.target.files?.[0];if(!f)return;err.value='';try{const rows=parseCsv(await f.text());const r:any=await adminFetch('/api/admin/accounting/bank/import',{method:'POST',body:{bank_account_id:bankId.value,rows}});notice.value=`Imported ${r.imported} transaction(s); ${r.skipped} duplicate/invalid row(s) skipped.`;await loadTransactions()}catch(x:any){err.value=x?.data?.statusMessage||x?.statusMessage||x.message}finally{e.target.value=''}}
@@ -147,8 +173,8 @@ function closeMatch(){if(matching.value)return;matchTx.value=null;candidates.val
 async function matchCandidate(c:any){matching.value=true;matchError.value='';try{await adminFetch('/api/admin/accounting/bank/match',{method:'POST',body:{transaction_id:matchTx.value.id,match_type:c.type,match_id:c.id}});notice.value='Bank transaction matched successfully.';closeMatch();await loadTransactions()}catch(e:any){matchError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{matching.value=false}}
 async function manualMatch(){matching.value=true;matchError.value='';try{await adminFetch('/api/admin/accounting/bank/manual',{method:'POST',body:{transaction_id:matchTx.value.id,account_id:manualAccount.value}});notice.value='Accounting journal created and bank transaction matched.';closeMatch();await loadTransactions()}catch(e:any){matchError.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{matching.value=false}}
 async function reconcile(){reconciling.value=true;err.value='';try{await adminFetch('/api/admin/accounting/bank/reconcile',{method:'POST',body:{bank_account_id:bankId.value,statement_date:statement.date,statement_balance:statement.balance}});notice.value='Bank statement reconciled successfully.';await loadTransactions()}catch(e:any){err.value=e?.data?.statusMessage||e?.statusMessage||e.message}finally{reconciling.value=false}}
-function keydown(e:KeyboardEvent){if(e.key!=='Escape')return;if(matchTx.value)return closeMatch();if(showBank.value)showBank.value=false;if(historySelected.value)historySelected.value=null}
-watch([showBank,matchTx,historySelected],([a,b,c])=>{if(import.meta.client)document.body.style.overflow=a||b||c?'hidden':''})
+function keydown(e:KeyboardEvent){if(e.key!=='Escape')return;if(matchTx.value)return closeMatch();if(showBalance.value)return closeBalance();if(showBank.value)showBank.value=false;if(historySelected.value)historySelected.value=null}
+watch([showBank,showBalance,matchTx,historySelected],([a,b,c,d])=>{if(import.meta.client)document.body.style.overflow=a||b||c||d?'hidden':''})
 onMounted(()=>{window.addEventListener('keydown',keydown);init()})
 onBeforeUnmount(()=>{window.removeEventListener('keydown',keydown);document.body.style.overflow=''})
 </script>
