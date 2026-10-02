@@ -277,15 +277,167 @@
               <strong class="text-slate-950">{{ money(owing(selectedBill)) }}</strong>
             </div>
             <div class="flex flex-wrap gap-2">
-              <NuxtLink
+              <button
                 v-if="owing(selectedBill) > 0"
-                to="/admin/accounting/payables"
+                type="button"
                 class="primary"
+                @click="openPayment"
               >
                 Record Payment
-              </NuxtLink>
+              </button>
               <button type="button" class="secondary" @click="closeBill">Close</button>
             </div>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="paymentOpen && selectedBill"
+        class="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/70 p-3 sm:p-6"
+        @click.self="closePayment"
+      >
+        <section
+          class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="supplier-payment-modal-title"
+        >
+          <header class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[.14em] text-blue-600">Accounts Payable</p>
+              <h2 id="supplier-payment-modal-title" class="mt-1 text-xl font-black text-slate-950">Record Supplier Payment</h2>
+              <p class="mt-1 text-sm font-semibold text-slate-500">
+                {{ selectedBill.accounting_suppliers?.name || 'Supplier' }} · {{ selectedBill.bill_number }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600 hover:bg-slate-50"
+              aria-label="Close payment"
+              @click="closePayment"
+            >
+              ×
+            </button>
+          </header>
+
+          <div class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div class="payment-summary">
+                <span>Bill Total</span>
+                <strong>{{ money(selectedBill.total) }}</strong>
+              </div>
+              <div class="payment-summary">
+                <span>Already Paid</span>
+                <strong>{{ money(selectedBill.paid_amount) }}</strong>
+              </div>
+              <div class="payment-summary">
+                <span>Outstanding</span>
+                <strong class="text-blue-700">{{ money(owing(selectedBill)) }}</strong>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+              <label class="field">
+                <span>Payment Date</span>
+                <input v-model="payment.payment_date" type="date" class="input">
+              </label>
+
+              <label class="field">
+                <span>Amount</span>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">$</span>
+                  <input
+                    v-model.number="payment.amount"
+                    type="number"
+                    min="0.01"
+                    :max="owing(selectedBill)"
+                    step="0.01"
+                    class="input !pl-7"
+                  >
+                </div>
+                <button type="button" class="mt-1 text-left text-xs font-black text-blue-600 hover:underline" @click="payment.amount = owing(selectedBill)">
+                  Pay full balance
+                </button>
+              </label>
+
+              <label class="field">
+                <span>Payment Method</span>
+                <select v-model="payment.payment_method" class="input">
+                  <option
+                    v-for="method in paymentOptions.payment_methods || []"
+                    :key="method.value"
+                    :value="method.value"
+                  >
+                    {{ method.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Bank Account</span>
+                <select v-model="payment.bank_account_id" class="input">
+                  <option :value="null">Default Bank Account</option>
+                  <option
+                    v-for="account in paymentOptions.bank_accounts || []"
+                    :key="account.id"
+                    :value="account.id"
+                  >
+                    {{ account.name }}
+                  </option>
+                </select>
+              </label>
+
+              <label class="field sm:col-span-2">
+                <span>Reference</span>
+                <input
+                  v-model="payment.reference"
+                  type="text"
+                  class="input"
+                  placeholder="EFT reference, receipt number or transaction reference"
+                >
+              </label>
+
+              <label class="field sm:col-span-2">
+                <span>Notes <em class="font-medium normal-case text-slate-400">(optional)</em></span>
+                <textarea
+                  v-model="payment.notes"
+                  rows="3"
+                  class="input resize-none"
+                  placeholder="Optional internal payment note"
+                />
+              </label>
+            </div>
+
+            <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-sm font-bold text-slate-600">Balance after payment</span>
+                <strong class="text-lg text-slate-950">{{ money(balanceAfterPayment) }}</strong>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">
+                {{ balanceAfterPayment <= 0 ? 'This bill will be marked Paid.' : 'This bill will be marked Part Paid.' }}
+              </p>
+            </div>
+
+            <div
+              v-if="paymentError"
+              class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700"
+            >
+              {{ paymentError }}
+            </div>
+          </div>
+
+          <footer class="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3 sm:px-6">
+            <button type="button" class="secondary" :disabled="paymentSaving" @click="closePayment">Cancel</button>
+            <button
+              type="button"
+              class="primary"
+              :disabled="paymentSaving || !validPayment"
+              @click="savePayment"
+            >
+              {{ paymentSaving ? 'Posting Payment…' : `Record ${money(payment.amount)} Payment` }}
+            </button>
           </footer>
         </section>
       </div>
@@ -305,6 +457,18 @@ const filter = ref('open')
 const sort = ref('due')
 const search = ref('')
 const selectedBill = ref<any>(null)
+const paymentOpen = ref(false)
+const paymentSaving = ref(false)
+const paymentError = ref('')
+const paymentOptions = ref<any>({ bank_accounts: [], payment_methods: [] })
+const payment = reactive<any>({
+  payment_date: new Date().toISOString().slice(0, 10),
+  amount: 0,
+  payment_method: 'bank_transfer',
+  bank_account_id: null,
+  reference: '',
+  notes: '',
+})
 
 const money = (value: any) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(value || 0))
@@ -446,16 +610,97 @@ function toggle(id: number) {
 }
 
 function closeBill() {
+  if (paymentOpen.value) return
   selectedBill.value = null
 }
 
-function handleBillKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape' && selectedBill.value) closeBill()
+const balanceAfterPayment = computed(() => {
+  if (!selectedBill.value) return 0
+  return Math.max(0, Math.round((owing(selectedBill.value) - Number(payment.amount || 0)) * 100) / 100)
+})
+
+const validPayment = computed(() => {
+  if (!selectedBill.value) return false
+  const amount = Number(payment.amount || 0)
+  return amount > 0 && amount <= owing(selectedBill.value) && Boolean(payment.payment_date)
+})
+
+async function loadPaymentOptions() {
+  if ((paymentOptions.value.payment_methods || []).length) return
+  paymentOptions.value = await adminFetch('/api/admin/accounting/supplier-payments/options')
 }
 
-watch(selectedBill, (bill) => {
+async function openPayment() {
+  if (!selectedBill.value || owing(selectedBill.value) <= 0) return
+  paymentError.value = ''
+  payment.payment_date = new Date().toISOString().slice(0, 10)
+  payment.amount = owing(selectedBill.value)
+  payment.payment_method = 'bank_transfer'
+  payment.bank_account_id = null
+  payment.reference = ''
+  payment.notes = ''
+
+  try {
+    await loadPaymentOptions()
+    paymentOpen.value = true
+  } catch (error: any) {
+    paymentError.value =
+      error?.data?.statusMessage || error?.statusMessage || error?.message || 'Unable to load payment options.'
+  }
+}
+
+function closePayment() {
+  if (paymentSaving.value) return
+  paymentOpen.value = false
+  paymentError.value = ''
+}
+
+async function savePayment() {
+  if (!selectedBill.value || !validPayment.value) return
+
+  const billId = Number(selectedBill.value.id)
+  const amount = Number(payment.amount)
+  paymentSaving.value = true
+  paymentError.value = ''
+
+  try {
+    await adminFetch('/api/admin/accounting/supplier-payments', {
+      method: 'POST',
+      body: {
+        bill_id: billId,
+        amount,
+        reference: payment.reference,
+        payment_date: payment.payment_date,
+        payment_method: payment.payment_method,
+        bank_account_id: payment.bank_account_id || null,
+        notes: payment.notes,
+      },
+    })
+
+    paymentOpen.value = false
+    await load()
+    selectedBill.value = bills.value.find((bill) => Number(bill.id) === billId) || null
+    msg.value = `Payment of ${money(amount)} recorded against ${selectedBill.value?.bill_number || 'supplier bill'}.`
+  } catch (error: any) {
+    paymentError.value =
+      error?.data?.statusMessage || error?.statusMessage || error?.message || 'Unable to record supplier payment.'
+  } finally {
+    paymentSaving.value = false
+  }
+}
+
+function handleBillKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  if (paymentOpen.value) {
+    closePayment()
+    return
+  }
+  if (selectedBill.value) closeBill()
+}
+
+watch([selectedBill, paymentOpen], ([bill, paying]) => {
   if (!import.meta.client) return
-  document.body.style.overflow = bill ? 'hidden' : ''
+  document.body.style.overflow = bill || paying ? 'hidden' : ''
 })
 
 async function load() {
@@ -628,4 +873,7 @@ td{@apply border-b border-slate-100 px-4 py-3 align-middle text-slate-700}
 .summary-list dt{@apply text-slate-500}
 .summary-list dd{@apply font-bold text-slate-900}
 .variance-box{@apply mt-3 flex justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800}
+.payment-summary{@apply rounded-xl border border-slate-200 bg-slate-50 p-3}
+.payment-summary span{@apply block text-[11px] font-black uppercase tracking-wide text-slate-400}
+.payment-summary strong{@apply mt-1 block text-lg font-black text-slate-950}
 </style>
