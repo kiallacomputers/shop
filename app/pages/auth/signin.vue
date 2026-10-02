@@ -5,7 +5,21 @@
       <h1 class="kc-title mt-1 text-3xl">Sign in</h1>
       <p class="mb-7 mt-2 text-sm text-slate-500">Manage your orders, delivery addresses, wishlist and account details.</p>
 
-      <form class="space-y-5" @submit.prevent="login">
+      <div
+        v-if="loginSuccessful"
+        class="flex min-h-[285px] flex-col items-center justify-center text-center"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl font-black text-emerald-700">
+          ✓
+        </div>
+        <h2 class="mt-5 text-xl font-black text-slate-900">Signed in successfully</h2>
+        <p class="mt-2 text-sm font-medium text-slate-500">Taking you to the store…</p>
+        <div class="mt-5 h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" aria-hidden="true"></div>
+      </div>
+
+      <form v-else class="space-y-5" @submit.prevent="login">
         <label>
           <span class="kc-field-label">Email address</span>
           <input v-model="email" type="email" autocomplete="email" class="w-full border px-4 py-3" required />
@@ -50,6 +64,7 @@ const email = ref("");
 const password = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
+const loginSuccessful = ref(false);
 const redirectTo = computed(() => {
   const redirect = route.query.redirect;
 
@@ -80,10 +95,16 @@ const login = async () => {
       refresh_token: result.refresh_token,
     });
     if (error) throw error;
+
+    // Authentication is complete. Immediately replace the login form so the
+    // customer gets clear feedback while Nuxt finishes the page transition.
     password.value = "";
+    loginSuccessful.value = true;
     await nextTick();
     await router.push(redirectTo.value);
   } catch (error: any) {
+    loginSuccessful.value = false;
+
     // Keep the technical error in the browser console for troubleshooting,
     // but never expose raw API/Nuxt errors to the customer.
     console.error("LOGIN ERROR:", error);
