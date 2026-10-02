@@ -15,7 +15,7 @@
           ✓
         </div>
         <h2 class="mt-5 text-xl font-black text-slate-900">Signed in successfully</h2>
-        <p class="mt-2 text-sm font-medium text-slate-500">Taking you to the store…</p>
+        <p class="mt-2 text-sm font-medium text-slate-500">{{ successRedirectMessage }}</p>
         <div class="mt-5 h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" aria-hidden="true"></div>
       </div>
 
@@ -82,6 +82,12 @@ const redirectTo = computed(() => {
 
   return redirect;
 });
+
+const successRedirectMessage = computed(() =>
+  redirectTo.value.startsWith("/admin")
+    ? "Taking you back to Admin…"
+    : "Taking you to the store…"
+);
 const login = async () => {
   loading.value = true;
   errorMessage.value = "";

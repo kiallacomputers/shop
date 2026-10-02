@@ -82,6 +82,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     checkingAdmin,
     adminPermissions,
     securityGroup,
+    adminAuthExpired,
   } = useAdminFetch();
 
   if (checkingAdmin.value) {
@@ -92,7 +93,29 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!adminChecked.value) await checkAdmin();
-  if (!isAdmin.value) return navigateTo("/");
+
+  if (!isAdmin.value) {
+    // If the login has expired (or no browser session could be restored),
+    // send the user to sign-in and preserve the exact Admin destination.
+    if (adminAuthExpired.value) {
+      const redirect = String(to.fullPath || to.path || "/admin");
+      return navigateTo({
+        path: "/auth/signin",
+        query: {
+          redirect:
+            redirect.startsWith("/admin") &&
+            !redirect.startsWith("//") &&
+            !redirect.includes("\\")
+              ? redirect
+              : "/admin",
+        },
+      });
+    }
+
+    // Signed in, but not an Admin.
+    return navigateTo("/");
+  }
+
   if (isSuperAdmin.value) return;
 
   // Existing Admins with no assigned security group retain the old full-access
