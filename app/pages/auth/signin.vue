@@ -84,8 +84,56 @@ const login = async () => {
     await nextTick();
     await router.push(redirectTo.value);
   } catch (error: any) {
+    // Keep the technical error in the browser console for troubleshooting,
+    // but never expose raw API/Nuxt errors to the customer.
     console.error("LOGIN ERROR:", error);
-    errorMessage.value = error?.message || "Unable to sign in. Please check your email and password.";
-  } finally { loading.value = false; }
+
+    const status = Number(
+      error?.statusCode ||
+      error?.status ||
+      error?.response?.status ||
+      error?.data?.statusCode ||
+      0
+    );
+
+    const serverMessage = String(
+      error?.data?.statusMessage ||
+      error?.data?.message ||
+      error?.statusMessage ||
+      ""
+    ).toLowerCase();
+
+    if (
+      status === 401 ||
+      status === 422 ||
+      serverMessage.includes("incorrect") ||
+      serverMessage.includes("invalid login") ||
+      serverMessage.includes("invalid credentials")
+    ) {
+      errorMessage.value =
+        "The email address or password you entered is incorrect. Please check your details and try again.";
+    } else if (
+      status === 429 ||
+      serverMessage.includes("rate limit") ||
+      serverMessage.includes("too many")
+    ) {
+      errorMessage.value =
+        "Too many sign-in attempts. Please wait a few minutes and try again.";
+    } else if (
+      serverMessage.includes("email not confirmed") ||
+      serverMessage.includes("email not verified")
+    ) {
+      errorMessage.value =
+        "Please verify your email address before signing in.";
+    } else if (status >= 500) {
+      errorMessage.value =
+        "We couldn't sign you in right now. Please try again shortly.";
+    } else {
+      errorMessage.value =
+        "Unable to sign in. Please check your details and try again.";
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
