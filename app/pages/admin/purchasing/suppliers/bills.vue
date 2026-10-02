@@ -173,22 +173,8 @@
                   </td>
                   <td class="text-right">
                     <button class="table-link" type="button" @click="toggle(b.id)">
-                      {{ expanded === b.id ? 'Close' : 'View' }}
+                      View
                     </button>
-                  </td>
-                </tr>
-
-                <tr v-if="expanded === b.id">
-                  <td colspan="10" class="!p-0">
-                    <BillDetails
-                      :bill="b"
-                      :money="money"
-                      :date="date"
-                      :date-time="dateTime"
-                      :owing="owing"
-                      :variance="variance"
-                      :po-status="poStatus"
-                    />
                   </td>
                 </tr>
               </template>
@@ -224,25 +210,86 @@
             <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
               <div class="text-xs font-semibold" :class="dueTextClass(b)">{{ dueText(b) }}</div>
               <button class="secondary !px-3 !py-1.5" type="button" @click="toggle(b.id)">
-                {{ expanded === b.id ? 'Hide Details' : 'View Details' }}
+                View Details
               </button>
-            </div>
-
-            <div v-if="expanded === b.id" class="-mx-4 -mb-4 mt-4">
-              <BillDetails
-                :bill="b"
-                :money="money"
-                :date="date"
-                :date-time="dateTime"
-                :owing="owing"
-                :variance="variance"
-                :po-status="poStatus"
-              />
             </div>
           </article>
         </div>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div
+        v-if="selectedBill"
+        class="fixed inset-0 z-[250] flex items-center justify-center bg-slate-950/60 p-3 sm:p-6"
+        @click.self="closeBill"
+      >
+        <section
+          class="flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-slate-50 shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="supplier-bill-modal-title"
+        >
+          <header class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[.14em] text-blue-600">Supplier Bill</p>
+              <div class="mt-1 flex flex-wrap items-center gap-2">
+                <h2 id="supplier-bill-modal-title" class="text-xl font-black text-slate-950">
+                  {{ selectedBill.bill_number }}
+                </h2>
+                <span class="status" :class="statusClass(selectedBill)">
+                  {{ statusLabel(selectedBill) }}
+                </span>
+              </div>
+              <p class="mt-1 truncate text-sm font-semibold text-slate-500">
+                {{ selectedBill.accounting_suppliers?.name || 'Unknown supplier' }}
+                <span v-if="selectedBill.supplier_invoice_number">
+                  · Invoice {{ selectedBill.supplier_invoice_number }}
+                </span>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600 hover:bg-slate-50"
+              aria-label="Close supplier bill"
+              @click="closeBill"
+            >
+              ×
+            </button>
+          </header>
+
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <BillDetails
+              :bill="selectedBill"
+              :money="money"
+              :date="date"
+              :date-time="dateTime"
+              :owing="owing"
+              :variance="variance"
+              :po-status="poStatus"
+            />
+          </div>
+
+          <footer class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3 sm:px-6">
+            <div class="text-sm text-slate-500">
+              Outstanding:
+              <strong class="text-slate-950">{{ money(owing(selectedBill)) }}</strong>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <NuxtLink
+                v-if="owing(selectedBill) > 0"
+                to="/admin/accounting/payables"
+                class="primary"
+              >
+                Record Payment
+              </NuxtLink>
+              <button type="button" class="secondary" @click="closeBill">Close</button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </Teleport>
   </main>
 </template>
 
@@ -257,7 +304,7 @@ const loading = ref(true)
 const filter = ref('open')
 const sort = ref('due')
 const search = ref('')
-const expanded = ref<number | null>(null)
+const selectedBill = ref<any>(null)
 
 const money = (value: any) =>
   new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(Number(value || 0))
@@ -395,8 +442,21 @@ const filteredBills = computed(() => {
 })
 
 function toggle(id: number) {
-  expanded.value = expanded.value === id ? null : id
+  selectedBill.value = bills.value.find((bill) => Number(bill.id) === Number(id)) || null
 }
+
+function closeBill() {
+  selectedBill.value = null
+}
+
+function handleBillKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && selectedBill.value) closeBill()
+}
+
+watch(selectedBill, (bill) => {
+  if (!import.meta.client) return
+  document.body.style.overflow = bill ? 'hidden' : ''
+})
 
 async function load() {
   loading.value = true
@@ -410,7 +470,15 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  window.addEventListener('keydown', handleBillKeydown)
+  load()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleBillKeydown)
+  document.body.style.overflow = ''
+})
 </script>
 
 <script lang="ts">
