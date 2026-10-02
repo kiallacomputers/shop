@@ -13,19 +13,21 @@
     </section>
 
     <Teleport to="body"><div v-if="selected" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 p-3 sm:p-6" @click.self="closeModal">
-      <section class="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <section class="inventory-modal-shell flex w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <header class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6"><div><p class="text-xs font-black uppercase tracking-wider text-blue-600">Inventory Details</p><h2 class="text-xl font-black sm:text-2xl">{{selected.product_name}}</h2><p class="text-sm text-slate-500">{{selected.variant_name ? selected.variant_name+' · ' : ''}}{{selected.code||'No SKU'}}</p></div><button class="rounded-lg px-3 py-2 text-2xl leading-none text-slate-500 hover:bg-slate-100" @click="closeModal">×</button></header>
-        <div v-if="detailLoading" class="p-12 text-center text-slate-500">Loading inventory details…</div>
+        <div v-if="detailLoading" class="flex flex-1 items-center justify-center p-12 text-center text-slate-500">Loading inventory details…</div>
         <template v-else-if="detail">
-          <div class="grid gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-6 sm:p-5"><div class="mini"><small>On Hand</small><b>{{detail.product.stock}}</b></div><div class="mini"><small>Allocated</small><b>{{selected.allocated||0}}</b></div><div class="mini"><small>Available</small><b>{{selected.available}}</b></div><div class="mini"><small>On PO</small><b>{{detail.product.on_order||0}}</b></div><div class="mini"><small>Landed Cost</small><b>{{money(detail.product.landed_cost_ex_gst)}}</b></div><div class="mini"><small>Stock Value</small><b>{{money(detail.product.stock_value_ex_gst)}}</b></div></div>
-          <nav class="flex gap-1 overflow-x-auto border-b border-slate-200 px-4 pt-3 sm:px-6"><button v-for="t in tabs" :key="t.id" class="whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-bold" :class="tab===t.id?'bg-blue-50 text-blue-700':'text-slate-600 hover:bg-slate-50'" @click="tab=t.id">{{t.label}}</button></nav>
-          <div class="overflow-y-auto p-5 sm:p-6">
+          <div class="flex min-h-0 flex-1 flex-col">
+          <div class="grid shrink-0 gap-3 border-b border-slate-200 bg-slate-50 p-4 sm:grid-cols-3 lg:grid-cols-6 sm:p-5"><div class="mini"><small>On Hand</small><b>{{detail.product.stock}}</b></div><div class="mini"><small>Allocated</small><b>{{selected.allocated||0}}</b></div><div class="mini"><small>Available</small><b>{{selected.available}}</b></div><div class="mini"><small>On PO</small><b>{{detail.product.on_order||0}}</b></div><div class="mini"><small>Landed Cost</small><b>{{money(detail.product.landed_cost_ex_gst)}}</b></div><div class="mini"><small>Stock Value</small><b>{{money(detail.product.stock_value_ex_gst)}}</b></div></div>
+          <nav class="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 px-4 pt-3 sm:px-6"><button v-for="t in tabs" :key="t.id" class="whitespace-nowrap rounded-t-lg px-4 py-3 text-sm font-bold" :class="tab===t.id?'bg-blue-50 text-blue-700':'text-slate-600 hover:bg-slate-50'" @click="tab=t.id">{{t.label}}</button></nav>
+          <div class="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
             <div v-if="modalErr" class="mb-4 rounded-xl bg-red-50 p-3 font-semibold text-red-700">{{modalErr}}</div>
             <div v-if="modalOk" class="mb-4 rounded-xl bg-green-50 p-3 font-semibold text-green-700">{{modalOk}}</div>
             <div v-if="tab==='overview'" class="grid gap-5 lg:grid-cols-2"><div class="subpanel"><h3>Stock settings</h3><dl class="details"><div><dt>Minimum / Low stock</dt><dd>{{detail.product.low_stock_level}}</dd></div><div><dt>Reorder level</dt><dd>{{detail.product.reorder_level}}</dd></div><div><dt>Target stock</dt><dd>{{detail.product.target_stock_level}}</dd></div><div><dt>Supplier cost</dt><dd>{{money(detail.product.buy_price_ex_gst)}}</dd></div><div><dt>Landed cost</dt><dd>{{money(detail.product.landed_cost_ex_gst)}}</dd></div><div><dt>Sell price</dt><dd>{{money(detail.product.sell_price)}}</dd></div></dl></div><div class="subpanel"><h3>Suppliers</h3><div v-if="!detail.suppliers.length" class="empty">No suppliers assigned.</div><div v-for="s in detail.suppliers" :key="s.id" class="flex items-center justify-between gap-4 border-b py-3 last:border-0"><div><b>{{s.accounting_suppliers?.name||'Supplier'}}</b><div class="text-xs text-slate-500">{{s.supplier_sku||'No supplier SKU'}} <span v-if="s.is_primary" class="ml-2 rounded-full bg-blue-100 px-2 py-0.5 font-bold text-blue-700">Primary</span></div></div><b>{{money(s.buy_price_ex_gst)}}</b></div></div></div>
             <div v-if="tab==='movements'" class="subpanel overflow-x-auto"><h3>Stock movements</h3><div v-if="!detail.movements.length" class="empty">No stock movements recorded.</div><table v-else class="w-full min-w-[760px] text-sm"><thead><tr><th>Date</th><th>Type</th><th class="text-right">Qty</th><th class="text-right">Unit Cost</th><th>Reference</th><th>Notes</th></tr></thead><tbody><tr v-for="m in detail.movements" :key="m.id"><td>{{date(m.movement_date)}}</td><td>{{pretty(m.movement_type)}}</td><td class="text-right font-bold" :class="Number(m.quantity)<0?'text-red-600':'text-green-700'">{{Number(m.quantity)>0?'+':''}}{{m.quantity}}</td><td class="text-right">{{money(m.unit_cost)}}</td><td>{{m.reference||'—'}}</td><td>{{m.notes||'—'}}</td></tr></tbody></table></div>
             <div v-if="tab==='adjust'" class="mx-auto max-w-2xl subpanel"><h3>Manual stock adjustment</h3><p class="mb-4 text-sm text-slate-500">Every adjustment requires a reason and is written to inventory movement history.</p><div class="grid gap-4 sm:grid-cols-2"><label>Direction<select v-model="adjust.direction" class="input mt-1 w-full"><option value="in">Increase stock</option><option value="out">Reduce stock</option></select></label><label>Quantity<input v-model.number="adjust.quantity" type="number" min="0.01" step="1" class="input mt-1 w-full"></label><label class="sm:col-span-2">Reason<input v-model="adjust.reason" class="input mt-1 w-full" placeholder="e.g. Damaged stock, count correction"></label><label class="sm:col-span-2">Notes<textarea v-model="adjust.notes" rows="3" class="input mt-1 w-full" placeholder="Optional additional details"></textarea></label></div><div class="mt-5 flex justify-end"><button class="btn-primary" :disabled="saving" @click="saveAdjustment">{{saving?'Posting…':'Post Adjustment'}}</button></div></div>
             <div v-if="tab==='purchases'" class="subpanel overflow-x-auto"><h3>Purchase history</h3><div v-if="!detail.purchases.length" class="empty">No purchase orders found for this product.</div><table v-else class="w-full min-w-[760px] text-sm"><thead><tr><th>Date</th><th>PO</th><th>Supplier</th><th>Status</th><th class="text-right">Qty</th><th class="text-right">Unit Cost</th><th class="text-right">Line Total</th></tr></thead><tbody><tr v-for="p in detail.purchases" :key="p.id"><td>{{date(p.order_date)}}</td><td><NuxtLink :to="`/admin/purchasing/purchase-orders/${p.purchase_order_id}`" class="font-bold text-blue-600">{{p.po_number}}</NuxtLink></td><td>{{p.supplier}}</td><td>{{pretty(p.status)}}</td><td class="text-right">{{p.quantity}}</td><td class="text-right">{{money(p.unit_cost_ex_gst)}}</td><td class="text-right">{{money(p.line_total)}}</td></tr></tbody></table></div>
+          </div>
           </div>
         </template>
       </section>
@@ -55,4 +57,21 @@ onMounted(load);
 
 <style scoped>
 .panel{@apply rounded-xl border border-slate-200 bg-white shadow-sm}.metric{@apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm}.metric small,.mini small{@apply block text-xs font-bold uppercase text-slate-500}.metric b{@apply mt-1 block text-2xl}.mini{@apply rounded-xl border border-slate-200 bg-white p-3}.mini b{@apply mt-1 block text-lg}.input{@apply rounded-lg border border-slate-300 bg-white px-3 py-2}.btn-secondary{@apply rounded-lg border border-slate-300 bg-white px-4 py-2 font-bold text-slate-700 hover:bg-slate-50}.btn-primary{@apply rounded-lg bg-blue-600 px-5 py-2.5 font-bold text-white hover:bg-blue-700 disabled:opacity-50}.subpanel{@apply rounded-xl border border-slate-200 bg-white p-4}.subpanel h3{@apply mb-3 text-lg font-black}.details>div{@apply flex justify-between gap-4 border-b py-3 last:border-0}.details dt{@apply text-slate-500}.details dd{@apply font-bold}.empty{@apply py-8 text-center text-sm text-slate-500}table th{@apply whitespace-nowrap px-3 py-3 font-bold}table td{@apply px-3 py-3 align-top}
+
+/* Keep the inventory modal at one physical height on desktop regardless of tab content.
+   min-height + height + max-height are intentionally identical so flex/content sizing
+   cannot collapse the shell when a short tab is selected. */
+.inventory-modal-shell {
+  height: calc(100dvh - 1.5rem);
+  min-height: calc(100dvh - 1.5rem);
+  max-height: calc(100dvh - 1.5rem);
+}
+
+@media (min-width: 640px) {
+  .inventory-modal-shell {
+    height: min(780px, calc(100dvh - 3rem)) !important;
+    min-height: min(780px, calc(100dvh - 3rem)) !important;
+    max-height: min(780px, calc(100dvh - 3rem)) !important;
+  }
+}
 </style>
