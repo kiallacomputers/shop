@@ -97,9 +97,7 @@ export default defineEventHandler(async(event)=>{
     description:String(row.ProductDescription||""),
     brand:String(row.VendorName||""),
     mpn:String(row.PartNumManuf||""),
-    // Leader labels GTIN/EAN/UPC as "Barcode" on its product page.
-    // Support the common field-name variants in case their service payload differs by product.
-    gtin:String(row.Barcode ?? row.BarCode ?? row.barcode ?? row.GTIN ?? row.EAN ?? row.UPC ?? ""),
+    gtin:String(row.ProductBarcode ?? row.Barcode ?? row.BarCode ?? row.GTIN ?? row.EAN ?? row.UPC ?? ""),
     price_ex_gst:Number(row.PrEx1 ?? row.Price1 ?? 0),
     price_inc_gst:Number(row.PrInc1 ?? row.PriceInc1 ?? 0),
     rrp_ex_gst:Number(row.RRPEx||0),
