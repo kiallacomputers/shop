@@ -13,6 +13,10 @@ function extractProductCode(rawUrl:string){
   }
   return "";
 }
+function cleanGtin(value:any){
+  const raw=String(value ?? "").trim().replace(/\s+/g,"");
+  return /^\d{8,14}$/.test(raw) ? raw : "";
+}
 function leaderImages(partNum:string, partNumManuf:string){
   // Leader commonly serves product images by part/manufacturer code, but filenames
   // are not guaranteed. We leave image discovery to vendor data unless confirmed.
@@ -97,7 +101,7 @@ export default defineEventHandler(async(event)=>{
     description:String(row.ProductDescription||""),
     brand:String(row.VendorName||""),
     mpn:String(row.PartNumManuf||""),
-    gtin:String(row.ProductBarcode ?? row.Barcode ?? row.BarCode ?? row.GTIN ?? row.EAN ?? row.UPC ?? ""),
+    gtin:cleanGtin(row.ProductBarcode ?? row.Barcode ?? row.BarCode ?? row.GTIN ?? row.EAN ?? row.UPC),
     price_ex_gst:Number(row.PrEx1 ?? row.Price1 ?? 0),
     price_inc_gst:Number(row.PrInc1 ?? row.PriceInc1 ?? 0),
     rrp_ex_gst:Number(row.RRPEx||0),
