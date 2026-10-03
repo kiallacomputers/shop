@@ -5,9 +5,6 @@ function xmlDecode(v:string){
 }
 function extractProductCode(rawUrl:string){
   const u=new URL(rawUrl);
-  // Leader product URLs include the visible product code in the page after load,
-  // but the opaque URL itself is not reliably reversible. Allow an explicit code
-  // from the client and retain URL parsing fallbacks for future URL formats.
   for(const key of ["Prod","prod","product","Product","sku","SKU","part","PartNum"]){
     const v=u.searchParams.get(key); if(v) return v.trim();
   }
@@ -17,11 +14,21 @@ function cleanGtin(value:any){
   const raw=String(value ?? "").trim().replace(/\s+/g,"");
   return /^\d{8,14}$/.test(raw) ? raw : "";
 }
-function leaderImages(partNum:string, partNumManuf:string){
-  // Leader commonly serves product images by part/manufacturer code, but filenames
-  // are not guaranteed. We leave image discovery to vendor data unless confirmed.
-  return [];
+function leaderImages(row:any){
+  const base="https://partner.leadersystems.com.au/Images/";
+  const files=[
+    row?.Image1 || (row?.PartNum ? `${row.PartNum}.jpg` : ""),
+    row?.Image2,
+    row?.Image3,
+    row?.Image4
+  ].map((v:any)=>String(v||"").trim()).filter(Boolean);
+
+  return [...new Set(files)].map(file=>{
+    if(/^https?:\/\//i.test(file)) return file;
+    return base + encodeURIComponent(file).replace(/%2F/gi,"/");
+  });
 }
+
 export default defineEventHandler(async(event)=>{
   await requireAdmin(event);
   const body=await readBody(event);
@@ -35,22 +42,16 @@ export default defineEventHandler(async(event)=>{
 
   const productCode=suppliedCode||extractProductCode(url);
   if(!productCode)
-    throw createError({statusCode:422,statusMessage:"Leader product code is required. Enter the Leader product code shown on the product page (for example MNL-32BR50C-B)."});
+    throw createError({statusCode:422,statusMessage:"Leader product code is required."});
 
   const cookie=String(process.env.LEADER_SESSION_COOKIE||"").trim();
   const customerCode=String(process.env.LEADER_CUSTOMER_CODE||"").trim();
   if(!cookie||!customerCode)
-    throw createError({statusCode:422,statusMessage:"Leader integration is not configured. Set LEADER_SESSION_COOKIE and LEADER_CUSTOMER_CODE in the server environment."});
+    throw createError({statusCode:422,statusMessage:"Leader integration is not configured. Set LEADER_SESSION_COOKIE and LEADER_CUSTOMER_CODE."});
 
   const form=new URLSearchParams({
-    Prod:productCode,
-    Category:"",
-    SubCategory:"",
-    OnlyAvailable:"",
-    Vendor:"",
-    VendorTenCode:"",
-    CustomerCode:customerCode,
-    ExactMatch:"0"
+    Prod:productCode, Category:"", SubCategory:"", OnlyAvailable:"",
+    Vendor:"", VendorTenCode:"", CustomerCode:customerCode, ExactMatch:"0"
   });
 
   const res=await fetch("https://partner.leadersystems.com.au/WSLD.asmx/GetProducts",{
@@ -70,8 +71,7 @@ export default defineEventHandler(async(event)=>{
 
   if(res.status===401||res.status===403||res.status===302||res.status===303)
     throw createError({statusCode:422,statusMessage:"Leader session is no longer authenticated. Update LEADER_SESSION_COOKIE and redeploy."});
-  if(!res.ok)
-    throw createError({statusCode:502,statusMessage:`Leader GetProducts returned HTTP ${res.status}.`});
+  if(!res.ok) throw createError({statusCode:502,statusMessage:`Leader GetProducts returned HTTP ${res.status}.`});
 
   const xml=await res.text();
   const m=xml.match(/<string[^>]*>([\s\S]*?)<\/string>/i);
@@ -89,33 +89,21 @@ export default defineEventHandler(async(event)=>{
     WA:Number(row.AvailWa||0), SA:Number(row.AvailSa||0)
   };
   const totalStock=Object.values(stockByState).reduce((a:number,b:any)=>a+Number(b||0),0);
-  const vendorUrl=String(row.VendorURL||"").trim();
 
   return {
-    authenticated:true,
-    source:"leader-getproducts",
-    source_url:url,
-    supplier_sku:String(row.PartNum||productCode),
-    product_id:row.ProductID,
-    name:String(row.ProductName||""),
-    description:String(row.ProductDescription||""),
-    brand:String(row.VendorName||""),
-    mpn:String(row.PartNumManuf||""),
+    authenticated:true, source:"leader-getproducts", source_url:url,
+    supplier_sku:String(row.PartNum||productCode), product_id:row.ProductID,
+    name:String(row.ProductName||""), description:String(row.ProductDescription||""),
+    brand:String(row.VendorName||""), mpn:String(row.PartNumManuf||""),
     gtin:cleanGtin(row.ProductBarcode ?? row.Barcode ?? row.BarCode ?? row.GTIN ?? row.EAN ?? row.UPC),
     price_ex_gst:Number(row.PrEx1 ?? row.Price1 ?? 0),
     price_inc_gst:Number(row.PrInc1 ?? row.PriceInc1 ?? 0),
-    rrp_ex_gst:Number(row.RRPEx||0),
-    rrp_inc_gst:Number(row.RRPInc||0),
-    category:String(row.Category||""),
-    subcategory:String(row.SubCategory||""),
-    stock:String(totalStock),
-    stock_total:totalStock,
-    stock_by_state:stockByState,
-    box_length_mm:Number(row.BoxLength||0),
-    box_width_mm:Number(row.BoxWidth||0),
-    box_height_mm:Number(row.BoxHeight||0),
-    vendor_url:vendorUrl,
-    images:leaderImages(String(row.PartNum||""),String(row.PartNumManuf||"")),
+    rrp_ex_gst:Number(row.RRPEx||0), rrp_inc_gst:Number(row.RRPInc||0),
+    category:String(row.Category||""), subcategory:String(row.SubCategory||""),
+    stock:String(totalStock), stock_total:totalStock, stock_by_state:stockByState,
+    box_length_mm:Number(row.BoxLength||0), box_width_mm:Number(row.BoxWidth||0),
+    box_height_mm:Number(row.BoxHeight||0), vendor_url:String(row.VendorURL||"").trim(),
+    images:leaderImages(row),
     raw_summary:{vendor_id:row.VendorID,vendor_code:row.VendTenCode,created:row.CreateTS}
   };
 });
