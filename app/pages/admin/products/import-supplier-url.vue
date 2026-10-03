@@ -42,6 +42,9 @@
         <label class="field"><span>Buy Price ex GST *</span><input v-model.number="draft.buy_price_ex_gst" class="input" type="number" min="0" step=".01"></label>
         <label class="field"><span>RRP Markup % *</span><input v-model.number="draft.rrp_markup_percent" class="input" type="number" min="0" step=".1"></label>
         <label class="field xl:col-span-3"><span>Short Description</span><textarea v-model="draft.blurb" rows="3" class="input"></textarea></label>
+        <label class="field xl:col-span-2"><span>SEO Title</span><input v-model="draft.seo_title" class="input" maxlength="70"><small class="normal-case font-normal tracking-normal text-slate-400">{{draft.seo_title.length}} / 60 recommended</small></label>
+        <label class="field"><span>URL Slug</span><input v-model="draft.slug" class="input"></label>
+        <label class="field xl:col-span-3"><span>Meta Description</span><textarea v-model="draft.meta_description" rows="3" maxlength="180" class="input"></textarea><small class="normal-case font-normal tracking-normal text-slate-400">{{draft.meta_description.length}} / 160 recommended</small></label>
       </div>
 
       <div class="mt-5 grid gap-5 xl:grid-cols-[1fr_1fr]">
@@ -63,12 +66,40 @@ const route=useRoute(),router=useRouter(),{adminFetch}=useAdminFetch()
 const suppliers=ref<any[]>([]),categories=ref<any[]>([]),supplierId=ref(Number(route.query.supplier||0)),supplierUrl=ref(''),leaderProductCode=ref(''),vendorUrl=ref('')
 const supplierData=ref<any>(null),vendorData=ref<any>(null),fetching=ref(false),vendorFetching=ref(false),saving=ref(false),error=ref(''),success=ref('')
 const selectedImages=ref<string[]>([])
-const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',category_id:'',buy_price_ex_gst:0,rrp_markup_percent:30,blurb:''})
+const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',category_id:'',buy_price_ex_gst:0,rrp_markup_percent:30,blurb:'',seo_title:'',meta_description:'',slug:''})
 const selectedSupplier=computed(()=>suppliers.value.find(x=>Number(x.id)===Number(supplierId.value)))
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const categoryGroups=computed(()=>categories.value.filter((x:any)=>x.parent_id==null).map((parent:any)=>({parent,children:categories.value.filter((x:any)=>String(x.parent_id)===String(parent.id)&&x.active!==false)})).filter((g:any)=>g.children.length))
 const bestDescription=computed(()=>vendorData.value?.description||supplierData.value?.description||'')
 const candidateImages=computed(()=>[...new Set([...(vendorData.value?.images||[]),...(supplierData.value?.images||[])])].slice(0,12))
+function cleanText(v:any){return String(v||'').replace(/\s+/g,' ').replace(/\s+([,.;:])/g,'$1').trim()}
+function makeSlug(v:string){return cleanText(v).toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,100)}
+function buildSeo(){
+  const s=supplierData.value||{},v=vendorData.value||{}
+  const brand=cleanText(v.brand||s.brand||draft.brand)
+  const mpn=cleanText(v.mpn||s.mpn||draft.mpn)
+  let name=cleanText(v.name||s.name||draft.name)
+  // Remove duplicated brand/model from the source title, then rebuild a clean search title.
+  let core=name
+  if(brand)core=core.replace(new RegExp(`^${brand.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\s*`,'i'),'')
+  if(mpn)core=core.replace(new RegExp(mpn.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),'').replace(/\s{2,}/g,' ').trim()
+  let title=cleanText([brand,mpn,core].filter(Boolean).join(' '))
+  if(title.length>60){
+    const shortCore=core.split(',')[0].trim()
+    title=cleanText([brand,mpn,shortCore].filter(Boolean).join(' '))
+  }
+  if(title.length>60)title=title.slice(0,60).replace(/\s+\S*$/,'').trim()
+  draft.seo_title=title||name.slice(0,60)
+  draft.slug=makeSlug([brand,mpn,core.split(',')[0]].filter(Boolean).join(' '))
+
+  const source=cleanText(v.description||s.description||draft.blurb)
+  const first=source.split(/(?<=[.!?])\s+/)[0]||''
+  const productLabel=cleanText([brand,mpn].filter(Boolean).join(' '))||name
+  let meta=first
+  if(!meta||meta.length<70)meta=cleanText(`Shop ${productLabel} at Kialla Computers. ${first}`)
+  if(meta.length>160)meta=meta.slice(0,160).replace(/\s+\S*$/,'').replace(/[,:;\-]+$/,'').trim()+'.'
+  draft.meta_description=meta
+}
 function applyBestData(){
   const v=vendorData.value||{},s=supplierData.value||{}
   draft.name=v.name||s.name||draft.name
@@ -79,6 +110,7 @@ function applyBestData(){
   if(s.price_ex_gst!=null)draft.buy_price_ex_gst=Number(s.price_ex_gst)
   draft.blurb=(v.description||s.description||draft.blurb||'').slice(0,500)
   selectedImages.value=candidateImages.value.slice(0,6)
+  buildSeo()
 }
 async function fetchSupplier(){
   fetching.value=true;error.value='';success.value='';supplierData.value=null;vendorData.value=null;vendorUrl.value='';selectedImages.value=[]
@@ -103,7 +135,7 @@ async function createProduct(){
   try{
     const description=bestDescription.value?[{type:'paragraph',text:bestDescription.value}]:[]
     const product:any=await adminFetch('/api/admin/products',{method:'POST',body:{
-      name:draft.name,slug:draft.name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''),
+      name:draft.name,slug:draft.slug||makeSlug(draft.name),seo_title:draft.seo_title,meta_description:draft.meta_description,
       product_code:draft.product_code,brand:draft.brand,mpn:draft.mpn,gtin:draft.gtin,category_id:Number(draft.category_id),
       blurb:draft.blurb,buy_price_ex_gst:Number(draft.buy_price_ex_gst),pricing_level_markup_override_percent:0,rrp_markup_percent:Number(draft.rrp_markup_percent||0),
       stock:0,low_stock_level:2,reorder_level:3,target_stock_level:5,weight_kg:1,length_cm:30,width_cm:20,height_cm:10,
