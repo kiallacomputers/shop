@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
   const gtin = String(body?.gtin || "").replace(/\s+/g, "").trim();
   const mpn = String(body?.mpn || "").trim();
   const seoTitle = String(body?.seo_title || "").trim();
-  const seoDescription = String(body?.seo_description || "").trim();
+  const seoDescription = String(body?.seo_description ?? body?.meta_description ?? "").trim();
   const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
