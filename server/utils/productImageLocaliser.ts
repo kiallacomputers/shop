@@ -1,7 +1,7 @@
 import { getAdminSupabase } from "~~/server/utils/adminAuth";
 import { extensionForImageMime, imageBytesMatchMime } from "~~/server/utils/imageUpload";
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 
@@ -72,6 +72,11 @@ const fetchImage = async (rawUrl: string) => {
       ["image/png",  (b) => b.length >= 8 && b.subarray(0,8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))],
       ["image/gif",  (b) => b.length >= 6 && ["GIF87a","GIF89a"].includes(b.subarray(0,6).toString("ascii"))],
       ["image/webp", (b) => b.length >= 12 && b.subarray(0,4).toString("ascii") === "RIFF" && b.subarray(8,12).toString("ascii") === "WEBP"],
+      ["image/avif", (b) => {
+        if (b.length < 16 || b.subarray(4,8).toString("ascii") !== "ftyp") return false;
+        const brands = b.subarray(8, Math.min(b.length, 64)).toString("ascii");
+        return brands.includes("avif") || brands.includes("avis");
+      }],
     ];
     const detectedMime = signatures.find(([, test]) => test(bytes))?.[0] || "";
     const mime = detectedMime || (ALLOWED_TYPES.has(headerMime) && imageBytesMatchMime(bytes, headerMime) ? headerMime : "");
@@ -94,7 +99,7 @@ export const isSupabaseProductImage = (value: string) =>
 export const localiseProductImage = async (remoteUrl: string, productCode = "product") => {
   if (isSupabaseProductImage(remoteUrl)) return { url: remoteUrl, copied: false };
   const { bytes, mime } = await fetchImage(remoteUrl);
-  const ext = extensionForImageMime(mime);
+  const ext = mime === "image/avif" ? "avif" : extensionForImageMime(mime);
   const safeCode = String(productCode || "product").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "product";
   const path = `imported/${safeCode}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   const supabase = getAdminSupabase();
