@@ -70,8 +70,11 @@
             <p class="mt-1 text-sm text-slate-500">Find products still using external image URLs and copy those images into the Kialla Computers Supabase products bucket.</p>
             <p v-if="imageScan" class="mt-2 text-sm font-semibold text-blue-700">{{ imageScan.products }} products · {{ imageScan.images }} external images found</p>
             <p v-if="imageMigrationResult" class="mt-2 text-sm font-semibold text-emerald-700">{{ imageMigrationResult.images_copied }} images copied · {{ imageMigrationResult.images_failed }} failed</p>
-            <details v-if="imageMigrationResult?.images_failed" class="mt-3 max-w-3xl text-left">
-              <summary class="cursor-pointer text-sm font-bold text-red-700">Show image copy failures</summary>
+            <details v-if="imageMigrationResult?.images_failed" open class="mt-3 max-w-3xl text-left">
+              <summary class="cursor-pointer text-sm font-bold text-red-700">Image copy failures — log remains until the next Copy operation</summary>
+              <div class="mt-2 flex justify-end">
+                <button type="button" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50" @click="copyImageFailureLog">{{ failureLogCopied ? 'Copied!' : 'Copy failure log' }}</button>
+              </div>
               <div class="mt-2 max-h-72 overflow-auto rounded-lg border border-red-200 bg-red-50 p-3">
                 <template v-for="product in imageMigrationResult.results || []" :key="product.id">
                   <div v-if="product.failures?.length" class="mb-3 last:mb-0">
@@ -325,6 +328,31 @@
       </Teleport>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div v-if="showImageMigrationConfirm" class="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-950/50 p-4" @click.self="showImageMigrationConfirm=false">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-wider text-blue-600">Product Image Storage</p>
+            <h2 class="mt-1 text-xl font-black text-slate-900">Copy images to Supabase?</h2>
+          </div>
+          <button type="button" class="flex h-9 w-9 items-center justify-center rounded-lg text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="showImageMigrationConfirm=false">×</button>
+        </div>
+        <p class="mt-4 text-sm leading-6 text-slate-600">
+          This will copy <strong>{{ imageScan?.images || 0 }} external images</strong> from
+          <strong>{{ imageScan?.products || 0 }} products</strong> into the Kialla Computers Supabase products bucket.
+        </p>
+        <div class="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800">
+          Existing Supabase images will be kept. If an external image cannot be copied, its original URL will remain on the product.
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50" @click="showImageMigrationConfirm=false">Cancel</button>
+          <button type="button" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700" @click="confirmImageMigration">Copy to Supabase</button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -780,13 +808,46 @@ const deleteProduct = async (product: Product) => {
 };
 
 const imageMigrationBusy = ref(false);
+const showImageMigrationConfirm = ref(false);
 const imageScan = ref<any>(null);
 const imageMigrationResult = ref<any>(null);
+const failureLogCopied = ref(false);
+
+const copyImageFailureLog = async () => {
+  const lines:string[] = [];
+  for (const product of imageMigrationResult.value?.results || []) {
+    if (!product.failures?.length) continue;
+    lines.push(`PRODUCT: ${product.name} (ID ${product.id})`);
+    for (const failure of product.failures) {
+      lines.push(`URL: ${failure.url}`);
+      lines.push(`ERROR: ${failure.error}`);
+      lines.push("");
+    }
+  }
+  const text = lines.join("\n") || "No image copy failures.";
+  try {
+    await navigator.clipboard.writeText(text);
+    failureLogCopied.value = true;
+    setTimeout(() => failureLogCopied.value = false, 2500);
+  } catch {
+    // Fallback for browsers where Clipboard API is unavailable.
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.style.position = "fixed";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    el.remove();
+    failureLogCopied.value = true;
+    setTimeout(() => failureLogCopied.value = false, 2500);
+  }
+};
+
 
 const scanExternalImages = async () => {
   imageMigrationBusy.value = true;
   errorMessage.value = "";
-  imageMigrationResult.value = null;
   try {
     imageScan.value = await adminFetch("/api/admin/products/localise-images", { method: "POST", body: { dry_run: true } });
   } catch (error: any) {
@@ -794,9 +855,13 @@ const scanExternalImages = async () => {
   } finally { imageMigrationBusy.value = false; }
 };
 
-const migrateExternalImages = async () => {
+const migrateExternalImages = () => {
   if (!imageScan.value?.images) return;
-  if (!confirm(`Copy ${imageScan.value.images} external product images into Supabase? Existing Supabase images will be kept.`)) return;
+  showImageMigrationConfirm.value = true;
+};
+
+const confirmImageMigration = async () => {
+  showImageMigrationConfirm.value = false;
   imageMigrationBusy.value = true;
   errorMessage.value = "";
   try {
