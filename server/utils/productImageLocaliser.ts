@@ -36,7 +36,13 @@ const fetchImage = async (rawUrl: string) => {
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
     const res = await fetch(current, {
       redirect: "manual",
-      headers: { accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,image/*;q=0.8" },
+      headers: {
+        accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,image/*;q=0.8",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36",
+        referer: current.hostname.toLowerCase() === "partner.leadersystems.com.au"
+          ? "https://partner.leadersystems.com.au/"
+          : `${current.protocol}//${current.host}/`,
+      },
       signal: AbortSignal.timeout(15000),
     });
     if ([301, 302, 303, 307, 308].includes(res.status)) {
@@ -89,7 +95,11 @@ export const localiseProductImages = async (urls: unknown, productCode = "produc
       images.push(result.url);
       if (result.copied) copied++;
     } catch (error: any) {
-      failed.push({ url, error: error?.statusMessage || error?.message || "Unable to copy image" });
+      const message = error?.statusMessage || error?.message || "Unable to copy image";
+      failed.push({ url, error: message });
+      // Never lose an existing/imported image merely because the remote host
+      // refused a server-side copy. Keep the original URL for a later retry.
+      images.push(url);
     }
   }
   return { images, copied, failed };

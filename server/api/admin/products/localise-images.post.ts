@@ -31,14 +31,23 @@ export default defineEventHandler(async (event) => {
     const external = (product.images || []).filter((u: any) => u && !isSupabaseProductImage(String(u)));
     const moved = await localiseProductImages(external, product.product_code || `product-${product.id}`);
     const images = [...localAlready, ...moved.images];
-    if (moved.images.length) {
+    // Do not touch a product unless at least one external image was copied.
+    // Failed URLs remain in moved.images so no image reference is ever lost.
+    if (moved.copied > 0) {
       const { error: updateError } = await supabase.from("products").update({ images }).eq("id", product.id);
       if (updateError) {
         results.push({ id: product.id, name: product.name, copied: 0, failed: external.length, error: updateError.message });
         continue;
       }
     }
-    results.push({ id: product.id, name: product.name, copied: moved.copied, failed: moved.failed.length, remaining_external: moved.failed.map((x) => x.url) });
+    results.push({
+      id: product.id,
+      name: product.name,
+      copied: moved.copied,
+      failed: moved.failed.length,
+      failures: moved.failed,
+      remaining_external: moved.failed.map((x) => x.url),
+    });
   }
   return {
     products_processed: results.length,

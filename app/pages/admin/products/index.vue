@@ -70,6 +70,20 @@
             <p class="mt-1 text-sm text-slate-500">Find products still using external image URLs and copy those images into the Kialla Computers Supabase products bucket.</p>
             <p v-if="imageScan" class="mt-2 text-sm font-semibold text-blue-700">{{ imageScan.products }} products · {{ imageScan.images }} external images found</p>
             <p v-if="imageMigrationResult" class="mt-2 text-sm font-semibold text-emerald-700">{{ imageMigrationResult.images_copied }} images copied · {{ imageMigrationResult.images_failed }} failed</p>
+            <details v-if="imageMigrationResult?.images_failed" class="mt-3 max-w-3xl text-left">
+              <summary class="cursor-pointer text-sm font-bold text-red-700">Show image copy failures</summary>
+              <div class="mt-2 max-h-72 overflow-auto rounded-lg border border-red-200 bg-red-50 p-3">
+                <template v-for="product in imageMigrationResult.results || []" :key="product.id">
+                  <div v-if="product.failures?.length" class="mb-3 last:mb-0">
+                    <p class="font-bold text-slate-900">{{ product.name }}</p>
+                    <div v-for="failure in product.failures" :key="failure.url" class="mt-1 text-xs text-red-700">
+                      <p class="break-all">{{ failure.url }}</p>
+                      <p class="font-semibold">{{ failure.error }}</p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </details>
           </div>
           <div class="flex flex-wrap gap-2">
             <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50" :disabled="imageMigrationBusy" @click="scanExternalImages">{{imageMigrationBusy?'Working…':'Scan External Images'}}</button>
