@@ -98,15 +98,25 @@
 
             <tbody>
               <template v-for="main in groupedProducts" :key="main.name">
-                <tr class="admin-group-row bg-slate-200 border-y border-slate-300">
+                <tr class="admin-group-row cursor-pointer bg-slate-200 border-y border-slate-300 hover:bg-slate-300/70 transition"
+                    @click="toggleCategory(main.name)">
                   <td colspan="9" class="px-5 py-3">
-                    <p class="font-bold text-slate-900">{{ main.name }}</p>
-                    <p class="text-xs text-slate-500">
-                      {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
-                    </p>
+                    <div class="flex items-center justify-between gap-4">
+                      <div>
+                        <p class="font-bold text-slate-900">{{ main.name }}</p>
+                        <p class="text-xs text-slate-500">
+                          {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
+                        </p>
+                      </div>
+                      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 text-lg font-black text-slate-700 shadow-sm"
+                            :aria-label="isCategoryOpen(main.name) ? 'Collapse category' : 'Expand category'">
+                        {{ isCategoryOpen(main.name) ? '−' : '+' }}
+                      </span>
+                    </div>
                   </td>
                 </tr>
 
+                <template v-if="isCategoryOpen(main.name)">
                 <template v-for="sub in main.subcategories" :key="`${main.name}-${sub.name}`">
                   <tr v-if="sub.name !== main.name" class="bg-blue-50 border-b border-blue-100">
                     <td colspan="9" class="px-5 py-2.5 pl-10">
@@ -207,6 +217,7 @@
                       </button>
                     </td>
                   </tr>
+                </template>
                 </template>
               </template>
             </tbody>
@@ -468,6 +479,17 @@ const groupedProducts = computed(() => {
       };
     });
 });
+
+const openCategories = ref<Set<string>>(new Set());
+
+const isCategoryOpen = (name: string) => openCategories.value.has(name);
+
+const toggleCategory = (name: string) => {
+  const next = new Set(openCategories.value);
+  if (next.has(name)) next.delete(name);
+  else next.add(name);
+  openCategories.value = next;
+};
 
 const hasFilters = computed(() =>
   Boolean(search.value || categoryFilter.value || stockFilter.value),
