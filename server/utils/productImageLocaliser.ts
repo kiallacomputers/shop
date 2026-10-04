@@ -16,9 +16,15 @@ const isPrivateIpv4 = (host: string) => {
     parts[0] === 0;
 };
 
+const decodeRemoteUrl = (value: string) =>
+  String(value || "")
+    .replace(/&amp;/gi, "&")
+    .replace(/&#38;/g, "&")
+    .replace(/&#x26;/gi, "&");
+
 const assertSafeRemoteUrl = (value: string) => {
   let url: URL;
-  try { url = new URL(value); } catch {
+  try { url = new URL(decodeRemoteUrl(value)); } catch {
     throw createError({ statusCode: 400, statusMessage: "Invalid remote image URL" });
   }
   if (!["https:", "http:"].includes(url.protocol)) {
@@ -56,9 +62,26 @@ const fetchImage = async (rawUrl: string) => {
     if (contentLength > MAX_IMAGE_BYTES) throw createError({ statusCode: 413, statusMessage: "Remote image is larger than 10 MB" });
     const bytes = Buffer.from(await res.arrayBuffer());
     if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) throw createError({ statusCode: 413, statusMessage: "Remote image is empty or larger than 10 MB" });
-    const mime = String(res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
-    if (!ALLOWED_TYPES.has(mime) || !imageBytesMatchMime(bytes, mime)) {
-      throw createError({ statusCode: 415, statusMessage: "Remote URL did not return a supported image" });
+    const headerMime = String(res.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+
+    // Some vendor/CDN endpoints return image bytes with a generic/incorrect
+    // Content-Type, or auto=format changes the actual format. Detect the file
+    // from its bytes instead of trusting the response header.
+    const signatures: Array<[string, (b: Buffer) => boolean]> = [
+      ["image/jpeg", (b) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff],
+      ["image/png",  (b) => b.length >= 8 && b.subarray(0,8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))],
+      ["image/gif",  (b) => b.length >= 6 && ["GIF87a","GIF89a"].includes(b.subarray(0,6).toString("ascii"))],
+      ["image/webp", (b) => b.length >= 12 && b.subarray(0,4).toString("ascii") === "RIFF" && b.subarray(8,12).toString("ascii") === "WEBP"],
+    ];
+    const detectedMime = signatures.find(([, test]) => test(bytes))?.[0] || "";
+    const mime = detectedMime || (ALLOWED_TYPES.has(headerMime) && imageBytesMatchMime(bytes, headerMime) ? headerMime : "");
+
+    if (!mime) {
+      const preview = bytes.subarray(0, 80).toString("utf8").replace(/\s+/g, " ").trim();
+      throw createError({
+        statusCode: 415,
+        statusMessage: `Remote URL did not return a supported image (HTTP content-type: ${headerMime || "missing"}${preview ? `; response starts: ${preview.slice(0,60)}` : ""})`,
+      });
     }
     return { bytes, mime, sourceUrl: current.toString() };
   }
