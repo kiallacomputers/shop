@@ -72,7 +72,31 @@
         <div><div class="flex items-center justify-between"><h3 class="font-black">Description Preview</h3><SourceTag :source="sourceChoice.description" /></div><div class="mt-3 min-h-[180px] whitespace-pre-line rounded-xl border bg-slate-50 p-4 text-sm leading-6 text-slate-700">{{chosenDescription||'No description detected yet.'}}</div></div>
       </div>
       <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><b>Supplier link:</b> {{selectedSupplier?.name}} will be saved as the default supplier with SKU <b>{{supplierData.supplier_sku||draft.product_code||'—'}}</b> and buy price <b>{{money(draft.buy_price_ex_gst)}}</b>.</div>
-      <div class="mt-5 flex justify-end gap-2"><NuxtLink to="/admin/products" class="secondary">Cancel</NuxtLink><button class="primary" :disabled="saving" @click="createProduct">{{saving?'Creating…':'Create Product'}}</button></div>
+
+      <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div><h3 class="font-black text-slate-900">Pre-Publish Product Check</h3><p class="mt-1 text-sm text-slate-500">Final checks before this product is created and published.</p></div>
+          <div class="flex gap-2 text-xs font-black">
+            <span class="rounded-full bg-red-100 px-2.5 py-1 text-red-700">{{blockingChecks.length}} errors</span>
+            <span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700">{{warningChecks.length}} warnings</span>
+          </div>
+        </div>
+        <div class="mt-4 grid gap-2 md:grid-cols-2">
+          <div v-for="check in publishChecks" :key="check.key" class="flex items-start gap-3 rounded-xl border bg-white p-3"
+               :class="check.level==='error'?'border-red-200':check.level==='warning'?'border-amber-200':'border-emerald-200'">
+            <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black"
+                  :class="check.level==='error'?'bg-red-100 text-red-700':check.level==='warning'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'">
+              {{check.level==='error'?'!':check.level==='warning'?'?':'✓'}}
+            </span>
+            <div><p class="text-sm font-black text-slate-900">{{check.label}}</p><p class="mt-0.5 text-xs leading-5 text-slate-500">{{check.message}}</p></div>
+          </div>
+        </div>
+        <div v-if="blockingChecks.length" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">Fix the red items above before creating this product.</div>
+        <div v-else-if="warningChecks.length" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This product can be created, but review the warnings above first.</div>
+        <div v-else class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">Ready to create — all checks passed.</div>
+      </div>
+
+      <div class="mt-5 flex justify-end gap-2"><NuxtLink to="/admin/products" class="secondary">Cancel</NuxtLink><button class="primary" :disabled="saving||blockingChecks.length>0" @click="createProduct">{{saving?'Creating…':blockingChecks.length?'Fix Errors Before Creating':'Create Product'}}</button></div>
     </section>
   </template>
 </main>
@@ -92,6 +116,36 @@ const SourceTag=defineComponent({
 const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',category_id:'',buy_price_ex_gst:0,rrp_markup_percent:30,blurb:'',seo_title:'',meta_description:'',slug:''})
 const selectedSupplier=computed(()=>suppliers.value.find(x=>Number(x.id)===Number(supplierId.value)))
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
+type PublishCheck={key:string,label:string,message:string,level:'ok'|'warning'|'error'}
+const publishChecks=computed<PublishCheck[]>(()=>{
+  const checks:PublishCheck[]=[]
+  const add=(key:string,label:string,message:string,level:'ok'|'warning'|'error')=>checks.push({key,label,message,level})
+  const sku=String(supplierData.value?.supplier_sku||draft.product_code||'').trim()
+  const expectedSlug=makeSlug(sku)
+  const gtin=String(draft.gtin||'').trim()
+  const buy=Number(draft.buy_price_ex_gst)
+  const rrpMarkup=Number(draft.rrp_markup_percent)
+  const description=String(chosenDescription.value||'').trim()
+
+  add('supplier','Supplier',supplierId.value&&supplierData.value?.authenticated?`${selectedSupplier.value?.name||'Supplier'} authenticated.`:'Fetch and authenticate the supplier product. ',supplierId.value&&supplierData.value?.authenticated?'ok':'error')
+  add('name','name',draft.name?.trim()?`Product name is ready (${draft.name.trim().length} characters).`:'Product name is required.',draft.name?.trim()?'ok':'error')
+  add('sku','Supplier SKU',sku?`Supplier SKU: ${sku}`:'Supplier SKU/product code is required.',sku?'ok':'error')
+  add('slug','URL slug',!sku?'Cannot validate without a supplier SKU.':draft.slug===expectedSlug?`Uses supplier SKU: ${draft.slug}`:`Expected ${expectedSlug||'a slug'} from the supplier SKU.`,!sku?'error':draft.slug===expectedSlug?'ok':'warning')
+  add('category','Category',draft.category_id?'A Kialla product category is selected.':'Select a category before creating the product.',draft.category_id?'ok':'error')
+  add('buy','Buy price',Number.isFinite(buy)&&buy>0?`${money(buy)} ex GST.`:buy===0?'Buy price is $0.00. Check this before publishing.':'A valid buy price ex GST is required.',Number.isFinite(buy)&&buy>0?'ok':buy===0?'warning':'error')
+  add('rrp','RRP markup',Number.isFinite(rrpMarkup)&&rrpMarkup>=0?`${rrpMarkup}% RRP markup configured.`:'Enter a valid RRP markup percentage.',Number.isFinite(rrpMarkup)&&rrpMarkup>=0?'ok':'error')
+  add('gtin','GTIN',!gtin?'No GTIN/barcode supplied.':cleanImportedGtin(gtin)?`Valid ${gtin.length}-digit GTIN.`:'GTIN is invalid; use an 8, 12, 13 or 14 digit barcode.',!gtin?'warning':cleanImportedGtin(gtin)?'ok':'warning')
+  add('images','Images',selectedImages.value.length?`${selectedImages.value.length} image${selectedImages.value.length===1?'':'s'} selected; external images will be copied to Supabase.`:'No product images selected.',selectedImages.value.length?'ok':'warning')
+  add('description','Description',description.length>=80?`Description is ready (${description.length} characters).`:description?`Description is quite short (${description.length} characters).`:'No product description supplied.',description.length>=80?'ok':'warning')
+  const seoTitle=String(draft.seo_title||'').trim()
+  add('seo-title','SEO title',!seoTitle?'SEO title is missing.':seoTitle.length<=60?`${seoTitle.length}/60 characters.`:`${seoTitle.length} characters; 60 or fewer is recommended.`,!seoTitle?'warning':seoTitle.length<=60?'ok':'warning')
+  const meta=String(draft.meta_description||'').trim()
+  add('meta','Meta description',!meta?'Meta description is missing.':meta.length>=100&&meta.length<=160?`${meta.length}/160 characters.`:`${meta.length} characters; around 100–160 is recommended.`,!meta?'warning':meta.length>=100&&meta.length<=160?'ok':'warning')
+  return checks
+})
+const blockingChecks=computed(()=>publishChecks.value.filter(x=>x.level==='error'))
+const warningChecks=computed(()=>publishChecks.value.filter(x=>x.level==='warning'))
+
 const categoryGroups=computed(()=>categories.value.filter((x:any)=>x.parent_id==null).map((parent:any)=>({parent,children:categories.value.filter((x:any)=>String(x.parent_id)===String(parent.id)&&x.active!==false)})).filter((g:any)=>g.children.length))
 const supplierImages=computed(()=>[...new Set(supplierData.value?.images||[])])
 const vendorImages=computed(()=>[...new Set(vendorData.value?.images||[])])
@@ -206,6 +260,7 @@ async function fetchVendor(){
 }
 async function createProduct(){
   error.value='';success.value=''
+  if(blockingChecks.value.length){error.value='Fix the Pre-Publish Product Check errors before creating this product.';return}
   if(!supplierData.value?.authenticated){error.value='Fetch and authenticate the supplier product before creating it.';return}
   if(!supplierId.value||!draft.name.trim()||!draft.product_code.trim()||!draft.category_id){error.value='Supplier, product name, product code and category are required.';return}
   if(!Number.isFinite(Number(draft.buy_price_ex_gst))||Number(draft.buy_price_ex_gst)<0){error.value='Enter a valid buy price ex GST.';return}
