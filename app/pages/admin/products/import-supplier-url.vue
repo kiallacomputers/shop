@@ -54,7 +54,16 @@
         <label class="field"><span>Brand <SourceTag :source="sourceChoice.brand" /></span><input v-model="draft.brand" class="input"></label>
         <label class="field"><span>MPN <SourceTag :source="sourceChoice.mpn" /></span><input v-model="draft.mpn" class="input"></label>
         <label class="field"><span>GTIN <SourceTag :source="sourceChoice.gtin" /></span><input v-model="draft.gtin" class="input"></label>
-        <label class="field"><span>Category *</span><select v-model="draft.category_id" class="input"><option value="">Select category…</option><optgroup v-for="g in categoryGroups" :key="g.parent.id" :label="g.parent.name"><option v-for="c in g.children" :key="c.id" :value="String(c.id)">{{c.name}}</option></optgroup></select></label>
+        <div class="field">
+          <span>Category *</span>
+          <select v-model="draft.category_id" class="input"><option value="">Select category…</option><optgroup v-for="g in categoryGroups" :key="g.parent.id" :label="g.parent.name"><option v-for="c in g.children" :key="c.id" :value="String(c.id)">{{c.name}}</option></optgroup></select>
+          <div v-if="categorySuggestion" class="mt-1 rounded-lg border border-violet-200 bg-violet-50 p-2 normal-case tracking-normal">
+            <div class="flex items-center justify-between gap-2"><span class="text-xs font-black text-violet-800">Suggested: {{categorySuggestion.name}}</span><span class="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-black text-violet-700">{{categorySuggestion.confidence}}% match</span></div>
+            <p class="mt-1 text-[11px] font-normal text-violet-700">{{categorySuggestion.reason}}</p>
+            <button v-if="String(draft.category_id)!==String(categorySuggestion.id)" type="button" class="mt-2 text-xs font-black text-violet-700 hover:underline" @click="useSuggestedCategory">Use suggested category</button>
+            <span v-else class="mt-2 inline-block text-[11px] font-bold text-emerald-700">✓ Selected</span>
+          </div>
+        </div>
         <label class="field"><span>Buy Price ex GST *</span><input v-model.number="draft.buy_price_ex_gst" class="input" type="number" min="0" step=".01"></label>
         <label class="field"><span>RRP Markup % *</span><input v-model.number="draft.rrp_markup_percent" class="input" type="number" min="0" step=".1"></label>
         <label class="field xl:col-span-3"><span>Short Description <SourceTag :source="sourceChoice.description" /></span><textarea v-model="draft.blurb" rows="3" class="input"></textarea></label>
@@ -93,6 +102,54 @@ const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',categ
 const selectedSupplier=computed(()=>suppliers.value.find(x=>Number(x.id)===Number(supplierId.value)))
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const categoryGroups=computed(()=>categories.value.filter((x:any)=>x.parent_id==null).map((parent:any)=>({parent,children:categories.value.filter((x:any)=>String(x.parent_id)===String(parent.id)&&x.active!==false)})).filter((g:any)=>g.children.length))
+const categorySuggestion=computed(()=>{
+  if(!supplierData.value||!categories.value.length)return null
+  const source=[
+    supplierData.value.category,
+    supplierData.value.subcategory,
+    supplierData.value.name,
+    vendorData.value?.name,
+    vendorData.value?.description
+  ].filter(Boolean).join(' ')
+  const norm=(v:any)=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
+  const words=(v:any)=>new Set(norm(v).split(/\s+/).filter((w:string)=>w.length>2))
+  const src=norm(source), srcWords=words(source)
+  const aliases:Record<string,string[]>={
+    'monitor':['monitor','monitors','display','displays','screen','screens'],
+    'laptop':['laptop','laptops','notebook','notebooks'],
+    'ssd':['ssd','solid state','storage'],
+    'cpu':['cpu','cpus','processor','processors'],
+    'networking':['network','networking','router','switch','wifi','wireless','access point'],
+    'mac':['mac','macbook','apple','imac']
+  }
+  const activeChildren=categories.value.filter((c:any)=>c.parent_id!=null&&c.active!==false)
+  let best:any=null
+  for(const c of activeChildren){
+    const parent=categories.value.find((p:any)=>String(p.id)===String(c.parent_id))
+    const label=`${parent?.name||''} ${c.name||''}`
+    const labelNorm=norm(label), labelWords=words(label)
+    let score=0
+    let hits:string[]=[]
+    for(const w of labelWords){
+      if(srcWords.has(w)){score+=18;hits.push(w)}
+      else if(src.includes(w)){score+=8;hits.push(w)}
+    }
+    for(const [key,list] of Object.entries(aliases)){
+      const categoryHas=labelNorm.includes(key)||list.some(a=>labelNorm.includes(a))
+      const sourceHas=src.includes(key)||list.some(a=>src.includes(a))
+      if(categoryHas&&sourceHas){score+=28;hits.push(key)}
+    }
+    const leaderCat=norm(`${supplierData.value.category||''} ${supplierData.value.subcategory||''}`)
+    if(leaderCat&&labelNorm.includes(leaderCat))score+=35
+    if(norm(c.name)&&leaderCat.includes(norm(c.name))){score+=40;hits.push(norm(c.name))}
+    if(!best||score>best.score)best={id:c.id,name:`${parent?.name ? parent.name+' → ' : ''}${c.name}`,score,hits:[...new Set(hits)]}
+  }
+  if(!best||best.score<=0)return null
+  const confidence=Math.min(98,Math.max(45,Math.round(45+best.score/2)))
+  const leaderLabel=[supplierData.value.category,supplierData.value.subcategory].filter(Boolean).join(' / ')
+  return {...best,confidence,reason:`Based on Leader category ${leaderLabel||'and the imported product details'}${best.hits.length?`; matched ${best.hits.slice(0,4).join(', ')}`:''}.`}
+})
+
 const supplierImages=computed(()=>[...new Set(supplierData.value?.images||[])])
 const vendorImages=computed(()=>[...new Set(vendorData.value?.images||[])])
 const candidateImages=computed(()=>[...new Set([...supplierImages.value,...vendorImages.value])].slice(0,20))
@@ -165,6 +222,12 @@ function setInitialChoices(){
     sourceChoice[key]=(vendorData.value?.[key==='description'?'description':key]?'vendor':'supplier') as 'supplier'|'vendor'
   }
 }
+function useSuggestedCategory(){
+  if(categorySuggestion.value)draft.category_id=String(categorySuggestion.value.id)
+}
+function autoSelectCategory(){
+  if(categorySuggestion.value&&!draft.category_id)draft.category_id=String(categorySuggestion.value.id)
+}
 function selectAllImages(source:'supplier'|'vendor'){
   const imgs=source==='vendor'?vendorImages.value:supplierImages.value
   selectedImages.value=[...new Set([...selectedImages.value,...imgs])]
@@ -182,6 +245,8 @@ async function fetchSupplier(){
     supplierData.value=result
     vendorUrl.value=result.vendor_url||''
     applyBestData()
+    await nextTick()
+    autoSelectCategory()
   }catch(e:any){
     supplierData.value=null
     error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch supplier product.'
@@ -193,6 +258,8 @@ async function fetchVendor(){
     vendorData.value=await adminFetch('/api/admin/products/import-url/vendor',{method:'POST',body:{url:vendorUrl.value}})
     setInitialChoices()
     applySelections()
+    await nextTick()
+    autoSelectCategory()
     selectedImages.value=[...new Set([...selectedImages.value,...vendorImages.value])].slice(0,12)
   }catch(e:any){error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch official vendor product.'}
   finally{vendorFetching.value=false}
