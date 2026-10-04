@@ -31,27 +31,45 @@
     </section>
 
     <section class="panel mt-5 p-5">
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="eyebrow">Review before creation</p><h2 class="mt-1 text-xl font-black">Kialla Product</h2><p class="mt-1 text-sm text-slate-500">Nothing is saved until you click Create Product.</p></div><button class="secondary" @click="applyBestData">Refresh from Sources</button></div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p class="eyebrow">Review before creation</p><h2 class="mt-1 text-xl font-black">Kialla Product</h2><p class="mt-1 text-sm text-slate-500">After Fetch Vendor, choose Supplier or Vendor for each customer-facing field. You can still edit the final value.</p></div><button class="secondary" @click="applySelections">Apply Source Choices</button></div>
+
+      <div v-if="vendorData" class="mt-5 overflow-hidden rounded-2xl border border-slate-200">
+        <div class="grid grid-cols-[150px_1fr_1fr] bg-slate-100 text-xs font-black uppercase tracking-wide text-slate-600">
+          <div class="p-3">Field</div><div class="p-3">Supplier</div><div class="p-3">Vendor</div>
+        </div>
+        <div v-for="row in comparisonRows" :key="row.key" class="grid grid-cols-[150px_1fr_1fr] border-t border-slate-200 text-sm">
+          <div class="p-3 font-black text-slate-700">{{row.label}}</div>
+          <button type="button" class="source-choice" :class="sourceChoice[row.key]==='supplier'?'source-selected':''" @click="chooseSource(row.key,'supplier')" :disabled="!row.supplier">
+            <span class="source-badge">Supplier</span><span>{{row.supplier||'Not supplied'}}</span>
+          </button>
+          <button type="button" class="source-choice" :class="sourceChoice[row.key]==='vendor'?'source-selected':''" @click="chooseSource(row.key,'vendor')" :disabled="!row.vendor">
+            <span class="source-badge vendor">Vendor</span><span>{{row.vendor||'Not supplied'}}</span>
+          </button>
+        </div>
+      </div>
+
       <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <label class="field xl:col-span-2"><span>Product Name *</span><input v-model="draft.name" class="input"></label>
+        <label class="field xl:col-span-2"><span>Product Name * <SourceTag :source="sourceChoice.name" /></span><input v-model="draft.name" class="input"></label>
         <label class="field"><span>Store Product Code *</span><input v-model="draft.product_code" class="input"></label>
-        <label class="field"><span>Brand</span><input v-model="draft.brand" class="input"></label>
-        <label class="field"><span>MPN</span><input v-model="draft.mpn" class="input"></label>
-        <label class="field"><span>GTIN</span><input v-model="draft.gtin" class="input"></label>
+        <label class="field"><span>Brand <SourceTag :source="sourceChoice.brand" /></span><input v-model="draft.brand" class="input"></label>
+        <label class="field"><span>MPN <SourceTag :source="sourceChoice.mpn" /></span><input v-model="draft.mpn" class="input"></label>
+        <label class="field"><span>GTIN <SourceTag :source="sourceChoice.gtin" /></span><input v-model="draft.gtin" class="input"></label>
         <label class="field"><span>Category *</span><select v-model="draft.category_id" class="input"><option value="">Select category…</option><optgroup v-for="g in categoryGroups" :key="g.parent.id" :label="g.parent.name"><option v-for="c in g.children" :key="c.id" :value="String(c.id)">{{c.name}}</option></optgroup></select></label>
         <label class="field"><span>Buy Price ex GST *</span><input v-model.number="draft.buy_price_ex_gst" class="input" type="number" min="0" step=".01"></label>
         <label class="field"><span>RRP Markup % *</span><input v-model.number="draft.rrp_markup_percent" class="input" type="number" min="0" step=".1"></label>
-        <label class="field xl:col-span-3"><span>Short Description</span><textarea v-model="draft.blurb" rows="3" class="input"></textarea></label>
+        <label class="field xl:col-span-3"><span>Short Description <SourceTag :source="sourceChoice.description" /></span><textarea v-model="draft.blurb" rows="3" class="input"></textarea></label>
         <label class="field xl:col-span-2"><span>SEO Title</span><input v-model="draft.seo_title" class="input" maxlength="70"><small class="normal-case font-normal tracking-normal text-slate-400">{{draft.seo_title.length}} / 60 recommended</small></label>
         <label class="field"><span>URL Slug</span><input v-model="draft.slug" class="input"></label>
         <label class="field xl:col-span-3"><span>Meta Description</span><textarea v-model="draft.meta_description" rows="3" maxlength="180" class="input"></textarea><small class="normal-case font-normal tracking-normal text-slate-400">{{draft.meta_description.length}} / 160 recommended</small></label>
       </div>
 
       <div class="mt-5 grid gap-5 xl:grid-cols-[1fr_1fr]">
-        <div><h3 class="font-black">Product Images</h3><p class="mt-1 text-sm text-slate-500">Official vendor images are preferred. Untick anything you do not want on the product.</p>
-          <div v-if="candidateImages.length" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"><label v-for="img in candidateImages" :key="img" class="relative overflow-hidden rounded-xl border bg-white"><input v-model="selectedImages" :value="img" type="checkbox" class="absolute left-2 top-2 z-10 h-4 w-4"><img :src="img" class="aspect-square w-full object-contain p-2"></label></div><div v-else class="mt-3 rounded-xl border border-dashed p-5 text-sm text-slate-500">No usable images detected yet.</div>
+        <div><h3 class="font-black">Product Images</h3><p class="mt-1 text-sm text-slate-500">Choose any combination of Supplier and Vendor images.</p>
+          <div v-if="supplierImages.length" class="mt-3"><div class="mb-2 flex items-center justify-between"><span class="source-badge">Supplier images</span><button type="button" class="text-xs font-bold text-blue-600" @click="selectAllImages('supplier')">Select all</button></div><div class="grid grid-cols-2 gap-3 sm:grid-cols-3"><label v-for="img in supplierImages" :key="'s-'+img" class="relative overflow-hidden rounded-xl border bg-white"><input v-model="selectedImages" :value="img" type="checkbox" class="absolute left-2 top-2 z-10 h-4 w-4"><span class="absolute right-2 top-2 z-10 rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white">SUPPLIER</span><img :src="img" class="aspect-square w-full object-contain p-2"></label></div></div>
+          <div v-if="vendorImages.length" class="mt-4"><div class="mb-2 flex items-center justify-between"><span class="source-badge vendor">Vendor images</span><button type="button" class="text-xs font-bold text-emerald-700" @click="selectAllImages('vendor')">Select all</button></div><div class="grid grid-cols-2 gap-3 sm:grid-cols-3"><label v-for="img in vendorImages" :key="'v-'+img" class="relative overflow-hidden rounded-xl border bg-white"><input v-model="selectedImages" :value="img" type="checkbox" class="absolute left-2 top-2 z-10 h-4 w-4"><span class="absolute right-2 top-2 z-10 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">VENDOR</span><img :src="img" class="aspect-square w-full object-contain p-2"></label></div></div>
+          <div v-if="!candidateImages.length" class="mt-3 rounded-xl border border-dashed p-5 text-sm text-slate-500">No usable images detected yet.</div>
         </div>
-        <div><h3 class="font-black">Description Preview</h3><div class="mt-3 min-h-[180px] whitespace-pre-line rounded-xl border bg-slate-50 p-4 text-sm leading-6 text-slate-700">{{bestDescription||'No description detected yet.'}}</div></div>
+        <div><div class="flex items-center justify-between"><h3 class="font-black">Description Preview</h3><SourceTag :source="sourceChoice.description" /></div><div class="mt-3 min-h-[180px] whitespace-pre-line rounded-xl border bg-slate-50 p-4 text-sm leading-6 text-slate-700">{{chosenDescription||'No description detected yet.'}}</div></div>
       </div>
       <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><b>Supplier link:</b> {{selectedSupplier?.name}} will be saved as the default supplier with SKU <b>{{supplierData.supplier_sku||draft.product_code||'—'}}</b> and buy price <b>{{money(draft.buy_price_ex_gst)}}</b>.</div>
       <div class="mt-5 flex justify-end gap-2"><NuxtLink to="/admin/products" class="secondary">Cancel</NuxtLink><button class="primary" :disabled="saving" @click="createProduct">{{saving?'Creating…':'Create Product'}}</button></div>
@@ -66,12 +84,27 @@ const route=useRoute(),router=useRouter(),{adminFetch}=useAdminFetch()
 const suppliers=ref<any[]>([]),categories=ref<any[]>([]),supplierId=ref(Number(route.query.supplier||0)),supplierUrl=ref(''),leaderProductCode=ref(''),vendorUrl=ref('')
 const supplierData=ref<any>(null),vendorData=ref<any>(null),fetching=ref(false),vendorFetching=ref(false),saving=ref(false),error=ref(''),success=ref('')
 const selectedImages=ref<string[]>([])
+const sourceChoice=reactive<Record<string,'supplier'|'vendor'>>({name:'supplier',brand:'supplier',mpn:'supplier',gtin:'supplier',description:'supplier'})
+const SourceTag=defineComponent({
+  props:{source:{type:String,default:''}},
+  setup(props){return()=>h('span',{class:['ml-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black normal-case tracking-normal',props.source==='vendor'?'bg-emerald-100 text-emerald-700':'bg-blue-100 text-blue-700']},props.source==='vendor'?'Vendor':'Supplier')}
+})
 const draft=reactive<any>({name:'',product_code:'',brand:'',mpn:'',gtin:'',category_id:'',buy_price_ex_gst:0,rrp_markup_percent:30,blurb:'',seo_title:'',meta_description:'',slug:''})
 const selectedSupplier=computed(()=>suppliers.value.find(x=>Number(x.id)===Number(supplierId.value)))
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const categoryGroups=computed(()=>categories.value.filter((x:any)=>x.parent_id==null).map((parent:any)=>({parent,children:categories.value.filter((x:any)=>String(x.parent_id)===String(parent.id)&&x.active!==false)})).filter((g:any)=>g.children.length))
-const bestDescription=computed(()=>vendorData.value?.description||supplierData.value?.description||'')
-const candidateImages=computed(()=>[...new Set([...(vendorData.value?.images||[]),...(supplierData.value?.images||[])])].slice(0,12))
+const supplierImages=computed(()=>[...new Set(supplierData.value?.images||[])])
+const vendorImages=computed(()=>[...new Set(vendorData.value?.images||[])])
+const candidateImages=computed(()=>[...new Set([...supplierImages.value,...vendorImages.value])].slice(0,20))
+const chosenDescription=computed(()=>sourceChoice.description==='vendor'&&vendorData.value?.description?vendorData.value.description:supplierData.value?.description||vendorData.value?.description||'')
+const bestDescription=chosenDescription
+const comparisonRows=computed(()=>[
+  {key:'name',label:'Product Name',supplier:supplierData.value?.name||'',vendor:vendorData.value?.name||''},
+  {key:'brand',label:'Brand',supplier:supplierData.value?.brand||'',vendor:vendorData.value?.brand||''},
+  {key:'mpn',label:'MPN',supplier:supplierData.value?.mpn||'',vendor:vendorData.value?.mpn||''},
+  {key:'gtin',label:'GTIN',supplier:supplierData.value?.gtin||'',vendor:vendorData.value?.gtin||''},
+  {key:'description',label:'Description',supplier:cleanText(supplierData.value?.description||'').slice(0,180),vendor:cleanText(vendorData.value?.description||'').slice(0,180)}
+])
 function cleanText(v:any){return String(v||'').replace(/\s+/g,' ').replace(/\s+([,.;:])/g,'$1').trim()}
 function makeSlug(v:string){return cleanText(v).toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,100)}
 function buildSeo(){
@@ -100,17 +133,46 @@ function buildSeo(){
   if(meta.length>160)meta=meta.slice(0,160).replace(/\s+\S*$/,'').replace(/[,:;\-]+$/,'').trim()+'.'
   draft.meta_description=meta
 }
-function applyBestData(){
-  const v=vendorData.value||{},s=supplierData.value||{}
-  draft.name=v.name||s.name||draft.name
-  draft.product_code=draft.product_code||s.supplier_sku||v.mpn||s.mpn||''
-  draft.brand=v.brand||s.brand||draft.brand
-  draft.mpn=v.mpn||s.mpn||draft.mpn
-  draft.gtin=v.gtin||s.gtin||draft.gtin
+function valueFor(key:string){
+  const s=supplierData.value||{},v=vendorData.value||{}
+  const source=sourceChoice[key]
+  if(key==='description')return source==='vendor'&&v.description?v.description:s.description||v.description||''
+  const vendorValue=v[key]
+  const supplierValue=s[key]
+  return source==='vendor'&&vendorValue?vendorValue:supplierValue||vendorValue||''
+}
+function chooseSource(key:string,source:'supplier'|'vendor'){
+  const data=source==='vendor'?vendorData.value:supplierData.value
+  if(!data)return
+  const check=key==='description'?data.description:data[key]
+  if(!check)return
+  sourceChoice[key]=source
+  applySelections()
+}
+function applySelections(){
+  const s=supplierData.value||{}
+  draft.name=valueFor('name')||draft.name
+  draft.product_code=draft.product_code||s.supplier_sku||valueFor('mpn')||''
+  draft.brand=valueFor('brand')||draft.brand
+  draft.mpn=valueFor('mpn')||draft.mpn
+  draft.gtin=valueFor('gtin')||draft.gtin
   if(s.price_ex_gst!=null)draft.buy_price_ex_gst=Number(s.price_ex_gst)
-  draft.blurb=(v.description||s.description||draft.blurb||'').slice(0,500)
-  selectedImages.value=candidateImages.value.slice(0,6)
+  draft.blurb=String(valueFor('description')||draft.blurb||'').slice(0,500)
   buildSeo()
+}
+function setInitialChoices(){
+  for(const key of ['name','brand','mpn','gtin','description']){
+    sourceChoice[key]=(vendorData.value?.[key==='description'?'description':key]?'vendor':'supplier') as 'supplier'|'vendor'
+  }
+}
+function selectAllImages(source:'supplier'|'vendor'){
+  const imgs=source==='vendor'?vendorImages.value:supplierImages.value
+  selectedImages.value=[...new Set([...selectedImages.value,...imgs])]
+}
+function applyBestData(){
+  if(vendorData.value)setInitialChoices()
+  applySelections()
+  if(!selectedImages.value.length)selectedImages.value=candidateImages.value.slice(0,6)
 }
 async function fetchSupplier(){
   fetching.value=true;error.value='';success.value='';supplierData.value=null;vendorData.value=null;vendorUrl.value='';selectedImages.value=[]
@@ -125,7 +187,16 @@ async function fetchSupplier(){
     error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch supplier product.'
   }finally{fetching.value=false}
 }
-async function fetchVendor(){vendorFetching.value=true;error.value='';try{vendorData.value=await adminFetch('/api/admin/products/import-url/vendor',{method:'POST',body:{url:vendorUrl.value}});applyBestData()}catch(e:any){error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch official vendor product.'}finally{vendorFetching.value=false}}
+async function fetchVendor(){
+  vendorFetching.value=true;error.value=''
+  try{
+    vendorData.value=await adminFetch('/api/admin/products/import-url/vendor',{method:'POST',body:{url:vendorUrl.value}})
+    setInitialChoices()
+    applySelections()
+    selectedImages.value=[...new Set([...selectedImages.value,...vendorImages.value])].slice(0,12)
+  }catch(e:any){error.value=e?.data?.statusMessage||e?.statusMessage||e.message||'Unable to fetch official vendor product.'}
+  finally{vendorFetching.value=false}
+}
 async function createProduct(){
   error.value='';success.value=''
   if(!supplierData.value?.authenticated){error.value='Fetch and authenticate the supplier product before creating it.';return}
@@ -151,4 +222,8 @@ onMounted(async()=>{try{[suppliers.value,categories.value]=await Promise.all([ad
 
 <style scoped>
 .panel{@apply rounded-2xl border border-slate-200 bg-white shadow-sm}.primary{@apply inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white hover:bg-blue-700 disabled:opacity-50}.secondary{@apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50}.field{@apply grid gap-1.5 text-xs font-black uppercase tracking-wide text-slate-500}.input{@apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100}.eyebrow{@apply text-xs font-black uppercase tracking-[.14em] text-blue-600}.details>div{@apply flex justify-between gap-4 border-b border-slate-100 py-2 text-sm}.details dt{@apply text-slate-500}.details dd{@apply text-right font-black text-slate-900}
+.source-choice{@apply flex min-h-[76px] flex-col items-start gap-2 border-l border-slate-200 p-3 text-left transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40}
+.source-selected{@apply bg-blue-50 ring-2 ring-inset ring-blue-500}
+.source-badge{@apply inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-blue-700}
+.source-badge.vendor{@apply bg-emerald-100 text-emerald-700}
 </style>
