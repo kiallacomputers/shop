@@ -1,5 +1,6 @@
 import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
 import { getStandardPricingLevel } from "~~/server/utils/customerPricing";
+import { localiseProductImages } from "~~/server/utils/productImageLocaliser";
 
 const cleanSlug = (value: unknown) =>
   String(value || "")
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const gtin = String(body?.gtin || "").replace(/\s+/g, "").trim();
   const mpn = String(body?.mpn || "").trim();
   const seoTitle = String(body?.seo_title || "").trim();
-  const seoDescription = String(body?.seo_description ?? body?.meta_description ?? "").trim();
+  const seoDescription = String(body?.seo_description || "").trim();
   const hasVariants = body?.has_variants === true;
   const buyPriceExGst = Number(body?.buy_price_ex_gst);
   const rrpMarkupPercent = Number(body?.rrp_markup_percent);
@@ -52,6 +53,7 @@ export default defineEventHandler(async (event) => {
   const widthCm = Number(body?.width_cm);
   const heightCm = Number(body?.height_cm);
   const relatedProductIds = normaliseRelatedProductIds(body?.related_product_ids);
+  const incomingImages = normaliseImages(body?.images);
   const standardPricingLevel = await getStandardPricingLevel();
   const sellMarkupPercent = standardPricingLevel.markupPercent;
 
@@ -98,6 +100,10 @@ export default defineEventHandler(async (event) => {
   const price = roundToNearestFive(sellExGst * 1.1);
   const oldPrice = roundToNearestFive(rrpExGst * 1.1);
 
+  // Supplier/vendor imports may contain external URLs. Copy them into our own
+  // Supabase products bucket before saving the product.
+  const localisedImages = await localiseProductImages(incomingImages, productCode || slug);
+
   const product = {
     name,
     slug,
@@ -127,7 +133,7 @@ export default defineEventHandler(async (event) => {
     active: body?.active !== false,
     featured: body?.featured === true,
     refurbished: body?.refurbished === true,
-    images: normaliseImages(body?.images),
+    images: localisedImages.images,
     category_id: body?.category_id || null,
   };
 

@@ -63,6 +63,21 @@
         </div>
       </div>
 
+      <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p class="text-sm font-bold text-slate-900">Product Image Storage</p>
+            <p class="mt-1 text-sm text-slate-500">Find products still using external image URLs and copy those images into the Kialla Computers Supabase products bucket.</p>
+            <p v-if="imageScan" class="mt-2 text-sm font-semibold text-blue-700">{{ imageScan.products }} products · {{ imageScan.images }} external images found</p>
+            <p v-if="imageMigrationResult" class="mt-2 text-sm font-semibold text-emerald-700">{{ imageMigrationResult.images_copied }} images copied · {{ imageMigrationResult.images_failed }} failed</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50" :disabled="imageMigrationBusy" @click="scanExternalImages">{{imageMigrationBusy?'Working…':'Scan External Images'}}</button>
+            <button type="button" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50" :disabled="imageMigrationBusy||!imageScan?.images" @click="migrateExternalImages">Copy to Supabase</button>
+          </div>
+        </div>
+      </div>
+
       <div v-if="errorMessage"
         class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
         {{ errorMessage }}
@@ -98,25 +113,15 @@
 
             <tbody>
               <template v-for="main in groupedProducts" :key="main.name">
-                <tr class="admin-group-row cursor-pointer bg-slate-200 border-y border-slate-300 hover:bg-slate-300/70 transition"
-                    @click="toggleCategory(main.name)">
+                <tr class="admin-group-row bg-slate-200 border-y border-slate-300">
                   <td colspan="9" class="px-5 py-3">
-                    <div class="flex items-center justify-between gap-4">
-                      <div>
-                        <p class="font-bold text-slate-900">{{ main.name }}</p>
-                        <p class="text-xs text-slate-500">
-                          {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
-                        </p>
-                      </div>
-                      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 text-lg font-black text-slate-700 shadow-sm"
-                            :aria-label="isCategoryOpen(main.name) ? 'Collapse category' : 'Expand category'">
-                        {{ isCategoryOpen(main.name) ? '−' : '+' }}
-                      </span>
-                    </div>
+                    <p class="font-bold text-slate-900">{{ main.name }}</p>
+                    <p class="text-xs text-slate-500">
+                      {{ main.count }} {{ main.count === 1 ? "product" : "products" }}
+                    </p>
                   </td>
                 </tr>
 
-                <template v-if="isCategoryOpen(main.name)">
                 <template v-for="sub in main.subcategories" :key="`${main.name}-${sub.name}`">
                   <tr v-if="sub.name !== main.name" class="bg-blue-50 border-b border-blue-100">
                     <td colspan="9" class="px-5 py-2.5 pl-10">
@@ -217,7 +222,6 @@
                       </button>
                     </td>
                   </tr>
-                </template>
                 </template>
               </template>
             </tbody>
@@ -479,17 +483,6 @@ const groupedProducts = computed(() => {
       };
     });
 });
-
-const openCategories = ref<Set<string>>(new Set());
-
-const isCategoryOpen = (name: string) => openCategories.value.has(name);
-
-const toggleCategory = (name: string) => {
-  const next = new Set(openCategories.value);
-  if (next.has(name)) next.delete(name);
-  else next.add(name);
-  openCategories.value = next;
-};
 
 const hasFilters = computed(() =>
   Boolean(search.value || categoryFilter.value || stockFilter.value),
@@ -770,6 +763,35 @@ const deleteProduct = async (product: Product) => {
   } finally {
     deletingId.value = null;
   }
+};
+
+const imageMigrationBusy = ref(false);
+const imageScan = ref<any>(null);
+const imageMigrationResult = ref<any>(null);
+
+const scanExternalImages = async () => {
+  imageMigrationBusy.value = true;
+  errorMessage.value = "";
+  imageMigrationResult.value = null;
+  try {
+    imageScan.value = await adminFetch("/api/admin/products/localise-images", { method: "POST", body: { dry_run: true } });
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to scan external product images";
+  } finally { imageMigrationBusy.value = false; }
+};
+
+const migrateExternalImages = async () => {
+  if (!imageScan.value?.images) return;
+  if (!confirm(`Copy ${imageScan.value.images} external product images into Supabase? Existing Supabase images will be kept.`)) return;
+  imageMigrationBusy.value = true;
+  errorMessage.value = "";
+  try {
+    imageMigrationResult.value = await adminFetch("/api/admin/products/localise-images", { method: "POST", body: {} });
+    await loadProducts();
+    await scanExternalImages();
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to copy external product images";
+  } finally { imageMigrationBusy.value = false; }
 };
 
 onMounted(async () => {
