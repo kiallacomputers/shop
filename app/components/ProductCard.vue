@@ -47,7 +47,7 @@
           <span v-if="product.has_variants && variantStock > 0" class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ variantStock }} across options</span>
           <span v-else-if="product.has_variants" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>
           <span v-else-if="Number(product.stock) > 0" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">In stock</span>
-          <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">On back order — due 3–4 days</span>
+          <span v-else class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{{ supplierBackorderText }}</span>
         </div>
         <NuxtLink :to="`/product/${product.slug}`" class="mt-4 flex min-h-[46px] w-full items-center justify-center rounded-xl bg-[#2367d1] px-4 py-3 text-sm font-black text-white hover:bg-[#194fa8] transition">View product</NuxtLink>
       </div>
@@ -98,6 +98,16 @@ const hasCustomerDiscount = computed(() =>
   displayPrice.value > 0 &&
   standardDisplayPrice.value > displayPrice.value
 );
+const leaderVicStock = computed(() => Math.max(0, Number(props.product?.leader_stock_vic || 0)));
+const leaderOtherStock = computed(() =>
+  ["leader_stock_nsw","leader_stock_qld","leader_stock_sa","leader_stock_wa"]
+    .reduce((sum, key) => sum + Math.max(0, Number(props.product?.[key] || 0)), 0)
+);
+const supplierBackorderText = computed(() => {
+  if (leaderVicStock.value > 0) return "On back order — usually 2–3 business days";
+  if (leaderOtherStock.value > 0) return "On back order — usually 4–7 business days";
+  return "On back order — contact us for ETA";
+});
 const variantStock = computed(() => variantRows.value.reduce((sum, v) => sum + Math.max(0, Number(v.stock || 0)), 0));
 const images = computed(() => {
   if (!props.product?.images) return [];

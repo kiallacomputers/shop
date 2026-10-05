@@ -73,6 +73,18 @@ export default defineEventHandler(async(event)=>{
     try{
       const remote=await leaderProduct(String(link.supplier_sku));
       if(!remote) return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"not_found"};
+      // Persist supplier warehouse availability separately from Kialla physical stock.
+      // A successful Leader lookup refreshes all five warehouses, including zeros.
+      const {error:stockSaveError}=await s.from("products").update({
+        leader_stock_vic:Math.max(0,Number(remote.byState.VIC||0)),
+        leader_stock_nsw:Math.max(0,Number(remote.byState.NSW||0)),
+        leader_stock_qld:Math.max(0,Number(remote.byState.QLD||0)),
+        leader_stock_sa:Math.max(0,Number(remote.byState.SA||0)),
+        leader_stock_wa:Math.max(0,Number(remote.byState.WA||0)),
+        leader_stock_updated_at:new Date().toISOString()
+      }).eq("id",link.product_id);
+      if(stockSaveError) throw new Error(`Unable to save Leader warehouse stock: ${stockSaveError.message}`);
+
       const currentBuy=Number(link.buy_price_ex_gst??p?.buy_price_ex_gst??0), currentSell=Number(p?.price||0);
       const newBuy=remote.buy, delta=Math.round((newBuy-currentBuy)*100)/100, deltaPct=currentBuy>0?Math.round((delta/currentBuy)*10000)/100:0;
       const sellEx=currentSell/1.1, proposedMargin=sellEx>0?Math.round(((sellEx-newBuy)/sellEx)*10000)/100:0;

@@ -21,7 +21,7 @@
           <template v-if="r.status==='ok'">
             <td class="p-4 text-right">{{money(r.current_buy)}}</td><td class="p-4 text-right font-bold">{{money(r.supplier_buy)}}</td>
             <td class="p-4 text-right"><span :class="r.delta>0?'text-red-600':r.delta<0?'text-emerald-600':'text-slate-500'" class="font-bold">{{signedMoney(r.delta)}} <small>({{signed(r.delta_percent)}}%)</small></span></td>
-            <td class="p-4 text-center"><span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="r.supplier_stock>0?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-700'">{{r.supplier_stock}}</span><p class="mt-1 text-[10px] text-slate-400">VIC {{r.stock_by_state?.VIC||0}}</p></td>
+            <td class="p-4 text-center"><span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="r.supplier_stock>0?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-700'">{{r.supplier_stock}}</span><p class="mt-1 whitespace-nowrap text-[10px] text-slate-400">VIC {{r.stock_by_state?.VIC||0}} · NSW {{r.stock_by_state?.NSW||0}} · QLD {{r.stock_by_state?.QLD||0}} · SA {{r.stock_by_state?.SA||0}} · WA {{r.stock_by_state?.WA||0}}</p></td>
             <td class="p-4 text-right"><span class="font-black" :class="r.proposed_margin<10?'text-red-600':r.proposed_margin<20?'text-amber-600':'text-emerald-700'">{{r.proposed_margin.toFixed(1)}}%</span></td>
             <td class="p-4 text-right"><button v-if="r.changed" class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50" :disabled="applying===r.product_id" @click="openApply(r)">Review & Apply</button><span v-else class="text-xs font-bold text-emerald-600">Up to date</span></td>
           </template><td v-else colspan="6" class="p-4 text-red-600">Unable to sync</td>

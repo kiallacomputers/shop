@@ -167,7 +167,7 @@
                     class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 ring-1 ring-inset ring-amber-200"
                   >
                     <span class="h-2 w-2 rounded-full bg-amber-500"></span>
-                    On back order — due 3–4 days
+                    {{ supplierBackorderText }}
                   </div>
                 </div>
 
@@ -599,6 +599,16 @@ const toggleAddon = (group:any, option:any) => {
 };
 
 const effectiveOldPrice = computed(() => Number(selectedVariant.value?.old_price ?? product.value?.old_price ?? product.value?.oldPrice ?? 0));
+const leaderVicStock = computed(() => Math.max(0, Number(product.value?.leader_stock_vic || 0)));
+const leaderOtherStock = computed(() =>
+  ["leader_stock_nsw","leader_stock_qld","leader_stock_sa","leader_stock_wa"]
+    .reduce((sum, key) => sum + Math.max(0, Number(product.value?.[key] || 0)), 0)
+);
+const supplierBackorderText = computed(() => {
+  if (leaderVicStock.value > 0) return "On back order — usually 2–3 business days";
+  if (leaderOtherStock.value > 0) return "On back order — usually 4–7 business days";
+  return "On back order — contact us for ETA";
+});
 const effectiveStock = computed(() => Number(selectedVariant.value?.stock ?? product.value?.stock ?? 0));
 const addCurrentToCart = () => {
   if (product.value?.has_variants && !selectedVariant.value) return;
@@ -634,7 +644,7 @@ const { data: product } = await useAsyncData(
       .select(
         `
         id, name, slug, product_code, has_variants, brand, gtin, mpn, seo_title, seo_description, blurb, description,
-        price, oldPrice, stock, active, featured, refurbished, images, category_id,
+        price, oldPrice, stock, leader_stock_vic,leader_stock_nsw,leader_stock_qld,leader_stock_sa,leader_stock_wa,leader_stock_updated_at, active, featured, refurbished, images, category_id,
         categories (name, slug),
         product_addon_groups (id,name,selection_type,required,sort_order,active,product_addon_options(id,name,price,sort_order,active)),
         product_variants (id, product_id, name, product_code, gtin, mpn, price, old_price, stock, active, images)
