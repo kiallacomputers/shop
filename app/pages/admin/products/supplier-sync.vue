@@ -39,7 +39,7 @@
   </div></div>
 </template>
 <script setup lang="ts">
-definePageMeta({middleware:'admin'})
+definePageMeta({layout: 'admin', middleware:'admin'})
 const {adminFetch}=useAdminFetch()
 const busy=ref(false), error=ref(''), rows=ref<any[]>([]), summary=ref<any>(null), selected=ref<any>(null), recalculate=ref(false), applying=ref<number|null>(null)
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
