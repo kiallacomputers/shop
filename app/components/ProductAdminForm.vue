@@ -249,17 +249,26 @@
           </label>
         </div>
 
-        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Standard Sell Price</p>
-            <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedSellPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">{{ standardPricingLevelName }} effective markup {{ effectiveStandardMarkupPercent }}% · GST inclusive · rounded to nearest dollar · {{ currency(calculatedSellPriceExGst) }} ex GST before rounding</p>
+        <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-xs font-black uppercase tracking-wide text-blue-700">Pricing Preview</p>
+              <p class="mt-1 text-sm text-slate-600">Live preview from the product buy price and your Standard pricing level.</p>
+            </div>
+            <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-700 shadow-sm">{{ standardPricingLevelName }} {{ effectiveStandardMarkupPercent }}%</span>
           </div>
-
-          <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p class="text-xs font-bold uppercase tracking-wide text-slate-600">Calculated RRP</p>
-            <p class="mt-1 text-2xl font-bold text-slate-900">{{ currency(calculatedRrpPrice) }}</p>
-            <p class="mt-1 text-xs text-slate-600">GST inclusive · rounded to nearest dollar · {{ currency(calculatedRrpPriceExGst) }} ex GST before rounding</p>
+          <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-6">
+            <div class="pricing-preview-card"><span>Buy ex GST</span><strong>{{ currency(numeric(form.buy_price_ex_gst)) }}</strong></div>
+            <div class="pricing-preview-card"><span>Sell ex GST</span><strong>{{ currency(calculatedSellPriceExGst) }}</strong></div>
+            <div class="pricing-preview-card"><span>Sell inc GST</span><strong>{{ currency(calculatedSellPrice) }}</strong></div>
+            <div class="pricing-preview-card"><span>RRP inc GST</span><strong>{{ currency(calculatedRrpPrice) }}</strong></div>
+            <div class="pricing-preview-card"><span>Gross Profit</span><strong>{{ currency(calculatedGrossProfit) }}</strong></div>
+            <div class="pricing-preview-card"><span>Margin</span><strong>{{ calculatedGrossMargin.toFixed(1) }}%</strong></div>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
+            <span>RRP ex GST: <b class="text-slate-700">{{ currency(calculatedRrpPriceExGst) }}</b></span>
+            <span>RRP markup: <b class="text-slate-700">{{ numeric(form.rrp_markup_percent) }}%</b></span>
+            <span>Final GST-inclusive prices use the existing store rounding rule.</span>
           </div>
         </div>
 
@@ -726,6 +735,13 @@ const effectiveLevelPercent = (level:any) => roundMoney(Number(level?.markup_per
 const levelCustomerPrice = (level:any) => roundToNearestFive(numeric(form.buy_price_ex_gst) * (1 + effectiveLevelPercent(level) / 100) * 1.1);
 const signedPercent = (value:number) => `${value > 0 ? "+" : ""}${roundMoney(value)}%`;
 const calculatedSellPrice = computed(() => roundToNearestFive(calculatedSellPriceExGst.value * 1.1));
+const calculatedGrossProfit = computed(() =>
+  roundMoney((calculatedSellPrice.value / 1.1) - numeric(form.buy_price_ex_gst)),
+);
+const calculatedGrossMargin = computed(() => {
+  const sellEx = calculatedSellPrice.value / 1.1;
+  return sellEx > 0 ? Math.max(0, roundMoney((calculatedGrossProfit.value / sellEx) * 100)) : 0;
+});
 const calculatedRrpPriceExGst = computed(() =>
   roundMoney(numeric(form.buy_price_ex_gst) * (1 + numeric(form.rrp_markup_percent) / 100)),
 );
@@ -1079,4 +1095,7 @@ onMounted(loadForm);
 
 <style scoped>
 .product-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1.5rem;align-items:start}.product-editor{min-width:0;display:flex;flex-direction:column;gap:1.5rem}.product-nav{position:sticky;top:6rem}.product-nav-card{border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:1rem;box-shadow:0 1px 2px rgb(15 23 42/.05)}.product-nav-kicker{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;font-weight:800;color:#64748b}.product-nav-name{margin-top:.35rem;font-weight:800;color:#0f172a;line-height:1.25}.product-nav-status{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.7rem}.product-nav-status span{font-size:.68rem;font-weight:800;padding:.25rem .45rem;border-radius:999px;background:#f1f5f9;color:#475569}.product-nav-status .is-live{background:#dcfce7;color:#166534}.product-nav-status .is-off{background:#fee2e2;color:#991b1b}.product-nav-links{display:grid;gap:.2rem;margin-top:1rem;padding-top:.75rem;border-top:1px solid #e2e8f0}.product-nav-links a,.product-nav-tools a{display:block;border-radius:.55rem;padding:.55rem .65rem;font-size:.82rem;font-weight:700;color:#475569;text-decoration:none}.product-nav-links a:hover,.product-nav-tools a:hover{background:#eff6ff;color:#1d4ed8}.product-nav-tools{display:grid;gap:.2rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid #e2e8f0}.product-section{scroll-margin-top:7rem}@media(max-width:1023px){.product-workspace{grid-template-columns:1fr}.product-nav{position:static}.product-nav-links{grid-template-columns:repeat(3,minmax(0,1fr))}.product-nav-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.product-nav-links,.product-nav-tools{grid-template-columns:1fr 1fr}}
+.pricing-preview-card{@apply rounded-lg border border-slate-200 bg-white p-3}
+.pricing-preview-card span{@apply block text-[11px] font-bold uppercase tracking-wide text-slate-500}
+.pricing-preview-card strong{@apply mt-1 block text-lg font-black text-slate-900}
 </style>
