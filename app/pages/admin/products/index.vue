@@ -15,6 +15,7 @@
 
         <div class="flex flex-wrap gap-2">
           <NuxtLink to="/admin/products/supplier-sync" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Supplier Sync</NuxtLink>
+          <NuxtLink to="/admin/products/import-leader-category" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import Leader Category</NuxtLink>
           <NuxtLink to="/admin/products/import-supplier-url" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import from Supplier URL</NuxtLink>
         </div>
         <NuxtLink to="/admin/products/new"
