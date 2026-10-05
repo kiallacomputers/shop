@@ -13,7 +13,10 @@
           <p class="mt-1 text-slate-500">Add, edit and manage products in your store.</p>
         </div>
 
-        <NuxtLink to="/admin/products/import-supplier-url" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import from Supplier URL</NuxtLink>
+        <div class="flex flex-wrap gap-2">
+          <NuxtLink to="/admin/products/supplier-sync" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Supplier Sync</NuxtLink>
+          <NuxtLink to="/admin/products/import-supplier-url" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Import from Supplier URL</NuxtLink>
+        </div>
         <NuxtLink to="/admin/products/new"
           class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700 transition">
           <span class="text-xl leading-none">+</span> Add Product
