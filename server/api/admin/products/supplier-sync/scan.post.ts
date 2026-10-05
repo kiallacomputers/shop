@@ -26,11 +26,41 @@ export default defineEventHandler(async(event)=>{
   const body=await readBody(event);
   const ids=Array.isArray(body?.product_ids)?body.product_ids.map(Number).filter(Boolean):[];
   const s=getAdminSupabase();
-  let q=s.from("accounting_product_suppliers").select("id,product_id,supplier_id,supplier_sku,buy_price_ex_gst,is_primary,accounting_suppliers(id,name),products(id,name,product_code,buy_price_ex_gst,price,oldPrice,rrp_markup_percent,active)").eq("is_primary",true);
+  // Load supplier links first, then suppliers/products separately. This avoids
+  // PostgREST relationship/foreign-key ambiguity causing the whole scan to 500.
+  let q=s.from("accounting_product_suppliers")
+    .select("id,product_id,supplier_id,supplier_sku,buy_price_ex_gst,is_primary")
+    .eq("is_primary",true);
   if(ids.length) q=q.in("product_id",ids);
-  const {data,error}=await q;
-  if(error) throw createError({statusCode:500,statusMessage:error.message});
-  const links=(data||[]).filter((x:any)=>/leader/i.test(String(x.accounting_suppliers?.name||""))&&String(x.supplier_sku||"").trim());
+  const {data:linkRows,error:linkError}=await q;
+  if(linkError) throw createError({statusCode:500,statusMessage:`Unable to load product supplier links: ${linkError.message}`});
+
+  const rawLinks=linkRows||[];
+  const supplierIds=[...new Set(rawLinks.map((x:any)=>Number(x.supplier_id)).filter(Boolean))];
+  const productIds=[...new Set(rawLinks.map((x:any)=>Number(x.product_id)).filter(Boolean))];
+
+  const supplierMap=new Map<number,any>();
+  if(supplierIds.length){
+    const {data:suppliers,error:supplierError}=await s.from("accounting_suppliers").select("id,name").in("id",supplierIds);
+    if(supplierError) throw createError({statusCode:500,statusMessage:`Unable to load suppliers: ${supplierError.message}`});
+    for(const row of suppliers||[]) supplierMap.set(Number(row.id),row);
+  }
+
+  const productMap=new Map<number,any>();
+  if(productIds.length){
+    // Only request columns needed by this screen. Keeping this list conservative
+    // also makes the sync compatible with older product-table migrations.
+    const {data:products,error:productError}=await s.from("products")
+      .select("id,name,product_code,buy_price_ex_gst,price")
+      .in("id",productIds);
+    if(productError) throw createError({statusCode:500,statusMessage:`Unable to load products: ${productError.message}`});
+    for(const row of products||[]) productMap.set(Number(row.id),row);
+  }
+
+  const links=rawLinks
+    .map((x:any)=>({...x,accounting_suppliers:supplierMap.get(Number(x.supplier_id)),products:productMap.get(Number(x.product_id))}))
+    .filter((x:any)=>/leader/i.test(String(x.accounting_suppliers?.name||""))&&String(x.supplier_sku||"").trim());
+
   const results:any[]=[];
   for(const link of links){
     const p:any=link.products;
