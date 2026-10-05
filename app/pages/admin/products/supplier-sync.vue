@@ -4,13 +4,13 @@
       <div><NuxtLink to="/admin/products" class="text-sm font-semibold text-blue-600">← Manage Products</NuxtLink>
         <h1 class="mt-3 text-3xl font-bold text-slate-900">Supplier Price & Stock Sync</h1>
         <p class="mt-1 text-slate-500">Check Leader against your primary supplier records. Nothing changes until you approve it.</p></div>
-      <button class="rounded-lg bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="busy" @click="scan">{{busy?'Checking Leader…':'Sync All Leader Products'}}</button>
+      <button class="rounded-lg bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="busy" @click="scan">{{busy?`Checking Leader… ${summary?.checked||0}/${summary?.total||'?'}`:'Sync All Leader Products'}}</button>
     </div>
     <div v-if="error" class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{{error}}</div>
     <div v-if="summary" class="mb-5 grid gap-3 sm:grid-cols-3">
       <div class="card"><span>Products checked</span><strong>{{summary.checked}}</strong></div>
       <div class="card"><span>Price changes</span><strong>{{summary.changed}}</strong></div>
-      <div class="card"><span>Unchanged</span><strong>{{summary.checked-summary.changed}}</strong></div>
+      <div class="card"><span>Unchanged</span><strong>{{Math.max(0,summary.checked-summary.changed)}}</strong></div>
     </div>
     <div v-if="rows.length" class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
       <table class="min-w-[1100px] w-full text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr>
@@ -45,7 +45,22 @@ const busy=ref(false), error=ref(''), rows=ref<any[]>([]), summary=ref<any>(null
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0))
 const signedMoney=(v:any)=>(Number(v)>0?'+':'')+money(v)
 const signed=(v:any)=>(Number(v)>0?'+':'')+Number(v||0).toFixed(2)
-async function scan(){busy.value=true;error.value='';try{const r:any=await adminFetch('/api/admin/products/supplier-sync/scan',{method:'POST',body:{}});summary.value=r;rows.value=(r.results||[]).sort((a:any,b:any)=>Number(b.changed)-Number(a.changed)||Math.abs(Number(b.delta||0))-Math.abs(Number(a.delta||0)))}catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||'Unable to sync supplier products'}finally{busy.value=false}}
+async function scan(){
+  busy.value=true;error.value='';rows.value=[];summary.value={checked:0,changed:0,total:0}
+  try{
+    let offset=0
+    do{
+      const r:any=await adminFetch('/api/admin/products/supplier-sync/scan',{method:'POST',body:{offset,limit:6}})
+      summary.value.total=Number(r.total||0)
+      summary.value.checked+=Number(r.checked||0)
+      summary.value.changed+=Number(r.changed||0)
+      rows.value=[...rows.value,...(r.results||[])].sort((a:any,b:any)=>Number(b.changed)-Number(a.changed)||Math.abs(Number(b.delta||0))-Math.abs(Number(a.delta||0)))
+      if(r.next_offset===null||r.next_offset===undefined)break
+      offset=Number(r.next_offset)
+    }while(true)
+  }catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||'Unable to sync supplier products'}
+  finally{busy.value=false}
+}
 function openApply(r:any){selected.value=r;recalculate.value=false}
 async function applyChange(){if(!selected.value)return;applying.value=selected.value.product_id;try{await adminFetch('/api/admin/products/supplier-sync/apply',{method:'POST',body:{product_id:selected.value.product_id,link_id:selected.value.link_id,buy_price_ex_gst:selected.value.supplier_buy,recalculate:recalculate.value}});selected.value=null;await scan()}catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to apply supplier update'}finally{applying.value=null}}
 </script>
