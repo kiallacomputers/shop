@@ -480,14 +480,24 @@
             <p class="mt-1">JPG, PNG, WEBP or GIF. You can select multiple files at once.</p>
           </div>
 
-          <button
-            type="button"
-            :disabled="uploadingImages"
-            class="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            @click="fileInput?.click()"
-          >
-            {{ uploadingImages ? "Uploading..." : "Select Images" }}
-          </button>
+          <div class="mt-4 flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              :disabled="uploadingImages"
+              class="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              @click="fileInput?.click()"
+            >
+              {{ uploadingImages ? "Uploading..." : "Upload New Images" }}
+            </button>
+            <button
+              type="button"
+              :disabled="uploadingImages"
+              class="rounded-lg border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              @click="openImageLibrary"
+            >
+              Choose from Image Library
+            </button>
+          </div>
         </div>
 
         <div v-if="uploadError" class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -585,6 +595,72 @@
         </div>
       </section>
 
+      <Teleport to="body">
+        <div v-if="imageLibraryOpen" class="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/60 p-4" @click.self="closeImageLibrary">
+          <div class="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 class="text-lg font-bold text-slate-900">Supabase Product Image Library</h3>
+                <p class="text-sm text-slate-500">Reuse images already stored in the <strong>products</strong> bucket. No duplicate file is uploaded.</p>
+              </div>
+              <button type="button" class="rounded-lg px-3 py-2 text-xl font-bold text-slate-500 hover:bg-slate-100" @click="closeImageLibrary">×</button>
+            </div>
+            <div class="border-b border-slate-200 bg-slate-50 px-5 py-3">
+              <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+                  <button type="button" class="font-semibold text-blue-700 hover:underline" @click="browseImageFolder('')">products</button>
+                  <template v-for="crumb in imageLibraryBreadcrumbs" :key="crumb.path">
+                    <span class="text-slate-400">/</span>
+                    <button type="button" class="max-w-48 truncate font-semibold text-blue-700 hover:underline" @click="browseImageFolder(crumb.path)">{{ crumb.name }}</button>
+                  </template>
+                </div>
+                <div class="flex w-full gap-2 lg:w-auto">
+                  <input v-model.trim="imageLibrarySearch" type="search" class="input min-w-0 lg:w-72" placeholder="Search this folder..." @keyup.enter="loadImageLibrary" />
+                  <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-white" @click="loadImageLibrary">Search</button>
+                </div>
+              </div>
+            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <div v-if="imageLibraryLoading" class="py-16 text-center text-slate-500">Loading image library...</div>
+              <div v-else-if="imageLibraryError" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{{ imageLibraryError }}</div>
+              <div v-else>
+                <div v-if="imageLibraryFolders.length" class="mb-5">
+                  <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Folders</p>
+                  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                    <button v-for="folder in imageLibraryFolders" :key="folder.path" type="button" class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left hover:border-blue-300 hover:bg-blue-50" @click="browseImageFolder(folder.path)">
+                      <div class="text-2xl">📁</div>
+                      <div class="mt-2 truncate text-sm font-semibold text-slate-800" :title="folder.name">{{ folder.name }}</div>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="imageLibraryFiles.length">
+                  <p class="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Images</p>
+                  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                    <button v-for="file in imageLibraryFiles" :key="file.path" type="button" class="relative overflow-hidden rounded-xl border bg-white text-left transition" :class="imageLibrarySelected.includes(file.url) ? 'border-blue-600 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'" @click="toggleLibraryImage(file.url)">
+                      <div class="aspect-square bg-slate-50"><img :src="file.url" :alt="file.name" class="h-full w-full object-contain p-2" loading="lazy" /></div>
+                      <div class="border-t border-slate-200 px-2 py-2"><div class="truncate text-xs font-semibold text-slate-700" :title="file.name">{{ file.name }}</div></div>
+                      <span v-if="imageLibrarySelected.includes(file.url)" class="absolute right-2 top-2 rounded-full bg-blue-600 px-2 py-1 text-xs font-bold text-white shadow">✓</span>
+                      <span v-else-if="imageUrls.includes(file.url)" class="absolute right-2 top-2 rounded-full bg-slate-700 px-2 py-1 text-[10px] font-bold text-white shadow">USED</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-if="!imageLibraryFolders.length && !imageLibraryFiles.length" class="py-16 text-center text-slate-500">No images found in this folder.</div>
+                <div v-if="imageLibraryHasMore" class="mt-5 text-center">
+                  <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50" @click="loadMoreLibraryImages">Load More</button>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="text-sm text-slate-600">{{ imageLibrarySelected.length }} selected <span v-if="imageLibrarySelected.some((url) => imageUrls.includes(url))"> · already-used images will be ignored</span></div>
+              <div class="flex justify-end gap-2">
+                <button type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50" @click="closeImageLibrary">Cancel</button>
+                <button type="button" :disabled="!imageLibrarySelected.length" class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50" @click="addSelectedLibraryImages">Add Selected Images</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
       <section id="product-description" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Product Description</h2>
         <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
@@ -648,6 +724,16 @@ const uploadProgress = ref(0);
 const uploadError = ref("");
 const draggedImageIndex = ref<number | null>(null);
 const dragOverImageIndex = ref<number | null>(null);
+const imageLibraryOpen = ref(false);
+const imageLibraryLoading = ref(false);
+const imageLibraryError = ref("");
+const imageLibraryPath = ref("");
+const imageLibrarySearch = ref("");
+const imageLibraryFolders = ref<Array<{ name: string; path: string }>>([]);
+const imageLibraryFiles = ref<Array<{ name: string; path: string; url: string; size?: number | null }>>([]);
+const imageLibrarySelected = ref<string[]>([]);
+const imageLibraryOffset = ref(0);
+const imageLibraryHasMore = ref(false);
 const descriptionBlocks = ref<any[]>([]);
 const standardMarkupPercent = ref(20);
 const standardPricingLevelName = ref("Standard");
@@ -801,6 +887,48 @@ const addRelatedProduct = (id: number) => {
 };
 const removeRelatedProduct = (id: number) => {
   relatedProductIds.value = relatedProductIds.value.filter((item) => item !== id);
+};
+
+const imageLibraryBreadcrumbs = computed(() => {
+  const parts = imageLibraryPath.value.split("/").filter(Boolean);
+  return parts.map((name, index) => ({ name, path: parts.slice(0, index + 1).join("/") }));
+});
+
+const fetchImageLibraryPage = async (append = false) => {
+  imageLibraryLoading.value = true;
+  imageLibraryError.value = "";
+  try {
+    const offset = append ? imageLibraryOffset.value : 0;
+    const query = new URLSearchParams({ path: imageLibraryPath.value, search: imageLibrarySearch.value, offset: String(offset), limit: "60" });
+    const result = await adminFetch<{ folders: Array<{ name: string; path: string }>; files: Array<{ name: string; path: string; url: string; size?: number | null }>; has_more: boolean; next_offset: number }>(`/api/admin/products/image-library?${query.toString()}`);
+    if (append) {
+      const folderPaths = new Set(imageLibraryFolders.value.map((x) => x.path));
+      imageLibraryFolders.value.push(...(result.folders || []).filter((x) => !folderPaths.has(x.path)));
+      const filePaths = new Set(imageLibraryFiles.value.map((x) => x.path));
+      imageLibraryFiles.value.push(...(result.files || []).filter((x) => !filePaths.has(x.path)));
+    } else {
+      imageLibraryFolders.value = result.folders || [];
+      imageLibraryFiles.value = result.files || [];
+    }
+    imageLibraryHasMore.value = Boolean(result.has_more);
+    imageLibraryOffset.value = Number(result.next_offset || 0);
+  } catch (error: any) {
+    imageLibraryError.value = error?.data?.statusMessage || error?.statusMessage || error?.message || "Unable to load the Supabase image library.";
+  } finally { imageLibraryLoading.value = false; }
+};
+const loadImageLibrary = async () => { imageLibraryOffset.value = 0; await fetchImageLibraryPage(false); };
+const loadMoreLibraryImages = async () => { if (!imageLibraryLoading.value && imageLibraryHasMore.value) await fetchImageLibraryPage(true); };
+const browseImageFolder = async (path: string) => { imageLibraryPath.value = path; imageLibrarySearch.value = ""; await loadImageLibrary(); };
+const openImageLibrary = async () => { imageLibraryOpen.value = true; imageLibrarySelected.value = []; imageLibraryPath.value = ""; imageLibrarySearch.value = ""; await loadImageLibrary(); };
+const closeImageLibrary = () => { imageLibraryOpen.value = false; };
+const toggleLibraryImage = (url: string) => {
+  const index = imageLibrarySelected.value.indexOf(url);
+  if (index >= 0) imageLibrarySelected.value.splice(index, 1); else imageLibrarySelected.value.push(url);
+};
+const addSelectedLibraryImages = () => {
+  const existing = new Set(imageUrls.value);
+  for (const url of imageLibrarySelected.value) if (!existing.has(url)) { imageUrls.value.push(url); existing.add(url); }
+  closeImageLibrary();
 };
 
 const handleImageSelection = async (event: Event) => {
