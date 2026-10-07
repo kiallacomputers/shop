@@ -1,6 +1,6 @@
 <template>
   <div class="admin-page">
-    <div class="admin-page-inner w-full max-w-[1900px]">
+    <div class="admin-page-inner w-full max-w-none">
       <div class="mb-8 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <NuxtLink
@@ -161,18 +161,18 @@
         </div>
 
         <div class="hidden overflow-x-auto lg:block">
-          <table class="admin-data-table admin-data-table-compact w-full min-w-[1280px]">
+          <table class="admin-data-table admin-data-table-compact w-full table-fixed">
             <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
-                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
-                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
-                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">RRP</th>
-                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">RRP %</th>
-                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Pricing Override</th>
-                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
-                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
-                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Actions</th>
+                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500" style="width:31%">Product</th>
+                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500" style="width:13%">Category</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500" style="width:8%">Price</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500" style="width:8%">RRP</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500" style="width:7%">RRP %</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500" style="width:15%">Pricing Override</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500" style="width:6%">Stock</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500" style="width:7%">Status</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500" style="width:5%">Actions</th>
               </tr>
             </thead>
 
@@ -210,8 +210,8 @@
                           </div>
                         </div>
                         <div class="min-w-0">
-                          <p class="font-semibold text-slate-900 truncate" :title="product.name">{{ product.name }}</p>
-                          <p v-if="product.slug" class="mt-1 text-xs text-slate-400 truncate">/{{ product.slug }}</p>
+                          <p class="font-semibold leading-snug text-slate-900" :title="product.name">{{ product.name }}</p>
+                          <p v-if="product.slug" class="mt-1 break-all text-xs text-slate-400">/{{ product.slug }}</p>
                           <p v-if="product.product_code" class="mt-1 text-xs font-semibold text-slate-500">Code: {{ product.product_code }}</p>
                           <div class="mt-2 flex flex-wrap gap-1.5">
                             <span v-if="product.featured"
@@ -223,16 +223,16 @@
                       </div>
                     </td>
 
-                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-slate-600 break-words">
                       {{ product.categories?.name || "Uncategorised" }}
                     </td>
                     <td class="px-3 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">
                       {{ currency(product.price) }}
                     </td>
-                    <td class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-right font-semibold text-slate-600 break-words">
                       {{ currency(calculatedProductRrp(product)) }}
                     </td>
-                    <td class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-center font-semibold text-slate-600 break-words">
                       {{ Number(product.rrp_markup_percent || 0) }}%
                     </td>
                     <td class="px-3 py-3 text-center whitespace-nowrap">
