@@ -51,7 +51,7 @@ export default defineEventHandler(async(event)=>{
     // Only request columns needed by this screen. Keeping this list conservative
     // also makes the sync compatible with older product-table migrations.
     const {data:products,error:productError}=await s.from("products")
-      .select("id,name,product_code,buy_price_ex_gst,price")
+      .select("id,name,product_code,buy_price_ex_gst,price,oldPrice")
       .in("id",productIds);
     if(productError) throw createError({statusCode:500,statusMessage:`Unable to load products: ${productError.message}`});
     for(const row of products||[]) productMap.set(Number(row.id),row);
@@ -97,7 +97,7 @@ export default defineEventHandler(async(event)=>{
       const sellEx=currentSell/1.1, proposedMargin=sellEx>0?Math.round(((sellEx-newBuy)/sellEx)*10000)/100:0;
       const review=reviewMap.get(Number(link.product_id));
       const ignored=Boolean(review&&Number(review.supplier_link_id)===Number(link.id)&&Math.abs(Number(review.supplier_buy_price)-newBuy)<0.005);
-      return {product_id:link.product_id,link_id:link.id,name:p?.name,sku:link.supplier_sku,current_buy:currentBuy,supplier_buy:newBuy,delta,delta_percent:deltaPct,current_sell:currentSell,supplier_rrp:remote.rrp,supplier_stock:remote.stock,stock_by_state:remote.byState,proposed_margin:proposedMargin,changed:Math.abs(delta)>=0.01,ignored,status:"ok"};
+      return {product_id:link.product_id,link_id:link.id,name:p?.name,sku:link.supplier_sku,current_buy:currentBuy,supplier_buy:newBuy,delta,delta_percent:deltaPct,current_sell:currentSell,current_rrp:Number(p?.oldPrice||0),supplier_rrp:remote.rrp,supplier_stock:remote.stock,stock_by_state:remote.byState,proposed_margin:proposedMargin,changed:Math.abs(delta)>=0.01,ignored,status:"ok"};
     }catch(e:any){
       return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"error",error:e?.statusMessage||e?.message||"Sync failed"};
     }
