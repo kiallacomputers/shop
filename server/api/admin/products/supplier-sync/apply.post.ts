@@ -22,5 +22,6 @@ export default defineEventHandler(async(event)=>{
   if(e1) throw createError({statusCode:500,statusMessage:e1.message});
   const {error:e2}=await s.from("accounting_product_suppliers").update({buy_price_ex_gst:money(newBuy),updated_at:new Date().toISOString()}).eq("id",linkId);
   if(e2) throw createError({statusCode:500,statusMessage:e2.message});
+  await s.from("supplier_price_change_reviews").delete().eq("product_id",productId).eq("supplier_link_id",linkId);
   return {ok:true,recalculated:recalculate};
 });
