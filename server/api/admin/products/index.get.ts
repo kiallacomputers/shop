@@ -14,6 +14,12 @@ export default defineEventHandler(async (event) => {
         name,
         slug,
         parent_id
+      ),
+      product_variants (
+        id,
+        name,
+        product_code,
+        active
       )
     `)
     .order("name", { ascending: true });

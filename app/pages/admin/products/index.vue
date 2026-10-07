@@ -28,7 +28,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">Search Products</label>
-            <input v-model="search" type="text" placeholder="Search by product name..."
+            <input v-model="search" type="text" placeholder="Search by product name or product code..."
               class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
           </div>
 
@@ -417,6 +417,13 @@ type Product = {
   id: string | number;
   name: string;
   slug?: string | null;
+  product_code?: string | null;
+  product_variants?: Array<{
+    id: string | number;
+    name?: string | null;
+    product_code?: string | null;
+    active?: boolean | null;
+  }> | null;
   category_id?: string | number | null;
   price?: number | string | null;
   buy_price_ex_gst?: number | string | null;
@@ -499,8 +506,15 @@ const filteredProducts = computed(() => {
     const main = mainCategoryFor(category);
 
     if (term) {
-      const text = [product.name, product.slug, product.product_code, category?.name, main?.name]
-        .filter(Boolean).join(" ").toLowerCase();
+      const variationSearch = (product.product_variants || [])
+        .flatMap((variant) => [variant.name, variant.product_code])
+        .filter(Boolean);
+
+      const text = [
+        product.name,
+        product.product_code,
+        ...variationSearch,
+      ].filter(Boolean).join(" ").toLowerCase();
       if (!text.includes(term)) return false;
     }
 
