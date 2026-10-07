@@ -51,12 +51,18 @@ export default defineEventHandler(async(event)=>{
     // Only request columns needed by this screen. Keeping this list conservative
     // also makes the sync compatible with older product-table migrations.
     const {data:products,error:productError}=await s.from("products")
-      .select("id,name,product_code,buy_price_ex_gst,price,oldPrice")
+      .select("id,name,product_code,buy_price_ex_gst,price,oldPrice,has_variants")
       .in("id",productIds);
     if(productError) throw createError({statusCode:500,statusMessage:`Unable to load products: ${productError.message}`});
     for(const row of products||[]) productMap.set(Number(row.id),row);
   }
 
+  const variantMap=new Map<number,any[]>();
+  if(productIds.length){
+    const {data:variants,error:variantError}=await s.from("product_variants").select("id,product_id,name,product_code,buy_price_ex_gst,price,old_price,active").in("product_id",productIds).eq("active",true);
+    if(variantError) throw createError({statusCode:500,statusMessage:`Unable to load product variations: ${variantError.message}`});
+    for(const v of variants||[]){const a=variantMap.get(Number(v.product_id))||[];a.push(v);variantMap.set(Number(v.product_id),a);}
+  }
   const links=rawLinks
     .map((x:any)=>({...x,accounting_suppliers:supplierMap.get(Number(x.supplier_id)),products:productMap.get(Number(x.product_id))}))
     .filter((x:any)=>/leader/i.test(String(x.accounting_suppliers?.name||""))&&String(x.supplier_sku||"").trim());
@@ -73,31 +79,26 @@ export default defineEventHandler(async(event)=>{
   // sequentially. The UI automatically requests the next page.
   const requestedOffset=Math.max(0,Number(body?.offset)||0);
   const requestedLimit=Math.min(6,Math.max(1,Number(body?.limit)||6));
-  const batch=links.slice(requestedOffset,requestedOffset+requestedLimit);
+  const syncItems:any[]=[];for(const link of links){const p:any=link.products;syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
+  const batch=syncItems.slice(requestedOffset,requestedOffset+requestedLimit);
 
   const results=await Promise.all(batch.map(async(link:any)=>{
     const p:any=link.products;
     try{
-      const remote=await leaderProduct(String(link.supplier_sku));
+      const remote=await leaderProduct(String(item.sku));
       if(!remote) return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"not_found"};
       // Persist supplier warehouse availability separately from Kialla physical stock.
       // A successful Leader lookup refreshes all five warehouses, including zeros.
-      const {error:stockSaveError}=await s.from("products").update({
-        leader_stock_vic:Math.max(0,Number(remote.byState.VIC||0)),
-        leader_stock_nsw:Math.max(0,Number(remote.byState.NSW||0)),
-        leader_stock_qld:Math.max(0,Number(remote.byState.QLD||0)),
-        leader_stock_sa:Math.max(0,Number(remote.byState.SA||0)),
-        leader_stock_wa:Math.max(0,Number(remote.byState.WA||0)),
-        leader_stock_updated_at:new Date().toISOString()
-      }).eq("id",link.product_id);
+      const stockPayload={leader_stock_vic:Math.max(0,Number(remote.byState.VIC||0)),leader_stock_nsw:Math.max(0,Number(remote.byState.NSW||0)),leader_stock_qld:Math.max(0,Number(remote.byState.QLD||0)),leader_stock_sa:Math.max(0,Number(remote.byState.SA||0)),leader_stock_wa:Math.max(0,Number(remote.byState.WA||0)),leader_stock_updated_at:new Date().toISOString()};
+      const stockSave=v?await s.from("product_variants").update(stockPayload).eq("id",v.id):await s.from("products").update(stockPayload).eq("id",link.product_id);const stockSaveError=stockSave.error;
       if(stockSaveError) throw new Error(`Unable to save Leader warehouse stock: ${stockSaveError.message}`);
 
-      const currentBuy=Number(link.buy_price_ex_gst??p?.buy_price_ex_gst??0), currentSell=Number(p?.price||0);
+      const currentBuy=Number(v?.buy_price_ex_gst??(v?0:(link.buy_price_ex_gst??p?.buy_price_ex_gst??0))), currentSell=Number(v?.price??p?.price??0), currentRrp=Number(v?.old_price??p?.oldPrice??0);
       const newBuy=remote.buy, delta=Math.round((newBuy-currentBuy)*100)/100, deltaPct=currentBuy>0?Math.round((delta/currentBuy)*10000)/100:0;
       const sellEx=currentSell/1.1, proposedMargin=sellEx>0?Math.round(((sellEx-newBuy)/sellEx)*10000)/100:0;
       const review=reviewMap.get(Number(link.product_id));
       const ignored=Boolean(review&&Number(review.supplier_link_id)===Number(link.id)&&Math.abs(Number(review.supplier_buy_price)-newBuy)<0.005);
-      return {product_id:link.product_id,link_id:link.id,name:p?.name,sku:link.supplier_sku,current_buy:currentBuy,supplier_buy:newBuy,delta,delta_percent:deltaPct,current_sell:currentSell,current_rrp:Number(p?.oldPrice||0),supplier_rrp:remote.rrp,supplier_stock:remote.stock,stock_by_state:remote.byState,proposed_margin:proposedMargin,changed:Math.abs(delta)>=0.01,ignored,status:"ok"};
+      return {row_key:v?`v:${v.id}`:`p:${link.product_id}`,product_id:link.product_id,variant_id:v?.id||null,name:v?`${p?.name} — ${v.name}`:p?.name,variant_name:v?.name||null,sku:item.sku,link_id:link.id,current_buy:currentBuy,current_rrp:currentRrp,supplier_buy:newBuy,delta,delta_percent:deltaPct,current_sell:currentSell,supplier_rrp:remote.rrp,supplier_stock:remote.stock,stock_by_state:remote.byState,proposed_margin:proposedMargin,changed:Math.abs(delta)>=0.01,ignored,status:"ok"};
     }catch(e:any){
       return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"error",error:e?.statusMessage||e?.message||"Sync failed"};
     }
@@ -105,10 +106,10 @@ export default defineEventHandler(async(event)=>{
 
   const nextOffset=requestedOffset+batch.length;
   return {
-    total:links.length,
+    total:syncItems.length,
     offset:requestedOffset,
     processed:batch.length,
-    next_offset:nextOffset<links.length?nextOffset:null,
+    next_offset:nextOffset<syncItems.length?nextOffset:null,
     checked:results.length,
     changed:results.filter((x:any)=>x.changed).length,
     results

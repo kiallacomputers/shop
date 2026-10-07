@@ -1,15 +1,6 @@
-import { getAdminSupabase, requireAdmin } from "~~/server/utils/adminAuth";
-export default defineEventHandler(async(event)=>{
-  await requireAdmin(event);
-  const b=await readBody(event), productId=Number(b?.product_id), linkId=Number(b?.link_id), supplierBuy=Number(b?.supplier_buy), ignored=b?.ignored===true;
-  if(!productId||!linkId||!Number.isFinite(supplierBuy)) throw createError({statusCode:400,statusMessage:"Valid product, supplier link and supplier price are required."});
-  const s=getAdminSupabase();
-  if(!ignored){
-    const {error}=await s.from("supplier_price_change_reviews").delete().eq("product_id",productId).eq("supplier_link_id",linkId);
-    if(error) throw createError({statusCode:500,statusMessage:error.message});
-    return {ok:true,ignored:false};
-  }
-  const {error}=await s.from("supplier_price_change_reviews").upsert({product_id:productId,supplier_link_id:linkId,supplier_buy_price:supplierBuy,status:"ignored",updated_at:new Date().toISOString()},{onConflict:"product_id,supplier_link_id"});
-  if(error) throw createError({statusCode:500,statusMessage:error.message});
-  return {ok:true,ignored:true};
-});
+import {getAdminSupabase,requireAdmin} from "~~/server/utils/adminAuth";
+export default defineEventHandler(async(event)=>{await requireAdmin(event);const b=await readBody(event),productId=Number(b?.product_id),variantId=Number(b?.variant_id||0)||null,linkId=Number(b?.link_id),supplierBuy=Number(b?.supplier_buy),ignored=b?.ignored===true,s=getAdminSupabase();
+if(!productId||!linkId)throw createError({statusCode:400,statusMessage:"Product and supplier link are required."});
+if(variantId){if(!ignored){const{error}=await s.from("supplier_variant_price_change_reviews").delete().eq("variant_id",variantId);if(error)throw createError({statusCode:500,statusMessage:error.message});return{ok:true};}const{error}=await s.from("supplier_variant_price_change_reviews").upsert({product_id:productId,variant_id:variantId,supplier_link_id:linkId,supplier_buy_price:supplierBuy,status:"ignored",updated_at:new Date().toISOString()},{onConflict:"variant_id,supplier_link_id"});if(error)throw createError({statusCode:500,statusMessage:error.message});return{ok:true};}
+if(!ignored){const{error}=await s.from("supplier_price_change_reviews").delete().eq("product_id",productId).eq("supplier_link_id",linkId);if(error)throw createError({statusCode:500,statusMessage:error.message});return{ok:true};}
+const{error}=await s.from("supplier_price_change_reviews").upsert({product_id:productId,supplier_link_id:linkId,supplier_buy_price:supplierBuy,status:"ignored",updated_at:new Date().toISOString()},{onConflict:"product_id,supplier_link_id"});if(error)throw createError({statusCode:500,statusMessage:error.message});return{ok:true};});
