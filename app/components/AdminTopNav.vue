@@ -3,14 +3,14 @@
     <NuxtLink to="/admin" :class="topLink('/admin', true)">Dashboard</NuxtLink>
     <div v-for="group in visibleGroups" :key="group.key" class="relative">
       <button type="button" class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition"
-        :class="groupActive(group) ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-100'"
+        :class="groupActive(group) ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
         @click.stop="openGroup=openGroup===group.key?null:group.key">
         {{ group.title }} <span class="text-xs" :class="openGroup===group.key?'rotate-180':''">⌄</span>
       </button>
-      <div v-if="openGroup===group.key" class="absolute left-0 top-[calc(100%+10px)] z-[100] w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 shadow-2xl">
+      <div v-if="openGroup===group.key" class="absolute left-0 top-[calc(100%+10px)] z-[100] w-64 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl">
         <NuxtLink v-for="item in group.items" :key="item.to" :to="item.to"
           class="block rounded-lg px-3 py-2.5 text-sm font-semibold transition"
-          :class="itemActive(item)?'bg-blue-600 text-white':'text-slate-700 hover:bg-slate-100 hover:text-blue-700'"
+          :class="itemActive(item)?'bg-blue-600 text-white':'text-slate-300 hover:bg-slate-800 hover:text-white'"
           @click="openGroup=null">{{ item.label }}</NuxtLink>
       </div>
     </div>
@@ -37,7 +37,7 @@ const visibleGroups=computed(()=>groups.value.map(g=>({...g,items:g.items.filter
 })})).filter(g=>g.items.length));
 const itemActive=(i:any)=>{const m=i.exact?route.path===i.to:route.path===i.to||route.path.startsWith(i.to+'/');const x=(i.exclude||[]).some((e:string)=>route.path===e||route.path.startsWith(e+'/'));return m&&!x};
 const groupActive=(g:any)=>g.items.some(itemActive);
-const topLink=(path:string,exact=false)=>['rounded-lg px-3 py-2 text-sm font-bold transition',((exact?route.path===path:route.path.startsWith(path))?'bg-blue-600 text-white':'text-slate-700 hover:bg-slate-100')];
+const topLink=(path:string,exact=false)=>['rounded-lg px-3 py-2 text-sm font-bold transition',((exact?route.path===path:route.path.startsWith(path))?'bg-blue-600 text-white':'text-slate-300 hover:bg-slate-800 hover:text-white')];
 watch(()=>route.fullPath,()=>openGroup.value=null);
 onMounted(()=>document.addEventListener('click',()=>openGroup.value=null));
 </script>

@@ -21,11 +21,11 @@
     </Transition>
 
     <div>
-      <header class="sticky top-0 z-40 hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl lg:block">
+      <header class="sticky top-0 z-40 hidden border-b border-slate-800 bg-slate-950/95 text-slate-200 backdrop-blur-xl lg:block">
         <div class="flex h-[72px] items-center gap-5 px-6">
           <NuxtLink to="/admin" class="flex shrink-0 items-center gap-2.5">
-            <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5"><img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-full w-full object-contain" /></div>
-            <div class="hidden xl:block"><p class="text-sm font-black text-slate-900">Kialla Computers</p><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">Administration</p></div>
+            <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-700 bg-white p-1.5"><img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-full w-full object-contain" /></div>
+            <div class="hidden xl:block"><p class="text-sm font-black text-white">Kialla Computers</p><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">Administration</p></div>
           </NuxtLink>
           <div class="min-w-0 flex-1"><AdminTopNav /></div>
           <div class="flex shrink-0 items-center gap-2.5">
@@ -33,13 +33,13 @@
             <NuxtLink to="/" class="admin-btn-secondary !min-h-[38px]">View Store</NuxtLink>
           </div>
         </div>
-        <div class="flex h-[48px] items-center border-t border-slate-100 px-6">
+        <div class="flex h-[48px] items-center border-t border-slate-800 px-6">
           <div class="min-w-0">
-            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
-              <NuxtLink to="/admin" class="hover:text-blue-600">Admin</NuxtLink>
-              <template v-for="crumb in breadcrumbs" :key="crumb.label"><span>/</span><NuxtLink v-if="crumb.to" :to="crumb.to" class="hover:text-blue-600">{{crumb.label}}</NuxtLink><span v-else class="text-slate-500">{{crumb.label}}</span></template>
+            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+              <NuxtLink to="/admin" class="hover:text-blue-400">Admin</NuxtLink>
+              <template v-for="crumb in breadcrumbs" :key="crumb.label"><span>/</span><NuxtLink v-if="crumb.to" :to="crumb.to" class="hover:text-blue-400">{{crumb.label}}</NuxtLink><span v-else class="text-slate-400">{{crumb.label}}</span></template>
             </div>
-            <h1 class="text-base font-black text-slate-900">{{pageTitle}}</h1>
+            <h1 class="text-base font-black text-white">{{pageTitle}}</h1>
           </div>
         </div>
       </header>
