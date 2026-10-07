@@ -46,7 +46,24 @@
             <td class="p-4 text-center"><span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="r.supplier_stock>0?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-700'">{{r.supplier_stock}}</span><p class="mt-1 whitespace-nowrap text-[10px] text-slate-400">VIC {{r.stock_by_state?.VIC||0}} · NSW {{r.stock_by_state?.NSW||0}} · QLD {{r.stock_by_state?.QLD||0}} · SA {{r.stock_by_state?.SA||0}} · WA {{r.stock_by_state?.WA||0}}</p></td>
             <td class="p-4 text-center"><span v-if="r.ignored" class="badge bg-slate-200 text-slate-700">Ignored</span><span v-else-if="r.changed" class="badge bg-amber-100 text-amber-800">Review</span><span v-else class="badge bg-emerald-100 text-emerald-700">Up to date</span></td>
             <td class="p-4 text-right"><div v-if="r.changed&&!r.ignored" class="flex justify-end gap-2"><button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white" @click="openApply(r)">Review</button><button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold" @click="ignoreRow(r)">Ignore</button></div><button v-else-if="r.ignored" class="text-xs font-bold text-blue-600" @click="restoreRow(r)">Restore</button><span v-else class="text-xs font-bold text-emerald-600">Up to date</span></td>
-          </template><td v-else colspan="8" class="p-4 text-red-600">Unable to sync</td>
+          </template>
+          <template v-else>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-right text-slate-400">—</td>
+            <td class="p-4 text-center text-slate-400">—</td>
+            <td class="p-4 text-center"><span v-if="r.disabled" class="badge bg-slate-200 text-slate-700">Disabled</span><span v-else class="badge bg-red-100 text-red-700">Failed</span></td>
+            <td class="p-4 text-right">
+              <div v-if="!r.disabled" class="flex justify-end gap-2">
+                <button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold" :disabled="retryingKey===String(r.row_key||r.product_id)" @click="retryFailedRow(r)">{{retryingKey===String(r.row_key||r.product_id)?'Retrying…':'Retry'}}</button>
+                <button class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-700" @click="disableFailedRow(r)">{{r.variant_id?'Disable Variation':'Disable Product'}}</button>
+              </div>
+              <span v-else class="text-xs font-bold text-slate-500">Disabled</span>
+            </td>
+          </template>
         </tr>
       </tbody></table>
     </div>
@@ -74,6 +91,24 @@ const allVisibleSelected=computed(()=>selectableVisible.value.length>0&&selectab
 function filterCount(key:string){return rows.value.filter(r=>matches(r,key)).length}
 function toggleAllVisible(){if(allVisibleSelected.value)selectedIds.value=selectedIds.value.filter(id=>!selectableVisible.value.includes(id));else selectedIds.value=[...new Set([...selectedIds.value,...selectableVisible.value])]}
 async function scan(){busy.value=true;error.value='';rows.value=[];selectedIds.value=[];summary.value={checked:0,changed:0,total:0};try{let offset=0;do{const r:any=await adminFetch('/api/admin/products/supplier-sync/scan',{method:'POST',body:{offset,limit:6}});summary.value.total=Number(r.total||0);summary.value.checked+=Number(r.checked||0);summary.value.changed+=Number(r.changed||0);rows.value=[...rows.value,...(r.results||[])].sort((a:any,b:any)=>Number(b.changed)-Number(a.changed)||Math.abs(Number(b.delta||0))-Math.abs(Number(a.delta||0)));if(r.next_offset===null||r.next_offset===undefined)break;offset=Number(r.next_offset)}while(true)}catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||'Unable to sync supplier products'}finally{busy.value=false}}
+async function retryFailedRow(r:any){
+  const key=String(r.row_key||r.product_id);retryingKey.value=key;error.value='';
+  try{
+    // The scan endpoint is batched by the current sync list; rerun the scan to safely refresh the failed item.
+    await runSync();
+  }catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to retry supplier sync'}
+  finally{retryingKey.value=''}
+}
+async function disableFailedRow(r:any){
+  const isVariant=Boolean(r.variant_id);
+  const label=isVariant?'variation':'product';
+  const ok=window.confirm(`Disable ${r.name||r.sku||'this item'}?\n\nThis ${label} will be removed from the storefront, but its history and supplier records will be kept.`);
+  if(!ok)return;
+  try{
+    await adminFetch('/api/admin/products/supplier-sync/disable',{method:'POST',body:{product_id:r.product_id,variant_id:r.variant_id||null}});
+    r.disabled=true;
+  }catch(e:any){error.value=e?.data?.statusMessage||e?.message||`Unable to disable ${label}`}
+}
 function openApply(r:any){selected.value=r}
 async function applyRow(r:any,recalculate:boolean){await adminFetch('/api/admin/products/supplier-sync/apply',{method:'POST',body:{product_id:r.product_id,variant_id:r.variant_id||null,link_id:r.link_id,buy_price_ex_gst:r.supplier_buy,supplier_rrp:r.supplier_rrp,recalculate}});r.current_buy=r.supplier_buy;r.delta=0;r.delta_percent=0;r.changed=false;r.ignored=false}
 async function applyChange(recalculate:boolean){if(!selected.value)return;try{await applyRow(selected.value,recalculate);selected.value=null}catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to apply supplier update'}}
