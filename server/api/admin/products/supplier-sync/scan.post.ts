@@ -82,11 +82,13 @@ export default defineEventHandler(async(event)=>{
   const syncItems:any[]=[];for(const link of links){const p:any=link.products;syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
   const batch=syncItems.slice(requestedOffset,requestedOffset+requestedLimit);
 
-  const results=await Promise.all(batch.map(async(link:any)=>{
-    const p:any=link.products;
+  const results=await Promise.all(batch.map(async(item:any)=>{
+    const link:any=item.link;
+    const p:any=item.p;
+    const v:any=item.variant;
     try{
       const remote=await leaderProduct(String(item.sku));
-      if(!remote) return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"not_found"};
+      if(!remote) return {row_key:v?`v:${v.id}`:`p:${link.product_id}`,product_id:link.product_id,variant_id:v?.id||null,link_id:link.id,name:v?`${p?.name} — ${v.name}`:p?.name,sku:item.sku,status:"not_found"};
       // Persist supplier warehouse availability separately from Kialla physical stock.
       // A successful Leader lookup refreshes all five warehouses, including zeros.
       const stockPayload={leader_stock_vic:Math.max(0,Number(remote.byState.VIC||0)),leader_stock_nsw:Math.max(0,Number(remote.byState.NSW||0)),leader_stock_qld:Math.max(0,Number(remote.byState.QLD||0)),leader_stock_sa:Math.max(0,Number(remote.byState.SA||0)),leader_stock_wa:Math.max(0,Number(remote.byState.WA||0)),leader_stock_updated_at:new Date().toISOString()};
