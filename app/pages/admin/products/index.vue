@@ -1,7 +1,7 @@
 <template>
   <div class="admin-page">
-    <div class="admin-page-inner max-w-[1500px]">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+    <div class="admin-page-inner w-full max-w-[1900px]">
+      <div class="mb-8 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <NuxtLink
             to="/admin"
@@ -116,19 +116,63 @@
       </div>
 
       <div v-else class="admin-table-shell">
-        <div class="overflow-x-auto">
-          <table class="admin-data-table admin-data-table-compact min-w-[980px]">
+        <!-- Mobile/tablet cards avoid squeezing a 9-column admin table onto a small screen. -->
+        <div class="divide-y divide-slate-100 lg:hidden">
+          <template v-for="main in groupedProducts" :key="`mobile-${main.name}`">
+            <div class="bg-slate-200 px-4 py-3">
+              <p class="font-bold text-slate-900">{{ main.name }}</p>
+              <p class="text-xs text-slate-500">{{ main.count }} {{ main.count === 1 ? "product" : "products" }}</p>
+            </div>
+            <template v-for="sub in main.subcategories" :key="`mobile-${main.name}-${sub.name}`">
+              <div v-if="sub.name !== main.name" class="border-b border-blue-100 bg-blue-50 px-4 py-2.5">
+                <p class="font-bold text-blue-800">{{ sub.name }}</p>
+                <p class="text-xs text-blue-600">{{ sub.products.length }} {{ sub.products.length === 1 ? "product" : "products" }}</p>
+              </div>
+              <div v-for="product in sub.products" :key="`mobile-product-${product.id}`" class="bg-white p-4">
+                <div class="flex gap-3">
+                  <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+                    <img v-if="firstImage(product)" :src="firstImage(product)" :alt="product.name" class="h-full w-full object-contain p-1" />
+                    <div v-else class="flex h-full w-full items-center justify-center text-[10px] text-slate-400">No image</div>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="font-bold text-slate-900">{{ product.name }}</p>
+                    <p v-if="product.product_code" class="mt-1 break-all text-xs font-semibold text-slate-500">Code: {{ product.product_code }}</p>
+                    <p class="mt-1 text-xs text-slate-500">{{ product.categories?.name || "Uncategorised" }}</p>
+                  </div>
+                  <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600" @click="toggleActionsMenu(product, $event)">⋯</button>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">Price</p><p class="font-bold text-slate-900">{{ currency(product.price) }}</p></div>
+                  <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">RRP</p><p class="font-bold text-slate-900">{{ currency(calculatedProductRrp(product)) }}</p></div>
+                  <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">Stock</p><p class="font-bold text-slate-900">{{ product.has_variants ? "Variants" : Number(product.stock || 0) }}</p></div>
+                  <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">Status</p><p class="font-bold" :class="product.active===false?'text-slate-500':'text-emerald-700'">{{ product.active===false ? "Inactive" : "Active" }}</p></div>
+                </div>
+                <div class="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 p-2">
+                  <span class="text-xs font-bold text-slate-500">Pricing Override</span>
+                  <div class="ml-auto flex items-center gap-1">
+                    <input v-model="overrideDrafts[String(product.id)]" type="number" step="0.1" class="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-right text-sm font-bold" :disabled="savingOverrideId===String(product.id)" @keyup.enter="savePricingOverride(product)" />
+                    <span class="text-xs font-bold text-slate-400">%</span>
+                    <button type="button" class="rounded-md border border-slate-300 px-2 py-1.5 text-xs font-bold" :disabled="savingOverrideId===String(product.id)||!overrideChanged(product)" @click="savePricingOverride(product)">Save</button>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
+        </div>
+
+        <div class="hidden overflow-x-auto lg:block">
+          <table class="admin-data-table admin-data-table-compact w-full min-w-[1280px]">
             <thead class="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
-                <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
-                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
-                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">RRP</th>
-                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">RRP %</th>
-                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Pricing Override</th>
-                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
-                <th class="px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
-                <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Actions</th>
+                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Product</th>
+                <th class="px-3 py-3 text-xs font-bold uppercase tracking-wide text-slate-500">Category</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Price</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">RRP</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">RRP %</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Pricing Override</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Stock</th>
+                <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">Status</th>
+                <th class="px-3 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">Actions</th>
               </tr>
             </thead>
 
@@ -156,8 +200,8 @@
 
                   <tr v-for="product in sub.products" :key="product.id"
                     class="border-b border-slate-100 hover:bg-slate-50/70 transition">
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3 min-w-[280px]">
+                    <td class="px-3 py-3">
+                      <div class="flex items-center gap-3 min-w-[320px]">
                         <div class="admin-product-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
                           <img v-if="firstImage(product)" :src="firstImage(product)" :alt="product.name"
                             class="h-full w-full object-contain p-1" />
@@ -179,19 +223,19 @@
                       </div>
                     </td>
 
-                    <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">
                       {{ product.categories?.name || "Uncategorised" }}
                     </td>
-                    <td class="px-5 py-4 text-right font-semibold text-slate-900 whitespace-nowrap">
+                    <td class="px-3 py-3 text-right font-semibold text-slate-900 whitespace-nowrap">
                       {{ currency(product.price) }}
                     </td>
-                    <td class="px-5 py-4 text-right font-semibold text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
                       {{ currency(calculatedProductRrp(product)) }}
                     </td>
-                    <td class="px-5 py-4 text-center font-semibold text-slate-600 whitespace-nowrap">
+                    <td class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
                       {{ Number(product.rrp_markup_percent || 0) }}%
                     </td>
-                    <td class="px-5 py-4 text-center whitespace-nowrap">
+                    <td class="px-3 py-3 text-center whitespace-nowrap">
                       <div class="inline-flex items-center gap-1.5">
                         <div class="relative w-24">
                           <input
@@ -214,19 +258,19 @@
                       </div>
                       <p v-if="overrideSavedId === String(product.id)" class="mt-1 text-[11px] font-bold text-emerald-600">Saved</p>
                     </td>
-                    <td class="px-5 py-4 text-center">
+                    <td class="px-3 py-3 text-center">
                       <span v-if="product.has_variants" class="inline-flex justify-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">Variants</span>
                       <span v-else class="inline-flex min-w-12 justify-center rounded-full px-2.5 py-1 text-xs font-bold" :class="stockClass(product.stock)">
                         {{ Number(product.stock || 0) }}
                       </span>
                     </td>
-                    <td class="px-5 py-4 text-center">
+                    <td class="px-3 py-3 text-center">
                       <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
                         :class="product.active === false ? 'bg-slate-100 text-slate-600' : 'bg-green-100 text-green-700'">
                         {{ product.active === false ? "Inactive" : "Active" }}
                       </span>
                     </td>
-                    <td class="px-5 py-4 text-right whitespace-nowrap">
+                    <td class="px-3 py-3 text-right whitespace-nowrap">
                       <button
                         type="button"
                         class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold leading-none text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-not-allowed disabled:opacity-50"

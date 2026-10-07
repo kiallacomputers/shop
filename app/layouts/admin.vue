@@ -20,24 +20,27 @@
       </div>
     </Transition>
 
-    <aside class="fixed inset-y-0 left-0 z-30 hidden w-[272px] border-r border-slate-800 bg-slate-950 lg:block"><AdminSidebar /></aside>
-
-    <div class="lg:pl-[272px]">
-      <header class="admin-desktop-bar sticky top-0 z-20 hidden h-[72px] items-center justify-between border-b border-slate-200 bg-white/90 px-7 backdrop-blur-xl lg:flex">
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 text-xs font-bold text-slate-400">
-            <NuxtLink to="/admin" class="hover:text-blue-600">Admin</NuxtLink>
-            <template v-for="crumb in breadcrumbs" :key="crumb.label">
-              <span class="text-slate-300">/</span>
-              <NuxtLink v-if="crumb.to" :to="crumb.to" class="truncate hover:text-blue-600">{{ crumb.label }}</NuxtLink>
-              <span v-else class="truncate text-slate-500">{{ crumb.label }}</span>
-            </template>
+    <div>
+      <header class="sticky top-0 z-40 hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl lg:block">
+        <div class="flex h-[72px] items-center gap-5 px-6">
+          <NuxtLink to="/admin" class="flex shrink-0 items-center gap-2.5">
+            <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5"><img src="/kialla-computers-logo.png" alt="Kialla Computers" class="h-full w-full object-contain" /></div>
+            <div class="hidden xl:block"><p class="text-sm font-black text-slate-900">Kialla Computers</p><p class="text-[10px] font-bold uppercase tracking-[0.14em] text-blue-600">Administration</p></div>
+          </NuxtLink>
+          <div class="min-w-0 flex-1"><AdminTopNav /></div>
+          <div class="flex shrink-0 items-center gap-2.5">
+            <span v-if="adminRole" class="rounded-full border px-3 py-1.5 text-xs font-black" :class="isSuperAdmin ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-blue-200 bg-blue-50 text-blue-700'">{{ isSuperAdmin ? 'SuperAdmin' : 'Admin' }}</span>
+            <NuxtLink to="/" class="admin-btn-secondary !min-h-[38px]">View Store</NuxtLink>
           </div>
-          <h1 class="mt-0.5 truncate text-lg font-black tracking-tight text-slate-900">{{ pageTitle }}</h1>
         </div>
-        <div class="flex items-center gap-2.5">
-          <span v-if="adminRole" class="rounded-full border px-3 py-1.5 text-xs font-black" :class="isSuperAdmin ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-blue-200 bg-blue-50 text-blue-700'">{{ isSuperAdmin ? 'SuperAdmin' : 'Admin' }}</span>
-          <NuxtLink to="/" class="admin-btn-secondary !min-h-[38px]">View Store</NuxtLink>
+        <div class="flex h-[48px] items-center border-t border-slate-100 px-6">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+              <NuxtLink to="/admin" class="hover:text-blue-600">Admin</NuxtLink>
+              <template v-for="crumb in breadcrumbs" :key="crumb.label"><span>/</span><NuxtLink v-if="crumb.to" :to="crumb.to" class="hover:text-blue-600">{{crumb.label}}</NuxtLink><span v-else class="text-slate-500">{{crumb.label}}</span></template>
+            </div>
+            <h1 class="text-base font-black text-slate-900">{{pageTitle}}</h1>
+          </div>
         </div>
       </header>
 
