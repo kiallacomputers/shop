@@ -7,6 +7,13 @@
       <button class="rounded-lg bg-blue-600 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="busy" @click="scan">{{busy?`Checking Leader… ${summary?.checked||0}/${summary?.total||'?'}`:'Sync All Leader Products'}}</button>
     </div>
 
+    <div class="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="font-bold text-slate-900">Leader sync history</h2><p class="text-xs text-slate-500">Recent saved sync runs and their results</p></div><button type="button" class="action" :disabled="historyBusy" @click="loadHistory">{{historyBusy?'Loading…':'Refresh history'}}</button></div>
+      <p v-if="historyError" class="mt-3 text-sm text-amber-700">{{historyError}}</p>
+      <div v-if="historyRuns.length" class="mt-3 overflow-x-auto"><table class="w-full min-w-[650px] text-left text-xs"><thead><tr class="border-b text-slate-500"><th class="p-2">Started</th><th class="p-2">Status</th><th class="p-2">Checked</th><th class="p-2">Changed</th><th class="p-2">Failed</th><th class="p-2">Details</th></tr></thead><tbody><tr v-for="run in historyRuns" :key="run.id" class="border-b border-slate-100"><td class="p-2">{{formatDate(run.started_at)}}</td><td class="p-2">{{run.status||'—'}}</td><td class="p-2">{{run.checked_count??run.checked??'—'}}</td><td class="p-2">{{run.changed_count??run.changed??'—'}}</td><td class="p-2">{{run.failed_count??run.failed??'—'}}</td><td class="p-2"><button class="font-bold text-blue-700 hover:underline" @click="loadRunDetails(run.id)">View results</button></td></tr></tbody></table></div>
+      <p v-else-if="!historyBusy&&!historyError" class="mt-3 text-sm text-slate-500">No saved sync runs yet.</p>
+      <div v-if="detailRunId!==null" class="mt-4 rounded-lg bg-slate-50 p-3"><div class="flex justify-between gap-2"><h3 class="font-bold">Run #{{detailRunId}} results</h3><button class="text-sm text-blue-700" @click="detailRunId=null">Close</button></div><p v-if="detailsBusy" class="text-sm">Loading results…</p><p v-else-if="!historyResults.length" class="text-sm text-slate-500">No saved item results.</p><div v-else class="mt-2 max-h-72 space-y-2 overflow-y-auto"><div v-for="(item,i) in historyResults" :key="item.id||i" class="rounded border bg-white p-2 text-xs"><b>{{item.product_name||item.name||item.product_code||item.sku||'Product '+(item.product_id||'')}}</b> — {{item.status||'Result'}}<p v-if="item.error||item.error_message" class="mt-1 text-red-700">{{item.error||item.error_message}}</p></div></div></div>
+    </div>
     <div v-if="error" class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{{error}}</div>
 
     <div v-if="summary" class="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
@@ -75,12 +82,40 @@
         <div class="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4"><p class="text-xs font-bold uppercase text-blue-700">RRP</p><p class="mt-1 text-lg font-black">{{money(selected.current_rrp)}} → {{selected.supplier_rrp>0?money(selected.supplier_rrp):'Keep current RRP'}}</p></div><div class="mt-5 rounded-xl border border-slate-200 p-4"><p class="font-bold text-slate-900">Choose what to update</p><p class="mt-1 text-sm text-slate-500">Accepting the buy price does not alter the customer's Sell Price unless you explicitly choose recalculation.</p></div>
         <div class="mt-6 flex flex-wrap justify-end gap-2"><button class="rounded-lg border px-4 py-2 font-bold" @click="selected=null">Cancel</button><button class="rounded-lg border border-slate-300 px-4 py-2 font-bold" @click="ignoreSelected">Ignore Change</button><button class="rounded-lg bg-slate-800 px-4 py-2 font-bold text-white" @click="applyChange(false)">Accept Buy Price Only</button><button class="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white" @click="applyChange(true)">Accept + Recalculate Sell + Supplier RRP</button></div>
       </div></div></Teleport>
+    <Teleport to="body">
+      <div v-if="pendingDisable" class="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-950/60 p-4" @click.self="closeDisableModal">
+        <div role="dialog" aria-modal="true" aria-labelledby="disable-title" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+          <div class="mb-4 flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 text-xl text-red-700">!</div>
+            <div>
+              <h2 id="disable-title" class="text-xl font-black text-slate-900">Disable {{ pendingDisable.variant_id ? 'variation' : 'product' }}?</h2>
+              <p class="mt-1 break-words font-semibold text-slate-800">{{ pendingDisable.name || pendingDisable.sku || 'Selected item' }}</p>
+              <p v-if="pendingDisable.sku" class="mt-1 text-xs text-slate-500">{{ pendingDisable.sku }}</p>
+            </div>
+          </div>
+          <p class="text-sm leading-6 text-slate-600">This {{ pendingDisable.variant_id ? 'variation' : 'product' }} will no longer be available on the storefront. Its history and supplier records will be retained.</p>
+          <p v-if="disableError" role="alert" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ disableError }}</p>
+          <div class="mt-6 flex flex-wrap justify-end gap-3">
+            <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 font-bold text-slate-700 disabled:opacity-50" :disabled="disabling" @click="closeDisableModal">Cancel</button>
+            <button type="button" class="rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50" :disabled="disabling" @click="confirmDisable">{{ disabling ? 'Disabling…' : pendingDisable.variant_id ? 'Disable Variation' : 'Disable Product' }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div></div>
 </template>
 <script setup lang="ts">
 definePageMeta({layout:'admin',middleware:'admin'})
 const {adminFetch}=useAdminFetch()
 const busy=ref(false), bulkBusy=ref(false), error=ref(''), rows=ref<any[]>([]), summary=ref<any>(null), selected=ref<any>(null), filter=ref('changed'), selectedIds=ref<string[]>([])
+const retryingKey=ref('');
+const pendingDisable=ref<any>(null), disabling=ref(false), disableError=ref('');
+function closeDisableModal(){if(disabling.value)return;pendingDisable.value=null;disableError.value=''}
+const historyBusy=ref(false), historyError=ref(''), historyRuns=ref<any[]>([]), historyResults=ref<any[]>([]), detailRunId=ref<number|null>(null), detailsBusy=ref(false);
+const formatDate=(v:any)=>v?new Date(v).toLocaleString('en-AU'):'—';
+async function loadHistory(){historyBusy.value=true;historyError.value='';try{const result:any=await adminFetch('/api/admin/products/supplier-sync/history');historyRuns.value=result.runs||[]}catch(e:any){historyError.value=e?.data?.statusMessage||e?.message||'Unable to load history'}finally{historyBusy.value=false}}
+async function loadRunDetails(id:number){detailRunId.value=id;detailsBusy.value=true;historyResults.value=[];try{const result:any=await adminFetch('/api/admin/products/supplier-sync/history',{query:{run_id:id}});historyResults.value=result.results||[]}catch(e:any){historyError.value=e?.data?.statusMessage||e?.message||'Unable to load run results'}finally{detailsBusy.value=false}}
+onMounted(loadHistory);
 const filters=[{key:'changed',label:'Needs Review'},{key:'increase',label:'Increased'},{key:'decrease',label:'Decreased'},{key:'low_margin',label:'Margin < 20%'},{key:'ignored',label:'Ignored'},{key:'failed',label:'Failed'},{key:'all',label:'All'}]
 const money=(v:any)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(Number(v||0)); const signedMoney=(v:any)=>(Number(v)>0?'+':'')+money(v); const signed=(v:any)=>(Number(v)>0?'+':'')+Number(v||0).toFixed(2)
 const priceChangedCount=computed(()=>rows.value.filter(r=>r.status==='ok'&&r.changed).length), increaseCount=computed(()=>rows.value.filter(r=>r.status==='ok'&&r.changed&&r.delta>0).length), decreaseCount=computed(()=>rows.value.filter(r=>r.status==='ok'&&r.changed&&r.delta<0).length), lowMarginCount=computed(()=>rows.value.filter(r=>r.status==='ok'&&r.changed&&r.proposed_margin<20).length), failedCount=computed(()=>rows.value.filter(r=>r.status!=='ok').length)
@@ -90,24 +125,26 @@ const selectableVisible=computed(()=>filteredRows.value.filter(r=>r.status==='ok
 const allVisibleSelected=computed(()=>selectableVisible.value.length>0&&selectableVisible.value.every(id=>selectedIds.value.includes(id)))
 function filterCount(key:string){return rows.value.filter(r=>matches(r,key)).length}
 function toggleAllVisible(){if(allVisibleSelected.value)selectedIds.value=selectedIds.value.filter(id=>!selectableVisible.value.includes(id));else selectedIds.value=[...new Set([...selectedIds.value,...selectableVisible.value])]}
-async function scan(){busy.value=true;error.value='';rows.value=[];selectedIds.value=[];summary.value={checked:0,changed:0,total:0};try{let offset=0;do{const r:any=await adminFetch('/api/admin/products/supplier-sync/scan',{method:'POST',body:{offset,limit:6}});summary.value.total=Number(r.total||0);summary.value.checked+=Number(r.checked||0);summary.value.changed+=Number(r.changed||0);rows.value=[...rows.value,...(r.results||[])].sort((a:any,b:any)=>Number(b.changed)-Number(a.changed)||Math.abs(Number(b.delta||0))-Math.abs(Number(a.delta||0)));if(r.next_offset===null||r.next_offset===undefined)break;offset=Number(r.next_offset)}while(true)}catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||'Unable to sync supplier products'}finally{busy.value=false}}
+async function scan(){busy.value=true;error.value='';rows.value=[];selectedIds.value=[];summary.value={checked:0,changed:0,total:0};try{let offset=0;do{const r:any=await adminFetch('/api/admin/products/supplier-sync/scan',{method:'POST',body:{offset,limit:6}});summary.value.total=Number(r.total||0);summary.value.checked+=Number(r.checked||0);summary.value.changed+=Number(r.changed||0);rows.value=[...rows.value,...(r.results||[])].sort((a:any,b:any)=>Number(b.changed)-Number(a.changed)||Math.abs(Number(b.delta||0))-Math.abs(Number(a.delta||0)));if(r.next_offset===null||r.next_offset===undefined)break;offset=Number(r.next_offset)}while(true)}catch(e:any){error.value=e?.data?.statusMessage||e?.data?.message||e?.statusMessage||e?.message||'Unable to sync supplier products'}finally{busy.value=false;await loadHistory()}}
 async function retryFailedRow(r:any){
   const key=String(r.row_key||r.product_id);retryingKey.value=key;error.value='';
   try{
     // The scan endpoint is batched by the current sync list; rerun the scan to safely refresh the failed item.
-    await runSync();
+    await scan();
   }catch(e:any){error.value=e?.data?.statusMessage||e?.message||'Unable to retry supplier sync'}
   finally{retryingKey.value=''}
 }
-async function disableFailedRow(r:any){
-  const isVariant=Boolean(r.variant_id);
-  const label=isVariant?'variation':'product';
-  const ok=window.confirm(`Disable ${r.name||r.sku||'this item'}?\n\nThis ${label} will be removed from the storefront, but its history and supplier records will be kept.`);
-  if(!ok)return;
+function disableFailedRow(r:any){pendingDisable.value=r;disableError.value=''}
+async function confirmDisable(){
+  const r=pendingDisable.value;
+  if(!r || disabling.value)return;
+  disabling.value=true;disableError.value='';
   try{
     await adminFetch('/api/admin/products/supplier-sync/disable',{method:'POST',body:{product_id:r.product_id,variant_id:r.variant_id||null}});
     r.disabled=true;
-  }catch(e:any){error.value=e?.data?.statusMessage||e?.message||`Unable to disable ${label}`}
+    pendingDisable.value=null;
+  }catch(e:any){disableError.value=e?.data?.statusMessage||e?.message||'Unable to disable item'}
+  finally{disabling.value=false}
 }
 function openApply(r:any){selected.value=r}
 async function applyRow(r:any,recalculate:boolean){await adminFetch('/api/admin/products/supplier-sync/apply',{method:'POST',body:{product_id:r.product_id,variant_id:r.variant_id||null,link_id:r.link_id,buy_price_ex_gst:r.supplier_buy,supplier_rrp:r.supplier_rrp,recalculate}});r.current_buy=r.supplier_buy;r.delta=0;r.delta_percent=0;r.changed=false;r.ignored=false}
