@@ -141,6 +141,8 @@
                   </div>
                   <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-xl font-bold text-slate-600" @click="toggleActionsMenu(product, $event)">⋯</button>
                 </div>
+                <button v-if="product.has_variants || product.product_variants?.length" type="button" class="mt-3 rounded-lg border border-blue-200 px-3 py-2 text-sm font-bold text-blue-700" @click="toggleVariants(product)">{{ expandedVariants[String(product.id)] ? '▾ Hide variations' : '▸ Show variations' }}</button>
+                <AdminProductVariationPanel v-if="expandedVariants[String(product.id)]" :product-id="product.id" :admin-fetch="adminFetch" @changed="loadProducts" />
                 <div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">Price</p><p class="font-bold text-slate-900">{{ currency(product.price) }}</p></div>
                   <div class="rounded-lg bg-slate-50 p-2"><p class="text-[10px] font-bold uppercase text-slate-400">RRP</p><p class="font-bold text-slate-900">{{ currency(calculatedProductRrp(product)) }}</p></div>
@@ -213,6 +215,7 @@
                           <p class="font-semibold leading-snug text-slate-900" :title="product.name">{{ product.name }}</p>
                           <p v-if="product.slug" class="mt-1 break-all text-xs text-slate-400">/{{ product.slug }}</p>
                           <p v-if="product.product_code" class="mt-1 text-xs font-semibold text-slate-500">Code: {{ product.product_code }}</p>
+                          <button v-if="product.has_variants || product.product_variants?.length" type="button" class="mt-1 text-xs font-bold text-blue-700 hover:underline" @click="toggleVariants(product)">{{ expandedVariants[String(product.id)] ? '▾ Hide variations' : '▸ Show variations' }}</button>
                           <div class="mt-2 flex flex-wrap gap-1.5">
                             <span v-if="product.featured"
                               class="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">Featured</span>
@@ -286,6 +289,9 @@
                         <span aria-hidden="true">⋯</span>
                       </button>
                     </td>
+                  </tr>
+                  <tr v-if="expandedVariants[String(product.id)]" :key="`variants-${product.id}`" class="border-b border-blue-100 bg-blue-50/40">
+                    <td colspan="9" class="px-4 py-3"><AdminProductVariationPanel :product-id="product.id" :admin-fetch="adminFetch" @changed="loadProducts" /></td>
                   </tr>
                 </template>
               </template>
@@ -467,6 +473,11 @@ const previewCategoryName = computed(() => {
   return categoryMap.value.get(String(previewProduct.value.category_id ?? ""))?.name || "";
 });
 
+const expandedVariants = ref<Record<string, boolean>>({});
+const toggleVariants = (product: Product) => {
+  const id = String(product.id);
+  expandedVariants.value[id] = !expandedVariants.value[id];
+};
 const search = ref("");
 const categoryFilter = ref("");
 const stockFilter = ref("");
