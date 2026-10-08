@@ -200,8 +200,8 @@
                     </td>
                   </tr>
 
-                  <tr v-for="product in sub.products" :key="product.id"
-                    class="border-b border-slate-100 hover:bg-slate-50/70 transition">
+                  <template v-for="product in sub.products" :key="product.id">
+                  <tr class="border-b border-slate-100 hover:bg-slate-50/70 transition">
                     <td class="px-3 py-3">
                       <div class="flex items-center gap-3 min-w-[320px]">
                         <div class="admin-product-thumb h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
@@ -293,6 +293,7 @@
                   <tr v-if="expandedVariants[String(product.id)]" :key="`variants-${product.id}`" class="border-b border-blue-100 bg-blue-50/40">
                     <td colspan="9" class="px-4 py-3"><AdminProductVariationPanel :product-id="product.id" :admin-fetch="adminFetch" @changed="loadProducts" /></td>
                   </tr>
+                  </template>
                 </template>
               </template>
             </tbody>
