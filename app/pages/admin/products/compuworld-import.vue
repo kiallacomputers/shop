@@ -73,7 +73,8 @@
             <tbody><tr v-for="item in eligibleProducts" :key="item.index" class="border-b">
               <td class="p-3"><input v-model="selectedProductIndices" type="checkbox" :value="item.index" /></td>
               <td class="max-w-80 p-3">{{item.row[nameColumn]||Object.values(item.row)[0]||'—'}}</td>
-              <td class="p-3"><span class="font-semibold">{{statusLabel(item.index)}}</span><span v-if="matches[item.index]?.name" class="block text-xs text-slate-500">{{matches[item.index].name}}</span></td>\n              <td class="p-3">{{item.row[categoryColumn]||'Uncategorised'}}</td>
+              <td class="p-3"><span class="font-semibold">{{statusLabel(item.index)}}</span><span v-if="matches[item.index]?.name" class="block text-xs text-slate-500">{{matches[item.index].name}}</span></td>
+              <td class="p-3">{{item.row[categoryColumn]||'Uncategorised'}}</td>
               <td class="p-3"><select v-model="actions[item.index]" class="rounded border p-2">
                 <option value="supplier">Use supplier category</option><option value="shop">Choose shop category</option>
               </select></td>
@@ -142,7 +143,8 @@ async function load(){
     selectedSupplierCategories.value=[];selectedProductIndices.value=[];matches.value=[];productFilter.value='new';
     identityColumns.sku=guess(data.headers,['supplier sku','sku','item code','product code','stock code']);
     identityColumns.mpn=guess(data.headers,['manufacturer part','mpn','mfr part']);
-    identityColumns.gtin=guess(data.headers,['barcode','gtin','ean','upc']);\n    await checkExisting();
+    identityColumns.gtin=guess(data.headers,['barcode','gtin','ean','upc']);
+    await checkExisting();
   }catch(e:any){error.value=e?.data?.statusMessage||e.message||'Unable to fetch Compuworld price list'}
   finally{loading.value=false}
 }
