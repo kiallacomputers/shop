@@ -37,42 +37,46 @@
       </div>
     </div>
 
-    <div v-if="rows.length" class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <table class="min-w-[1650px] w-full text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr>
-        <th class="p-4 text-center"><input type="checkbox" :checked="allVisibleSelected" @change="toggleAllVisible"></th>
-        <th class="p-4 text-left">Product</th><th class="p-4 text-right">Current Buy</th><th class="p-4 text-right">Leader Buy</th><th class="p-4 text-right">Change</th><th class="p-4 text-right">Current Sell</th><th class="p-4 text-right">RRP → Leader RRP</th><th class="p-4 text-right">Margin After Cost</th><th class="p-4 text-center">Leader Stock</th><th class="p-4 text-center">Status</th><th class="p-4 text-right">Action</th>
-      </tr></thead><tbody>
-        <tr v-for="r in filteredRows" :key="r.row_key||r.product_id" class="border-t border-slate-100" :class="r.ignored?'bg-slate-50/70':''">
-          <td class="p-4 text-center"><input v-if="r.status==='ok'&&r.changed&&!r.ignored" v-model="selectedIds" type="checkbox" :value="r.row_key||String(r.product_id)"></td>
-          <td class="p-4"><p class="font-bold text-slate-900">{{r.name}}</p><p class="text-xs text-slate-500">{{r.sku}}</p><p v-if="r.error" class="mt-1 text-xs font-semibold text-red-600">{{r.error}}</p></td>
-          <template v-if="r.status==='ok'">
-            <td class="p-4 text-right">{{money(r.current_buy)}}</td><td class="p-4 text-right font-bold">{{money(r.supplier_buy)}}</td>
-            <td class="p-4 text-right"><span :class="r.delta>0?'text-red-600':r.delta<0?'text-emerald-600':'text-slate-500'" class="font-bold">{{signedMoney(r.delta)}} <small>({{signed(r.delta_percent)}}%)</small></span></td>
-            <td class="p-4 text-right">{{money(r.current_sell)}}</td><td class="p-4 text-right"><span v-if="r.supplier_rrp>0">{{money(r.current_rrp)}} → <b>{{money(r.supplier_rrp)}}</b></span><span v-else class="text-slate-400">No supplier RRP</span></td>
-            <td class="p-4 text-right"><span class="font-black" :class="r.proposed_margin<10?'text-red-600':r.proposed_margin<20?'text-amber-600':'text-emerald-700'">{{Number(r.proposed_margin||0).toFixed(1)}}%</span></td>
-            <td class="p-4 text-center"><span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="r.supplier_stock>0?'bg-emerald-50 text-emerald-700':'bg-red-50 text-red-700'">{{r.supplier_stock}}</span><p class="mt-1 whitespace-nowrap text-[10px] text-slate-400">VIC {{r.stock_by_state?.VIC||0}} · NSW {{r.stock_by_state?.NSW||0}} · QLD {{r.stock_by_state?.QLD||0}} · SA {{r.stock_by_state?.SA||0}} · WA {{r.stock_by_state?.WA||0}}</p></td>
-            <td class="p-4 text-center"><span v-if="r.ignored" class="badge bg-slate-200 text-slate-700">Ignored</span><span v-else-if="r.changed" class="badge bg-amber-100 text-amber-800">Review</span><span v-else class="badge bg-emerald-100 text-emerald-700">Up to date</span></td>
-            <td class="p-4 text-right"><div v-if="r.changed&&!r.ignored" class="flex justify-end gap-2"><button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white" @click="openApply(r)">Review</button><button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold" @click="ignoreRow(r)">Ignore</button></div><button v-else-if="r.ignored" class="text-xs font-bold text-blue-600" @click="restoreRow(r)">Restore</button><span v-else class="text-xs font-bold text-emerald-600">Up to date</span></td>
-          </template>
-          <template v-else>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-right text-slate-400">—</td>
-            <td class="p-4 text-center text-slate-400">—</td>
-            <td class="p-4 text-center"><span v-if="r.disabled" class="badge bg-slate-200 text-slate-700">Disabled</span><span v-else class="badge bg-red-100 text-red-700">Failed</span></td>
-            <td class="p-4 text-right">
-              <div v-if="!r.disabled" class="flex justify-end gap-2">
-                <button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold" :disabled="retryingKey===String(r.row_key||r.product_id)" @click="retryFailedRow(r)">{{retryingKey===String(r.row_key||r.product_id)?'Retrying…':'Retry'}}</button>
-                <button class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-700" @click="disableFailedRow(r)">{{r.variant_id?'Disable Variation':'Disable Product'}}</button>
-              </div>
-              <span v-else class="text-xs font-bold text-slate-500">Disabled</span>
-            </td>
-          </template>
-        </tr>
-      </tbody></table>
+    <div v-if="rows.length" class="space-y-2">
+      <div v-for="r in filteredRows" :key="r.row_key||r.product_id" class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4" :class="r.ignored?'opacity-75':''">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div class="flex min-w-0 flex-1 items-start gap-3">
+            <input v-if="r.status==='ok'&&r.changed&&!r.ignored" v-model="selectedIds" type="checkbox" :value="r.row_key||String(r.product_id)" class="mt-1 h-4 w-4 shrink-0" :aria-label="`Select ${r.name}`">
+            <div class="min-w-0 flex-1">
+              <p class="break-words text-sm font-bold leading-snug text-slate-900">{{r.name}}</p>
+              <p class="mt-1 text-xs text-slate-500">{{r.sku}}</p>
+              <p v-if="r.error" class="mt-1 break-words text-xs font-semibold text-red-600">{{r.error}}</p>
+            </div>
+          </div>
+          <div class="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+            <span v-if="r.disabled" class="badge bg-slate-200 text-slate-700">Disabled</span>
+            <span v-else-if="r.status!=='ok'" class="badge bg-red-100 text-red-700">Failed</span>
+            <span v-else-if="r.ignored" class="badge bg-slate-200 text-slate-700">Ignored</span>
+            <span v-else-if="r.changed" class="badge bg-amber-100 text-amber-800">Review</span>
+            <span v-else class="badge bg-emerald-100 text-emerald-700">Up to date</span>
+            <template v-if="r.status==='ok'">
+              <template v-if="r.changed&&!r.ignored">
+                <button class="action-blue" @click="openApply(r)">Review</button>
+                <button class="action" @click="ignoreRow(r)">Ignore</button>
+              </template>
+              <button v-else-if="r.ignored" class="action" @click="restoreRow(r)">Restore</button>
+            </template>
+            <template v-else-if="!r.disabled">
+              <button class="action" :disabled="retryingKey===String(r.row_key||r.product_id)" @click="retryFailedRow(r)">{{retryingKey===String(r.row_key||r.product_id)?'Retrying…':'Retry'}}</button>
+              <button class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold text-red-700" @click="disableFailedRow(r)">{{r.variant_id?'Disable Variation':'Disable Product'}}</button>
+            </template>
+          </div>
+        </div>
+        <div v-if="r.status==='ok'" class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-xs sm:grid-cols-3 xl:grid-cols-6">
+          <div><span class="block text-slate-500">Current buy</span><strong>{{money(r.current_buy)}}</strong></div>
+          <div><span class="block text-slate-500">Leader buy</span><strong>{{money(r.supplier_buy)}}</strong></div>
+          <div><span class="block text-slate-500">Change</span><strong :class="r.delta>0?'text-red-600':r.delta<0?'text-emerald-600':'text-slate-700'">{{signedMoney(r.delta)}} ({{signed(r.delta_percent)}}%)</strong></div>
+          <div><span class="block text-slate-500">Sell / RRP</span><strong>{{money(r.current_sell)}} / {{money(r.current_rrp)}}</strong><span v-if="r.supplier_rrp>0" class="block text-slate-500">Leader RRP {{money(r.supplier_rrp)}}</span></div>
+          <div><span class="block text-slate-500">Margin after cost</span><strong :class="r.proposed_margin<10?'text-red-600':r.proposed_margin<20?'text-amber-600':'text-emerald-700'">{{Number(r.proposed_margin||0).toFixed(1)}}%</strong></div>
+          <div><span class="block text-slate-500">Leader stock</span><strong>{{r.supplier_stock}}</strong><span class="block break-words text-[11px] text-slate-500">VIC {{r.stock_by_state?.VIC||0}} · NSW {{r.stock_by_state?.NSW||0}} · QLD {{r.stock_by_state?.QLD||0}} · SA {{r.stock_by_state?.SA||0}} · WA {{r.stock_by_state?.WA||0}}</span></div>
+        </div>
+      </div>
+      <p v-if="!filteredRows.length" class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No items match this filter.</p>
     </div>
     <div v-else-if="summary&&!busy" class="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-500">No Leader-linked primary supplier products were found.</div>
 
