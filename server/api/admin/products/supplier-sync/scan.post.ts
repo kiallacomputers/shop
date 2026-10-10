@@ -51,7 +51,7 @@ export default defineEventHandler(async(event)=>{
     // Only request columns needed by this screen. Keeping this list conservative
     // also makes the sync compatible with older product-table migrations.
     const {data:products,error:productError}=await s.from("products")
-      .select("id,name,product_code,buy_price_ex_gst,price,oldPrice,has_variants")
+      .select("id,name,product_code,buy_price_ex_gst,price,oldPrice,has_variants,active")
       .in("id",productIds);
     if(productError) throw createError({statusCode:500,statusMessage:`Unable to load products: ${productError.message}`});
     for(const row of products||[]) productMap.set(Number(row.id),row);
@@ -79,7 +79,7 @@ export default defineEventHandler(async(event)=>{
   // sequentially. The UI automatically requests the next page.
   const requestedOffset=Math.max(0,Number(body?.offset)||0);
   const requestedLimit=Math.min(6,Math.max(1,Number(body?.limit)||6));
-  const syncItems:any[]=[];for(const link of links){const p:any=link.products;syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
+  const syncItems:any[]=[];for(const link of links){const p:any=link.products;if(!p || p.active===false)continue;syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
   const batch=syncItems.slice(requestedOffset,requestedOffset+requestedLimit);
 
   const results=await Promise.all(batch.map(async(item:any)=>{
