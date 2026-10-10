@@ -79,7 +79,7 @@ export default defineEventHandler(async(event)=>{
   // sequentially. The UI automatically requests the next page.
   const requestedOffset=Math.max(0,Number(body?.offset)||0);
   const requestedLimit=Math.min(6,Math.max(1,Number(body?.limit)||6));
-  const syncItems:any[]=[];for(const link of links){const p:any=link.products;if(!p || p.active===false)continue;syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
+  const syncItems:any[]=[];for(const link of links){const p:any=link.products;if(!p || p.active===false)continue;if(!p.has_variants && !(variantMap.get(Number(link.product_id))||[]).length)syncItems.push({link,p,variant:null,sku:String(link.supplier_sku)});for(const v of variantMap.get(Number(link.product_id))||[]){if(String(v.product_code||"").trim())syncItems.push({link,p,variant:v,sku:String(v.product_code).trim()});}}
   const batch=syncItems.slice(requestedOffset,requestedOffset+requestedLimit);
 
   const results=await Promise.all(batch.map(async(item:any)=>{
@@ -102,7 +102,7 @@ export default defineEventHandler(async(event)=>{
       const ignored=Boolean(review&&Number(review.supplier_link_id)===Number(link.id)&&Math.abs(Number(review.supplier_buy_price)-newBuy)<0.005);
       return {row_key:v?`v:${v.id}`:`p:${link.product_id}`,product_id:link.product_id,variant_id:v?.id||null,name:v?`${p?.name} — ${v.name}`:p?.name,variant_name:v?.name||null,sku:item.sku,link_id:link.id,current_buy:currentBuy,current_rrp:currentRrp,supplier_buy:newBuy,delta,delta_percent:deltaPct,current_sell:currentSell,supplier_rrp:remote.rrp,supplier_stock:remote.stock,stock_by_state:remote.byState,proposed_margin:proposedMargin,changed:Math.abs(delta)>=0.01,ignored,status:"ok"};
     }catch(e:any){
-      return {product_id:link.product_id,name:p?.name,sku:link.supplier_sku,status:"error",error:e?.statusMessage||e?.message||"Sync failed"};
+      return {row_key:v?`v:${v.id}`:`p:${link.product_id}`,product_id:link.product_id,variant_id:v?.id||null,link_id:link.id,name:v?`${p?.name} — ${v.name}`:p?.name,sku:item.sku,status:"error",error:e?.statusMessage||e?.message||"Sync failed"};
     }
   }));
 
