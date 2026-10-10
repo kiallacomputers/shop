@@ -5,6 +5,10 @@
     <NuxtLink to="/admin/products/new" class="secondary">Standard Add Product</NuxtLink>
   </div>
 
+  <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 flex flex-wrap items-center justify-between gap-3">
+    <div><h2 class="font-bold text-slate-900">Compuworld automatic import</h2><p class="text-sm text-slate-600">Fetch the Compuworld reseller export and review product categories. No CSV upload needed.</p></div>
+    <NuxtLink to="/admin/products/compuworld-import" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white">Open Compuworld Import →</NuxtLink>
+  </div>
   <div v-if="error" class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{{error}}</div>
   <div v-if="success" class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">{{success}}</div>
 
