@@ -26,7 +26,7 @@
             <p class="product-nav-name">{{ form.name || (mode === "create" ? "New product" : "Product") }}</p>
             <div class="product-nav-status">
               <span :class="form.active ? 'is-live' : 'is-off'">{{ form.active ? 'Active' : 'Inactive' }}</span>
-              <span v-if="form.has_variants">Variants</span>
+              
               <span v-if="form.featured">Featured</span>
             </div>
             <nav class="product-nav-links" aria-label="Product editor sections">
@@ -124,7 +124,7 @@
           <label class="flex items-end pb-2">
             <span class="flex items-center gap-2 text-sm font-medium text-slate-700">
               <input v-model="form.has_variants" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-              This product has variants / options
+              Variants are no longer supported
             </span>
           </label>
 
@@ -186,7 +186,7 @@
         </div>
       </section>
 
-      <section v-if="form.has_variants" class="rounded-xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
+      <section v-if="false" class="rounded-xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Product Variants</h2>
@@ -1044,7 +1044,7 @@ const loadForm = async () => {
       form.mpn = product.mpn || "";
       form.seo_title = product.seo_title || "";
       form.seo_description = product.seo_description || "";
-      form.has_variants = product.has_variants === true;
+      form.has_variants = false;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.pricing_level_markup_override_percent = product.pricing_level_markup_override_percent == null ? "0" : String(product.pricing_level_markup_override_percent);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
