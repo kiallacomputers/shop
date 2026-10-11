@@ -104,6 +104,18 @@
                   <p v-else class="text-xs text-amber-700">Image required</p>
                   <div class="flex flex-col gap-2">
                     <button v-if="imageCandidates[item.index]&&!savedImages[item.index]" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white disabled:opacity-50" :disabled="imageBusy[item.index]" @click="approveImage(item.index)">{{imageBusy[item.index]?'Saving…':'Approve & Save Image'}}</button>
+                    <div class="mt-2 rounded-lg border border-slate-200 p-2">
+                      <p class="text-xs font-semibold">Official manufacturer images</p>
+                      <a :href="manufacturerSearchUrl(item.index)" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-700 underline">Find manufacturer product page by part number ↗</a>
+                      <input v-model.trim="manufacturerUrls[item.index]" type="url" placeholder="Paste official manufacturer product URL" class="mt-2 w-full rounded border p-2 text-xs" />
+                      <button class="mt-2 rounded bg-slate-800 px-2 py-1 text-xs font-bold text-white disabled:opacity-50" :disabled="imageBusy[item.index]||!manufacturerUrls[item.index]" @click="findManufacturerImages(item.index)">Fetch Manufacturer Images</button>
+                      <div v-if="manufacturerImages[item.index]?.length" class="mt-2 flex flex-wrap gap-2">
+                        <div v-for="(candidate,k) in manufacturerImages[item.index]" :key="candidate" class="w-28 rounded border p-1">
+                          <img :src="candidate" alt="Manufacturer candidate" referrerpolicy="no-referrer" class="h-20 w-full object-contain" />
+                          <button class="mt-1 w-full rounded bg-blue-700 px-1 py-1 text-xs text-white disabled:opacity-50" :disabled="imageBusy[item.index]" @click="saveManufacturerImage(item.index,candidate)">Approve image</button>
+                        </div>
+                      </div>
+                    </div>
                     <label class="cursor-pointer text-xs font-semibold text-blue-700">Upload image manually
                       <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="mt-1 block w-48 text-xs" :disabled="imageBusy[item.index]" @change="uploadImage($event,item.index)" />
                     </label>
@@ -134,6 +146,32 @@ const actions=ref<string[]>([]),selectedCategories=ref<string[]>([]);
 const identityFields=[{key:'sku',label:'Supplier SKU column'},{key:'mpn',label:'Manufacturer part number column'},{key:'gtin',label:'Barcode / GTIN column'}];
 const identityColumns=reactive<Record<string,string>>({sku:'',mpn:'',gtin:''});
 const productFilter=ref('new'),checking=ref(false);
+const manufacturerUrls=reactive<Record<number,string>>({});
+const manufacturerImages=reactive<Record<number,string[]>>({});
+function manufacturerSearchUrl(i:number){
+ const row=result.value?.rows[i]||{};
+ const mpn=row[identityColumns.mpn]||row[identityColumns.sku]||'';
+ return 'https://www.google.com/search?q='+encodeURIComponent(mpn+' official manufacturer product images');
+}
+async function findManufacturerImages(i:number){
+ imageBusy[i]=true;imageErrors[i]='';manufacturerImages[i]=[];
+ try{
+  const response=await adminFetch('/api/admin/products/import-url/vendor',{method:'POST',body:{url:manufacturerUrls[i]}});
+  manufacturerImages[i]=Array.isArray(response.images)?response.images.filter((x:unknown)=>typeof x==='string'&&x.startsWith('https://')).slice(0,12):[];
+  if(!manufacturerImages[i].length)imageErrors[i]='No images detected on this manufacturer page.';
+ }catch(e:any){imageErrors[i]=e?.data?.statusMessage||e.message||'Could not fetch manufacturer images'}
+ finally{imageBusy[i]=false}
+}
+async function saveManufacturerImage(i:number,url:string){
+ imageBusy[i]=true;imageErrors[i]='';
+ try{
+  const row=result.value?.rows[i]||{};
+  const sku=row[identityColumns.sku]||row[identityColumns.mpn]||`row-${i}`;
+  const response=await adminFetch('/api/admin/products/compuworld/save-manufacturer-image',{method:'POST',body:{url,sourceUrl:manufacturerUrls[i],sku}});
+  savedImages[i]=response.url;
+ }catch(e:any){imageErrors[i]=e?.data?.statusMessage||e.message||'Could not save manufacturer image'}
+ finally{imageBusy[i]=false}
+}
 const imageColumn=ref('');
 const imageCandidates=reactive<Record<number,string>>({});
 const savedImages=reactive<Record<number,string>>({});
