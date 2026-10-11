@@ -8,7 +8,7 @@
     </div>
     <p v-if="error" class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{error}}</p>
     <section v-if="result" class="mt-6 rounded-xl border bg-white p-5">
-      <p class="font-bold">{{result.total}} products available from Compuworld <span v-if="result.truncated" class="text-amber-700">(first 500 loaded)</span></p>
+      <p class="font-bold">{{result.total}} products available from Compuworld <span v-if="result.truncated" class="text-amber-700">(more products available)</span></p>
       <p class="mt-1 text-sm text-slate-600">Select supplier categories first. Only products in your selected categories will be shown for review. Nothing is imported automatically.</p>
       <label class="mt-4 block text-sm font-semibold">Supplier category column
         <select v-model="categoryColumn" class="mt-1 block w-full max-w-md rounded-lg border p-2">
@@ -47,7 +47,11 @@
           </label>
         </div>
       </div>
-      <div v-if="selectedSupplierCategories.length" class="mt-5">
+      <div v-if="selectedSupplierCategories.length" class="mt-4 flex flex-wrap items-center gap-3">
+        <button class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50" :disabled="loading" @click="loadCategoryProducts(0)">Load Products in Selected Categories</button>
+        <span class="text-sm text-slate-600">{{result.matchedTotal}} matching products · {{result.rows.length}} loaded</span>
+      </div>
+      <div v-if="selectedSupplierCategories.length && result.rows.length" class="mt-5">
         <h2 class="font-black">2. Select products to review</h2>
         <p class="mt-1 text-sm text-slate-600">{{selectedProductIndices.length}} of {{eligibleProducts.length}} displayed products selected in the chosen categories.</p>
         <div class="mt-3 flex flex-wrap gap-2">
@@ -112,6 +116,10 @@
           </table>
         </div>
       </div>
+      <div v-if="selectedSupplierCategories.length && result.truncated" class="mt-4 flex items-center gap-3">
+        <button class="rounded-lg border px-4 py-2 font-semibold disabled:opacity-50" :disabled="loading" @click="loadCategoryProducts(result.offset+result.rows.length)">Next 500 products →</button>
+        <span class="text-sm text-slate-500">Showing {{result.offset+1}}–{{result.offset+result.rows.length}} of {{result.matchedTotal}} in selected categories</span>
+      </div>
       <p class="mt-4 text-sm text-amber-800">Product import and image-to-product linking are not enabled yet. Saved images remain in Supabase, but the current selection is not persisted across page reloads. Only explicitly selected products will be eligible for the future import action. Supplier categories must be mapped to shop categories before creating products.</p>
     </section>
   </main>
@@ -119,7 +127,7 @@
 <script setup lang="ts">
 definePageMeta({layout:'admin',middleware:['admin']});
 const {adminFetch}=useAdminFetch();
-const result=ref<{headers:string[];rows:Record<string,string>[];total:number;truncated:boolean}|null>(null);
+const result=ref<{headers:string[];rows:Record<string,string>[];total:number;matchedTotal:number;categoryCounts:Record<string,number>;offset:number;limit:number;truncated:boolean}|null>(null);
 const categories=ref<{id:number;name:string}[]>([]);
 const loading=ref(false),error=ref(''),categoryColumn=ref(''),nameColumn=ref(''),bulkCategory=ref('');
 const actions=ref<string[]>([]),selectedCategories=ref<string[]>([]);
@@ -184,7 +192,7 @@ watch(identityColumns,()=>{matches.value=[];selectedProductIndices.value=[]},{de
 const selectedSupplierCategories=ref<string[]>([]),selectedProductIndices=ref<number[]>([]),categorySearch=ref('');
 const supplierCategories=computed(()=>{
   const counts=new Map<string,number>();
-  for(const row of result.value?.rows||[]){const name=row[categoryColumn.value]?.trim()||'Uncategorised';counts.set(name,(counts.get(name)||0)+1)}
+  for(const [name,count] of Object.entries(result.value?.categoryCounts||{})){counts.set(name,count)}
   return [...counts].map(([name,count])=>({name,count})).sort((a,b)=>a.name.localeCompare(b.name));
 });
 const filteredSupplierCategories=computed(()=>supplierCategories.value.filter(c=>c.name.toLowerCase().includes(categorySearch.value.toLowerCase())));
@@ -194,8 +202,23 @@ const eligibleProducts=computed(()=> (result.value?.rows||[]).map((row,index)=>(
   return productFilter.value==='all'||status===productFilter.value;
 }));
 function selectAllEligible(){selectedProductIndices.value=eligibleProducts.value.map(x=>x.index)}
-watch(categoryColumn,()=>{selectedSupplierCategories.value=[];selectedProductIndices.value=[]});
-watch(selectedSupplierCategories,()=>{const allowed=new Set(eligibleProducts.value.map(x=>x.index));selectedProductIndices.value=selectedProductIndices.value.filter(i=>allowed.has(i))},{deep:true});
+watch(categoryColumn,async()=>{
+  selectedSupplierCategories.value=[];selectedProductIndices.value=[];
+  if(!result.value || !categoryColumn.value)return;
+  try{ const data=await adminFetch('/api/admin/products/compuworld/preview',{query:{categoryColumn:categoryColumn.value}}); result.value=data;matches.value=[]; }
+  catch(e:any){error.value=e?.data?.statusMessage||e.message||'Could not load supplier categories'}
+});
+watch(selectedSupplierCategories,()=>{selectedProductIndices.value=[];matches.value=[];if(result.value)result.value={...result.value,rows:[],matchedTotal:0,truncated:false}},{deep:true});
+async function loadCategoryProducts(offset:number){
+ if(!result.value||!categoryColumn.value||!selectedSupplierCategories.value.length)return;
+ loading.value=true;error.value='';
+ try{
+  const data=await adminFetch('/api/admin/products/compuworld/preview',{query:{categoryColumn:categoryColumn.value,categories:selectedSupplierCategories.value.join('|'),offset}});
+  result.value=data;selectedProductIndices.value=[];matches.value=[];
+  await checkExisting();
+ }catch(e:any){error.value=e?.data?.statusMessage||e.message||'Could not load products in selected categories'}
+ finally{loading.value=false}
+}
 
 function guess(headers:string[], keys:string[]){return headers.find(h=>keys.some(k=>h.toLowerCase().includes(k)))||''}
 function applyBulk(){if(!result.value)return;selectedProductIndices.value.forEach(i=>{actions.value[i]='shop';selectedCategories.value[i]=bulkCategory.value})}
@@ -214,7 +237,7 @@ async function load(){
     imageColumn.value=guess(data.headers,['image url','imageurl','image link','image']);
     for(const key of Object.keys(imageCandidates))delete imageCandidates[Number(key)];
     for(const key of Object.keys(savedImages))delete savedImages[Number(key)];
-    await checkExisting();
+    if(!categoryColumn.value)await checkExisting();
   }catch(e:any){error.value=e?.data?.statusMessage||e.message||'Unable to fetch Compuworld price list'}
   finally{loading.value=false}
 }

@@ -39,5 +39,17 @@ export default defineEventHandler(async (event) => {
   if (parsed.length < 2) throw createError({statusCode:502,statusMessage:"Compuworld export contains no product rows"});
   const headers = parsed.shift()!.map(h=>h.trim());
   if (headers.some((h,i)=>!h||headers.indexOf(h)!==i)) throw createError({statusCode:502,statusMessage:"Compuworld CSV has missing or duplicate column names"});
-  return { headers, total:parsed.length, rows:parsed.slice(0,500).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""]))), truncated:parsed.length>500 };
+  const query = getQuery(event);
+  const categoryColumn = typeof query.categoryColumn === 'string' && headers.includes(query.categoryColumn) ? query.categoryColumn : '';
+  const categoryNames = typeof query.categories === 'string' ? query.categories.split('|').filter(Boolean).slice(0,200) : [];
+  const offset = Math.max(0, Math.min(1000000, Number(query.offset)||0));
+  const limit = 500;
+  const categoryCounts: Record<string,number> = {};
+  if (categoryColumn) {
+    const idx = headers.indexOf(categoryColumn);
+    for (const row of parsed) { const key = row[idx]?.trim() || 'Uncategorised'; categoryCounts[key] = (categoryCounts[key]||0)+1; }
+  }
+  const filtered = categoryColumn && categoryNames.length ? parsed.filter(row=>categoryNames.includes(row[headers.indexOf(categoryColumn)]?.trim()||'Uncategorised')) : (categoryColumn ? [] : parsed);
+  const page = filtered.slice(offset,offset+limit);
+  return { headers, total:parsed.length, matchedTotal:filtered.length, categoryCounts, offset, limit, rows:page.map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""]))), truncated:offset+page.length<filtered.length };
 });
