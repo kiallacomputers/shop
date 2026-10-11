@@ -28,7 +28,7 @@
           <select v-model="productFilter" class="ml-2 rounded-lg border p-2">
             <option value="new">New Products Only (default)</option>
             <option value="all">All Products</option>
-            <option value="existing">Existing Products</option>
+            <option value="existing">Already in Shop (including Leader)</option>
             <option value="review">Needs Review</option>
           </select>
         </label>
@@ -90,7 +90,10 @@
             <tbody><tr v-for="item in eligibleProducts" :key="item.index" class="border-b">
               <td class="p-3"><input v-model="selectedProductIndices" type="checkbox" :value="item.index" /></td>
               <td class="max-w-80 p-3">{{item.row[nameColumn]||Object.values(item.row)[0]||'—'}}</td>
-              <td class="p-3"><span class="font-semibold">{{statusLabel(item.index)}}</span><span v-if="matches[item.index]?.name" class="block text-xs text-slate-500">{{matches[item.index].name}}</span></td>
+              <td class="p-3"><span class="font-semibold">{{statusLabel(item.index)}}</span><NuxtLink v-if="matches[item.index]?.productId" :to="`/admin/products/${matches[item.index].productId}`" class="block text-xs font-semibold text-blue-700 hover:underline">{{matches[item.index].name}} ↗</NuxtLink>
+                <span v-if="matches[item.index]?.supplierNames?.length" class="block text-xs text-slate-600">Suppliers: {{matches[item.index].supplierNames.join(', ')}}</span>
+                <span v-if="matches[item.index]?.leaderBuyPrice!=null" class="block text-xs text-slate-600">Leader buy: {{new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(matches[item.index].leaderBuyPrice!)}} ex GST</span>
+                <span v-if="matches[item.index]?.status==='review'" class="block text-xs text-amber-700">{{matches[item.index].reason}}</span></td>
               <td class="p-3">{{item.row[categoryColumn]||'Uncategorised'}}</td>
               <td class="p-3"><select v-model="actions[item.index]" class="rounded border p-2">
                 <option value="supplier">Use supplier category</option><option value="shop">Choose shop category</option>
@@ -212,8 +215,8 @@ async function uploadImage(event:Event,i:number){
   finally{imageBusy[i]=false}
 }
 
-const matches=ref<{status:string;reason:string;name?:string}[]>([]);
-function statusLabel(i:number){return matches.value[i]?.status==='new'?'New':matches.value[i]?.status==='existing'?'Existing': 'Needs Review'}
+const matches=ref<{status:string;reason:string;name?:string;productId?:number;variantId?:number|null;supplierNames?:string[];leaderBuyPrice?:number|null;alreadyLinkedCompuworld?:boolean;active?:boolean}[]>([]);
+function statusLabel(i:number){const m=matches.value[i];return m?.status==='new'?'New':m?.status==='existing'?(m.alreadyLinkedCompuworld?'Already linked to Compuworld':m.supplierNames?.some(x=>/leader/i.test(x))?'Already in shop — Leader':'Already in shop'):'Needs Review'}
 async function checkExisting(){
  if(!result.value)return;
  checking.value=true;error.value='';
