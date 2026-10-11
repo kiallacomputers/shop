@@ -67,9 +67,22 @@
           </label>
         </div>
         <button class="mt-3 rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-40" :disabled="!bulkCategory||!selectedProductIndices.length" @click="applyBulk">Apply shop category to selected products</button>
+        <section class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <h3 class="font-black text-slate-900">3. Product images</h3>
+          <p class="mt-1 text-sm text-slate-600">Find images for selected products from Compuworld image URLs, then approve each image before saving it to Supabase. Missing images can be uploaded manually.</p>
+          <label class="mt-3 block text-sm font-semibold">Supplier image URL column
+            <select v-model="imageColumn" class="mt-1 block w-full max-w-lg rounded-lg border p-2">
+              <option value="">No image URL column found</option><option v-for="h in result.headers" :key="h" :value="h">{{h}}</option>
+            </select>
+          </label>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-bold text-white" :disabled="!selectedProductIndices.length" @click="findImages">Find Images for Selected Products</button>
+            <span class="text-xs text-slate-600">{{imageCandidatesCount}} supplier images found; {{savedImagesCount}} saved to Supabase</span>
+          </div>
+        </section>
         <div class="mt-4 max-h-[550px] overflow-auto rounded-lg border">
           <table class="min-w-full text-left text-sm">
-            <thead class="sticky top-0 bg-slate-100"><tr><th class="p-3">Select</th><th class="p-3">Product</th><th class="p-3">Status</th><th class="p-3">Supplier category</th><th class="p-3">Category action</th><th class="p-3">Kialla category</th></tr></thead>
+            <thead class="sticky top-0 bg-slate-100"><tr><th class="p-3">Select</th><th class="p-3">Product</th><th class="p-3">Status</th><th class="p-3">Supplier category</th><th class="p-3">Category action</th><th class="p-3">Kialla category</th><th class="p-3">Product image</th></tr></thead>
             <tbody><tr v-for="item in eligibleProducts" :key="item.index" class="border-b">
               <td class="p-3"><input v-model="selectedProductIndices" type="checkbox" :value="item.index" /></td>
               <td class="max-w-80 p-3">{{item.row[nameColumn]||Object.values(item.row)[0]||'—'}}</td>
@@ -81,11 +94,25 @@
               <td class="p-3"><select v-model="selectedCategories[item.index]" class="rounded border p-2" :disabled="actions[item.index]!=='shop'">
                 <option value="">Choose category…</option><option v-for="c in categories" :key="c.id" :value="String(c.id)">{{c.name}}</option>
               </select></td>
+              <td class="min-w-56 p-3">
+                <template v-if="selectedProductIndices.includes(item.index)">
+                  <img v-if="savedImages[item.index]||imageCandidates[item.index]" :src="savedImages[item.index]||imageCandidates[item.index]" alt="Supplier product image preview" class="mb-2 h-24 w-24 rounded border bg-white object-contain" referrerpolicy="no-referrer" />
+                  <p v-else class="text-xs text-amber-700">Image required</p>
+                  <div class="flex flex-col gap-2">
+                    <button v-if="imageCandidates[item.index]&&!savedImages[item.index]" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white disabled:opacity-50" :disabled="imageBusy[item.index]" @click="approveImage(item.index)">{{imageBusy[item.index]?'Saving…':'Approve & Save Image'}}</button>
+                    <label class="cursor-pointer text-xs font-semibold text-blue-700">Upload image manually
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="mt-1 block w-48 text-xs" :disabled="imageBusy[item.index]" @change="uploadImage($event,item.index)" />
+                    </label>
+                    <span v-if="savedImages[item.index]" class="text-xs font-semibold text-emerald-700">Saved to Supabase (not linked to a product yet)</span>
+                    <span v-if="imageErrors[item.index]" class="text-xs text-red-700">{{imageErrors[item.index]}}</span>
+                  </div>
+                </template><span v-else class="text-xs text-slate-500">Select product first</span>
+              </td>
             </tr></tbody>
           </table>
         </div>
       </div>
-      <p class="mt-4 text-sm text-amber-800">Preview only: importing and saving mappings are not enabled yet. Only explicitly selected products will be eligible for the future import action. Supplier categories must be mapped to shop categories before creating products.</p>
+      <p class="mt-4 text-sm text-amber-800">Product import and image-to-product linking are not enabled yet. Saved images remain in Supabase, but the current selection is not persisted across page reloads. Only explicitly selected products will be eligible for the future import action. Supplier categories must be mapped to shop categories before creating products.</p>
     </section>
   </main>
 </template>
@@ -99,6 +126,46 @@ const actions=ref<string[]>([]),selectedCategories=ref<string[]>([]);
 const identityFields=[{key:'sku',label:'Supplier SKU column'},{key:'mpn',label:'Manufacturer part number column'},{key:'gtin',label:'Barcode / GTIN column'}];
 const identityColumns=reactive<Record<string,string>>({sku:'',mpn:'',gtin:''});
 const productFilter=ref('new'),checking=ref(false);
+const imageColumn=ref('');
+const imageCandidates=reactive<Record<number,string>>({});
+const savedImages=reactive<Record<number,string>>({});
+const imageErrors=reactive<Record<number,string>>({});
+const imageBusy=reactive<Record<number,boolean>>({});
+const imageCandidatesCount=computed(()=>selectedProductIndices.value.filter(i=>!!imageCandidates[i]).length);
+const savedImagesCount=computed(()=>selectedProductIndices.value.filter(i=>!!savedImages[i]).length);
+function findImages(){
+  if(!result.value)return;
+  for(const i of selectedProductIndices.value){
+    imageErrors[i]='';
+    const raw=String(result.value.rows[i]?.[imageColumn.value]||'').trim();
+    try{
+      const u=new URL(raw);
+      imageCandidates[i]=u.protocol==='https:'&&['www.compuworld.com.au','compuworld.com.au'].includes(u.hostname)&&!u.port&&!u.username&&!u.password?u.toString():'';
+      if(raw&&!imageCandidates[i])imageErrors[i]='Image URL is not hosted on Compuworld; use manual upload.';
+    }catch{imageCandidates[i]=''}
+  }
+}
+async function approveImage(i:number){
+  if(!imageCandidates[i]||!result.value)return;
+  imageBusy[i]=true;imageErrors[i]='';
+  try{
+    const sku=result.value.rows[i]?.[identityColumns.sku]||String(i);
+    const response=await adminFetch('/api/admin/products/compuworld/save-image',{method:'POST',body:{url:imageCandidates[i],sku}});
+    savedImages[i]=response.url;
+  }catch(e:any){imageErrors[i]=e?.data?.statusMessage||e.message||'Could not save supplier image'}
+  finally{imageBusy[i]=false}
+}
+async function uploadImage(event:Event,i:number){
+  const file=(event.target as HTMLInputElement).files?.[0];if(!file)return;
+  imageBusy[i]=true;imageErrors[i]='';
+  try{
+    const data=new FormData();data.append('file',file);
+    const response=await adminFetch('/api/admin/products/upload-image',{method:'POST',body:data});
+    savedImages[i]=response.url;
+  }catch(e:any){imageErrors[i]=e?.data?.statusMessage||e.message||'Could not upload image'}
+  finally{imageBusy[i]=false}
+}
+
 const matches=ref<{status:string;reason:string;name?:string}[]>([]);
 function statusLabel(i:number){return matches.value[i]?.status==='new'?'New':matches.value[i]?.status==='existing'?'Existing': 'Needs Review'}
 async function checkExisting(){
@@ -144,6 +211,9 @@ async function load(){
     identityColumns.sku=guess(data.headers,['supplier sku','sku','item code','product code','stock code']);
     identityColumns.mpn=guess(data.headers,['manufacturer part','mpn','mfr part']);
     identityColumns.gtin=guess(data.headers,['barcode','gtin','ean','upc']);
+    imageColumn.value=guess(data.headers,['image url','imageurl','image link','image']);
+    for(const key of Object.keys(imageCandidates))delete imageCandidates[Number(key)];
+    for(const key of Object.keys(savedImages))delete savedImages[Number(key)];
     await checkExisting();
   }catch(e:any){error.value=e?.data?.statusMessage||e.message||'Unable to fetch Compuworld price list'}
   finally{loading.value=false}
