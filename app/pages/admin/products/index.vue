@@ -862,7 +862,7 @@ const duplicateProduct = async (product: Product) => {
 // ========================================
 
 const deleteProduct = async (product: Product) => {
-  if (!await dialog.confirm(`Are you sure you want to delete \"${product.name}\"?`,{title:'Delete product?',confirmText:'Delete',danger:true})) return;
+  if (!await dialog.confirm(`Are you sure you want to delete "${product.name}"?`,{title:'Delete product?',confirmText:'Delete',danger:true})) return;
 
   deletingId.value = String(product.id);
   errorMessage.value = "";
@@ -898,7 +898,7 @@ const copyImageFailureLog = async () => {
       lines.push("");
     }
   }
-  const text = lines.join("\n") || "No image copy failures.";
+  const text = lines.join("n") || "No image copy failures.";
   try {
     await navigator.clipboard.writeText(text);
     failureLogCopied.value = true;
