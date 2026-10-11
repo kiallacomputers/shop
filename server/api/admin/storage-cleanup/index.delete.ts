@@ -149,16 +149,18 @@ export default defineEventHandler(async (event) => {
 
   const { data: variants, error: variantError } = await supabase
     .from("product_variants")
-    .select("id,images");
+    .select("*");
 
-  if (productError || variantError) {
+  const missingLegacyVariantTable = variantError?.code === "42P01" ||
+    variantError?.code === "PGRST205";
+  if (productError || (variantError && !missingLegacyVariantTable)) {
     throw createError({
       statusCode: 500,
       statusMessage: "Unable to re-check product image references.",
     });
   }
 
-  const referenced = collectImageReferences([...(products || []), ...(variants || [])]);
+  const referenced = collectImageReferences([...(products || []), ...(!variantError ? (variants || []) : [])]);
   const nowUsed = paths.filter((path) => referenced.has(path));
 
   if (nowUsed.length) {
