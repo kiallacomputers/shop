@@ -100,139 +100,65 @@ const collectImageReferences = (products: any[]) => {
   return references;
 };
 
-const listAllFiles = async (supabase: any) => {
-  const output: Array<{
-    name: string;
-    path: string;
-    size: number | null;
-    created_at: string | null;
-    updated_at: string | null;
-    mime_type: string | null;
-  }> = [];
-
-  const walk = async (folder = "", depth = 0) => {
-    if (depth > 10) return;
-
-    let offset = 0;
-    const limit = 1000;
-
-    while (true) {
-      const { data, error } = await supabase.storage
-        .from(BUCKET)
-        .list(folder, {
-          limit,
-          offset,
-          sortBy: { column: "name", order: "asc" },
-        });
-
-      if (error) throw error;
-
-      const rows = data || [];
-
-      for (const item of rows) {
-        const path = folder ? `${folder}/${item.name}` : item.name;
-
-        // Supabase returns folders without file metadata/id.
-        const isFolder =
-          !item.id &&
-          !item.metadata &&
-          !item.created_at &&
-          !item.updated_at;
-
-        if (isFolder) {
-          // Advertisement banners also live in this bucket. They are not
-          // product photography and must never be offered by this cleanup page.
-          if (path === "ads" || path.startsWith("ads/")) continue;
-          await walk(path, depth + 1);
-          continue;
-        }
-
-        const mimeType =
-          item.metadata?.mimetype ||
-          item.metadata?.contentType ||
-          null;
-
-        const looksLikeImage =
-          mimeType?.startsWith("image/") ||
-          /\.(jpe?g|png|webp|gif|avif)$/i.test(item.name);
-
-        if (!looksLikeImage) continue;
-
-        output.push({
-          name: item.name,
-          path,
-          size: Number(item.metadata?.size ?? 0) || null,
-          created_at: item.created_at || null,
-          updated_at: item.updated_at || null,
-          mime_type: mimeType,
-        });
-      }
-
-      if (rows.length < limit) break;
-      offset += limit;
+// Scan one folder/page per request to stay below Netlify function time limits.
+const PAGE_SIZE = 100;
+const scanPage = async (supabase: any, folder: string, offset: number) => {
+  const { data, error } = await supabase.storage.from(BUCKET).list(folder, {
+    limit: PAGE_SIZE, offset, sortBy: { column: "name", order: "asc" },
+  });
+  if (error) throw error;
+  const files: any[] = [];
+  const folders: string[] = [];
+  for (const item of data || []) {
+    const path = folder ? `${folder}/${item.name}` : item.name;
+    const isFolder = !item.id && !item.metadata && !item.created_at && !item.updated_at;
+    if (isFolder) {
+      if (path !== "ads" && !path.startsWith("ads/")) folders.push(path);
+      continue;
     }
-  };
-
-  await walk();
-  return output;
+    const mimeType = item.metadata?.mimetype || item.metadata?.contentType || null;
+    if (!(mimeType?.startsWith("image/") || /\.(jpe?g|png|webp|gif|avif)$/i.test(item.name))) continue;
+    files.push({name:item.name,path,size:Number(item.metadata?.size??0)||null,
+      created_at:item.created_at||null,updated_at:item.updated_at||null,mime_type:mimeType});
+  }
+  return {files,folders,hasMore:(data||[]).length===PAGE_SIZE};
 };
 
 export default defineEventHandler(async (event) => {
   await requireSuperAdmin(event);
   const supabase = getAdminSupabase();
 
+  const query = getQuery(event);
+  const folder = typeof query.folder === "string" ? query.folder : "";
+  const offset = Math.max(0, Math.floor(Number(query.offset || 0)) || 0);
+  if (offset > 1000000 || folder.startsWith("/") || folder.includes("..") || folder === "ads" || folder.startsWith("ads/")) {
+    throw createError({statusCode:400,statusMessage:"Invalid scan position"});
+  }
+
+  // Only the current page's file references need comparison, but all products
+  // must be read to ensure we never flag an image that is in use.
   const { data: products, error: productError } = await supabase
-    .from("products")
-    .select("id,images,description");
-
+    .from("products").select("id,images,description");
+  if (productError) throw createError({statusCode:500,statusMessage:"Unable to read product images"});
   const { data: variants, error: variantError } = await supabase
-    .from("product_variants")
-    .select("*");
-
-  const missingLegacyVariantTable = variantError?.code === "42P01" ||
-    variantError?.code === "PGRST205";
-  if (productError || (variantError && !missingLegacyVariantTable)) {
-    console.error("STORAGE CLEANUP PRODUCT LOOKUP ERROR:", productError);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Unable to inspect product image references.",
-    });
+    .from("product_variants").select("id,images");
+  // Variants may be absent or have no images column after migration.
+  const ignoreVariantError = variantError && ["42P01","42703","PGRST205","PGRST204"].includes(variantError.code);
+  if (variantError && !ignoreVariantError) {
+    throw createError({statusCode:500,statusMessage:"Unable to read legacy variant images"});
   }
-
-  const referenced = collectImageReferences([...(products || []), ...(!variantError ? (variants || []) : [])]);
-
-  let files;
-  try {
-    files = await listAllFiles(supabase);
-  } catch (error: any) {
-    console.error("STORAGE CLEANUP BUCKET LIST ERROR:", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: error?.message || "Unable to list product storage.",
-    });
+  const referenced = collectImageReferences([...(products||[]),...(!variantError?(variants||[]):[])]);
+  let page;
+  try { page = await scanPage(supabase,folder,offset); }
+  catch (error:any) {
+    console.error("STORAGE CLEANUP LIST ERROR:",error);
+    throw createError({statusCode:500,statusMessage:error?.message||"Storage scan failed"});
   }
-
-  const unused = files
-    .filter((file) => !referenced.has(file.path))
-    .map((file) => {
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(file.path);
-      return {
-        ...file,
-        url: data.publicUrl,
-      };
-    });
-
-  const totalBytes = unused.reduce(
-    (sum, file) => sum + Number(file.size || 0),
-    0,
-  );
-
-  return {
-    bucket: BUCKET,
-    scanned_files: files.length,
-    referenced_files: files.length - unused.length,
-    unused_files: unused.length,
-    unused_bytes: totalBytes,
-    files: unused,
-  };
+  const unused = page.files.filter(file=>!referenced.has(file.path)).map(file=>({
+    ...file,url:supabase.storage.from(BUCKET).getPublicUrl(file.path).data.publicUrl
+  }));
+  return {bucket:BUCKET,scanned_files:page.files.length,
+    referenced_files:page.files.length-unused.length,unused_files:unused.length,
+    unused_bytes:unused.reduce((sum,file)=>sum+Number(file.size||0),0),files:unused,
+    folders:page.folders,has_more:page.hasMore,next_offset:offset+100};
 });

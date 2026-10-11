@@ -176,7 +176,7 @@
       </section>
 
       <div
-        v-else
+        v-else-if="summary && !errorMessage"
         class="rounded-xl border border-emerald-200 bg-emerald-50 p-10 text-center"
       >
         <p class="text-lg font-bold text-emerald-800">
@@ -212,6 +212,9 @@ type CleanupResponse = {
   unused_files: number;
   unused_bytes: number;
   files: StorageFile[];
+  folders?: string[];
+  has_more?: boolean;
+  next_offset?: number;
 };
 
 const { adminFetch } = useAdminFetch();
@@ -261,12 +264,30 @@ const loadUnused = async () => {
   selectedPaths.value = [];
 
   try {
-    const result = await adminFetch<CleanupResponse>(
-      "/api/admin/storage-cleanup",
-    );
-
-    summary.value = result;
-    files.value = result?.files || [];
+    const pending: {folder:string;offset:number}[] = [{folder:"",offset:0}];
+    const visited = new Set<string>();
+    const aggregate: CleanupResponse = {bucket:"products",scanned_files:0,referenced_files:0,
+      unused_files:0,unused_bytes:0,files:[]};
+    while (pending.length) {
+      const current = pending.shift()!;
+      const key = `${current.folder}:${current.offset}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const result = await adminFetch<CleanupResponse>("/api/admin/storage-cleanup",{
+        query:{folder:current.folder,offset:current.offset}
+      });
+      aggregate.scanned_files += result.scanned_files;
+      aggregate.referenced_files += result.referenced_files;
+      aggregate.unused_files += result.unused_files;
+      aggregate.unused_bytes += result.unused_bytes;
+      aggregate.files.push(...result.files);
+      for (const folder of result.folders||[]) pending.push({folder,offset:0});
+      if (result.has_more) pending.push({folder:current.folder,offset:result.next_offset||current.offset+100});
+      summary.value = {...aggregate};
+      files.value = [...aggregate.files];
+    }
+    summary.value = aggregate;
+    files.value = aggregate.files;
   } catch (error: any) {
     files.value = [];
     summary.value = null;
