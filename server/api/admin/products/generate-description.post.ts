@@ -96,7 +96,11 @@ async function fetchPublicProductPage(input: string) {
   };
   const title = decode(meta("og:title") || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").slice(0, 220);
   const description = meta("description") || meta("og:description");
-  const contentHtml = html.match(/<main\\b[^>]*>([\\s\\S]*?)<\\/main>/i)?.[1] || html.match(/<article\\b[^>]*>([\\s\\S]*?)<\\/article>/i)?.[1] || html;\n  const text = decode(contentHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).slice(0, 14000);
+  const contentHtml = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1]
+    || html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] || html;
+  const text = decode(contentHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).slice(0, 14000);
   const images: string[] = [];
   const addImage = (candidate: string) => {
     try { const u = new URL(decode(candidate), url); if (u.protocol === "https:" && !images.includes(u.toString())) images.push(u.toString()); } catch { /* ignore */ }
