@@ -678,10 +678,10 @@
               <input v-model="descriptionPartNumber" type="text" class="input mt-1 w-full" placeholder="e.g. 910-006559" />
             </label>
             <button type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" :disabled="generatingDescription" @click="generateVendorDescription">
-              {{ generatingDescription ? "Researching product..." : "Find Details & Generate Description" }}
+              {{ generatingDescription ? "Reading vendor page..." : "Extract Vendor Details & Images" }}
             </button>
           </div>
-          <p class="mt-2 text-xs text-slate-600">Uses web search and AI to draft an editable description. Review all specifications before saving. Existing content is not replaced until you confirm.</p>
+          <p class="mt-2 text-xs text-slate-600">Extracts available information directly from the public vendor page. No AI or paid API required. Review all content and images before saving.</p>
           <p v-if="descriptionGenerationError" class="mt-2 text-sm text-red-700">{{ descriptionGenerationError }}</p>
           <div v-if="descriptionDraft" class="mt-3 rounded-lg border border-slate-200 bg-white p-3">
             <p class="text-sm font-semibold">Draft ready: {{ descriptionDraft.blocks.length }} description blocks</p>
@@ -706,7 +706,7 @@
               </div>
               <p v-if="suggestedImageError" class="mt-2 text-sm text-red-700">{{ suggestedImageError }}</p>
             </div>
-            <p class="mt-3 text-xs font-semibold">Research sources (check product match):</p>
+            <p class="mt-3 text-xs font-semibold">Source page (check product match):</p>
             <ul class="mt-1 list-disc pl-5 text-xs">
               <li v-for="source in descriptionDraft.sources" :key="source.url"><a :href="source.url" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">{{ source.title || source.url }}</a></li>
             </ul>

@@ -14,101 +14,40 @@ export default defineEventHandler(async (event) => {
   const productName = clean(body?.productName, 220);
   const productUrl = clean(body?.productUrl, 1200);
   if (!productUrl && (!vendor || !partNumber)) throw error(400, "Enter a product URL or manufacturer and product number.");
-  const searchKey = process.env.SERPER_API_KEY;
-  const aiKey = process.env.OPENAI_API_KEY;
-  if (!searchKey || !aiKey) throw error(503, "Configure SERPER_API_KEY and OPENAI_API_KEY on the server.");
-
-  let page: { title: string; description: string; text: string; url: string; images: string[] } | null = null;
-  if (productUrl) {
-    // Public HTTPS pages only. DNS and redirect targets are validated server-side.
-    page = await fetchPublicProductPage(productUrl);
+  if (!productUrl) throw error(400, "Vendor Product URL is required for website extraction. No AI or search API is used.");
+  const page = await fetchPublicProductPage(productUrl);
+  const evidence = [page.title, page.description, page.text].join(" ").toLowerCase();
+  const terms = [partNumber, productName].filter((x) => x.length >= 4);
+  if (terms.length && !terms.some((term) => evidence.includes(term.toLowerCase()))) {
+    throw error(422, "The vendor page does not appear to match the entered product. Check the URL and product number.");
   }
-  const query = page ? `"${page.title || vendor}" "${partNumber}" product specifications` : `"${vendor}" "${partNumber}" product specifications`;
-  let search: any;
-  try {
-    search = await $fetch<any>("https://google.serper.dev/search", {
-      method: "POST",
-      headers: { "X-API-KEY": searchKey, "Content-Type": "application/json" },
-      body: { q: query, num: 8, gl: "au", hl: "en" },
-      timeout: 12000,
-    });
-  } catch {
-    throw error(502, "Product research search failed. Check your Serper API key.");
+  const title = page.title.replace(/\\s*[|–—]\\s*[^|–—]{2,70}$/, "").trim() || productName || [vendor, partNumber].filter(Boolean).join(" ");
+  const summary = (page.description || "").trim();
+  if (!summary && page.text.length < 120) throw error(422, "The vendor page does not contain enough readable product details.");
+  // Website extraction only: preserve statements from the source instead of inventing features.
+  const blocks: Block[] = [{ type: "heading", text: "Overview", level: 2 }];
+  if (summary) blocks.push({ type: "paragraph", text: clean(summary, 1100) });
+  const candidates = page.text.split(/(?<=[.!?])\\s+/)
+    .map((v) => v.trim())
+    .filter((v) => v.length >= 45 && v.length <= 240)
+    .filter((v) => !/cookie|privacy policy|subscribe|sign up|javascript|all rights reserved|terms of use/i.test(v));
+  const unique = [...new Set(candidates)].filter((v) => !summary.includes(v)).slice(0, 6);
+  if (unique.length) {
+    blocks.push({ type: "heading", text: "Product Details", level: 2 });
+    blocks.push({ type: "list", items: unique });
   }
-  let imageSearch: any = null;
-  try {
-    imageSearch = await $fetch<any>("https://google.serper.dev/images", {
-      method: "POST",
-      headers: { "X-API-KEY": searchKey, "Content-Type": "application/json" },
-      body: { q: `"${vendor}" "${partNumber}" product official image`, num: 12, gl: "au", hl: "en" },
-      timeout: 12000,
-    });
-  } catch { /* Description can still succeed if image search is unavailable. */ }
-  const images = (Array.isArray(imageSearch?.images) ? imageSearch.images : [])
-    .filter((item: any) => typeof item.imageUrl === "string" && item.imageUrl.startsWith("https://"))
-    .slice(0, 12)
-    .map((item: any) => ({
-      url: item.imageUrl,
-      thumbnail: typeof item.thumbnailUrl === "string" && item.thumbnailUrl.startsWith("https://") ? item.thumbnailUrl : item.imageUrl,
-      title: clean(item.title, 160),
-      host: (() => { try { return new URL(item.imageUrl).hostname; } catch { return ""; } })(),
-    }));
-  const results = (Array.isArray(search?.organic) ? search.organic : [])
-    .filter((r: any) => typeof r.link === "string" && /^https:\/\//.test(r.link))
-    .slice(0, 8)
-    .map((r: any) => ({ title: clean(r.title, 180), url: r.link, snippet: clean(r.snippet, 600) }));
-  if (!results.length && !page) throw error(404, "No product research found. Try another URL or manufacturer and MPN.");
-  if (page) results.unshift({ title: page.title || "Vendor product page", url: page.url, snippet: page.description });
-  const pageImages = (page?.images || []).map((url) => ({ url, thumbnail: url, title: page?.title || "Vendor product image", host: new URL(url).hostname }));
-  const combinedImages = [...pageImages, ...images.filter((item: any) => !pageImages.some((p) => p.url === item.url))].slice(0, 12);
-
-  const instructions = [
-    "Create an attractive, accurate ecommerce description using ONLY the supplied vendor-page text and search snippets.",
-    "Never invent specifications, dimensions, compatibility, warranties, inclusions, or claims.",
-    "If snippets are vague, produce fewer sections rather than filling gaps.",
-    "Return JSON with keys: blurb (one sentence), blocks (array), seoTitle (max 60 characters), seoDescription (max 155 characters).",
-    "Allowed blocks: {type:'heading',text:'...',level:2}, {type:'paragraph',text:'...'}, {type:'list',items:['...']}.",
-    "Use heading Overview, a concise introductory paragraph, and Key Features list only when substantiated.",
-    "Do not include vendor marketing claims without evidence. No markdown, no HTML, no links in blocks.",
-    "Australian English. Do not claim the product is in stock.",
-  ].join(" ");
-  let response: any;
-  try {
-    response = await $fetch<any>("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${aiKey}`, "Content-Type": "application/json" },
-      body: {
-        model: process.env.OPENAI_DESCRIPTION_MODEL || "gpt-4o-mini",
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: instructions },
-          { role: "user", content: JSON.stringify({ vendor, partNumber, productName, vendorPage: page ? { title: page.title, description: page.description, text: page.text } : null, research: results }) },
-        ],
-      },
-      timeout: 25000,
-    });
-  } catch {
-    throw error(502, "Description generation failed. Check the OpenAI API key and model access.");
-  }
-  let generated: any;
-  try {
-    generated = JSON.parse(response?.choices?.[0]?.message?.content || "{}");
-  } catch {
-    throw error(502, "AI returned an invalid description.");
-  }
-  const blocks: Block[] = (Array.isArray(generated.blocks) ? generated.blocks : [])
-    .slice(0, 14)
-    .map((b: any) => {
-      const type = String(b?.type || "");
-      if (type === "heading") return { type, text: clean(b.text, 180), level: 2 };
-      if (type === "paragraph") return { type, text: clean(b.text, 1200) };
-      if (type === "list") return { type, items: (Array.isArray(b.items) ? b.items : []).slice(0, 10).map((x: any) => clean(x, 300)).filter(Boolean) };
-      return null;
-    })
-    .filter((b: any) => b && (b.text || b.items?.length));
-  if (!blocks.length) throw error(422, "Insufficient verified details to generate a description.");
-  return { blurb: clean(generated.blurb, 350), blocks, sources: results.map(({ title, url }: any) => ({ title, url })), images: combinedImages, seoTitle: clean(generated.seoTitle, 60), seoDescription: clean(generated.seoDescription, 155) };
+  const images = page.images.slice(0, 12).map((url) => ({
+    url, thumbnail: url, title: page.title || "Vendor product image",
+    host: new URL(url).hostname,
+  }));
+  return {
+    blurb: clean(summary || title, 350),
+    blocks,
+    sources: [{ title: page.title || "Vendor product page", url: page.url }],
+    images,
+    seoTitle: clean(title, 60),
+    seoDescription: clean(summary || title, 155),
+  };
 });
 
 function isPrivateAddress(ip: string): boolean {
@@ -157,7 +96,7 @@ async function fetchPublicProductPage(input: string) {
   };
   const title = decode(meta("og:title") || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").slice(0, 220);
   const description = meta("description") || meta("og:description");
-  const text = decode(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).slice(0, 14000);
+  const contentHtml = html.match(/<main\\b[^>]*>([\\s\\S]*?)<\\/main>/i)?.[1] || html.match(/<article\\b[^>]*>([\\s\\S]*?)<\\/article>/i)?.[1] || html;\n  const text = decode(contentHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).slice(0, 14000);
   const images: string[] = [];
   const addImage = (candidate: string) => {
     try { const u = new URL(decode(candidate), url); if (u.protocol === "https:" && !images.includes(u.toString())) images.push(u.toString()); } catch { /* ignore */ }
