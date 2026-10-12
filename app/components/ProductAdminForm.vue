@@ -26,7 +26,7 @@
             <p class="product-nav-name">{{ form.name || (mode === "create" ? "New product" : "Product") }}</p>
             <div class="product-nav-status">
               <span :class="form.active ? 'is-live' : 'is-off'">{{ form.active ? 'Active' : 'Inactive' }}</span>
-              
+              <span v-if="form.has_variants">Variants</span>
               <span v-if="form.featured">Featured</span>
             </div>
             <nav class="product-nav-links" aria-label="Product editor sections">
@@ -124,7 +124,7 @@
           <label class="flex items-end pb-2">
             <span class="flex items-center gap-2 text-sm font-medium text-slate-700">
               <input v-model="form.has_variants" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-blue-600" />
-              Variants are no longer supported
+              This product has variants / options
             </span>
           </label>
 
@@ -186,7 +186,7 @@
         </div>
       </section>
 
-      <section v-if="false" class="rounded-xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
+      <section v-if="form.has_variants" class="rounded-xl border border-cyan-200 bg-cyan-50 p-5 sm:p-6">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Product Variants</h2>
@@ -665,6 +665,33 @@
         <h2 class="text-lg font-bold text-slate-900">Product Description</h2>
         <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
 
+        <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div class="flex flex-wrap items-end gap-3">
+            <label class="min-w-44 flex-1 text-sm font-medium text-slate-700">Vendor / Manufacturer
+              <input v-model="descriptionVendor" type="text" class="input mt-1 w-full" placeholder="e.g. Logitech" />
+            </label>
+            <label class="min-w-44 flex-1 text-sm font-medium text-slate-700">Vendor Product Number / MPN
+              <input v-model="descriptionPartNumber" type="text" class="input mt-1 w-full" placeholder="e.g. 910-006559" />
+            </label>
+            <button type="button" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" :disabled="generatingDescription" @click="generateVendorDescription">
+              {{ generatingDescription ? "Researching product..." : "Find Details & Generate Description" }}
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-slate-600">Uses web search and AI to draft an editable description. Review all specifications before saving. Existing content is not replaced until you confirm.</p>
+          <p v-if="descriptionGenerationError" class="mt-2 text-sm text-red-700">{{ descriptionGenerationError }}</p>
+          <div v-if="descriptionDraft" class="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+            <p class="text-sm font-semibold">Draft ready: {{ descriptionDraft.blocks.length }} description blocks</p>
+            <p class="mt-1 text-sm text-slate-600">{{ descriptionDraft.blurb }}</p>
+            <div class="mt-2 flex gap-2">
+              <button type="button" class="rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white" @click="applyVendorDescription">Use This Description</button>
+              <button type="button" class="rounded border px-3 py-2 text-sm" @click="descriptionDraft = null">Discard</button>
+            </div>
+            <p class="mt-3 text-xs font-semibold">Research sources (check product match):</p>
+            <ul class="mt-1 list-disc pl-5 text-xs">
+              <li v-for="source in descriptionDraft.sources" :key="source.url"><a :href="source.url" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">{{ source.title || source.url }}</a></li>
+            </ul>
+          </div>
+        </div>
         <div class="mt-5">
           <ProductDescriptionBuilder v-model="descriptionBlocks" />
         </div>
@@ -734,7 +761,38 @@ const imageLibraryFiles = ref<Array<{ name: string; path: string; url: string; s
 const imageLibrarySelected = ref<string[]>([]);
 const imageLibraryOffset = ref(0);
 const imageLibraryHasMore = ref(false);
-const descriptionBlocks = ref<any[]>([]);
+const descriptionBlocks = ref<any[]>([]);\nconst descriptionVendor = ref("");
+const descriptionPartNumber = ref("");
+const generatingDescription = ref(false);
+const descriptionGenerationError = ref("");
+const descriptionDraft = ref<{ blurb: string; blocks: any[]; sources: Array<{title:string;url:string}> } | null>(null);
+const generateVendorDescription = async () => {
+  descriptionGenerationError.value = "";
+  descriptionDraft.value = null;
+  const vendor = descriptionVendor.value.trim() || form.brand.trim();
+  const partNumber = descriptionPartNumber.value.trim() || form.mpn.trim();
+  if (!vendor || !partNumber) {
+    descriptionGenerationError.value = "Enter the vendor/manufacturer and product number.";
+    return;
+  }
+  generatingDescription.value = true;
+  try {
+    descriptionDraft.value = await adminFetch("/api/admin/products/generate-description", {
+      method: "POST", body: { vendor, partNumber, productName: form.name },
+    });
+  } catch (err: any) {
+    descriptionGenerationError.value = err?.data?.statusMessage || err?.message || "Unable to generate description.";
+  } finally {
+    generatingDescription.value = false;
+  }
+};
+const applyVendorDescription = () => {
+  if (!descriptionDraft.value) return;
+  descriptionBlocks.value = descriptionDraft.value.blocks;
+  if (descriptionDraft.value.blurb) form.blurb = descriptionDraft.value.blurb;
+  descriptionDraft.value = null;
+};
+
 const standardMarkupPercent = ref(20);
 const standardPricingLevelName = ref("Standard");
 const pricingLevels = ref<Array<{key:string;name:string;markup_percent:number}>>([]);
@@ -1044,7 +1102,7 @@ const loadForm = async () => {
       form.mpn = product.mpn || "";
       form.seo_title = product.seo_title || "";
       form.seo_description = product.seo_description || "";
-      form.has_variants = false;
+      form.has_variants = product.has_variants === true;
       form.buy_price_ex_gst = product.buy_price_ex_gst == null ? "" : String(product.buy_price_ex_gst);
       form.pricing_level_markup_override_percent = product.pricing_level_markup_override_percent == null ? "0" : String(product.pricing_level_markup_override_percent);
       form.rrp_markup_percent = product.rrp_markup_percent == null ? "" : String(product.rrp_markup_percent);
