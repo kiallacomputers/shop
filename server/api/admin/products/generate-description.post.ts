@@ -1,3 +1,5 @@
+import { lookup } from "node:dns/promises";
+import { isIP } from "node:net";
 import { requireAdmin } from "~~/server/utils/adminAuth";
 
 type Block = { type: string; text?: string; level?: number; items?: string[] };
@@ -10,12 +12,18 @@ export default defineEventHandler(async (event) => {
   const vendor = clean(body?.vendor || body?.brand);
   const partNumber = clean(body?.partNumber || body?.mpn || body?.product_code);
   const productName = clean(body?.productName, 220);
-  if (!vendor || !partNumber) throw error(400, "Enter a manufacturer/vendor name and product number.");
+  const productUrl = clean(body?.productUrl, 1200);
+  if (!productUrl && (!vendor || !partNumber)) throw error(400, "Enter a product URL or manufacturer and product number.");
   const searchKey = process.env.SERPER_API_KEY;
   const aiKey = process.env.OPENAI_API_KEY;
   if (!searchKey || !aiKey) throw error(503, "Configure SERPER_API_KEY and OPENAI_API_KEY on the server.");
 
-  const query = `"${vendor}" "${partNumber}" product specifications`;
+  let page: { title: string; description: string; text: string; url: string; images: string[] } | null = null;
+  if (productUrl) {
+    // Public HTTPS pages only. DNS and redirect targets are validated server-side.
+    page = await fetchPublicProductPage(productUrl);
+  }
+  const query = page ? `"${page.title || vendor}" "${partNumber}" product specifications` : `"${vendor}" "${partNumber}" product specifications`;
   let search: any;
   try {
     search = await $fetch<any>("https://google.serper.dev/search", {
@@ -49,13 +57,16 @@ export default defineEventHandler(async (event) => {
     .filter((r: any) => typeof r.link === "string" && /^https:\/\//.test(r.link))
     .slice(0, 8)
     .map((r: any) => ({ title: clean(r.title, 180), url: r.link, snippet: clean(r.snippet, 600) }));
-  if (!results.length) throw error(404, "No reliable search results found for that product number.");
+  if (!results.length && !page) throw error(404, "No product research found. Try another URL or manufacturer and MPN.");
+  if (page) results.unshift({ title: page.title || "Vendor product page", url: page.url, snippet: page.description });
+  const pageImages = (page?.images || []).map((url) => ({ url, thumbnail: url, title: page?.title || "Vendor product image", host: new URL(url).hostname }));
+  const combinedImages = [...pageImages, ...images.filter((item: any) => !pageImages.some((p) => p.url === item.url))].slice(0, 12);
 
   const instructions = [
-    "Create an attractive, accurate ecommerce description from ONLY the supplied search-result snippets.",
+    "Create an attractive, accurate ecommerce description using ONLY the supplied vendor-page text and search snippets.",
     "Never invent specifications, dimensions, compatibility, warranties, inclusions, or claims.",
     "If snippets are vague, produce fewer sections rather than filling gaps.",
-    "Return a JSON object with keys: blurb (one sentence), blocks (array).",
+    "Return JSON with keys: blurb (one sentence), blocks (array), seoTitle (max 60 characters), seoDescription (max 155 characters).",
     "Allowed blocks: {type:'heading',text:'...',level:2}, {type:'paragraph',text:'...'}, {type:'list',items:['...']}.",
     "Use heading Overview, a concise introductory paragraph, and Key Features list only when substantiated.",
     "Do not include vendor marketing claims without evidence. No markdown, no HTML, no links in blocks.",
@@ -72,7 +83,7 @@ export default defineEventHandler(async (event) => {
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: instructions },
-          { role: "user", content: JSON.stringify({ vendor, partNumber, productName, research: results }) },
+          { role: "user", content: JSON.stringify({ vendor, partNumber, productName, vendorPage: page ? { title: page.title, description: page.description, text: page.text } : null, research: results }) },
         ],
       },
       timeout: 25000,
@@ -97,5 +108,64 @@ export default defineEventHandler(async (event) => {
     })
     .filter((b: any) => b && (b.text || b.items?.length));
   if (!blocks.length) throw error(422, "Insufficient verified details to generate a description.");
-  return { blurb: clean(generated.blurb, 350), blocks, sources: results.map(({ title, url }: any) => ({ title, url })), images };
+  return { blurb: clean(generated.blurb, 350), blocks, sources: results.map(({ title, url }: any) => ({ title, url })), images: combinedImages, seoTitle: clean(generated.seoTitle, 60), seoDescription: clean(generated.seoDescription, 155) };
 });
+
+function isPrivateAddress(ip: string): boolean {
+  if (ip.includes(":")) return true; // reject IPv6 for predictable egress checks
+  const n = ip.split(".").map(Number);
+  return n[0] === 0 || n[0] === 10 || n[0] === 127 || n[0] >= 224 ||
+    (n[0] === 169 && n[1] === 254) || (n[0] === 172 && n[1] >= 16 && n[1] <= 31) ||
+    (n[0] === 192 && n[1] === 168) || (n[0] === 100 && n[1] >= 64 && n[1] <= 127) ||
+    (n[0] === 192 && n[1] === 0) || (n[0] === 198 && (n[1] === 18 || n[1] === 19));
+}
+async function fetchPublicProductPage(input: string) {
+  let url: URL;
+  try { url = new URL(input); } catch { throw createError({ statusCode: 400, statusMessage: "Invalid product URL." }); }
+  if (url.protocol !== "https:" || url.username || url.password || url.port || isIP(url.hostname) || url.hostname === "localhost" || !url.hostname.includes("."))
+    throw createError({ statusCode: 400, statusMessage: "Use a public HTTPS manufacturer URL." });
+  const addresses = await lookup(url.hostname, { all: true });
+  if (!addresses.length || addresses.some((a) => isPrivateAddress(a.address)))
+    throw createError({ statusCode: 400, statusMessage: "Product URL resolves to a private address." });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), { redirect: "manual", signal: AbortSignal.timeout(12000), headers: { "User-Agent": "KiallaComputersProductResearch/1.0", Accept: "text/html" } });
+  } catch { throw createError({ statusCode: 502, statusMessage: "Could not retrieve vendor product page." }); }
+  if (response.status >= 300 && response.status < 400) throw createError({ statusCode: 422, statusMessage: "Vendor page redirects. Paste the final product page URL." });
+  if (!response.ok || !(response.headers.get("content-type") || "").includes("text/html"))
+    throw createError({ statusCode: 422, statusMessage: "Vendor page is unavailable or not HTML. Try manufacturer + MPN." });
+  if (Number(response.headers.get("content-length") || 0) > 1500000)
+    throw createError({ statusCode: 413, statusMessage: "Vendor page is too large." });
+  const reader = response.body?.getReader();
+  if (!reader) throw createError({ statusCode: 502, statusMessage: "Vendor page is empty." });
+  let size = 0; const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > 1500000) { await reader.cancel(); throw createError({ statusCode: 413, statusMessage: "Vendor page is too large." }); }
+    chunks.push(value);
+  }
+  const html = Buffer.concat(chunks).toString("utf8");
+  const decode = (v: string) => v.replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").trim();
+  const meta = (name: string) => {
+    const tags = html.match(/<meta\b[^>]*>/gi) || [];
+    for (const tag of tags) {
+      if (new RegExp(`(?:name|property)=["']${name}["']`, "i").test(tag)) return decode(tag.match(/content=["']([^"']*)["']/i)?.[1] || "");
+    }
+    return "";
+  };
+  const title = decode(meta("og:title") || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "").slice(0, 220);
+  const description = meta("description") || meta("og:description");
+  const text = decode(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ").replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).slice(0, 14000);
+  const images: string[] = [];
+  const addImage = (candidate: string) => {
+    try { const u = new URL(decode(candidate), url); if (u.protocol === "https:" && !images.includes(u.toString())) images.push(u.toString()); } catch { /* ignore */ }
+  };
+  const ogImage = meta("og:image"); if (ogImage) addImage(ogImage);
+  for (const match of html.matchAll(/<img\b[^>]*(?:src|data-src)=["']([^"']+)["'][^>]*>/gi)) {
+    if (images.length >= 12) break;
+    addImage(match[1]);
+  }
+  return { title, description, text, images, url: url.toString() };
+}

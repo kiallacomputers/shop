@@ -666,6 +666,10 @@
         <p class="text-sm text-slate-500 mt-1">Build the product page using headings, paragraphs, lists, tables and callout blocks. The JSON is generated automatically.</p>
 
         <div class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <label class="block text-sm font-medium text-slate-700">Vendor Product URL (recommended)
+            <input v-model="descriptionProductUrl" type="url" class="input mt-1 w-full" placeholder="https://manufacturer.com/product/..." />
+          </label>
+          <p class="mb-3 mt-1 text-xs text-slate-600">Paste a public manufacturer product page, or leave blank and search by vendor and MPN below.</p>
           <div class="flex flex-wrap items-end gap-3">
             <label class="min-w-44 flex-1 text-sm font-medium text-slate-700">Vendor / Manufacturer
               <input v-model="descriptionVendor" type="text" class="input mt-1 w-full" placeholder="e.g. Logitech" />
@@ -682,6 +686,8 @@
           <div v-if="descriptionDraft" class="mt-3 rounded-lg border border-slate-200 bg-white p-3">
             <p class="text-sm font-semibold">Draft ready: {{ descriptionDraft.blocks.length }} description blocks</p>
             <p class="mt-1 text-sm text-slate-600">{{ descriptionDraft.blurb }}</p>
+            <p v-if="descriptionDraft.seoTitle" class="mt-2 text-xs"><strong>SEO title:</strong> {{ descriptionDraft.seoTitle }}</p>
+            <p v-if="descriptionDraft.seoDescription" class="mt-1 text-xs"><strong>SEO description:</strong> {{ descriptionDraft.seoDescription }}</p>
             <div class="mt-2 flex gap-2">
               <button type="button" class="rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white" @click="applyVendorDescription">Use This Description</button>
               <button type="button" class="rounded border px-3 py-2 text-sm" @click="descriptionDraft = null">Discard</button>
@@ -776,12 +782,13 @@ const imageLibrarySelected = ref<string[]>([]);
 const imageLibraryOffset = ref(0);
 const imageLibraryHasMore = ref(false);
 const descriptionBlocks = ref<any[]>([]);
+const descriptionProductUrl = ref("");
 const descriptionVendor = ref("");
 const descriptionPartNumber = ref("");
 const generatingDescription = ref(false);
 const descriptionGenerationError = ref("");
 type SuggestedImage = { url: string; thumbnail: string; title: string; host: string };
-const descriptionDraft = ref<{ blurb: string; blocks: any[]; sources: Array<{title:string;url:string}>; images: SuggestedImage[] } | null>(null);
+const descriptionDraft = ref<{ blurb: string; blocks: any[]; sources: Array<{title:string;url:string}>; images: SuggestedImage[]; seoTitle?: string; seoDescription?: string } | null>(null);
 const savingSuggestedImage = ref("");
 const suggestedImageError = ref("");
 const addSuggestedImage = async (candidate: SuggestedImage) => {
@@ -801,14 +808,14 @@ const generateVendorDescription = async () => {
   descriptionDraft.value = null;
   const vendor = descriptionVendor.value.trim() || form.brand.trim();
   const partNumber = descriptionPartNumber.value.trim() || form.mpn.trim();
-  if (!vendor || !partNumber) {
-    descriptionGenerationError.value = "Enter the vendor/manufacturer and product number.";
+  if (!descriptionProductUrl.value.trim() && (!vendor || !partNumber)) {
+    descriptionGenerationError.value = "Enter a vendor product URL or manufacturer and product number.";
     return;
   }
   generatingDescription.value = true;
   try {
     descriptionDraft.value = await adminFetch("/api/admin/products/generate-description", {
-      method: "POST", body: { vendor, partNumber, productName: form.name },
+      method: "POST", body: { vendor, partNumber, productName: form.name, productUrl: descriptionProductUrl.value.trim() },
     });
   } catch (err: any) {
     descriptionGenerationError.value = err?.data?.statusMessage || err?.message || "Unable to generate description.";
@@ -820,6 +827,8 @@ const applyVendorDescription = () => {
   if (!descriptionDraft.value) return;
   descriptionBlocks.value = descriptionDraft.value.blocks;
   if (descriptionDraft.value.blurb) form.blurb = descriptionDraft.value.blurb;
+  if (descriptionDraft.value.seoTitle) form.seo_title = descriptionDraft.value.seoTitle;
+  if (descriptionDraft.value.seoDescription) form.seo_description = descriptionDraft.value.seoDescription;
   descriptionDraft.value = null;
 };
 
