@@ -686,6 +686,20 @@
               <button type="button" class="rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white" @click="applyVendorDescription">Use This Description</button>
               <button type="button" class="rounded border px-3 py-2 text-sm" @click="descriptionDraft = null">Discard</button>
             </div>
+            <div v-if="descriptionDraft.images?.length" class="mt-4">
+              <p class="text-sm font-semibold">Product image suggestions — review before adding</p>
+              <p class="mt-1 text-xs text-slate-600">Images are not added automatically. Only manufacturer-hosted images can be copied to Supabase; other images can be opened for manual review.</p>
+              <div class="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div v-for="candidate in descriptionDraft.images" :key="candidate.url" class="rounded border border-slate-200 p-2">
+                  <img :src="candidate.thumbnail || candidate.url" :alt="candidate.title" class="h-28 w-full object-contain" loading="lazy" referrerpolicy="no-referrer" />
+                  <p class="mt-1 truncate text-xs" :title="candidate.title">{{ candidate.title }}</p>
+                  <p class="truncate text-xs text-slate-500">{{ candidate.host }}</p>
+                  <button type="button" class="mt-2 w-full rounded bg-blue-700 px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50" :disabled="savingSuggestedImage === candidate.url" @click="addSuggestedImage(candidate)">{{ savingSuggestedImage === candidate.url ? 'Saving...' : 'Add to Product' }}</button>
+                  <a :href="candidate.url" target="_blank" rel="noopener noreferrer" class="mt-1 block text-center text-xs text-blue-700 underline">View original</a>
+                </div>
+              </div>
+              <p v-if="suggestedImageError" class="mt-2 text-sm text-red-700">{{ suggestedImageError }}</p>
+            </div>
             <p class="mt-3 text-xs font-semibold">Research sources (check product match):</p>
             <ul class="mt-1 list-disc pl-5 text-xs">
               <li v-for="source in descriptionDraft.sources" :key="source.url"><a :href="source.url" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">{{ source.title || source.url }}</a></li>
@@ -761,11 +775,27 @@ const imageLibraryFiles = ref<Array<{ name: string; path: string; url: string; s
 const imageLibrarySelected = ref<string[]>([]);
 const imageLibraryOffset = ref(0);
 const imageLibraryHasMore = ref(false);
-const descriptionBlocks = ref<any[]>([]);\nconst descriptionVendor = ref("");
+const descriptionBlocks = ref<any[]>([]);
+const descriptionVendor = ref("");
 const descriptionPartNumber = ref("");
 const generatingDescription = ref(false);
 const descriptionGenerationError = ref("");
-const descriptionDraft = ref<{ blurb: string; blocks: any[]; sources: Array<{title:string;url:string}> } | null>(null);
+type SuggestedImage = { url: string; thumbnail: string; title: string; host: string };
+const descriptionDraft = ref<{ blurb: string; blocks: any[]; sources: Array<{title:string;url:string}>; images: SuggestedImage[] } | null>(null);
+const savingSuggestedImage = ref("");
+const suggestedImageError = ref("");
+const addSuggestedImage = async (candidate: SuggestedImage) => {
+  suggestedImageError.value = "";
+  savingSuggestedImage.value = candidate.url;
+  try {
+    const result = await adminFetch<{ url: string }>("/api/admin/products/save-researched-image", {
+      method: "POST", body: { url: candidate.url, vendor: descriptionVendor.value.trim() || form.brand, partNumber: descriptionPartNumber.value.trim() || form.mpn },
+    });
+    if (!imageUrls.value.includes(result.url)) imageUrls.value.push(result.url);
+  } catch (err: any) {
+    suggestedImageError.value = err?.data?.statusMessage || err?.message || "Could not save image. Open the original and upload manually.";
+  } finally { savingSuggestedImage.value = ""; }
+};
 const generateVendorDescription = async () => {
   descriptionGenerationError.value = "";
   descriptionDraft.value = null;

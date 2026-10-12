@@ -27,6 +27,24 @@ export default defineEventHandler(async (event) => {
   } catch {
     throw error(502, "Product research search failed. Check your Serper API key.");
   }
+  let imageSearch: any = null;
+  try {
+    imageSearch = await $fetch<any>("https://google.serper.dev/images", {
+      method: "POST",
+      headers: { "X-API-KEY": searchKey, "Content-Type": "application/json" },
+      body: { q: `"${vendor}" "${partNumber}" product official image`, num: 12, gl: "au", hl: "en" },
+      timeout: 12000,
+    });
+  } catch { /* Description can still succeed if image search is unavailable. */ }
+  const images = (Array.isArray(imageSearch?.images) ? imageSearch.images : [])
+    .filter((item: any) => typeof item.imageUrl === "string" && item.imageUrl.startsWith("https://"))
+    .slice(0, 12)
+    .map((item: any) => ({
+      url: item.imageUrl,
+      thumbnail: typeof item.thumbnailUrl === "string" && item.thumbnailUrl.startsWith("https://") ? item.thumbnailUrl : item.imageUrl,
+      title: clean(item.title, 160),
+      host: (() => { try { return new URL(item.imageUrl).hostname; } catch { return ""; } })(),
+    }));
   const results = (Array.isArray(search?.organic) ? search.organic : [])
     .filter((r: any) => typeof r.link === "string" && /^https:\/\//.test(r.link))
     .slice(0, 8)
@@ -79,5 +97,5 @@ export default defineEventHandler(async (event) => {
     })
     .filter((b: any) => b && (b.text || b.items?.length));
   if (!blocks.length) throw error(422, "Insufficient verified details to generate a description.");
-  return { blurb: clean(generated.blurb, 350), blocks, sources: results.map(({ title, url }: any) => ({ title, url })) };
+  return { blurb: clean(generated.blurb, 350), blocks, sources: results.map(({ title, url }: any) => ({ title, url })), images };
 });
