@@ -106,11 +106,25 @@
                   <h3 v-if="section.text" class="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
                   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" :class="section.columns === 4 ? 'lg:grid-cols-4' : section.columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'">
                     <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <div v-if="feature.icon" class="mb-3 text-2xl" aria-hidden="true">{{ feature.icon }}</div>
                       <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
                       <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
                     </div>
                   </div>
                 </div>
+
+                <!-- Phase 3 responsive product showcase -->
+                <section v-else-if="section.type === 'image_text'" class="mb-8 overflow-hidden rounded-2xl border border-slate-200" :class="section.showcaseStyle === 'dark' ? 'bg-slate-900 text-white' : section.showcaseStyle === 'soft' ? 'bg-slate-50 text-slate-900' : 'bg-white text-slate-900'">
+                  <div class="grid items-center gap-6 p-5 md:grid-cols-2 md:gap-8 md:p-8">
+                    <div v-if="section.showcaseImageUrl" class="overflow-hidden rounded-xl bg-white" :class="section.showcaseImageSide === 'right' ? 'md:order-2' : ''">
+                      <img :src="section.showcaseImageUrl" :alt="section.showcaseImageAlt || section.text || 'Product feature'" loading="lazy" class="h-auto w-full object-contain" />
+                    </div>
+                    <div :class="section.showcaseImageSide === 'right' ? 'md:order-1' : ''">
+                      <h3 v-if="section.text" class="mb-4 text-xl font-bold sm:text-2xl">{{ section.text }}</h3>
+                      <p class="whitespace-pre-line leading-7" :class="section.showcaseStyle === 'dark' ? 'text-slate-200' : 'text-slate-600'">{{ section.showcaseBody }}</p>
+                    </div>
+                  </div>
+                </section>
 
                 <!-- Link -->
                 <div v-else-if="section.type === 'link'" class="mb-4" :class="section.textAlign === 'center' ? 'text-center' : section.textAlign === 'right' ? 'text-right' : 'text-left'">

@@ -27,6 +27,7 @@
           <option value="info">Info Box</option>
           <option value="divider">Divider</option>
           <option value="feature_cards">Feature Cards</option>
+          <option value="image_text">Image + Text Showcase</option>
         </select>
 
         <button
@@ -47,6 +48,9 @@
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('warranty')">+ Warranty & Support</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('box')">+ What's in the Box</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('specs')">+ Specifications</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('showcase')">+ Image & Text Showcase</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('shipping')">+ Shipping Information</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('refurbished')">+ Refurbished Condition</button>
       </div>
     </div>
 
@@ -406,10 +410,26 @@
             <select v-model.number="block.columns" class="input w-full"><option :value="2">Two columns</option><option :value="3">Three columns</option><option :value="4">Four columns</option></select>
             <div v-for="(feature, featureIndex) in block.features" :key="featureIndex" class="rounded-lg border border-slate-200 p-3 space-y-2">
               <div class="flex justify-between items-center"><strong class="text-sm">Card {{ featureIndex + 1 }}</strong><button type="button" class="text-sm text-red-600" @click="block.features?.splice(featureIndex, 1)">Remove</button></div>
+              <label class="block text-xs font-semibold text-slate-600">Icon</label>
+              <select v-model="feature.icon" class="input w-full"><option value="">No icon</option><option value="⚡">⚡ Performance</option><option value="🔒">🔒 Security</option><option value="🔌">🔌 Connectivity</option><option value="🖥️">🖥️ Display</option><option value="💾">💾 Storage</option><option value="🔋">🔋 Battery</option><option value="🛡️">🛡️ Warranty</option><option value="✓">✓ Check</option><option value="🌐">🌐 Network</option><option value="📦">📦 Package</option></select>
               <input v-model="feature.title" class="input w-full" placeholder="Feature title" />
               <textarea v-model="feature.description" class="input w-full" rows="2" placeholder="Customer benefit or verified specification" />
             </div>
-            <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700" @click="block.features?.push({ title: '', description: '' })">+ Add Feature Card</button>
+            <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700" @click="block.features?.push({ icon: '', title: '', description: '' })">+ Add Feature Card</button>
+          </div>
+        </template>
+
+        <template v-else-if="block.type === 'image_text'">
+          <div class="space-y-4 rounded-lg border border-slate-200 p-4">
+            <p class="text-sm text-slate-500">Create a responsive image and text showcase. Use a public HTTPS image URL or a Supabase Storage image URL.</p>
+            <label class="block"><span class="field-label">Section heading</span><input v-model="block.text" class="input w-full" placeholder="Designed for everyday productivity" /></label>
+            <label class="block"><span class="field-label">Description</span><textarea v-model="block.showcaseBody" class="input w-full" rows="5" placeholder="Describe a verified product benefit and why it matters to customers." /></label>
+            <label class="block"><span class="field-label">Image URL</span><input v-model="block.showcaseImageUrl" class="input w-full" placeholder="https://..." /></label>
+            <label class="block"><span class="field-label">Image alternative text</span><input v-model="block.showcaseImageAlt" class="input w-full" placeholder="Describe the image for accessibility" /></label>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label><span class="field-label">Image placement</span><select v-model="block.showcaseImageSide" class="input w-full"><option value="left">Image on left</option><option value="right">Image on right</option></select></label>
+              <label><span class="field-label">Presentation</span><select v-model="block.showcaseStyle" class="input w-full"><option value="clean">Clean</option><option value="soft">Soft background</option><option value="dark">Dark showcase</option></select></label>
+            </div>
           </div>
         </template>
 
@@ -970,7 +990,12 @@ type DescriptionBlock = {
   type: string;
   text?: string;
   columns?: number;
-  features?: Array<{ title: string; description: string }>; 
+  features?: Array<{ icon?: string; title: string; description: string }>;
+  showcaseBody?: string;
+  showcaseImageUrl?: string;
+  showcaseImageAlt?: string;
+  showcaseImageSide?: "left" | "right";
+  showcaseStyle?: "clean" | "soft" | "dark"; 
   level?: number;
   headingColor?: string;
   underline?: boolean;
@@ -1063,6 +1088,9 @@ const appendSection = (kind: string) => {
   if (kind === 'warranty') blocks.value.push(section('paragraph', { paragraphHeading: 'Warranty & Support', text: 'Enter the verified manufacturer warranty, coverage and support arrangements.' }));
   if (kind === 'box') blocks.value.push(section('list', { items: ['List each included item', 'Add included accessories'] }));
   if (kind === 'specs') blocks.value.push(section('table', { headers: ['Specification', 'Details'], rows: [['Brand', ''], ['Model', ''], ['Connectivity', '']] }));
+  if (kind === 'showcase') blocks.value.push(createBlock('image_text'));
+  if (kind === 'shipping') blocks.value.push(section('paragraph', { paragraphHeading: 'Delivery & Shipping', text: 'Enter your actual dispatch, shipping and collection arrangements.' }));
+  if (kind === 'refurbished') blocks.value.push(section('paragraph', { paragraphHeading: 'Refurbished Product Condition', text: 'Describe the inspected condition, included accessories, testing performed and applicable warranty.' }));
   templateNotice.value = 'Section appended. Replace placeholders and verify all details before publishing.';
 };
 
@@ -1265,6 +1293,7 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     info: { fontColor: "#1e3a8a", backgroundColor: "#eff6ff", textAlign: "left" },
     list: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
     table: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
+    image_text: { fontColor: "#1e293b", backgroundColor: "#ffffff", textAlign: "left" },
     feature_cards: { fontColor: "#1e293b", backgroundColor: "#ffffff", textAlign: "left" },
     image: { fontColor: "#64748b", backgroundColor: "#ffffff", textAlign: "left" },
   };
@@ -1279,7 +1308,15 @@ const normaliseBlock = (input: any): DescriptionBlock => {
   if (type === "feature_cards") {
     base.text = typeof input?.text === "string" ? input.text : "Product Highlights";
     base.columns = [2, 3, 4].includes(Number(input?.columns)) ? Number(input.columns) : 3;
-    base.features = Array.isArray(input?.features) ? input.features.map((f: any) => ({ title: String(f?.title || ""), description: String(f?.description || "") })) : [];
+    base.features = Array.isArray(input?.features) ? input.features.map((f: any) => ({ title: String(f?.title || ""), description: String(f?.description || ""), icon: String(f?.icon || "") })) : [];
+  }
+  if (type === "image_text") {
+    base.text = String(input?.text || "Product Showcase");
+    base.showcaseBody = String(input?.showcaseBody || "");
+    base.showcaseImageUrl = String(input?.showcaseImageUrl || "");
+    base.showcaseImageAlt = String(input?.showcaseImageAlt || "");
+    base.showcaseImageSide = input?.showcaseImageSide === "right" ? "right" : "left";
+    base.showcaseStyle = ["clean", "soft", "dark"].includes(input?.showcaseStyle) ? input.showcaseStyle : "clean";
   }
   if (type === "heading") {
     base.text = input?.text || "";
@@ -1475,6 +1512,9 @@ const createBlock = (type: string): DescriptionBlock => {
     });
   }
 
+  if (type === "image_text") {
+    return normaliseBlock({ type, text: "Product Showcase", showcaseBody: "Explain a verified customer benefit.", showcaseImageUrl: "", showcaseImageAlt: "", showcaseImageSide: "left", showcaseStyle: "soft" });
+  }
   if (type === "feature_cards") {
     return normaliseBlock({ type, text: "Product Highlights", columns: 3, features: [
       { title: "Feature One", description: "Describe the customer benefit." },
@@ -1716,6 +1756,8 @@ const blockLabel = (type: string) =>
     warning: "Warning",
     info: "Info Box",
     divider: "Divider",
+    feature_cards: "Feature Cards",
+    image_text: "Image + Text Showcase",
   })[type] || "Content";
 
 // ========================================
