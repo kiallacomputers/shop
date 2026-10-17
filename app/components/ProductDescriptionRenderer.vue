@@ -101,6 +101,17 @@
                   </div>
                 </div>
 
+                <!-- Responsive feature cards -->
+                <div v-else-if="section.type === 'feature_cards'" class="mb-8">
+                  <h3 v-if="section.text" class="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" :class="section.columns === 4 ? 'lg:grid-cols-4' : section.columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'">
+                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
+                      <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Link -->
                 <div v-else-if="section.type === 'link'" class="mb-4" :class="section.textAlign === 'center' ? 'text-center' : section.textAlign === 'right' ? 'text-right' : 'text-left'">
                   <a v-if="section.linkUrl" :href="section.linkUrl" target="_blank" rel="noopener noreferrer external" :class="section.linkStyle === 'button' ? 'inline-flex rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700' : 'font-semibold text-blue-600 underline'">{{ section.linkText || section.linkUrl }}</a>

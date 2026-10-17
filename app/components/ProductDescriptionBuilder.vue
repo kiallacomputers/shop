@@ -26,6 +26,7 @@
           <option value="warning">Warning</option>
           <option value="info">Info Box</option>
           <option value="divider">Divider</option>
+          <option value="feature_cards">Feature Cards</option>
         </select>
 
         <button
@@ -35,6 +36,17 @@
         >
           + Add Block
         </button>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-4">
+      <h3 class="font-semibold text-slate-900">Reusable Professional Sections</h3>
+      <p class="mt-1 text-xs text-slate-500">Append a section without replacing your existing description.</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('highlights')">+ Feature Highlights</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('warranty')">+ Warranty & Support</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('box')">+ What's in the Box</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('specs')">+ Specifications</button>
       </div>
     </div>
 
@@ -386,6 +398,21 @@
         <!-- ======================================== -->
         <!-- LINK -->
         <!-- ======================================== -->
+        <template v-else-if="block.type === 'feature_cards'">
+          <div class="space-y-3 p-4">
+            <label class="block text-sm font-semibold text-slate-700">Feature Cards Heading</label>
+            <input v-model="block.text" class="input w-full" placeholder="Product Highlights" />
+            <label class="block text-sm font-semibold text-slate-700">Columns</label>
+            <select v-model.number="block.columns" class="input w-full"><option :value="2">Two columns</option><option :value="3">Three columns</option><option :value="4">Four columns</option></select>
+            <div v-for="(feature, featureIndex) in block.features" :key="featureIndex" class="rounded-lg border border-slate-200 p-3 space-y-2">
+              <div class="flex justify-between items-center"><strong class="text-sm">Card {{ featureIndex + 1 }}</strong><button type="button" class="text-sm text-red-600" @click="block.features?.splice(featureIndex, 1)">Remove</button></div>
+              <input v-model="feature.title" class="input w-full" placeholder="Feature title" />
+              <textarea v-model="feature.description" class="input w-full" rows="2" placeholder="Customer benefit or verified specification" />
+            </div>
+            <button type="button" class="rounded-lg border border-blue-200 px-3 py-2 text-sm font-semibold text-blue-700" @click="block.features?.push({ title: '', description: '' })">+ Add Feature Card</button>
+          </div>
+        </template>
+
         <template v-else-if="block.type === 'link'">
           <div class="grid gap-4 sm:grid-cols-2">
             <label><span class="field-label">Link Text</span><input v-model="block.linkText" class="input" type="text" placeholder="e.g. Manufacturer website" /></label>
@@ -942,6 +969,8 @@ type DescriptionBlock = {
   _key: string;
   type: string;
   text?: string;
+  columns?: number;
+  features?: Array<{ title: string; description: string }>; 
   level?: number;
   headingColor?: string;
   underline?: boolean;
@@ -1017,14 +1046,24 @@ const applyDescriptionPreset = (id: string) => {
   const benefits = section('list', { items: ['Add the first verified benefit', 'Add another useful feature', 'Explain a practical customer benefit'] });
   const specs = section('table', { headers: ['Specification', 'Details'], rows: [['Brand', ''], ['Model', ''], ['Key specification', '']] });
   const image = section('image', { caption: 'Add a clear product or feature image', alt: 'Product feature image' });
+  const cards = section('feature_cards', { text: 'Product Highlights', columns: 3, features: [{ title: 'Performance', description: 'Describe a verified advantage.' }, { title: 'Connectivity', description: 'Describe supported connections.' }, { title: 'Reliability', description: 'Describe the practical benefit.' }] });
   const templates: Record<string, DescriptionBlock[]> = {
-    retail: [section('heading', { text: 'Why Choose This Product?', level: 2 }), overview, section('heading', { text: 'Key Features', level: 3 }), benefits, image, section('heading', { text: 'Technical Specifications', level: 3 }), specs],
+    retail: [section('heading', { text: 'Why Choose This Product?', level: 2 }), overview, section('heading', { text: 'Key Features', level: 3 }), benefits, cards, image, section('heading', { text: 'Technical Specifications', level: 3 }), specs],
     technical: [section('heading', { text: 'Product Overview', level: 2 }), overview, section('heading', { text: 'Technical Specifications', level: 3 }), specs, section('heading', { text: 'Compatibility & Requirements', level: 3 }), section('paragraph', { text: 'Enter verified compatibility, connectivity and system requirements.' }), section('heading', { text: 'Included in the Box', level: 3 }), section('list', { items: ['List included accessories'] })],
-    premium: [section('heading', { text: 'Designed to Perform', level: 2 }), overview, image, section('heading', { text: 'Highlights', level: 3 }), benefits, section('paragraph', { paragraphHeading: 'Built for Your Needs', text: 'Explain the product’s main advantage with clear, customer-friendly language.' }), section('heading', { text: 'At a Glance', level: 3 }), specs],
+    premium: [section('heading', { text: 'Designed to Perform', level: 2 }), overview, image, cards, section('heading', { text: 'Highlights', level: 3 }), benefits, section('paragraph', { paragraphHeading: 'Built for Your Needs', text: 'Explain the product’s main advantage with clear, customer-friendly language.' }), section('heading', { text: 'At a Glance', level: 3 }), specs],
   };
   blocks.value = templates[id] || templates.retail;
   templateNotice.value = 'Template added. Replace all placeholder text and verify specifications before saving.';
   showPreview.value = true;
+};
+
+const appendSection = (kind: string) => {
+  const section = (type: string, values: Record<string, any> = {}) => normaliseBlock({ type, ...values });
+  if (kind === 'highlights') blocks.value.push(createBlock('feature_cards'));
+  if (kind === 'warranty') blocks.value.push(section('paragraph', { paragraphHeading: 'Warranty & Support', text: 'Enter the verified manufacturer warranty, coverage and support arrangements.' }));
+  if (kind === 'box') blocks.value.push(section('list', { items: ['List each included item', 'Add included accessories'] }));
+  if (kind === 'specs') blocks.value.push(section('table', { headers: ['Specification', 'Details'], rows: [['Brand', ''], ['Model', ''], ['Connectivity', '']] }));
+  templateNotice.value = 'Section appended. Replace placeholders and verify all details before publishing.';
 };
 
 const uploadingImageKey = ref<string | null>(null);
@@ -1226,6 +1265,7 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     info: { fontColor: "#1e3a8a", backgroundColor: "#eff6ff", textAlign: "left" },
     list: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
     table: { fontColor: "#374151", backgroundColor: "#ffffff", textAlign: "left" },
+    feature_cards: { fontColor: "#1e293b", backgroundColor: "#ffffff", textAlign: "left" },
     image: { fontColor: "#64748b", backgroundColor: "#ffffff", textAlign: "left" },
   };
 
@@ -1236,6 +1276,11 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     ? input.textAlign
     : defaults.textAlign;
 
+  if (type === "feature_cards") {
+    base.text = typeof input?.text === "string" ? input.text : "Product Highlights";
+    base.columns = [2, 3, 4].includes(Number(input?.columns)) ? Number(input.columns) : 3;
+    base.features = Array.isArray(input?.features) ? input.features.map((f: any) => ({ title: String(f?.title || ""), description: String(f?.description || "") })) : [];
+  }
   if (type === "heading") {
     base.text = input?.text || "";
     base.level = Number(input?.level || 2);
@@ -1430,6 +1475,13 @@ const createBlock = (type: string): DescriptionBlock => {
     });
   }
 
+  if (type === "feature_cards") {
+    return normaliseBlock({ type, text: "Product Highlights", columns: 3, features: [
+      { title: "Feature One", description: "Describe the customer benefit." },
+      { title: "Feature Two", description: "Add a verified product detail." },
+      { title: "Feature Three", description: "Explain what makes this useful." },
+    ] });
+  }
   if (type === "divider") {
     return normaliseBlock({ type });
   }
