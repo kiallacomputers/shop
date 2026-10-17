@@ -38,6 +38,43 @@
       </div>
     </div>
 
+    <!-- Professional description layouts: templates are editable and never overwrite without confirmation. -->
+    <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="font-semibold text-slate-900">Professional Description Designer</h3>
+          <p class="mt-1 text-sm text-slate-500">Choose a starting layout, edit every section and preview the storefront presentation.</p>
+        </div>
+        <button type="button" class="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50" @click="showPreview = !showPreview">
+          {{ showPreview ? 'Hide Live Preview' : 'Show Live Preview' }}
+        </button>
+      </div>
+      <div class="mt-4 grid gap-3 sm:grid-cols-3">
+        <button v-for="preset in descriptionPresets" :key="preset.id" type="button"
+          class="rounded-xl border border-slate-200 p-4 text-left transition hover:border-blue-500 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500"
+          @click="applyDescriptionPreset(preset.id)">
+          <span class="block text-sm font-bold text-slate-900">{{ preset.name }}</span>
+          <span class="mt-1 block text-xs leading-5 text-slate-500">{{ preset.description }}</span>
+          <span class="mt-3 block text-xs font-semibold text-blue-700">Use this template →</span>
+        </button>
+      </div>
+      <p v-if="templateNotice" class="mt-3 text-sm text-slate-600" role="status">{{ templateNotice }}</p>
+      <div v-if="showPreview" class="mt-5 border-t border-slate-200 pt-4">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h4 class="text-sm font-bold text-slate-900">Live Storefront Preview</h4>
+          <div class="inline-flex rounded-lg border border-slate-200 p-1 text-xs">
+            <button type="button" :class="previewDevice === 'desktop' ? 'bg-blue-600 text-white' : 'text-slate-600'" class="rounded px-3 py-1.5" @click="previewDevice = 'desktop'">Desktop</button>
+            <button type="button" :class="previewDevice === 'mobile' ? 'bg-blue-600 text-white' : 'text-slate-600'" class="rounded px-3 py-1.5" @click="previewDevice = 'mobile'">Mobile</button>
+          </div>
+        </div>
+        <div class="overflow-x-auto rounded-xl bg-slate-100 p-3">
+          <div class="mx-auto bg-white transition-all" :class="previewDevice === 'mobile' ? 'w-[360px] max-w-full' : 'w-full'">
+            <ProductDescriptionRenderer :description="blocks.map(stripInternalFields)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="!blocks.length"
       class="rounded-xl border-2 border-dashed border-slate-300 p-10 text-center"
@@ -54,7 +91,12 @@
       class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
     >
       <header
-        class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3"
+        draggable="true"
+        class="flex flex-wrap cursor-grab items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 active:cursor-grabbing"
+        @dragstart="onBlockDragStart($event, index)"
+        @dragover.prevent
+        @drop.prevent="onBlockDrop(index)"
+        @dragend="draggedBlockIndex = null"
       >
         <div class="flex items-center gap-3">
           <span
@@ -948,6 +990,42 @@ const { adminFetch } = useAdminFetch();
 
 const newBlockType = ref("heading");
 const blocks = ref<DescriptionBlock[]>([]);
+const showPreview = ref(false);
+const previewDevice = ref<'desktop' | 'mobile'>('desktop');
+const templateNotice = ref('');
+const draggedBlockIndex = ref<number | null>(null);
+const descriptionPresets = [
+  { id: 'retail', name: 'Modern Retail', description: 'Overview, selling points, image and specifications.' },
+  { id: 'technical', name: 'Technical Professional', description: 'Detailed specifications, compatibility and downloads.' },
+  { id: 'premium', name: 'Premium Showcase', description: 'Strong visual introduction, feature highlights and key details.' },
+] as const;
+const onBlockDragStart = (event: DragEvent, index: number) => {
+  draggedBlockIndex.value = index;
+  if (event.dataTransfer) { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(index)); }
+};
+const onBlockDrop = (target: number) => {
+  const from = draggedBlockIndex.value;
+  draggedBlockIndex.value = null;
+  if (from === null || from === target || from < 0 || from >= blocks.value.length) return;
+  const [block] = blocks.value.splice(from, 1);
+  blocks.value.splice(target, 0, block);
+};
+const applyDescriptionPreset = (id: string) => {
+  if (blocks.value.length && !window.confirm('Replace your current description blocks with this template? Existing unsaved description content will be replaced.')) return;
+  const section = (type: string, values: Record<string, any> = {}) => normaliseBlock({ type, ...values });
+  const overview = section('paragraph', { paragraphHeading: 'Product Overview', text: 'Write a concise introduction explaining what this product does and who it is for.' });
+  const benefits = section('list', { items: ['Add the first verified benefit', 'Add another useful feature', 'Explain a practical customer benefit'] });
+  const specs = section('table', { headers: ['Specification', 'Details'], rows: [['Brand', ''], ['Model', ''], ['Key specification', '']] });
+  const image = section('image', { caption: 'Add a clear product or feature image', alt: 'Product feature image' });
+  const templates: Record<string, DescriptionBlock[]> = {
+    retail: [section('heading', { text: 'Why Choose This Product?', level: 2 }), overview, section('heading', { text: 'Key Features', level: 3 }), benefits, image, section('heading', { text: 'Technical Specifications', level: 3 }), specs],
+    technical: [section('heading', { text: 'Product Overview', level: 2 }), overview, section('heading', { text: 'Technical Specifications', level: 3 }), specs, section('heading', { text: 'Compatibility & Requirements', level: 3 }), section('paragraph', { text: 'Enter verified compatibility, connectivity and system requirements.' }), section('heading', { text: 'Included in the Box', level: 3 }), section('list', { items: ['List included accessories'] })],
+    premium: [section('heading', { text: 'Designed to Perform', level: 2 }), overview, image, section('heading', { text: 'Highlights', level: 3 }), benefits, section('paragraph', { paragraphHeading: 'Built for Your Needs', text: 'Explain the product’s main advantage with clear, customer-friendly language.' }), section('heading', { text: 'At a Glance', level: 3 }), specs],
+  };
+  blocks.value = templates[id] || templates.retail;
+  templateNotice.value = 'Template added. Replace all placeholder text and verify specifications before saving.';
+  showPreview.value = true;
+};
 
 const uploadingImageKey = ref<string | null>(null);
 const imageUploadError = ref("");
