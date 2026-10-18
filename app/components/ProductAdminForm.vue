@@ -713,7 +713,7 @@
           </div>
         </div>
         <div class="mt-5">
-          <ProductDescriptionBuilder v-model="descriptionBlocks" />
+          <ProductDescriptionBuilder v-model="descriptionBlocks" :product-images="imageUrls" />
         </div>
       </section>
 

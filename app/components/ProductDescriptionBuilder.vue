@@ -54,6 +54,32 @@
       </div>
     </div>
 
+    <!-- Phase 4: browser-local section and layout library -->
+    <section class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5" aria-label="My description library">
+      <h3 class="font-semibold text-slate-900">My Description Library</h3>
+      <p class="mt-1 text-xs text-slate-500">Save your own sections or complete layouts for reuse. Saved templates stay in this browser only; export a backup to move them to another computer.</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <input v-model="libraryName" class="input min-w-[180px] flex-1" maxlength="80" placeholder="Template name (e.g. Laptop Layout)" aria-label="Template name" />
+        <button type="button" class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700" @click="saveLibraryEntry('layout')">Save entire layout</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="exportLibrary">Export library</button>
+        <label class="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Import library
+          <input type="file" class="sr-only" accept="application/json,.json" @change="importLibrary" />
+        </label>
+      </div>
+      <p v-if="libraryNotice" class="mt-2 text-xs text-slate-600" role="status">{{ libraryNotice }}</p>
+      <div v-if="savedLibrary.length" class="mt-4 space-y-2">
+        <div v-for="entry in savedLibrary" :key="entry.id" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 p-3">
+          <div><p class="text-sm font-semibold text-slate-800">{{ entry.name }}</p><p class="text-xs text-slate-500">{{ entry.kind === 'layout' ? 'Full layout' : 'Reusable section' }} · {{ entry.blocks.length }} block(s)</p></div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="rounded-md border border-blue-200 px-2 py-1 text-xs text-blue-700 hover:bg-blue-50" @click="useLibraryEntry(entry, false)">Append</button>
+            <button type="button" class="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50" @click="useLibraryEntry(entry, true)">Replace</button>
+            <button type="button" class="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50" @click="deleteLibraryEntry(entry.id)">Delete</button>
+          </div>
+        </div>
+      </div>
+      <p v-else class="mt-3 text-sm text-slate-500">No saved templates yet. Create a description and save the entire layout, or save individual blocks below.</p>
+    </section>
+
     <!-- Professional description layouts: templates are editable and never overwrite without confirmation. -->
     <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -106,6 +132,9 @@
       :key="block._key"
       class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
     >
+      <div class="flex justify-end border-b border-slate-100 px-3 py-1">
+        <button type="button" class="text-xs font-semibold text-blue-700 hover:underline" @click="saveLibraryEntry('section', block)">Save section to library</button>
+      </div>
       <header
         draggable="true"
         class="flex flex-wrap cursor-grab items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 active:cursor-grabbing"
@@ -425,6 +454,14 @@
             <label class="block"><span class="field-label">Section heading</span><input v-model="block.text" class="input w-full" placeholder="Designed for everyday productivity" /></label>
             <label class="block"><span class="field-label">Description</span><textarea v-model="block.showcaseBody" class="input w-full" rows="5" placeholder="Describe a verified product benefit and why it matters to customers." /></label>
             <label class="block"><span class="field-label">Image URL</span><input v-model="block.showcaseImageUrl" class="input w-full" placeholder="https://..." /></label>
+            <div v-if="productImages.length" class="space-y-2">
+              <p class="field-label">Choose an existing product image</p>
+              <div class="flex gap-2 overflow-x-auto pb-2">
+                <button v-for="(image, imageIndex) in productImages" :key="imageIndex" type="button" class="shrink-0 overflow-hidden rounded-lg border-2 p-1" :class="block.showcaseImageUrl === image ? 'border-blue-600' : 'border-slate-200'" :aria-label="'Use product image ' + (imageIndex + 1)" @click="block.showcaseImageUrl = image">
+                  <img :src="image" alt="" class="h-16 w-16 object-contain" loading="lazy" />
+                </button>
+              </div>
+            </div>
             <label class="block"><span class="field-label">Image alternative text</span><input v-model="block.showcaseImageAlt" class="input w-full" placeholder="Describe the image for accessibility" /></label>
             <div class="grid gap-3 sm:grid-cols-2">
               <label><span class="field-label">Image placement</span><select v-model="block.showcaseImageSide" class="input w-full"><option value="left">Image on left</option><option value="right">Image on right</option></select></label>
@@ -1034,6 +1071,7 @@ type DescriptionBlock = {
 
 const props = defineProps<{
   modelValue: any[];
+  productImages?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -1048,6 +1086,69 @@ const showPreview = ref(false);
 const previewDevice = ref<'desktop' | 'mobile'>('desktop');
 const templateNotice = ref('');
 const draggedBlockIndex = ref<number | null>(null);
+const libraryName = ref('');
+const libraryNotice = ref('');
+type LibraryEntry = { id: string; name: string; kind: 'layout' | 'section'; blocks: any[] };
+const savedLibrary = ref<LibraryEntry[]>([]);
+const LIBRARY_KEY = 'kc-product-description-library-v1';
+const productImages = computed(() => (props.productImages || []).filter((url): url is string => typeof url === 'string' && /^https:\/\//i.test(url)));
+const validLibraryEntry = (value: any): value is LibraryEntry =>
+  !!value && typeof value.id === 'string' && typeof value.name === 'string' && value.name.length <= 80 &&
+  (value.kind === 'layout' || value.kind === 'section') && Array.isArray(value.blocks) && value.blocks.length <= 100 &&
+  value.blocks.every((block: any) => block && typeof block.type === 'string' && block.type.length < 40);
+const persistLibrary = () => {
+  try { localStorage.setItem(LIBRARY_KEY, JSON.stringify(savedLibrary.value)); }
+  catch { libraryNotice.value = 'Could not save browser templates. Storage may be full or unavailable.'; }
+};
+onMounted(() => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]');
+    if (Array.isArray(parsed)) savedLibrary.value = parsed.filter(validLibraryEntry).slice(0, 60);
+  } catch { libraryNotice.value = 'Saved templates could not be read from browser storage.'; }
+});
+const saveLibraryEntry = (kind: 'layout' | 'section', block?: DescriptionBlock) => {
+  const name = (libraryName.value || (kind === 'section' ? window.prompt('Name this reusable section:', block?.text || block?.type || '') : '') || '').trim();
+  if (!name || name.length > 80) { libraryNotice.value = 'Enter a template name (up to 80 characters).'; return; }
+  const chosen = kind === 'section' && block ? [block] : blocks.value;
+  if (!chosen.length) { libraryNotice.value = 'Add at least one block before saving.'; return; }
+  if (savedLibrary.value.length >= 60) { libraryNotice.value = 'Library limit reached (60 templates). Export or delete an existing template.'; return; }
+  savedLibrary.value.push({ id: makeKey(), name, kind, blocks: chosen.map(item => JSON.parse(JSON.stringify(stripInternalFields(item)))) });
+  persistLibrary(); libraryName.value = ''; libraryNotice.value = `Saved "${name}" to this browser.`;
+};
+const useLibraryEntry = (entry: LibraryEntry, replace: boolean) => {
+  if (replace && blocks.value.length && !window.confirm('Replace the current description with this saved template? Unsaved changes will be lost.')) return;
+  const copied = entry.blocks.map(item => normaliseBlock(JSON.parse(JSON.stringify(item))));
+  if (replace) blocks.value = copied;
+  else blocks.value.push(...copied);
+  libraryNotice.value = `${replace ? 'Loaded' : 'Appended'} "${entry.name}". Review content before saving the product.`;
+};
+const deleteLibraryEntry = (id: string) => {
+  const entry = savedLibrary.value.find(item => item.id === id);
+  if (!entry || !window.confirm(`Delete saved template "${entry.name}"?`)) return;
+  savedLibrary.value = savedLibrary.value.filter(item => item.id !== id);
+  persistLibrary(); libraryNotice.value = 'Template deleted.';
+};
+const exportLibrary = () => {
+  if (!savedLibrary.value.length) { libraryNotice.value = 'No templates to export.'; return; }
+  const blob = new Blob([JSON.stringify({ version: 1, templates: savedLibrary.value }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'kialla-description-library.json'; anchor.click();
+  URL.revokeObjectURL(url); libraryNotice.value = 'Library backup downloaded.';
+};
+const importLibrary = async (event: Event) => {
+  const input = event.target as HTMLInputElement; const file = input.files?.[0];
+  input.value = ''; if (!file) return;
+  if (file.size > 2_000_000) { libraryNotice.value = 'File too large (maximum 2 MB).'; return; }
+  try {
+    const parsed = JSON.parse(await file.text());
+    if (parsed?.version !== 1 || !Array.isArray(parsed.templates) || !parsed.templates.every(validLibraryEntry)) throw new Error('Invalid library format');
+    const remaining = 60 - savedLibrary.value.length;
+    if (remaining <= 0) { libraryNotice.value = 'Library is full.'; return; }
+    const entries = parsed.templates.slice(0, remaining).map((entry: LibraryEntry) => ({ ...entry, id: makeKey() }));
+    savedLibrary.value.push(...entries); persistLibrary(); libraryNotice.value = `Imported ${entries.length} template(s).`;
+  } catch { libraryNotice.value = 'Import failed. Choose a valid Kialla description library JSON file.'; }
+};
+
 const descriptionPresets = [
   { id: 'retail', name: 'Modern Retail', description: 'Overview, selling points, image and specifications.' },
   { id: 'technical', name: 'Technical Professional', description: 'Detailed specifications, compatibility and downloads.' },
