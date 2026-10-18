@@ -22,6 +22,7 @@
           <option value="image">Image</option>
           <option value="list">List</option>
           <option value="table">Table</option>
+          <option value="tabbed_specs">Tabbed Specifications</option>
           <option value="quote">Quote</option>
           <option value="warning">Warning</option>
           <option value="info">Info Box</option>
@@ -898,6 +899,42 @@
           </div>
         </template>
 
+        <!-- Tabbed specifications: one list per tab, automatically laid out by storefront -->
+        <template v-else-if="block.type === 'tabbed_specs'">
+          <div class="space-y-4">
+            <label class="block text-sm font-semibold">Main heading
+              <input v-model="block.text" class="input mt-1 w-full" placeholder="Main Specifications" />
+            </label>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-semibold">Tabs (2–4)</span>
+              <button type="button" class="secondary-button" :disabled="(block.tabs?.length || 0) >= 4" @click="block.tabs!.push({ title: 'New Tab', specs: [] })">+ Add Tab</button>
+            </div>
+            <div v-for="(tab, tabIndex) in block.tabs" :key="tabIndex" class="rounded-lg border border-slate-200 p-3 space-y-3">
+              <div class="flex flex-wrap gap-2 items-center">
+                <input v-model="tab.title" class="input flex-1 min-w-[150px]" :aria-label="`Tab ${tabIndex + 1} title`" />
+                <button type="button" class="secondary-button" :disabled="tabIndex === 0" @click="block.tabs!.splice(tabIndex - 1, 0, ...block.tabs!.splice(tabIndex, 1))">↑</button>
+                <button type="button" class="secondary-button" :disabled="tabIndex === block.tabs!.length - 1" @click="block.tabs!.splice(tabIndex + 1, 0, ...block.tabs!.splice(tabIndex, 1))">↓</button>
+                <button type="button" class="secondary-button text-red-600" :disabled="block.tabs!.length <= 2" @click="block.tabs!.splice(tabIndex, 1)">Remove tab</button>
+              </div>
+              <p class="text-xs text-slate-500">One specification list. Desktop displays two columns; mobile displays one.</p>
+              <div v-for="(spec, specIndex) in tab.specs" :key="specIndex" class="flex flex-wrap items-start gap-2">
+                <input v-model="spec.label" class="input min-w-[140px] flex-1" placeholder="Specification name" />
+                <textarea v-model="spec.value" rows="2" class="input min-w-[180px] flex-[2]" placeholder="Details" />
+                <button type="button" class="secondary-button" :disabled="specIndex === 0" @click="tab.specs.splice(specIndex - 1, 0, ...tab.specs.splice(specIndex, 1))">↑</button>
+                <button type="button" class="secondary-button" :disabled="specIndex === tab.specs.length - 1" @click="tab.specs.splice(specIndex + 1, 0, ...tab.specs.splice(specIndex, 1))">↓</button>
+                <button type="button" class="secondary-button text-red-600" @click="tab.specs.splice(specIndex, 1)">×</button>
+              </div>
+              <button type="button" class="secondary-button" @click="tab.specs.push({ label: '', value: '' })">+ Add Specification</button>
+              <details class="rounded-lg bg-slate-50 p-3">
+                <summary class="cursor-pointer text-sm font-semibold">Bulk paste specifications</summary>
+                <p class="my-2 text-xs text-slate-500">One per line: Name: Value (or tab-separated Name and Value). Existing entries are kept.</p>
+                <textarea :id="`spec-paste-${block._key}-${tabIndex}`" rows="5" class="input w-full" placeholder="Engine speed: Up to 35 ppm" />
+                <button type="button" class="secondary-button mt-2" @click="pasteSpecifications(tab, block._key, tabIndex)">Import lines</button>
+              </details>
+            </div>
+          </div>
+        </template>
+
         <!-- ======================================== -->
         <!-- TABLE -->
         <!-- ======================================== -->
@@ -1093,6 +1130,7 @@ type DescriptionBlock = {
   items?: string[];
   headers?: string[];
   rows?: string[][];
+  tabs?: Array<{ title: string; specs: Array<{ label: string; value: string }> }>;
   url?: string;
   path?: string;
   alt?: string;
@@ -1526,6 +1564,13 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     ? input.textAlign
     : defaults.textAlign;
 
+  if (type === "tabbed_specs") {
+    base.tabs = Array.isArray(input?.tabs) ? input.tabs.slice(0, 4).map((tab: any) => ({
+      title: String(tab?.title ?? ''),
+      specs: Array.isArray(tab?.specs) ? tab.specs.map((spec: any) => ({ label: String(spec?.label ?? ''), value: String(spec?.value ?? '') })) : [],
+    })) : [];
+  }
+
   if (type === "feature_cards") {
     base.text = typeof input?.text === "string" ? input.text : "Product Highlights";
     base.columns = [2, 3, 4].includes(Number(input?.columns)) ? Number(input.columns) : 3;
@@ -1725,6 +1770,8 @@ const createBlock = (type: string): DescriptionBlock => {
     });
   }
 
+  if (type === "tabbed_specs") return normaliseBlock({ type, text: "Main Specifications", tabs: [{ title: "General", specs: [{ label: "", value: "" }] }, { title: "Specifications", specs: [{ label: "", value: "" }] }] });
+
   if (type === "table") {
     return normaliseBlock({
       type,
@@ -1756,6 +1803,16 @@ const createBlock = (type: string): DescriptionBlock => {
 // ========================================
 // BLOCK ACTIONS
 // ========================================
+
+const pasteSpecifications = (tab: { title: string; specs: Array<{ label: string; value: string }> }, key: string, index: number) => {
+  const field = document.getElementById(`spec-paste-${key}-${index}`) as HTMLTextAreaElement | null;
+  if (!field) return;
+  for (const line of field.value.split(/\r?\n/)) {
+    const match = line.match(/^(.+?)(?:\t|:\s+)(.+)$/);
+    if (match) tab.specs.push({ label: match[1].trim(), value: match[2].trim() });
+  }
+  field.value = '';
+};
 
 const addBlock = () => {
   blocks.value.push(createBlock(newBlockType.value));
@@ -1973,6 +2030,7 @@ const blockLabel = (type: string) =>
     image: "Image",
     list: "List",
     table: "Table",
+    tabbed_specs: "Tabbed Specifications",
     quote: "Quote",
     warning: "Warning",
     info: "Info Box",

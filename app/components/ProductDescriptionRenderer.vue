@@ -276,6 +276,9 @@
                 <!-- Divider -->
                 <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
+                <!-- Responsive tabbed specification lists -->
+                <ProductTabbedSpecifications v-else-if="section.type === 'tabbed_specs'" :block="section" />
+
                 <!-- Table -->
                 <div
                   v-else-if="section.type === 'table'"
