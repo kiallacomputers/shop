@@ -78,17 +78,56 @@
         <input v-model="librarySearch" class="input flex-1" placeholder="Search templates" aria-label="Search templates" />
       </div>
       <p v-if="libraryNotice" class="mt-2 text-xs text-slate-600" role="status">{{ libraryNotice }}</p>
-      <div v-if="filteredLibrary.length" class="mt-4 space-y-2">
-        <div v-for="entry in filteredLibrary" :key="entry.id" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 p-3">
-          <div><p class="text-sm font-semibold text-slate-800">{{ entry.name }}</p><p class="text-xs text-slate-500">{{ entry.category }} · {{ entry.kind === 'layout' ? 'Full layout' : 'Reusable section' }} · {{ entry.blocks.length }} block(s)</p></div>
-          <div class="flex flex-wrap gap-2">
-            <button type="button" class="rounded-md border border-blue-200 px-2 py-1 text-xs text-blue-700" @click="useLibraryEntry(entry, false)">Append</button>
-            <button type="button" class="rounded-md border border-slate-300 px-2 py-1 text-xs" @click="useLibraryEntry(entry, true)">Replace</button>
-            <button type="button" :disabled="libraryBusy" class="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700" @click="deleteLibraryEntry(entry.id)">Delete</button>
+      <p class="mt-2 text-xs text-slate-500">Drag a template into the drop area to append it, or use Preview, Duplicate and History.</p>
+      <div v-if="filteredLibrary.length" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div v-for="entry in filteredLibrary" :key="entry.id" draggable="true" @dragstart="onLibraryDragStart($event, entry)" class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm" :aria-label="`Template ${entry.name}`">
+          <div class="mb-3 flex h-28 flex-col gap-2 overflow-hidden rounded-lg bg-slate-50 p-3" aria-hidden="true">
+            <div v-for="(sample, sampleIndex) in entry.blocks.slice(0, 4)" :key="sampleIndex" class="min-h-0">
+              <div v-if="sample.type === 'heading'" class="truncate text-sm font-bold text-slate-800">{{ sample.text || 'Product heading' }}</div>
+              <div v-else-if="sample.type === 'feature_cards'" class="flex gap-1"><span v-for="n in Math.min(Number(sample.columns) || 3, 4)" :key="n" class="h-7 flex-1 rounded border border-blue-200 bg-blue-50" /></div>
+              <div v-else-if="sample.type === 'image' || sample.type === 'image_text'" class="flex items-center gap-2"><span class="h-8 w-12 rounded bg-blue-100" /><span class="h-2 flex-1 rounded bg-slate-200" /></div>
+              <div v-else-if="sample.type === 'table'" class="grid grid-cols-3 gap-1"><span v-for="n in 6" :key="n" class="h-2 rounded bg-slate-200" /></div>
+              <div v-else class="truncate text-xs text-slate-500">{{ sample.text || sample.showcaseBody || sample.type.replaceAll('_', ' ') }}</div>
+            </div>
+          </div>
+          <p class="truncate text-sm font-semibold text-slate-800">{{ entry.name }}</p>
+          <p class="text-xs text-slate-500">{{ entry.category }} · {{ entry.kind === 'layout' ? 'Full layout' : 'Section' }} · {{ entry.blocks.length }} blocks</p>
+          <div class="mt-3 flex flex-wrap gap-1.5">
+            <button type="button" class="rounded border border-blue-200 px-2 py-1 text-xs text-blue-700" @click="previewLibraryEntry(entry)">Preview</button>
+            <button type="button" class="rounded border border-blue-200 px-2 py-1 text-xs text-blue-700" @click="useLibraryEntry(entry, false)">Append</button>
+            <button type="button" class="rounded border border-slate-300 px-2 py-1 text-xs" @click="useLibraryEntry(entry, true)">Replace</button>
+            <button type="button" :disabled="libraryBusy" class="rounded border border-slate-300 px-2 py-1 text-xs" @click="duplicateLibraryEntry(entry)">Duplicate</button>
+            <button type="button" class="rounded border border-slate-300 px-2 py-1 text-xs" @click="openHistory(entry)">History</button>
+            <button type="button" :disabled="libraryBusy" class="rounded border border-red-200 px-2 py-1 text-xs text-red-700" @click="deleteLibraryEntry(entry.id)">Delete</button>
           </div>
         </div>
       </div>
       <p v-else class="mt-3 text-sm text-slate-500">No matching templates. Save a layout or import your Phase 4 library.</p>
+      <div class="mt-4 rounded-lg border-2 border-dashed border-blue-200 bg-blue-50 p-4 text-center text-sm text-blue-800" @dragover.prevent @drop.prevent="onLibraryDrop($event)">Drop a template here to append its blocks to the product description</div>
+      <div v-if="previewEntry" class="mt-4 rounded-xl border border-blue-200 p-4">
+        <div class="flex items-center justify-between gap-2"><h4 class="font-semibold">Preview: {{ previewEntry.name }}</h4><button type="button" class="text-sm underline" @click="previewEntry = null">Close</button></div>
+        <p class="mt-2 text-xs text-slate-500">{{ previewEntry.blocks.length }} blocks · {{ previewEntry.category }}</p>
+        <div class="mt-3 space-y-2">
+          <div v-for="(block, index) in previewEntry.blocks" :key="index" class="rounded border border-slate-200 p-2 text-sm">
+            <strong>{{ block.type.replaceAll('_', ' ') }}</strong>
+            <p class="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-600">{{ block.text || block.showcaseBody || block.features?.map((f: any) => f.title).join(' · ') || block.items?.join(' · ') || block.headers?.join(' · ') || 'Visual or structured content' }}</p>
+          </div>
+        </div>
+        <button type="button" class="mt-3 rounded bg-blue-600 px-3 py-2 text-sm text-white" @click="useLibraryEntry(previewEntry!, false); previewEntry = null">Append to description</button>
+      </div>
+      <div v-if="historyEntry" class="mt-4 rounded-xl border border-slate-300 p-4">
+        <div class="flex items-center justify-between gap-2"><h4 class="font-semibold">Version history: {{ historyEntry.name }}</h4><button type="button" class="text-sm underline" @click="historyEntry = null">Close</button></div>
+        <p class="mt-1 text-xs text-slate-500">Saving a revision updates the shared template, not the product description.</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button type="button" :disabled="libraryBusy || !blocks.length" class="rounded bg-blue-600 px-3 py-2 text-xs text-white disabled:opacity-50" @click="saveTemplateRevision(historyEntry!)">Save current editor as new revision</button>
+          <button type="button" class="rounded border px-3 py-2 text-xs" @click="openHistory(historyEntry!)">Refresh versions</button>
+        </div>
+        <p v-if="historyLoading" class="mt-2 text-xs">Loading history…</p>
+        <div v-for="version in historyVersions" :key="version.id" class="mt-2 flex flex-wrap items-center justify-between gap-2 rounded border p-2 text-xs">
+          <span>Version {{ version.version_number }} · {{ new Date(version.created_at).toLocaleString() }} · {{ version.blocks.length }} blocks</span>
+          <div class="flex gap-2"><button type="button" class="underline" @click="previewLibraryEntry({ ...historyEntry!, blocks: version.blocks })">Preview</button><button type="button" :disabled="libraryBusy" class="font-semibold text-blue-700" @click="restoreTemplateRevision(historyEntry!, version)">Restore</button></div>
+        </div>
+      </div>
     </section>
 
     <!-- Professional description layouts: templates are editable and never overwrite without confirmation. -->
@@ -1105,6 +1144,60 @@ const libraryFilter = ref('All');
 const librarySearch = ref('');
 const libraryCategories = ['General', 'Laptops', 'Desktops', 'Monitors', 'Printers', 'Networking', 'Storage', 'Accessories', 'Refurbished'];
 type LibraryEntry = { id: string; name: string; category: string; kind: 'layout' | 'section'; blocks: any[] };
+type LibraryVersion = { id: string; version_number: number; blocks: any[]; created_at: string };
+const previewEntry = ref<LibraryEntry | null>(null);
+const historyEntry = ref<LibraryEntry | null>(null);
+const historyVersions = ref<LibraryVersion[]>([]);
+const historyLoading = ref(false);
+const draggedLibraryId = ref<string | null>(null);
+const previewLibraryEntry = (entry: LibraryEntry) => { previewEntry.value = entry; };
+const onLibraryDragStart = (event: DragEvent, entry: LibraryEntry) => {
+  draggedLibraryId.value = entry.id;
+  event.dataTransfer?.setData('text/plain', entry.id);
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'copy';
+};
+const onLibraryDrop = (event: DragEvent) => {
+  const id = draggedLibraryId.value || event.dataTransfer?.getData('text/plain');
+  draggedLibraryId.value = null;
+  const entry = savedLibrary.value.find(item => item.id === id);
+  if (entry) useLibraryEntry(entry, false);
+};
+const duplicateLibraryEntry = async (entry: LibraryEntry) => {
+  libraryBusy.value = true;
+  try {
+    await adminFetch('/api/admin/description-templates', { method: 'POST', body: { name: `${entry.name.slice(0, 73)} (Copy)`, category: entry.category, kind: entry.kind, blocks: entry.blocks } });
+    await loadLibrary(); libraryNotice.value = `Duplicated "${entry.name}".`;
+  } catch (error: any) { libraryNotice.value = `Duplicate failed: ${error?.data?.statusMessage || error?.message || 'request failed'}`; }
+  finally { libraryBusy.value = false; }
+};
+const openHistory = async (entry: LibraryEntry) => {
+  historyEntry.value = entry; historyLoading.value = true; historyVersions.value = [];
+  try {
+    const result = await adminFetch(`/api/admin/description-templates/${encodeURIComponent(entry.id)}/versions`);
+    historyVersions.value = Array.isArray(result) ? result as LibraryVersion[] : [];
+  } catch (error: any) { libraryNotice.value = `History failed: ${error?.data?.statusMessage || error?.message || 'request failed'}`; }
+  finally { historyLoading.value = false; }
+};
+const saveTemplateRevision = async (entry: LibraryEntry) => {
+  if (!window.confirm(`Save the current product description as a new revision of "${entry.name}"? This updates the shared template.`)) return;
+  libraryBusy.value = true;
+  try {
+    await adminFetch(`/api/admin/description-templates/${encodeURIComponent(entry.id)}`, { method: 'PUT', body: { blocks: blocks.value.map(item => JSON.parse(JSON.stringify(stripInternalFields(item)))) } });
+    await loadLibrary(); libraryNotice.value = 'New template revision saved.';
+    await openHistory(entry);
+  } catch (error: any) { libraryNotice.value = `Revision failed: ${error?.data?.statusMessage || error?.message || 'request failed'}`; }
+  finally { libraryBusy.value = false; }
+};
+const restoreTemplateRevision = async (entry: LibraryEntry, version: LibraryVersion) => {
+  if (!window.confirm(`Restore version ${version.version_number} of "${entry.name}" for all admins? The current template is preserved in history.`)) return;
+  libraryBusy.value = true;
+  try {
+    await adminFetch(`/api/admin/description-templates/${encodeURIComponent(entry.id)}`, { method: 'PUT', body: { blocks: version.blocks } });
+    await loadLibrary(); libraryNotice.value = `Restored version ${version.version_number}.`;
+    await openHistory(entry);
+  } catch (error: any) { libraryNotice.value = `Restore failed: ${error?.data?.statusMessage || error?.message || 'request failed'}`; }
+  finally { libraryBusy.value = false; }
+};
 const savedLibrary = ref<LibraryEntry[]>([]);
 const filteredLibrary = computed(() => savedLibrary.value.filter(item =>
   (libraryFilter.value === 'All' || item.category === libraryFilter.value) &&
