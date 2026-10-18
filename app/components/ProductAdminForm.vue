@@ -19,6 +19,10 @@
     </div>
 
     <form id="product-admin-form" v-else class="space-y-6" @submit.prevent="saveProduct('save')">
+      <div v-if="mode === 'edit'" class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-5 py-4">
+        <div><p class="font-semibold text-slate-900">{{ showAdvanced ? 'All product settings' : 'Simple product editor' }}</p><p class="text-sm text-slate-600">{{ showAdvanced ? 'Supplier, freight, related products and technical options are visible.' : 'Focus on the essentials. Your advanced settings are preserved.' }}</p></div>
+        <button type="button" class="admin-btn-secondary" @click="showAdvanced = !showAdvanced">{{ showAdvanced ? 'Switch to Simple Edit' : 'Show Advanced Settings' }}</button>
+      </div>
       <div class="product-workspace">
         <aside class="product-nav">
           <div class="product-nav-card">
@@ -32,9 +36,9 @@
             <nav class="product-nav-links" aria-label="Product editor sections">
               <a href="#product-details">📝 Product details</a>
               <a href="#pricing-stock">💰 Pricing & stock</a>
-              <a href="#suppliers">🚚 Suppliers</a>
-              <a href="#related-products">🔗 Related products</a>
-              <a href="#freight">📦 Freight</a>
+              <a v-if="showAdvanced" href="#suppliers">🚚 Suppliers</a>
+              <a v-if="showAdvanced" href="#related-products">🔗 Related products</a>
+              <a v-if="showAdvanced" href="#freight">📦 Freight</a>
               <a href="#product-images">🖼️ Images</a>
               <a href="#product-description">📄 Description</a>
             </nav>
@@ -133,7 +137,7 @@
             <textarea v-model="form.blurb" rows="3" class="input" placeholder="Short description shown on product cards"></textarea>
           </label>
 
-          <div class="md:col-span-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
+          <div v-show="showAdvanced" class="md:col-span-2 mt-2 rounded-xl border border-blue-200 bg-blue-50/60 p-4">
             <div>
               <p class="text-xs font-black uppercase tracking-wider text-blue-700">Google & Product Identifiers</p>
               <p class="mt-1 text-sm text-slate-600">Used by Google Merchant, structured product data and search engines.</p>
@@ -155,7 +159,7 @@
             </div>
           </div>
 
-          <div class="md:col-span-2 mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
+          <div v-show="showAdvanced" class="md:col-span-2 mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-4">
             <div>
               <p class="text-xs font-black uppercase tracking-wider text-violet-700">Search Engine Listing</p>
               <p class="mt-1 text-sm text-slate-600">Optional. Leave these blank to use the automatic product name and short-description defaults.</p>
@@ -319,7 +323,7 @@
       </section>
 
 
-      <section id="suppliers" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section v-show="showAdvanced" id="suppliers" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Product Suppliers</h2>
@@ -340,7 +344,7 @@
         <p v-if="supplierRows.length" class="mt-3 text-xs text-slate-500">The Default supplier is automatically preferred by Stock Intelligence and when creating purchase orders. Alternate suppliers remain available for price or availability choices.</p>
       </section>
 
-      <section id="related-products" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section v-show="showAdvanced" id="related-products" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 class="text-lg font-bold text-slate-900">Related Products</h2>
@@ -391,7 +395,7 @@
         </div>
       </section>
 
-      <section id="freight" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+      <section v-show="showAdvanced" id="freight" class="product-section rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
         <h2 class="text-lg font-bold text-slate-900">Freight Measurements</h2>
         <p class="mt-1 text-sm text-slate-500">
           Used to calculate Australia Post parcel rates. Enter the packed weight and dimensions for one unit.
@@ -713,7 +717,7 @@
           </div>
         </div>
         <div class="mt-5">
-          <ProductDescriptionBuilder v-model="descriptionBlocks" :product-images="imageUrls" />
+          <ProductDescriptionBuilder v-model="descriptionBlocks" />
         </div>
       </section>
 
@@ -761,6 +765,7 @@ const categories = ref<ProductCategory[]>([]);
 const loading = ref(props.mode === "edit");
 const saving = ref(false);
 const saveMode = ref<"close" | "continue" | "add-another">("close");
+const showAdvanced = ref(false);
 const successMessage = ref("");
 const errorMessage = ref("");
 const slugTouched = ref(props.mode === "edit");

@@ -32,26 +32,27 @@ export default defineEventHandler(async (event) => {
   await requireAdmin(event);
   const body = await readBody(event);
 
+  const quickCreate = body?.quick_create === true;
   const name = String(body?.name || "").trim();
   const slug = cleanSlug(body?.slug || name);
-  const productCode = String(body?.product_code || "").trim();
+  const productCode = String(body?.product_code || "").trim() || (quickCreate ? `KC-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}` : "");
   const brand = String(body?.brand || "").trim();
   const gtin = String(body?.gtin || "").replace(/\s+/g, "").trim();
   const mpn = String(body?.mpn || "").trim();
   const seoTitle = String(body?.seo_title || "").trim();
   const seoDescription = String(body?.seo_description || "").trim();
   const hasVariants = false;
-  const buyPriceExGst = Number(body?.buy_price_ex_gst);
-  const rrpMarkupPercent = Number(body?.rrp_markup_percent);
+  const buyPriceExGst = Number(body?.buy_price_ex_gst ?? (quickCreate ? 0 : undefined));
+  const rrpMarkupPercent = Number(body?.rrp_markup_percent ?? (quickCreate ? 0 : undefined));
   const pricingLevelMarkupOverridePercent = Number(body?.pricing_level_markup_override_percent ?? 0);
-  const stock = Number(body?.stock);
-  const lowStockLevel = Number(body?.low_stock_level);
-  const reorderLevel = Number(body?.reorder_level);
-  const targetStockLevel = Number(body?.target_stock_level);
-  const weightKg = Number(body?.weight_kg);
-  const lengthCm = Number(body?.length_cm);
-  const widthCm = Number(body?.width_cm);
-  const heightCm = Number(body?.height_cm);
+  const stock = Number(body?.stock ?? (quickCreate ? 0 : undefined));
+  const lowStockLevel = Number(body?.low_stock_level ?? (quickCreate ? 2 : undefined));
+  const reorderLevel = Number(body?.reorder_level ?? (quickCreate ? 3 : undefined));
+  const targetStockLevel = Number(body?.target_stock_level ?? (quickCreate ? 5 : undefined));
+  const weightKg = Number(body?.weight_kg ?? (quickCreate ? 1 : undefined));
+  const lengthCm = Number(body?.length_cm ?? (quickCreate ? 30 : undefined));
+  const widthCm = Number(body?.width_cm ?? (quickCreate ? 20 : undefined));
+  const heightCm = Number(body?.height_cm ?? (quickCreate ? 10 : undefined));
   const relatedProductIds = normaliseRelatedProductIds(body?.related_product_ids);
   const incomingImages = normaliseImages(body?.images);
   const standardPricingLevel = await getStandardPricingLevel();
@@ -130,7 +131,7 @@ export default defineEventHandler(async (event) => {
     length_cm: lengthCm,
     width_cm: widthCm,
     height_cm: heightCm,
-    active: body?.active !== false,
+    active: quickCreate ? false : body?.active !== false,
     featured: body?.featured === true,
     refurbished: body?.refurbished === true,
     images: localisedImages.images,
