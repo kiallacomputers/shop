@@ -101,12 +101,15 @@
                   </div>
                 </div>
 
-                <!-- Responsive feature cards -->
+                <!-- Responsive feature cards: centered content and centered incomplete rows -->
                 <div v-else-if="section.type === 'feature_cards'" class="mb-8">
-                  <h3 v-if="section.text" class="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
-                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" :class="section.columns === 4 ? 'lg:grid-cols-4' : section.columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'">
-                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                      <div v-if="feature.icon" class="mb-3 text-2xl" aria-hidden="true">{{ feature.icon }}</div>
+                  <h3 v-if="section.text" class="mb-4 text-center text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
+                  <div class="flex flex-wrap justify-center gap-4">
+                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex"
+                      class="flex w-full flex-col items-center rounded-xl border border-slate-200 bg-slate-50 p-5 text-center shadow-sm sm:w-[calc(50%-0.5rem)]"
+                      :class="section.columns === 4 ? 'lg:w-[calc(25%-0.75rem)]' : section.columns === 2 ? 'lg:w-[calc(50%-0.5rem)]' : 'lg:w-[calc(33.333%-0.667rem)]'">
+                      <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" :alt="feature.title ? `${feature.title} icon` : 'Feature icon'" loading="lazy" referrerpolicy="no-referrer" class="mb-3 h-14 w-14 object-contain" />
+                      <div v-else-if="feature.icon" class="mb-3 text-3xl" aria-hidden="true">{{ feature.icon }}</div>
                       <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
                       <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
                     </div>

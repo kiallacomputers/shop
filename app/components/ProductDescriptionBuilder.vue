@@ -492,6 +492,10 @@
               <div class="flex justify-between items-center"><strong class="text-sm">Card {{ featureIndex + 1 }}</strong><button type="button" class="text-sm text-red-600" @click="block.features?.splice(featureIndex, 1)">Remove</button></div>
               <label class="block text-xs font-semibold text-slate-600">Icon</label>
               <select v-model="feature.icon" class="input w-full"><option value="">No icon</option><option value="⚡">⚡ Performance</option><option value="🔒">🔒 Security</option><option value="🔌">🔌 Connectivity</option><option value="🖥️">🖥️ Display</option><option value="💾">💾 Storage</option><option value="🔋">🔋 Battery</option><option value="🛡️">🛡️ Warranty</option><option value="✓">✓ Check</option><option value="🌐">🌐 Network</option><option value="📦">📦 Package</option></select>
+              <label class="block text-xs font-semibold text-slate-600">Colour SVG icon URL (optional)</label>
+              <input v-model="feature.iconUrl" type="url" class="input w-full" placeholder="https://www.svgrepo.com/show/.../icon.svg" />
+              <p class="text-xs text-slate-500">Find an icon at <a href="https://www.svgrepo.com/" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">SVG Repo ↗</a>, then paste the direct HTTPS .svg image URL. This overrides the emoji icon. Use only trusted SVG files.</p>
+              <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" alt="Icon preview" class="mx-auto h-12 w-12 object-contain" referrerpolicy="no-referrer" />
               <input v-model="feature.title" class="input w-full" placeholder="Feature title" />
               <textarea v-model="feature.description" class="input w-full" rows="2" placeholder="Customer benefit or verified specification" />
             </div>
@@ -1114,7 +1118,7 @@ type DescriptionBlock = {
   type: string;
   text?: string;
   columns?: number;
-  features?: Array<{ icon?: string; title: string; description: string }>;
+  features?: Array<{ icon?: string; iconUrl?: string; title: string; description: string }>;
   showcaseBody?: string;
   showcaseImageUrl?: string;
   showcaseImageAlt?: string;
