@@ -37,9 +37,11 @@
             <select v-model="categoryFilter"
               class="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
               <option value="">All Categories</option>
-              <option v-for="category in sortedCategories" :key="category.id" :value="String(category.id)">
-                {{ categoryLabel(category) }}
-              </option>
+              <optgroup v-for="group in groupedProductCategories" :key="group.parent.id" :label="group.parent.name">
+                <option v-for="category in group.children" :key="category.id" :value="String(category.id)">
+                  {{ category.name }}
+                </option>
+              </optgroup>
             </select>
           </div>
 
@@ -418,6 +420,7 @@ type Category = {
   id: string | number;
   name: string;
   parent_id?: string | number | null;
+  sort_order?: number | null;
 };
 
 type Product = {
@@ -501,14 +504,22 @@ const categoryLabel = (category: Category) => {
   return parent ? `${parent.name} → ${category.name}` : category.name;
 };
 
-const sortedCategories = computed(() =>
-  [...categories.value].sort((a, b) => {
-    const mainA = mainCategoryFor(a)?.name || a.name;
-    const mainB = mainCategoryFor(b)?.name || b.name;
-    const mainSort = mainA.localeCompare(mainB, undefined, { sensitivity: "base" });
-    return mainSort || a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-  }),
-);
+const sortProductCategories = (items: Category[]) =>
+  [...items].sort((a, b) => {
+    const orderDifference = Number(a.sort_order || 0) - Number(b.sort_order || 0);
+    if (orderDifference !== 0) return orderDifference;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+  });
+
+const groupedProductCategories = computed(() => {
+  const parents = sortProductCategories(
+    categories.value.filter((category) => category.parent_id === null || category.parent_id === undefined || category.parent_id === ""),
+  );
+  return parents.map((parent) => ({
+    parent,
+    children: sortProductCategories(categories.value.filter((category) => String(category.parent_id ?? "") === String(parent.id))),
+  })).filter((group) => group.children.length > 0);
+});
 
 const filteredProducts = computed(() => {
   const term = search.value.trim().toLowerCase();
