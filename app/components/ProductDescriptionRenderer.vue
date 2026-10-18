@@ -102,16 +102,16 @@
                 </div>
 
                 <!-- Responsive feature cards -->
-                <div v-else-if="section.type === 'feature_cards'" class="mb-8">
+                <div v-else-if="section.type === 'feature_cards'" class="mb-8 feature-cards-container">
                   <h3 v-if="section.text" class="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
-                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" :class="section.columns === 4 ? 'lg:grid-cols-4' : section.columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'">
-                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                      <div v-if="feature.icon" class="mb-3" aria-hidden="true">
-                        <img v-if="isFeatureSvgUrl(feature.icon)" :src="feature.icon" alt="" class="h-10 w-10 object-contain" loading="lazy" referrerpolicy="no-referrer" />
+                  <div class="feature-cards-grid" :class="`feature-cards-cols-${[2, 3, 4].includes(Number(section.columns)) ? Number(section.columns) : 3}`">
+                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="feature-card-item min-w-0 text-center rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <div v-if="feature.icon" class="mb-3 flex items-center justify-center" aria-hidden="true">
+                        <img v-if="isFeatureSvgUrl(feature.icon)" :src="feature.icon" alt="" class="block h-10 w-10 object-contain" loading="lazy" referrerpolicy="no-referrer" />
                         <span v-else class="text-2xl">{{ feature.icon }}</span>
                       </div>
-                      <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
-                      <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
+                      <h4 class="mb-2 break-words text-base font-bold text-slate-900">{{ feature.title }}</h4>
+                      <p class="whitespace-pre-line break-words text-sm leading-6 text-slate-600">{{ feature.description }}</p>
                     </div>
                   </div>
                 </div>
@@ -460,3 +460,17 @@ const descriptionImageClass = (width) => {
 };
 
 </script>
+
+<style scoped>
+/* Respond to the width of the product-description area, not the viewport. */
+.feature-cards-container { container-type: inline-size; }
+.feature-cards-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.feature-card-item { min-width: 0; overflow-wrap: anywhere; }
+@container (min-width: 560px) {
+  .feature-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 850px) {
+  .feature-cards-grid.feature-cards-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .feature-cards-grid.feature-cards-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+</style>
