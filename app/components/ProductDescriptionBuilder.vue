@@ -22,7 +22,6 @@
           <option value="image">Image</option>
           <option value="list">List</option>
           <option value="table">Table</option>
-          <option value="tabbed_specs">Tabbed Specifications</option>
           <option value="quote">Quote</option>
           <option value="warning">Warning</option>
           <option value="info">Info Box</option>
@@ -491,11 +490,32 @@
             <div v-for="(feature, featureIndex) in block.features" :key="featureIndex" class="rounded-lg border border-slate-200 p-3 space-y-2">
               <div class="flex justify-between items-center"><strong class="text-sm">Card {{ featureIndex + 1 }}</strong><button type="button" class="text-sm text-red-600" @click="block.features?.splice(featureIndex, 1)">Remove</button></div>
               <label class="block text-xs font-semibold text-slate-600">Icon</label>
-              <select v-model="feature.icon" class="input w-full"><option value="">No icon</option><option value="⚡">⚡ Performance</option><option value="🔒">🔒 Security</option><option value="🔌">🔌 Connectivity</option><option value="🖥️">🖥️ Display</option><option value="💾">💾 Storage</option><option value="🔋">🔋 Battery</option><option value="🛡️">🛡️ Warranty</option><option value="✓">✓ Check</option><option value="🌐">🌐 Network</option><option value="📦">📦 Package</option></select>
-              <label class="block text-xs font-semibold text-slate-600">Colour SVG icon URL (optional)</label>
-              <input v-model="feature.iconUrl" type="url" class="input w-full" placeholder="https://www.svgrepo.com/show/.../icon.svg" />
-              <p class="text-xs text-slate-500">Find an icon at <a href="https://www.svgrepo.com/" target="_blank" rel="noopener noreferrer" class="text-blue-700 underline">SVG Repo ↗</a>, then paste the direct HTTPS .svg image URL. This overrides the emoji icon. Use only trusted SVG files.</p>
-              <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" alt="Icon preview" class="mx-auto h-12 w-12 object-contain" referrerpolicy="no-referrer" />
+              <div class="flex items-center gap-3">
+                <select v-model="feature.icon" class="input min-w-0 flex-1">
+                  <option value="">No icon</option>
+                  <optgroup label="Built-in icons">
+                    <option v-for="item in builtInFeatureIcons" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  </optgroup>
+                  <optgroup label="Saved SVG icons">
+                    <option v-for="item in customFeatureIcons" :key="item.url" :value="item.url">{{ item.name }}</option>
+                  </optgroup>
+                  <option v-if="isFeatureSvgUrl(feature.icon) && !customFeatureIcons.some(item => item.url === feature.icon)" :value="feature.icon">Current SVG URL</option>
+                </select>
+                <img v-if="isFeatureSvgUrl(feature.icon)" :src="feature.icon" alt="" class="h-9 w-9 shrink-0 object-contain" referrerpolicy="no-referrer" />
+                <span v-else-if="feature.icon" class="text-2xl" aria-hidden="true">{{ feature.icon }}</span>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <label class="block text-xs font-semibold text-slate-600">SVG URL (HTTPS .svg)</label>
+                <input :value="isFeatureSvgUrl(feature.icon) ? feature.icon : ''" class="input w-full" type="url" placeholder="https://example.com/icon.svg" @change="setFeatureSvgUrl(feature, ($event.target as HTMLInputElement).value)" />
+                <div class="flex flex-wrap items-center gap-2">
+                  <input v-model="newFeatureIconName" class="input min-w-0 flex-1" placeholder="Icon name for dropdown" />
+                  <button type="button" class="rounded-md border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-700 disabled:opacity-50" :disabled="!isFeatureSvgUrl(feature.icon) || !newFeatureIconName.trim()" @click="saveFeatureIcon(feature.icon || '')">Save to icon dropdown</button>
+                </div>
+                <p v-if="featureIconError" class="text-xs text-red-600">{{ featureIconError }}</p>
+                <div v-if="customFeatureIcons.length" class="flex flex-wrap gap-2">
+                  <button v-for="item in customFeatureIcons" :key="item.url" type="button" class="rounded border border-slate-300 bg-white px-2 py-1 text-xs" :title="'Remove ' + item.name + ' from saved icons'" @click="removeFeatureIcon(item.url)">Remove {{ item.name }}</button>
+                </div>
+              </div>
               <input v-model="feature.title" class="input w-full" placeholder="Feature title" />
               <textarea v-model="feature.description" class="input w-full" rows="2" placeholder="Customer benefit or verified specification" />
             </div>
@@ -903,42 +923,6 @@
           </div>
         </template>
 
-        <!-- Tabbed specifications: one list per tab, automatically laid out by storefront -->
-        <template v-else-if="block.type === 'tabbed_specs'">
-          <div class="space-y-4">
-            <label class="block text-sm font-semibold">Main heading
-              <input v-model="block.text" class="input mt-1 w-full" placeholder="Main Specifications" />
-            </label>
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-semibold">Tabs (1–4)</span>
-              <button type="button" class="secondary-button" :disabled="(block.tabs?.length || 0) >= 4" @click="block.tabs!.push({ title: 'New Tab', specs: [] })">+ Add Tab</button>
-            </div>
-            <div v-for="(tab, tabIndex) in block.tabs" :key="tabIndex" class="rounded-lg border border-slate-200 p-3 space-y-3">
-              <div class="flex flex-wrap gap-2 items-center">
-                <input v-model="tab.title" class="input flex-1 min-w-[150px]" :aria-label="`Tab ${tabIndex + 1} title`" />
-                <button type="button" class="secondary-button" :disabled="tabIndex === 0" @click="block.tabs!.splice(tabIndex - 1, 0, ...block.tabs!.splice(tabIndex, 1))">↑</button>
-                <button type="button" class="secondary-button" :disabled="tabIndex === block.tabs!.length - 1" @click="block.tabs!.splice(tabIndex + 1, 0, ...block.tabs!.splice(tabIndex, 1))">↓</button>
-                <button type="button" class="secondary-button text-red-600" :disabled="block.tabs!.length <= 1" @click="block.tabs!.splice(tabIndex, 1)">Remove tab</button>
-              </div>
-              <p class="text-xs text-slate-500">One specification list. Desktop displays two columns; mobile displays one.</p>
-              <div v-for="(spec, specIndex) in tab.specs" :key="specIndex" class="flex flex-wrap items-start gap-2">
-                <input v-model="spec.label" class="input min-w-[140px] flex-1" placeholder="Specification name" />
-                <textarea v-model="spec.value" rows="2" class="input min-w-[180px] flex-[2]" placeholder="Details" />
-                <button type="button" class="secondary-button" :disabled="specIndex === 0" @click="tab.specs.splice(specIndex - 1, 0, ...tab.specs.splice(specIndex, 1))">↑</button>
-                <button type="button" class="secondary-button" :disabled="specIndex === tab.specs.length - 1" @click="tab.specs.splice(specIndex + 1, 0, ...tab.specs.splice(specIndex, 1))">↓</button>
-                <button type="button" class="secondary-button text-red-600" @click="tab.specs.splice(specIndex, 1)">×</button>
-              </div>
-              <button type="button" class="secondary-button" @click="tab.specs.push({ label: '', value: '' })">+ Add Specification</button>
-              <details class="rounded-lg bg-slate-50 p-3">
-                <summary class="cursor-pointer text-sm font-semibold">Bulk paste specifications</summary>
-                <p class="my-2 text-xs text-slate-500">One per line: Name: Value (or tab-separated Name and Value). Existing entries are kept.</p>
-                <textarea :id="`spec-paste-${block._key}-${tabIndex}`" rows="5" class="input w-full" placeholder="Engine speed: Up to 35 ppm" />
-                <button type="button" class="secondary-button mt-2" @click="pasteSpecifications(tab, block._key, tabIndex)">Import lines</button>
-              </details>
-            </div>
-          </div>
-        </template>
-
         <!-- ======================================== -->
         <!-- TABLE -->
         <!-- ======================================== -->
@@ -1110,6 +1094,21 @@
       >{{ jsonPreview }}</pre>
     </details>
   </div>
+    <!-- Branded confirmation: never use a native browser confirm for template replacement. -->
+    <div v-if="pendingReplaceEntry" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4" @click.self="pendingReplaceEntry = null" @keydown.esc="pendingReplaceEntry = null">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="replace-template-title" aria-describedby="replace-template-description" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <h3 id="replace-template-title" class="text-lg font-bold text-slate-900">Replace product description?</h3>
+        <p id="replace-template-description" class="mt-3 text-sm leading-6 text-slate-600">
+          Replacing with <strong>{{ pendingReplaceEntry.name }}</strong> removes all current description sections, including unsaved edits.
+        </p>
+        <p class="mt-2 text-sm text-slate-600">To keep your current sections, choose <strong>Append instead</strong>.</p>
+        <div class="mt-6 flex flex-wrap justify-end gap-2">
+          <button type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700" @click="pendingReplaceEntry = null">Cancel</button>
+          <button type="button" class="rounded-lg border border-blue-300 px-4 py-2 text-sm font-semibold text-blue-700" @click="applyLibraryEntry(pendingReplaceEntry!, false); pendingReplaceEntry = null">Append instead</button>
+          <button type="button" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white" @click="confirmLibraryReplace">Replace description</button>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -1118,7 +1117,7 @@ type DescriptionBlock = {
   type: string;
   text?: string;
   columns?: number;
-  features?: Array<{ icon?: string; iconUrl?: string; title: string; description: string }>;
+  features?: Array<{ icon?: string; title: string; description: string }>;
   showcaseBody?: string;
   showcaseImageUrl?: string;
   showcaseImageAlt?: string;
@@ -1134,7 +1133,6 @@ type DescriptionBlock = {
   items?: string[];
   headers?: string[];
   rows?: string[][];
-  tabs?: Array<{ title: string; specs: Array<{ label: string; value: string }> }>;
   url?: string;
   path?: string;
   alt?: string;
@@ -1172,6 +1170,55 @@ const emit = defineEmits<{
 
 const { adminFetch } = useAdminFetch();
 
+type CustomFeatureIcon = { name: string; url: string };
+const featureIconStorageKey = 'kc-feature-svg-icons-v1';
+const builtInFeatureIcons = [
+  { value: '⚡', label: '⚡ Performance' }, { value: '🔒', label: '🔒 Security' },
+  { value: '🔌', label: '🔌 Connectivity' }, { value: '🖥️', label: '🖥️ Display' },
+  { value: '💾', label: '💾 Storage' }, { value: '🔋', label: '🔋 Battery' },
+  { value: '🛡️', label: '🛡️ Warranty' }, { value: '✓', label: '✓ Check' },
+  { value: '🌐', label: '🌐 Network' }, { value: '📦', label: '📦 Package' },
+];
+const customFeatureIcons = ref<CustomFeatureIcon[]>([]);
+const newFeatureIconName = ref('');
+const featureIconError = ref('');
+function isFeatureSvgUrl(value?: string): boolean {
+  if (!value) return false;
+  try { const url = new URL(value); return url.protocol === 'https:' && url.pathname.toLowerCase().endsWith('.svg'); }
+  catch { return false; }
+}
+function setFeatureSvgUrl(feature: { icon?: string }, value: string) {
+  const url = value.trim();
+  featureIconError.value = '';
+  if (!url) { feature.icon = ''; return; }
+  if (!isFeatureSvgUrl(url)) { featureIconError.value = 'Enter a public HTTPS URL ending in .svg.'; return; }
+  feature.icon = url;
+}
+function persistFeatureIcons() {
+  if (import.meta.client) localStorage.setItem(featureIconStorageKey, JSON.stringify(customFeatureIcons.value));
+}
+function saveFeatureIcon(url: string) {
+  featureIconError.value = '';
+  if (!isFeatureSvgUrl(url)) { featureIconError.value = 'Select a valid SVG URL first.'; return; }
+  const name = newFeatureIconName.value.trim().slice(0, 80);
+  if (!name) { featureIconError.value = 'Enter an icon name.'; return; }
+  const existing = customFeatureIcons.value.findIndex(item => item.url === url);
+  if (existing >= 0) customFeatureIcons.value[existing] = { name, url };
+  else customFeatureIcons.value.push({ name, url });
+  persistFeatureIcons();
+  newFeatureIconName.value = '';
+}
+function removeFeatureIcon(url: string) {
+  customFeatureIcons.value = customFeatureIcons.value.filter(item => item.url !== url);
+  persistFeatureIcons();
+}
+if (import.meta.client) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(featureIconStorageKey) || '[]');
+    if (Array.isArray(saved)) customFeatureIcons.value = saved.filter((item: any) => typeof item?.name === 'string' && isFeatureSvgUrl(item?.url)).slice(0, 200);
+  } catch { /* Ignore invalid old browser data. */ }
+}
+
 const newBlockType = ref("heading");
 const blocks = ref<DescriptionBlock[]>([]);
 const showPreview = ref(false);
@@ -1188,6 +1235,7 @@ const libraryCategories = ['General', 'Laptops', 'Desktops', 'Monitors', 'Printe
 type LibraryEntry = { id: string; name: string; category: string; kind: 'layout' | 'section'; blocks: any[] };
 type LibraryVersion = { id: string; version_number: number; blocks: any[]; created_at: string };
 const previewEntry = ref<LibraryEntry | null>(null);
+const pendingReplaceEntry = ref<LibraryEntry | null>(null);
 const historyEntry = ref<LibraryEntry | null>(null);
 const historyVersions = ref<LibraryVersion[]>([]);
 const historyLoading = ref(false);
@@ -1269,12 +1317,23 @@ const saveLibraryEntry = async (kind: 'layout' | 'section', block?: DescriptionB
   } catch (error: any) { libraryNotice.value = `Save failed: ${error?.data?.statusMessage || error?.message || 'request failed'}`; }
   finally { libraryBusy.value = false; }
 };
-const useLibraryEntry = (entry: LibraryEntry, replace: boolean) => {
-  if (replace && blocks.value.length && !window.confirm('Replace the current description with this saved template? Unsaved changes will be lost.')) return;
+const applyLibraryEntry = (entry: LibraryEntry, replace: boolean) => {
   const copied = entry.blocks.map(item => normaliseBlock(JSON.parse(JSON.stringify(item))));
   if (replace) blocks.value = copied;
   else blocks.value.push(...copied);
-  libraryNotice.value = `${replace ? 'Loaded' : 'Appended'} "${entry.name}". Review content before saving the product.`;
+  libraryNotice.value = `${replace ? 'Replaced description with' : 'Appended'} "${entry.name}". Review content before saving the product.`;
+};
+const useLibraryEntry = (entry: LibraryEntry, replace: boolean) => {
+  if (replace && blocks.value.length) {
+    pendingReplaceEntry.value = entry;
+    return;
+  }
+  applyLibraryEntry(entry, replace);
+};
+const confirmLibraryReplace = () => {
+  if (!pendingReplaceEntry.value) return;
+  applyLibraryEntry(pendingReplaceEntry.value, true);
+  pendingReplaceEntry.value = null;
 };
 const deleteLibraryEntry = async (id: string) => {
   const entry = savedLibrary.value.find(item => item.id === id);
@@ -1568,13 +1627,6 @@ const normaliseBlock = (input: any): DescriptionBlock => {
     ? input.textAlign
     : defaults.textAlign;
 
-  if (type === "tabbed_specs") {
-    base.tabs = Array.isArray(input?.tabs) ? input.tabs.slice(0, 4).map((tab: any) => ({
-      title: String(tab?.title ?? ''),
-      specs: Array.isArray(tab?.specs) ? tab.specs.map((spec: any) => ({ label: String(spec?.label ?? ''), value: String(spec?.value ?? '') })) : [],
-    })) : [];
-  }
-
   if (type === "feature_cards") {
     base.text = typeof input?.text === "string" ? input.text : "Product Highlights";
     base.columns = [2, 3, 4].includes(Number(input?.columns)) ? Number(input.columns) : 3;
@@ -1774,8 +1826,6 @@ const createBlock = (type: string): DescriptionBlock => {
     });
   }
 
-  if (type === "tabbed_specs") return normaliseBlock({ type, text: "Main Specifications", tabs: [{ title: "General", specs: [{ label: "", value: "" }] }] });
-
   if (type === "table") {
     return normaliseBlock({
       type,
@@ -1807,16 +1857,6 @@ const createBlock = (type: string): DescriptionBlock => {
 // ========================================
 // BLOCK ACTIONS
 // ========================================
-
-const pasteSpecifications = (tab: { title: string; specs: Array<{ label: string; value: string }> }, key: string, index: number) => {
-  const field = document.getElementById(`spec-paste-${key}-${index}`) as HTMLTextAreaElement | null;
-  if (!field) return;
-  for (const line of field.value.split(/\r?\n/)) {
-    const match = line.match(/^(.+?)(?:\t|:\s+)(.+)$/);
-    if (match) tab.specs.push({ label: match[1].trim(), value: match[2].trim() });
-  }
-  field.value = '';
-};
 
 const addBlock = () => {
   blocks.value.push(createBlock(newBlockType.value));
@@ -2034,7 +2074,6 @@ const blockLabel = (type: string) =>
     image: "Image",
     list: "List",
     table: "Table",
-    tabbed_specs: "Tabbed Specifications",
     quote: "Quote",
     warning: "Warning",
     info: "Info Box",

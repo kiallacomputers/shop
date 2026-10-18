@@ -101,18 +101,16 @@
                   </div>
                 </div>
 
-                <!-- Responsive feature cards: centered content and centered incomplete rows -->
+                <!-- Responsive feature cards -->
                 <div v-else-if="section.type === 'feature_cards'" class="mb-8">
-                  <h3 v-if="section.text" class="mb-4 text-center text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
-                  <div class="flex flex-wrap justify-center gap-4">
-                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex"
-                      class="flex w-full flex-col items-center rounded-xl border border-slate-200 bg-slate-50 p-5 text-center shadow-sm sm:w-[calc(50%-0.5rem)]"
-                      :class="section.columns === 4 ? 'lg:w-[calc(25%-0.75rem)]' : section.columns === 2 ? 'lg:w-[calc(50%-0.5rem)]' : 'lg:w-[calc(33.333%-0.667rem)]'">
-                      <div class="mb-3 flex w-full items-center justify-center gap-3 text-center">
-                        <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" :alt="feature.title ? `${feature.title} icon` : 'Feature icon'" loading="lazy" referrerpolicy="no-referrer" class="h-10 w-10 shrink-0 object-contain" />
-                        <span v-else-if="feature.icon" class="shrink-0 text-3xl" aria-hidden="true">{{ feature.icon }}</span>
-                        <h4 class="text-base font-bold text-slate-900">{{ feature.title }}</h4>
+                  <h3 v-if="section.text" class="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">{{ section.text }}</h3>
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" :class="section.columns === 4 ? 'lg:grid-cols-4' : section.columns === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'">
+                    <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                      <div v-if="feature.icon" class="mb-3" aria-hidden="true">
+                        <img v-if="isFeatureSvgUrl(feature.icon)" :src="feature.icon" alt="" class="h-10 w-10 object-contain" loading="lazy" referrerpolicy="no-referrer" />
+                        <span v-else class="text-2xl">{{ feature.icon }}</span>
                       </div>
+                      <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
                       <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
                     </div>
                   </div>
@@ -281,9 +279,6 @@
                 <!-- Divider -->
                 <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
-                <!-- Responsive tabbed specification lists -->
-                <ProductTabbedSpecifications v-else-if="section.type === 'tabbed_specs'" :block="section" />
-
                 <!-- Table -->
                 <div
                   v-else-if="section.type === 'table'"
@@ -343,6 +338,12 @@
 </template>
 
 <script setup lang="ts">
+function isFeatureSvgUrl(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  try { const url = new URL(value); return url.protocol === 'https:' && url.pathname.toLowerCase().endsWith('.svg'); }
+  catch { return false; }
+}
+
 const props = defineProps<{ description?: any[] | null }>();
 
 const paragraphHeadingSizeClass = (size?: string) => {
