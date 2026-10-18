@@ -906,7 +906,7 @@
               <input v-model="block.text" class="input mt-1 w-full" placeholder="Main Specifications" />
             </label>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-semibold">Tabs (2–4)</span>
+              <span class="text-sm font-semibold">Tabs (1–4)</span>
               <button type="button" class="secondary-button" :disabled="(block.tabs?.length || 0) >= 4" @click="block.tabs!.push({ title: 'New Tab', specs: [] })">+ Add Tab</button>
             </div>
             <div v-for="(tab, tabIndex) in block.tabs" :key="tabIndex" class="rounded-lg border border-slate-200 p-3 space-y-3">
@@ -914,7 +914,7 @@
                 <input v-model="tab.title" class="input flex-1 min-w-[150px]" :aria-label="`Tab ${tabIndex + 1} title`" />
                 <button type="button" class="secondary-button" :disabled="tabIndex === 0" @click="block.tabs!.splice(tabIndex - 1, 0, ...block.tabs!.splice(tabIndex, 1))">↑</button>
                 <button type="button" class="secondary-button" :disabled="tabIndex === block.tabs!.length - 1" @click="block.tabs!.splice(tabIndex + 1, 0, ...block.tabs!.splice(tabIndex, 1))">↓</button>
-                <button type="button" class="secondary-button text-red-600" :disabled="block.tabs!.length <= 2" @click="block.tabs!.splice(tabIndex, 1)">Remove tab</button>
+                <button type="button" class="secondary-button text-red-600" :disabled="block.tabs!.length <= 1" @click="block.tabs!.splice(tabIndex, 1)">Remove tab</button>
               </div>
               <p class="text-xs text-slate-500">One specification list. Desktop displays two columns; mobile displays one.</p>
               <div v-for="(spec, specIndex) in tab.specs" :key="specIndex" class="flex flex-wrap items-start gap-2">
@@ -1770,7 +1770,7 @@ const createBlock = (type: string): DescriptionBlock => {
     });
   }
 
-  if (type === "tabbed_specs") return normaliseBlock({ type, text: "Main Specifications", tabs: [{ title: "General", specs: [{ label: "", value: "" }] }, { title: "Specifications", specs: [{ label: "", value: "" }] }] });
+  if (type === "tabbed_specs") return normaliseBlock({ type, text: "Main Specifications", tabs: [{ title: "General", specs: [{ label: "", value: "" }] }] });
 
   if (type === "table") {
     return normaliseBlock({

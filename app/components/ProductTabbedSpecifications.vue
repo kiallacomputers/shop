@@ -1,7 +1,7 @@
 <template>
   <section class="my-6 text-slate-800">
     <h3 v-if="block.text" class="mb-6 text-center text-2xl font-bold sm:text-3xl">{{ block.text }}</h3>
-    <div class="grid gap-1" :style="{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }" role="tablist" :aria-label="block.text || 'Specifications'">
+    <div v-if="tabs.length > 1" class="grid gap-1" :style="{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }" role="tablist" :aria-label="block.text || 'Specifications'">
       <button v-for="(tab, index) in tabs" :key="index" type="button" role="tab"
         :id="`spec-tab-${uid}-${index}`" :aria-controls="`spec-panel-${uid}`" :aria-selected="active === index" :tabindex="active === index ? 0 : -1"
         class="rounded-t-md px-2 py-3 text-xs font-semibold transition-colors sm:text-base"
@@ -10,7 +10,7 @@
         {{ tab.title }}
       </button>
     </div>
-    <div v-if="tabs.length" :id="`spec-panel-${uid}`" role="tabpanel" :aria-labelledby="`spec-tab-${uid}-${active}`" class="pt-6">
+    <div v-if="tabs.length" :id="`spec-panel-${uid}`"  :role="tabs.length > 1 ? 'tabpanel' : undefined" :aria-labelledby="tabs.length > 1 ? `spec-tab-${uid}-${active}` : undefined" class="pt-6">
       <div class="spec-columns">
         <div v-for="(spec, index) in tabs[active]?.specs || []" :key="index" class="mb-5 break-inside-avoid">
           <h4 class="font-semibold text-slate-900">{{ spec.label }}</h4>
