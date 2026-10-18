@@ -108,9 +108,11 @@
                     <div v-for="(feature, featureIndex) in (section.features || [])" :key="featureIndex"
                       class="flex w-full flex-col items-center rounded-xl border border-slate-200 bg-slate-50 p-5 text-center shadow-sm sm:w-[calc(50%-0.5rem)]"
                       :class="section.columns === 4 ? 'lg:w-[calc(25%-0.75rem)]' : section.columns === 2 ? 'lg:w-[calc(50%-0.5rem)]' : 'lg:w-[calc(33.333%-0.667rem)]'">
-                      <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" :alt="feature.title ? `${feature.title} icon` : 'Feature icon'" loading="lazy" referrerpolicy="no-referrer" class="mb-3 h-14 w-14 object-contain" />
-                      <div v-else-if="feature.icon" class="mb-3 text-3xl" aria-hidden="true">{{ feature.icon }}</div>
-                      <h4 class="mb-2 text-base font-bold text-slate-900">{{ feature.title }}</h4>
+                      <div class="mb-3 flex w-full items-center justify-center gap-3 text-center">
+                        <img v-if="feature.iconUrl && /^https:\/\//i.test(feature.iconUrl)" :src="feature.iconUrl" :alt="feature.title ? `${feature.title} icon` : 'Feature icon'" loading="lazy" referrerpolicy="no-referrer" class="h-10 w-10 shrink-0 object-contain" />
+                        <span v-else-if="feature.icon" class="shrink-0 text-3xl" aria-hidden="true">{{ feature.icon }}</span>
+                        <h4 class="text-base font-bold text-slate-900">{{ feature.title }}</h4>
+                      </div>
                       <p class="whitespace-pre-line text-sm leading-6 text-slate-600">{{ feature.description }}</p>
                     </div>
                   </div>
