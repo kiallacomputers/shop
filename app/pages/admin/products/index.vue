@@ -353,6 +353,17 @@
             <span>{{ duplicatingId === String(actionsMenuProduct.id) ? "Duplicating..." : "Duplicate" }}</span>
           </button>
 
+          <button
+            type="button"
+            class="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-blue-50 disabled:opacity-50"
+            role="menuitem"
+            :disabled="changingActiveId === String(actionsMenuProduct.id)"
+            @click="changeActiveFromMenu"
+          >
+            <span class="w-5 text-center text-base" aria-hidden="true">{{ actionsMenuProduct.active === false ? '✓' : '○' }}</span>
+            <span>{{ changingActiveId === String(actionsMenuProduct.id) ? 'Saving...' : actionsMenuProduct.active === false ? 'Activate' : 'Deactivate' }}</span>
+          </button>
+
           <div class="my-1 border-t border-slate-100"></div>
 
           <button
@@ -459,6 +470,7 @@ const categories = ref<Category[]>([]);
 const loading = ref(true);
 const errorMessage = ref("");
 const deletingId = ref<string | null>(null);
+const changingActiveId = ref<string | null>(null);
 const duplicatingId = ref<string | null>(null);
 const savingOverrideId = ref<string | null>(null);
 const overrideSavedId = ref<string | null>(null);
@@ -731,24 +743,22 @@ const closeActionsMenu = () => {
 const positionActionsMenu = (button: HTMLElement) => {
   const rect = button.getBoundingClientRect();
   const menuWidth = 176;
+  const menuHeight = 250;
   const margin = 8;
   const viewportPadding = 12;
-
-  const left = Math.min(
-    window.innerWidth - menuWidth - viewportPadding,
-    Math.max(viewportPadding, rect.right - menuWidth),
-  );
-
-  const estimatedMenuHeight = 142;
+  const left = Math.max(viewportPadding, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - viewportPadding));
   const roomBelow = window.innerHeight - rect.bottom;
-  const top =
-    roomBelow >= estimatedMenuHeight + margin
-      ? rect.bottom + margin
-      : Math.max(viewportPadding, rect.top - estimatedMenuHeight - margin);
-
+  const roomAbove = rect.top;
+  const openUpwards = roomBelow < menuHeight + margin && roomAbove > roomBelow;
+  const availableHeight = Math.max(80, openUpwards ? roomAbove - margin - viewportPadding : roomBelow - margin - viewportPadding);
+  const top = openUpwards
+    ? Math.max(viewportPadding, rect.top - Math.min(menuHeight, availableHeight) - margin)
+    : Math.min(window.innerHeight - viewportPadding, rect.bottom + margin);
   actionsMenuStyle.value = {
     left: `${left}px`,
     top: `${top}px`,
+    maxHeight: `${availableHeight}px`,
+    overflowY: 'auto',
   };
 };
 
@@ -816,6 +826,24 @@ const duplicateFromMenu = async () => {
   if (!product) return;
   closeActionsMenu();
   await duplicateProduct(product);
+};
+
+const changeActiveFromMenu = async () => {
+  const product = actionsMenuProduct.value;
+  if (!product) return;
+  closeActionsMenu();
+  const id = String(product.id);
+  const nextActive = product.active === false;
+  changingActiveId.value = id;
+  errorMessage.value = '';
+  try {
+    await adminFetch(`/api/admin/products/${id}/active`, { method: 'PATCH', body: { active: nextActive } });
+    products.value = products.value.map((item) => String(item.id) === id ? { ...item, active: nextActive } : item);
+  } catch (error: any) {
+    errorMessage.value = error?.data?.statusMessage || error?.message || 'Unable to update product status.';
+  } finally {
+    changingActiveId.value = null;
+  }
 };
 
 const deleteFromMenu = async () => {
