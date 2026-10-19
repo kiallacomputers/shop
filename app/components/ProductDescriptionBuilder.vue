@@ -22,6 +22,7 @@
           <option value="image">Image</option>
           <option value="list">List</option>
           <option value="table">Table</option>
+          <option value="tabbed_specs">Tabbed Specifications</option>
           <option value="quote">Quote</option>
           <option value="warning">Warning</option>
           <option value="info">Info Box</option>
@@ -48,6 +49,7 @@
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('warranty')">+ Warranty & Support</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('box')">+ What's in the Box</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('specs')">+ Specifications</button>
+        <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="blocks.push(createBlock('tabbed_specs'))">+ Tabbed Specifications</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('showcase')">+ Image & Text Showcase</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('shipping')">+ Shipping Information</button>
         <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50" @click="appendSection('refurbished')">+ Refurbished Condition</button>
@@ -923,6 +925,27 @@
           </div>
         </template>
 
+        <!-- Tabbed specifications: each tab has its own two-column list -->
+        <template v-else-if="block.type === 'tabbed_specs'">
+          <div class="space-y-4">
+            <label class="block"><span class="field-label">Section heading (optional)</span><input v-model="block.text" class="input w-full" placeholder="Technical Specifications" /></label>
+            <p class="text-xs text-slate-500">Add one or more tabs. Each tab contains specification names and values. A single tab is supported.</p>
+            <div v-for="(tab, tabIndex) in block.tabs" :key="tabIndex" class="rounded-lg border border-slate-200 p-3 space-y-3">
+              <div class="flex items-center gap-2">
+                <input v-model="tab.title" class="input min-w-0 flex-1" :aria-label="`Tab ${tabIndex + 1} title`" placeholder="e.g. General" />
+                <button type="button" class="secondary-button text-red-600" @click="block.tabs!.splice(tabIndex, 1)">Delete tab</button>
+              </div>
+              <div v-for="(row, rowIndex) in tab.rows" :key="rowIndex" class="grid grid-cols-[1fr_1fr_auto] gap-2 items-start">
+                <input v-model="row[0]" class="input min-w-0" placeholder="Specification" />
+                <textarea v-model="row[1]" rows="1" class="input min-w-0" placeholder="Value" />
+                <button type="button" class="remove-small" title="Delete specification" @click="tab.rows.splice(rowIndex, 1)">×</button>
+              </div>
+              <button type="button" class="secondary-button" @click="tab.rows.push(['', ''])">+ Specification</button>
+            </div>
+            <button type="button" class="secondary-button" @click="block.tabs!.push({ title: `Tab ${block.tabs!.length + 1}`, rows: [['', '']] })">+ Add Tab</button>
+          </div>
+        </template>
+
         <!-- ======================================== -->
         <!-- TABLE -->
         <!-- ======================================== -->
@@ -1133,6 +1156,7 @@ type DescriptionBlock = {
   items?: string[];
   headers?: string[];
   rows?: string[][];
+  tabs?: Array<{ title: string; rows: string[][] }>;
   url?: string;
   path?: string;
   alt?: string;
@@ -1686,6 +1710,9 @@ const normaliseBlock = (input: any): DescriptionBlock => {
   } else if (type === "list") {
     base.style = input?.style || "bullet";
     base.items = Array.isArray(input?.items) ? [...input.items] : [""];
+  } else if (type === "tabbed_specs") {
+    base.text = input?.text || "Specifications";
+    base.tabs = Array.isArray(input?.tabs) ? input.tabs.map((tab: any) => ({ title: String(tab?.title || "General"), rows: Array.isArray(tab?.rows) ? tab.rows.map((row: any) => [String(row?.[0] ?? ""), String(row?.[1] ?? "")]) : [] })) : [{ title: "General", rows: [["", ""]] }];
   } else if (type === "table") {
     base.headers =
       Array.isArray(input?.headers) && input.headers.length
@@ -1824,6 +1851,10 @@ const createBlock = (type: string): DescriptionBlock => {
       style: "bullet",
       items: ["", ""],
     });
+  }
+
+  if (type === "tabbed_specs") {
+    return normaliseBlock({ type, text: "Specifications", tabs: [{ title: "General", rows: [["", ""]] }] });
   }
 
   if (type === "table") {

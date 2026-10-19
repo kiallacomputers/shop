@@ -279,6 +279,29 @@
                 <!-- Divider -->
                 <hr v-else-if="section.type === 'divider'" class="my-6 border-gray-200" />
 
+                <!-- Tabbed specifications: works with one or multiple tabs -->
+                <div v-else-if="section.type === 'tabbed_specs'" class="mb-8" >
+                  <h3 v-if="section.text" class="mb-3 text-xl font-semibold text-slate-900">{{ section.text }}</h3>
+                  <div v-if="section.tabs?.length" class="rounded-xl border border-slate-200 overflow-hidden">
+                    <div v-if="section.tabs.length > 1" class="flex flex-wrap gap-1 border-b border-slate-200 bg-slate-50 p-2" role="tablist">
+                      <button v-for="(tab, tabIndex) in section.tabs" :key="tabIndex" type="button" role="tab"
+                        :aria-selected="selectedSpecificationTab(index, section.tabs.length) === tabIndex"
+                        class="rounded-lg px-3 py-2 text-sm font-medium"
+                        :class="selectedSpecificationTab(index, section.tabs.length) === tabIndex ? 'bg-blue-600 text-white' : 'text-slate-700 hover:bg-slate-200'"
+                        @click="specificationTabSelection[index] = tabIndex">{{ tab.title || `Tab ${tabIndex + 1}` }}</button>
+                    </div>
+                    <div v-for="(tab, tabIndex) in section.tabs" v-show="selectedSpecificationTab(index, section.tabs.length) === tabIndex" :key="tabIndex" class="p-3 sm:p-4">
+                      <h4 v-if="section.tabs.length === 1 && tab.title" class="mb-3 font-semibold text-slate-800">{{ tab.title }}</h4>
+                      <dl class="grid grid-cols-1 gap-x-6 md:grid-cols-2">
+                        <div v-for="(row, rowIndex) in tab.rows" :key="rowIndex" class="min-w-0 border-b border-slate-100 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] sm:gap-3">
+                          <dt class="break-words font-semibold text-slate-700">{{ row[0] }}</dt>
+                          <dd class="mt-1 whitespace-pre-line break-words text-slate-600 sm:mt-0">{{ row[1] }}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Table -->
                 <div
                   v-else-if="section.type === 'table'"
@@ -345,6 +368,11 @@ function isFeatureSvgUrl(value: unknown): boolean {
 }
 
 const props = defineProps<{ description?: any[] | null }>();
+const specificationTabSelection = ref<Record<number, number>>({});
+function selectedSpecificationTab(index: number, count: number): number {
+  const selected = specificationTabSelection.value[index] ?? 0;
+  return selected >= 0 && selected < count ? selected : 0;
+}
 
 const paragraphHeadingSizeClass = (size?: string) => {
   if (size === "sm") return "text-sm";
